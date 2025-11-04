@@ -162,7 +162,7 @@ func TestUsersCreateOrUpdateWithWireMock(
 	defer WireMockClient.Reset()
 	stub := gowiremock.Put(gowiremock.URLPathTemplate("/v1/users")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"userId": map[string]interface{}{"referenceId": "user-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "USER_PROFILE"}, "agentUserId": "aus_1234567890", "identifiers": []interface{}{map[string]interface{}{"value": "joe@myapp.com", "type": "EMAIL"}}, "data": map[string]interface{}{"name": map[string]interface{}{"value": "Joe", "visibility": "VISIBLE"}}, "allUserData": map[string]interface{}{"myapp": map[string]interface{}{"name": "Joe"}}, "defaultUserData": map[string]interface{}{"name": "Joe"}},
+			map[string]interface{}{"userId": map[string]interface{}{"referenceId": "user-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "USER_PROFILE"}, "agentUserId": "aus_1234567890", "identifiers": []interface{}{map[string]interface{}{"value": "joe@myapp.com", "type": "EMAIL"}}, "data": map[string]interface{}{"name": map[string]interface{}{"value": "Joe", "visibility": "VISIBLE"}}, "allUserData": map[string]interface{}{"myapp": map[string]interface{}{"name": "Joe"}}, "defaultUserData": map[string]interface{}{"name": "Joe"}, "agentUserData": map[string]interface{}{"name": []interface{}{map[string]interface{}{"value": "Joe", "visibility": "VISIBLE", "userId": map[string]interface{}{"appId": "myapp", "referenceId": "user0"}}}}},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -211,7 +211,7 @@ func TestUsersGetWithWireMock(
 		gowiremock.Matching("user-0"),
 	).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"userId": map[string]interface{}{"referenceId": "user-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "USER_PROFILE"}, "agentUserId": "aus_1234567890", "identifiers": []interface{}{map[string]interface{}{"value": "joe@myapp.com", "type": "EMAIL"}}, "data": map[string]interface{}{"name": map[string]interface{}{"value": "Joe", "visibility": "VISIBLE"}}, "allUserData": map[string]interface{}{"myapp": map[string]interface{}{"name": "Joe"}}, "defaultUserData": map[string]interface{}{"name": "Joe"}},
+			map[string]interface{}{"userId": map[string]interface{}{"referenceId": "user-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "USER_PROFILE"}, "agentUserId": "aus_1234567890", "identifiers": []interface{}{map[string]interface{}{"value": "joe@myapp.com", "type": "EMAIL"}}, "data": map[string]interface{}{"name": map[string]interface{}{"value": "Joe", "visibility": "VISIBLE"}}, "allUserData": map[string]interface{}{"myapp": map[string]interface{}{"name": "Joe"}}, "defaultUserData": map[string]interface{}{"name": "Joe"}, "agentUserData": map[string]interface{}{"name": []interface{}{map[string]interface{}{"value": "Joe", "visibility": "VISIBLE", "userId": map[string]interface{}{"appId": "myapp", "referenceId": "user0"}}}}},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)

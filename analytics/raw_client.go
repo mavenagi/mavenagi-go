@@ -3,11 +3,13 @@
 package analytics
 
 import (
+	bytes "bytes"
 	context "context"
 	mavenagigo "github.com/mavenagi/mavenagi-go"
 	core "github.com/mavenagi/mavenagi-go/core"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	option "github.com/mavenagi/mavenagi-go/option"
+	io "io"
 	http "net/http"
 )
 
@@ -108,6 +110,48 @@ func (r *RawClient) GetConversationChart(
 		return nil, err
 	}
 	return &core.Response[*mavenagigo.ChartResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
+func (r *RawClient) ExportConversationTable(
+	ctx context.Context,
+	request *mavenagigo.ConversationTableRequest,
+	opts ...option.RequestOption,
+) (*core.Response[io.Reader], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := baseURL + "/v1/tables/conversations/export"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	response := bytes.NewBuffer(nil)
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        response,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[io.Reader]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
 		Body:       response,

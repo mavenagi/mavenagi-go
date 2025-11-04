@@ -206,6 +206,59 @@ func TestAnalyticsGetConversationChartWithWireMock(
 	require.True(t, ok, "WireMock request was not matched")
 }
 
+func TestAnalyticsExportConversationTableWithWireMock(
+	t *testing.T,
+) {
+	// wiremock client and server initialized in shared main_test.go
+	defer WireMockClient.Reset()
+	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/tables/conversations/export")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
+		gowiremock.NewResponse().WithJSONBody(
+			map[string]interface{}{},
+		).WithStatus(http.StatusOK),
+	)
+	err := WireMockClient.StubFor(stub)
+	require.NoError(t, err, "Failed to create WireMock stub")
+
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.ConversationTableRequest{
+		FieldGroupings: []*mavenagigo.ConversationGroupBy{
+			&mavenagigo.ConversationGroupBy{
+				Field: mavenagigo.ConversationFieldCategory,
+			},
+			&mavenagigo.ConversationGroupBy{
+				Field: mavenagigo.ConversationFieldCategory,
+			},
+		},
+		ColumnDefinitions: []*mavenagigo.ConversationColumnDefinition{
+			&mavenagigo.ConversationColumnDefinition{
+				Metric: &mavenagigo.ConversationMetric{
+					Count: &mavenagigo.ConversationCount{},
+				},
+				Header: "header",
+			},
+			&mavenagigo.ConversationColumnDefinition{
+				Metric: &mavenagigo.ConversationMetric{
+					Count: &mavenagigo.ConversationCount{},
+				},
+				Header: "header",
+			},
+		},
+	}
+	_, invocationErr := client.Analytics.ExportConversationTable(
+		context.TODO(),
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
+	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
+	require.True(t, ok, "WireMock request was not matched")
+}
+
 func TestAnalyticsGetFeedbackTableWithWireMock(
 	t *testing.T,
 ) {

@@ -8,6 +8,7 @@ import (
 	core "github.com/mavenagi/mavenagi-go/core"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	option "github.com/mavenagi/mavenagi-go/option"
+	io "io"
 	os "os"
 )
 
@@ -63,6 +64,25 @@ func (c *Client) GetConversationChart(
 	opts ...option.RequestOption,
 ) (*mavenagigo.ChartResponse, error) {
 	response, err := c.WithRawResponse.GetConversationChart(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// Export the conversation analytics table to a CSV file.
+//
+// This outputs the current table view defined by the request. For most programmatic use cases, prefer `getConversationTable` and format client-side. The CSV format may change and should not be relied upon by code consumers. A maximum of 10,000 rows can be exported at a time.
+func (c *Client) ExportConversationTable(
+	ctx context.Context,
+	request *mavenagigo.ConversationTableRequest,
+	opts ...option.RequestOption,
+) (io.Reader, error) {
+	response, err := c.WithRawResponse.ExportConversationTable(
 		ctx,
 		request,
 		opts...,

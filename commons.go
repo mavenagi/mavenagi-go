@@ -1773,6 +1773,7 @@ var (
 	appUserResponseFieldAgentUserId     = big.NewInt(1 << 3)
 	appUserResponseFieldAllUserData     = big.NewInt(1 << 4)
 	appUserResponseFieldDefaultUserData = big.NewInt(1 << 5)
+	appUserResponseFieldAgentUserData   = big.NewInt(1 << 6)
 )
 
 type AppUserResponse struct {
@@ -1787,6 +1788,8 @@ type AppUserResponse struct {
 	AllUserData map[string]map[string]string `json:"allUserData" url:"allUserData"`
 	// Default data for this user
 	DefaultUserData map[string]string `json:"defaultUserData" url:"defaultUserData"`
+	// All user data for this user, including reverse indexable user data
+	AgentUserData map[string][]*UserDataWithReference `json:"agentUserData" url:"agentUserData"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1835,6 +1838,13 @@ func (a *AppUserResponse) GetDefaultUserData() map[string]string {
 		return nil
 	}
 	return a.DefaultUserData
+}
+
+func (a *AppUserResponse) GetAgentUserData() map[string][]*UserDataWithReference {
+	if a == nil {
+		return nil
+	}
+	return a.AgentUserData
 }
 
 func (a *AppUserResponse) GetExtraProperties() map[string]interface{} {
@@ -1888,6 +1898,13 @@ func (a *AppUserResponse) SetAllUserData(allUserData map[string]map[string]strin
 func (a *AppUserResponse) SetDefaultUserData(defaultUserData map[string]string) {
 	a.DefaultUserData = defaultUserData
 	a.require(appUserResponseFieldDefaultUserData)
+}
+
+// SetAgentUserData sets the AgentUserData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppUserResponse) SetAgentUserData(agentUserData map[string][]*UserDataWithReference) {
+	a.AgentUserData = agentUserData
+	a.require(appUserResponseFieldAgentUserData)
 }
 
 func (a *AppUserResponse) UnmarshalJSON(data []byte) error {
@@ -7104,6 +7121,8 @@ var (
 	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 9)
 	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 10)
 	conversationSummaryFieldUsers                   = big.NewInt(1 << 11)
+	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 12)
+	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 13)
 )
 
 type ConversationSummary struct {
@@ -7136,6 +7155,10 @@ type ConversationSummary struct {
 	HumanAgentsWithInserts []string `json:"humanAgentsWithInserts" url:"humanAgentsWithInserts"`
 	// The names of all users that have a message of type `USER` on the conversation.
 	Users []string `json:"users" url:"users"`
+	// The text of the last user message in the conversation.
+	LastUserMessage *string `json:"lastUserMessage,omitempty" url:"lastUserMessage,omitempty"`
+	// The text of the last bot message in the conversation.
+	LastBotMessage *string `json:"lastBotMessage,omitempty" url:"lastBotMessage,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7226,6 +7249,20 @@ func (c *ConversationSummary) GetUsers() []string {
 		return nil
 	}
 	return c.Users
+}
+
+func (c *ConversationSummary) GetLastUserMessage() *string {
+	if c == nil {
+		return nil
+	}
+	return c.LastUserMessage
+}
+
+func (c *ConversationSummary) GetLastBotMessage() *string {
+	if c == nil {
+		return nil
+	}
+	return c.LastBotMessage
 }
 
 func (c *ConversationSummary) GetExtraProperties() map[string]interface{} {
@@ -7321,6 +7358,20 @@ func (c *ConversationSummary) SetHumanAgentsWithInserts(humanAgentsWithInserts [
 func (c *ConversationSummary) SetUsers(users []string) {
 	c.Users = users
 	c.require(conversationSummaryFieldUsers)
+}
+
+// SetLastUserMessage sets the LastUserMessage field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetLastUserMessage(lastUserMessage *string) {
+	c.LastUserMessage = lastUserMessage
+	c.require(conversationSummaryFieldLastUserMessage)
+}
+
+// SetLastBotMessage sets the LastBotMessage field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetLastBotMessage(lastBotMessage *string) {
+	c.LastBotMessage = lastBotMessage
+	c.require(conversationSummaryFieldLastBotMessage)
 }
 
 func (c *ConversationSummary) UnmarshalJSON(data []byte) error {
@@ -14606,6 +14657,119 @@ func (u *UserData) MarshalJSON() ([]byte, error) {
 }
 
 func (u *UserData) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
+}
+
+var (
+	userDataWithReferenceFieldValue      = big.NewInt(1 << 0)
+	userDataWithReferenceFieldVisibility = big.NewInt(1 << 1)
+	userDataWithReferenceFieldUserId     = big.NewInt(1 << 2)
+)
+
+type UserDataWithReference struct {
+	// The value of the user metadata
+	Value string `json:"value" url:"value"`
+	// The visibility of the user metadata
+	Visibility VisibilityType `json:"visibility" url:"visibility"`
+	// Reverse index containing appId and referenceId data that identifies this app user
+	UserId *EntityIdFilter `json:"userId" url:"userId"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UserDataWithReference) GetValue() string {
+	if u == nil {
+		return ""
+	}
+	return u.Value
+}
+
+func (u *UserDataWithReference) GetVisibility() VisibilityType {
+	if u == nil {
+		return ""
+	}
+	return u.Visibility
+}
+
+func (u *UserDataWithReference) GetUserId() *EntityIdFilter {
+	if u == nil {
+		return nil
+	}
+	return u.UserId
+}
+
+func (u *UserDataWithReference) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UserDataWithReference) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataWithReference) SetValue(value string) {
+	u.Value = value
+	u.require(userDataWithReferenceFieldValue)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataWithReference) SetVisibility(visibility VisibilityType) {
+	u.Visibility = visibility
+	u.require(userDataWithReferenceFieldVisibility)
+}
+
+// SetUserId sets the UserId field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataWithReference) SetUserId(userId *EntityIdFilter) {
+	u.UserId = userId
+	u.require(userDataWithReferenceFieldUserId)
+}
+
+func (u *UserDataWithReference) UnmarshalJSON(data []byte) error {
+	type unmarshaler UserDataWithReference
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UserDataWithReference(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UserDataWithReference) MarshalJSON() ([]byte, error) {
+	type embed UserDataWithReference
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UserDataWithReference) String() string {
 	if len(u.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
 			return value

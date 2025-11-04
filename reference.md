@@ -1294,6 +1294,90 @@ client.Analytics.GetConversationChart(
 </dl>
 </details>
 
+<details><summary><code>client.Analytics.ExportConversationTable(request) -> string</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Export the conversation analytics table to a CSV file.
+
+This outputs the current table view defined by the request. For most programmatic use cases, prefer `getConversationTable` and format client-side. The CSV format may change and should not be relied upon by code consumers. A maximum of 10,000 rows can be exported at a time.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.ConversationTableRequest{
+        FieldGroupings: []*mavenagigo.ConversationGroupBy{
+            &mavenagigo.ConversationGroupBy{
+                Field: mavenagigo.ConversationFieldCategory,
+            },
+            &mavenagigo.ConversationGroupBy{
+                Field: mavenagigo.ConversationFieldCategory,
+            },
+        },
+        ColumnDefinitions: []*mavenagigo.ConversationColumnDefinition{
+            &mavenagigo.ConversationColumnDefinition{
+                Metric: &mavenagigo.ConversationMetric{
+                    Count: &mavenagigo.ConversationCount{},
+                },
+                Header: "header",
+            },
+            &mavenagigo.ConversationColumnDefinition{
+                Metric: &mavenagigo.ConversationMetric{
+                    Count: &mavenagigo.ConversationCount{},
+                },
+                Header: "header",
+            },
+        },
+    }
+client.Analytics.ExportConversationTable(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.ConversationTableRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.Analytics.GetFeedbackTable(request) -> *mavenagigo.FeedbackTableResponse</code></summary>
 <dl>
 <dd>
