@@ -4,7 +4,6 @@ package client
 
 import (
 	actions "github.com/mavenagi/mavenagi-go/actions"
-	agentcapabilities "github.com/mavenagi/mavenagi-go/agentcapabilities"
 	agents "github.com/mavenagi/mavenagi-go/agents"
 	analytics "github.com/mavenagi/mavenagi-go/analytics"
 	appsettings "github.com/mavenagi/mavenagi-go/appsettings"
@@ -25,21 +24,20 @@ import (
 )
 
 type MavenAGI struct {
-	Actions           *actions.Client
-	AgentCapabilities *agentcapabilities.Client
-	Agents            *agents.Client
-	Analytics         *analytics.Client
-	AppSettings       *appsettings.Client
-	Assets            *assets.Client
-	Conversation      *conversation.Client
-	Events            *events.Client
-	Inbox             *inbox.Client
-	Knowledge         *knowledge.Client
-	Organizations     *organizations.Client
-	Segments          *segments.Client
-	Translations      *translations.Client
-	Triggers          *triggers.Client
-	Users             *users.Client
+	Actions       *actions.Client
+	Agents        *agents.Client
+	Analytics     *analytics.Client
+	AppSettings   *appsettings.Client
+	Assets        *assets.Client
+	Conversation  *conversation.Client
+	Events        *events.Client
+	Inbox         *inbox.Client
+	Knowledge     *knowledge.Client
+	Organizations *organizations.Client
+	Segments      *segments.Client
+	Translations  *translations.Client
+	Triggers      *triggers.Client
+	Users         *users.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -55,23 +53,22 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
 	}
 	return &MavenAGI{
-		Actions:           actions.NewClient(options),
-		AgentCapabilities: agentcapabilities.NewClient(options),
-		Agents:            agents.NewClient(options),
-		Analytics:         analytics.NewClient(options),
-		AppSettings:       appsettings.NewClient(options),
-		Assets:            assets.NewClient(options),
-		Conversation:      conversation.NewClient(options),
-		Events:            events.NewClient(options),
-		Inbox:             inbox.NewClient(options),
-		Knowledge:         knowledge.NewClient(options),
-		Organizations:     organizations.NewClient(options),
-		Segments:          segments.NewClient(options),
-		Translations:      translations.NewClient(options),
-		Triggers:          triggers.NewClient(options),
-		Users:             users.NewClient(options),
-		options:           options,
-		baseURL:           options.BaseURL,
+		Actions:       actions.NewClient(options),
+		Agents:        agents.NewClient(options),
+		Analytics:     analytics.NewClient(options),
+		AppSettings:   appsettings.NewClient(options),
+		Assets:        assets.NewClient(options),
+		Conversation:  conversation.NewClient(options),
+		Events:        events.NewClient(options),
+		Inbox:         inbox.NewClient(options),
+		Knowledge:     knowledge.NewClient(options),
+		Organizations: organizations.NewClient(options),
+		Segments:      segments.NewClient(options),
+		Translations:  translations.NewClient(options),
+		Triggers:      triggers.NewClient(options),
+		Users:         users.NewClient(options),
+		options:       options,
+		baseURL:       options.BaseURL,
 		caller: internal.NewCaller(
 			&internal.CallerParams{
 				Client:      options.HTTPClient,

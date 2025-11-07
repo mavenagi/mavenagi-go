@@ -179,11 +179,45 @@ func (k *KnowledgeBasePatchRequest) SetRefreshFrequency(refreshFrequency *Knowle
 }
 
 var (
-	baseKnowledgeDocumentFieldUrl       = big.NewInt(1 << 0)
-	baseKnowledgeDocumentFieldLanguage  = big.NewInt(1 << 1)
-	baseKnowledgeDocumentFieldCreatedAt = big.NewInt(1 << 2)
-	baseKnowledgeDocumentFieldUpdatedAt = big.NewInt(1 << 3)
-	baseKnowledgeDocumentFieldAuthor    = big.NewInt(1 << 4)
+	knowledgeDocumentPatchRequestFieldKnowledgeBaseAppId = big.NewInt(1 << 0)
+	knowledgeDocumentPatchRequestFieldLlmInclusionStatus = big.NewInt(1 << 1)
+)
+
+type KnowledgeDocumentPatchRequest struct {
+	// The App ID of the knowledge base that contains the knowledge document to patch. If not provided the ID of the calling app will be used.
+	KnowledgeBaseAppId *string `json:"knowledgeBaseAppId,omitempty" url:"-"`
+	// Determines whether this document is sent to the LLM as part of a conversation.
+	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (k *KnowledgeDocumentPatchRequest) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetKnowledgeBaseAppId sets the KnowledgeBaseAppId field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentPatchRequest) SetKnowledgeBaseAppId(knowledgeBaseAppId *string) {
+	k.KnowledgeBaseAppId = knowledgeBaseAppId
+	k.require(knowledgeDocumentPatchRequestFieldKnowledgeBaseAppId)
+}
+
+// SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentPatchRequest) SetLlmInclusionStatus(llmInclusionStatus *LlmInclusionStatus) {
+	k.LlmInclusionStatus = llmInclusionStatus
+	k.require(knowledgeDocumentPatchRequestFieldLlmInclusionStatus)
+}
+
+var (
+	baseKnowledgeDocumentFieldUrl      = big.NewInt(1 << 0)
+	baseKnowledgeDocumentFieldLanguage = big.NewInt(1 << 1)
+	baseKnowledgeDocumentFieldAuthor   = big.NewInt(1 << 2)
 )
 
 type BaseKnowledgeDocument struct {
@@ -191,10 +225,6 @@ type BaseKnowledgeDocument struct {
 	Url *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
-	// The time at which this document was created.
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The time at which this document was last modified.
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 
@@ -217,20 +247,6 @@ func (b *BaseKnowledgeDocument) GetLanguage() *string {
 		return nil
 	}
 	return b.Language
-}
-
-func (b *BaseKnowledgeDocument) GetCreatedAt() *time.Time {
-	if b == nil {
-		return nil
-	}
-	return b.CreatedAt
-}
-
-func (b *BaseKnowledgeDocument) GetUpdatedAt() *time.Time {
-	if b == nil {
-		return nil
-	}
-	return b.UpdatedAt
 }
 
 func (b *BaseKnowledgeDocument) GetAuthor() *string {
@@ -265,20 +281,6 @@ func (b *BaseKnowledgeDocument) SetLanguage(language *string) {
 	b.require(baseKnowledgeDocumentFieldLanguage)
 }
 
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BaseKnowledgeDocument) SetCreatedAt(createdAt *time.Time) {
-	b.CreatedAt = createdAt
-	b.require(baseKnowledgeDocumentFieldCreatedAt)
-}
-
-// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BaseKnowledgeDocument) SetUpdatedAt(updatedAt *time.Time) {
-	b.UpdatedAt = updatedAt
-	b.require(baseKnowledgeDocumentFieldUpdatedAt)
-}
-
 // SetAuthor sets the Author field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BaseKnowledgeDocument) SetAuthor(author *string) {
@@ -287,20 +289,12 @@ func (b *BaseKnowledgeDocument) SetAuthor(author *string) {
 }
 
 func (b *BaseKnowledgeDocument) UnmarshalJSON(data []byte) error {
-	type embed BaseKnowledgeDocument
-	var unmarshaler = struct {
-		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BaseKnowledgeDocument
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BaseKnowledgeDocument(unmarshaler.embed)
-	b.CreatedAt = unmarshaler.CreatedAt.TimePtr()
-	b.UpdatedAt = unmarshaler.UpdatedAt.TimePtr()
+	*b = BaseKnowledgeDocument(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
@@ -314,12 +308,8 @@ func (b *BaseKnowledgeDocument) MarshalJSON() ([]byte, error) {
 	type embed BaseKnowledgeDocument
 	var marshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
 	}{
-		embed:     embed(*b),
-		CreatedAt: internal.NewOptionalDateTime(b.CreatedAt),
-		UpdatedAt: internal.NewOptionalDateTime(b.UpdatedAt),
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -1052,7 +1042,7 @@ type KnowledgeBaseResponse struct {
 	// The tags of the knowledge base.
 	Tags []string `json:"tags" url:"tags"`
 	// Determines whether documents in the knowledge base are sent to the LLM as part of a conversation.
-	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
+	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
 	// How often the knowledge base should be refreshed.
 	RefreshFrequency KnowledgeBaseRefreshFrequency `json:"refreshFrequency" url:"refreshFrequency"`
 	// The IDs of the segment that must be matched for the knowledge base to be relevant to a conversation.
@@ -1137,9 +1127,9 @@ func (k *KnowledgeBaseResponse) GetTags() []string {
 	return k.Tags
 }
 
-func (k *KnowledgeBaseResponse) GetLlmInclusionStatus() *LlmInclusionStatus {
+func (k *KnowledgeBaseResponse) GetLlmInclusionStatus() LlmInclusionStatus {
 	if k == nil {
-		return nil
+		return ""
 	}
 	return k.LlmInclusionStatus
 }
@@ -1241,7 +1231,7 @@ func (k *KnowledgeBaseResponse) SetTags(tags []string) {
 
 // SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseResponse) SetLlmInclusionStatus(llmInclusionStatus *LlmInclusionStatus) {
+func (k *KnowledgeBaseResponse) SetLlmInclusionStatus(llmInclusionStatus LlmInclusionStatus) {
 	k.LlmInclusionStatus = llmInclusionStatus
 	k.require(knowledgeBaseResponseFieldLlmInclusionStatus)
 }
@@ -1494,6 +1484,8 @@ var (
 	knowledgeBaseVersionFieldVersionId    = big.NewInt(1 << 1)
 	knowledgeBaseVersionFieldStatus       = big.NewInt(1 << 2)
 	knowledgeBaseVersionFieldErrorMessage = big.NewInt(1 << 3)
+	knowledgeBaseVersionFieldCreatedAt    = big.NewInt(1 << 4)
+	knowledgeBaseVersionFieldUpdatedAt    = big.NewInt(1 << 5)
 )
 
 type KnowledgeBaseVersion struct {
@@ -1505,6 +1497,10 @@ type KnowledgeBaseVersion struct {
 	Status KnowledgeBaseVersionStatus `json:"status" url:"status"`
 	// A user-facing error message that provides more details about a version failure.
 	ErrorMessage *string `json:"errorMessage,omitempty" url:"errorMessage,omitempty"`
+	// The date and time the knowledge base version was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// The date and time the knowledge base version was last updated.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1539,6 +1535,20 @@ func (k *KnowledgeBaseVersion) GetErrorMessage() *string {
 		return nil
 	}
 	return k.ErrorMessage
+}
+
+func (k *KnowledgeBaseVersion) GetCreatedAt() time.Time {
+	if k == nil {
+		return time.Time{}
+	}
+	return k.CreatedAt
+}
+
+func (k *KnowledgeBaseVersion) GetUpdatedAt() time.Time {
+	if k == nil {
+		return time.Time{}
+	}
+	return k.UpdatedAt
 }
 
 func (k *KnowledgeBaseVersion) GetExtraProperties() map[string]interface{} {
@@ -1580,13 +1590,35 @@ func (k *KnowledgeBaseVersion) SetErrorMessage(errorMessage *string) {
 	k.require(knowledgeBaseVersionFieldErrorMessage)
 }
 
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersion) SetCreatedAt(createdAt time.Time) {
+	k.CreatedAt = createdAt
+	k.require(knowledgeBaseVersionFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersion) SetUpdatedAt(updatedAt time.Time) {
+	k.UpdatedAt = updatedAt
+	k.require(knowledgeBaseVersionFieldUpdatedAt)
+}
+
 func (k *KnowledgeBaseVersion) UnmarshalJSON(data []byte) error {
-	type unmarshaler KnowledgeBaseVersion
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed KnowledgeBaseVersion
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*k),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*k = KnowledgeBaseVersion(value)
+	*k = KnowledgeBaseVersion(unmarshaler.embed)
+	k.CreatedAt = unmarshaler.CreatedAt.Time()
+	k.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *k)
 	if err != nil {
 		return err
@@ -1600,8 +1632,12 @@ func (k *KnowledgeBaseVersion) MarshalJSON() ([]byte, error) {
 	type embed KnowledgeBaseVersion
 	var marshaler = struct {
 		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
-		embed: embed(*k),
+		embed:     embed(*k),
+		CreatedAt: internal.NewDateTime(k.CreatedAt),
+		UpdatedAt: internal.NewDateTime(k.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2129,10 +2165,12 @@ func (k KnowledgeDocumentField) Ptr() *KnowledgeDocumentField {
 var (
 	knowledgeDocumentFilterFieldSearch                 = big.NewInt(1 << 0)
 	knowledgeDocumentFilterFieldTitle                  = big.NewInt(1 << 1)
-	knowledgeDocumentFilterFieldCreatedAfter           = big.NewInt(1 << 2)
-	knowledgeDocumentFilterFieldCreatedBefore          = big.NewInt(1 << 3)
-	knowledgeDocumentFilterFieldAppIds                 = big.NewInt(1 << 4)
-	knowledgeDocumentFilterFieldKnowledgeBaseVersionId = big.NewInt(1 << 5)
+	knowledgeDocumentFilterFieldUrl                    = big.NewInt(1 << 2)
+	knowledgeDocumentFilterFieldCreatedAfter           = big.NewInt(1 << 3)
+	knowledgeDocumentFilterFieldCreatedBefore          = big.NewInt(1 << 4)
+	knowledgeDocumentFilterFieldAppIds                 = big.NewInt(1 << 5)
+	knowledgeDocumentFilterFieldKnowledgeBaseVersionId = big.NewInt(1 << 6)
+	knowledgeDocumentFilterFieldLlmInclusionStatus     = big.NewInt(1 << 7)
 )
 
 type KnowledgeDocumentFilter struct {
@@ -2151,6 +2189,8 @@ type KnowledgeDocumentFilter struct {
 	Search *string `json:"search,omitempty" url:"search,omitempty"`
 	// Filter by title
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
+	// Filter by url
+	Url *string `json:"url,omitempty" url:"url,omitempty"`
 	// Filter knowledge documents created on or after this timestamp
 	CreatedAfter *time.Time `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
 	// Filter knowledge documents created on or before this timestamp
@@ -2160,6 +2200,8 @@ type KnowledgeDocumentFilter struct {
 	// Filter documents within the specified knowledge base version.
 	// If not provided all active knowledge base versions within the agent will be searched.
 	KnowledgeBaseVersionId *EntityIdWithoutAgent `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
+	// Filter by the LLM inclusion status
+	LlmInclusionStatus []LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2180,6 +2222,13 @@ func (k *KnowledgeDocumentFilter) GetTitle() *string {
 		return nil
 	}
 	return k.Title
+}
+
+func (k *KnowledgeDocumentFilter) GetUrl() *string {
+	if k == nil {
+		return nil
+	}
+	return k.Url
 }
 
 func (k *KnowledgeDocumentFilter) GetCreatedAfter() *time.Time {
@@ -2210,6 +2259,13 @@ func (k *KnowledgeDocumentFilter) GetKnowledgeBaseVersionId() *EntityIdWithoutAg
 	return k.KnowledgeBaseVersionId
 }
 
+func (k *KnowledgeDocumentFilter) GetLlmInclusionStatus() []LlmInclusionStatus {
+	if k == nil {
+		return nil
+	}
+	return k.LlmInclusionStatus
+}
+
 func (k *KnowledgeDocumentFilter) GetExtraProperties() map[string]interface{} {
 	return k.extraProperties
 }
@@ -2233,6 +2289,13 @@ func (k *KnowledgeDocumentFilter) SetSearch(search *string) {
 func (k *KnowledgeDocumentFilter) SetTitle(title *string) {
 	k.Title = title
 	k.require(knowledgeDocumentFilterFieldTitle)
+}
+
+// SetUrl sets the Url field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentFilter) SetUrl(url *string) {
+	k.Url = url
+	k.require(knowledgeDocumentFilterFieldUrl)
 }
 
 // SetCreatedAfter sets the CreatedAfter field and marks it as non-optional;
@@ -2261,6 +2324,13 @@ func (k *KnowledgeDocumentFilter) SetAppIds(appIds []string) {
 func (k *KnowledgeDocumentFilter) SetKnowledgeBaseVersionId(knowledgeBaseVersionId *EntityIdWithoutAgent) {
 	k.KnowledgeBaseVersionId = knowledgeBaseVersionId
 	k.require(knowledgeDocumentFilterFieldKnowledgeBaseVersionId)
+}
+
+// SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentFilter) SetLlmInclusionStatus(llmInclusionStatus []LlmInclusionStatus) {
+	k.LlmInclusionStatus = llmInclusionStatus
+	k.require(knowledgeDocumentFilterFieldLlmInclusionStatus)
 }
 
 func (k *KnowledgeDocumentFilter) UnmarshalJSON(data []byte) error {
@@ -2317,15 +2387,15 @@ func (k *KnowledgeDocumentFilter) String() string {
 var (
 	knowledgeDocumentRequestFieldUrl                 = big.NewInt(1 << 0)
 	knowledgeDocumentRequestFieldLanguage            = big.NewInt(1 << 1)
-	knowledgeDocumentRequestFieldCreatedAt           = big.NewInt(1 << 2)
-	knowledgeDocumentRequestFieldUpdatedAt           = big.NewInt(1 << 3)
-	knowledgeDocumentRequestFieldAuthor              = big.NewInt(1 << 4)
-	knowledgeDocumentRequestFieldKnowledgeDocumentId = big.NewInt(1 << 5)
-	knowledgeDocumentRequestFieldVersionId           = big.NewInt(1 << 6)
-	knowledgeDocumentRequestFieldContentType         = big.NewInt(1 << 7)
-	knowledgeDocumentRequestFieldTitle               = big.NewInt(1 << 8)
-	knowledgeDocumentRequestFieldContent             = big.NewInt(1 << 9)
-	knowledgeDocumentRequestFieldMetadata            = big.NewInt(1 << 10)
+	knowledgeDocumentRequestFieldAuthor              = big.NewInt(1 << 2)
+	knowledgeDocumentRequestFieldKnowledgeDocumentId = big.NewInt(1 << 3)
+	knowledgeDocumentRequestFieldVersionId           = big.NewInt(1 << 4)
+	knowledgeDocumentRequestFieldContentType         = big.NewInt(1 << 5)
+	knowledgeDocumentRequestFieldTitle               = big.NewInt(1 << 6)
+	knowledgeDocumentRequestFieldContent             = big.NewInt(1 << 7)
+	knowledgeDocumentRequestFieldMetadata            = big.NewInt(1 << 8)
+	knowledgeDocumentRequestFieldCreatedAt           = big.NewInt(1 << 9)
+	knowledgeDocumentRequestFieldUpdatedAt           = big.NewInt(1 << 10)
 )
 
 type KnowledgeDocumentRequest struct {
@@ -2333,10 +2403,6 @@ type KnowledgeDocumentRequest struct {
 	Url *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
-	// The time at which this document was created.
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The time at which this document was last modified.
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 	// ID that uniquely identifies this knowledge document within its knowledge base
@@ -2350,6 +2416,10 @@ type KnowledgeDocumentRequest struct {
 	Content string `json:"content" url:"content"`
 	// Metadata for the knowledge document.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
+	// The time at which this document was created.
+	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
+	// The time at which this document was last modified.
+	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2370,20 +2440,6 @@ func (k *KnowledgeDocumentRequest) GetLanguage() *string {
 		return nil
 	}
 	return k.Language
-}
-
-func (k *KnowledgeDocumentRequest) GetCreatedAt() *time.Time {
-	if k == nil {
-		return nil
-	}
-	return k.CreatedAt
-}
-
-func (k *KnowledgeDocumentRequest) GetUpdatedAt() *time.Time {
-	if k == nil {
-		return nil
-	}
-	return k.UpdatedAt
 }
 
 func (k *KnowledgeDocumentRequest) GetAuthor() *string {
@@ -2435,6 +2491,20 @@ func (k *KnowledgeDocumentRequest) GetMetadata() map[string]string {
 	return k.Metadata
 }
 
+func (k *KnowledgeDocumentRequest) GetCreatedAt() *time.Time {
+	if k == nil {
+		return nil
+	}
+	return k.CreatedAt
+}
+
+func (k *KnowledgeDocumentRequest) GetUpdatedAt() *time.Time {
+	if k == nil {
+		return nil
+	}
+	return k.UpdatedAt
+}
+
 func (k *KnowledgeDocumentRequest) GetExtraProperties() map[string]interface{} {
 	return k.extraProperties
 }
@@ -2458,20 +2528,6 @@ func (k *KnowledgeDocumentRequest) SetUrl(url *string) {
 func (k *KnowledgeDocumentRequest) SetLanguage(language *string) {
 	k.Language = language
 	k.require(knowledgeDocumentRequestFieldLanguage)
-}
-
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetCreatedAt(createdAt *time.Time) {
-	k.CreatedAt = createdAt
-	k.require(knowledgeDocumentRequestFieldCreatedAt)
-}
-
-// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetUpdatedAt(updatedAt *time.Time) {
-	k.UpdatedAt = updatedAt
-	k.require(knowledgeDocumentRequestFieldUpdatedAt)
 }
 
 // SetAuthor sets the Author field and marks it as non-optional;
@@ -2521,6 +2577,20 @@ func (k *KnowledgeDocumentRequest) SetContent(content string) {
 func (k *KnowledgeDocumentRequest) SetMetadata(metadata map[string]string) {
 	k.Metadata = metadata
 	k.require(knowledgeDocumentRequestFieldMetadata)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentRequest) SetCreatedAt(createdAt *time.Time) {
+	k.CreatedAt = createdAt
+	k.require(knowledgeDocumentRequestFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentRequest) SetUpdatedAt(updatedAt *time.Time) {
+	k.UpdatedAt = updatedAt
+	k.require(knowledgeDocumentRequestFieldUpdatedAt)
 }
 
 func (k *KnowledgeDocumentRequest) UnmarshalJSON(data []byte) error {
@@ -2577,14 +2647,15 @@ func (k *KnowledgeDocumentRequest) String() string {
 var (
 	knowledgeDocumentResponseFieldUrl                    = big.NewInt(1 << 0)
 	knowledgeDocumentResponseFieldLanguage               = big.NewInt(1 << 1)
-	knowledgeDocumentResponseFieldCreatedAt              = big.NewInt(1 << 2)
-	knowledgeDocumentResponseFieldUpdatedAt              = big.NewInt(1 << 3)
-	knowledgeDocumentResponseFieldAuthor                 = big.NewInt(1 << 4)
-	knowledgeDocumentResponseFieldKnowledgeDocumentId    = big.NewInt(1 << 5)
-	knowledgeDocumentResponseFieldKnowledgeBaseVersionId = big.NewInt(1 << 6)
-	knowledgeDocumentResponseFieldTitle                  = big.NewInt(1 << 7)
-	knowledgeDocumentResponseFieldContent                = big.NewInt(1 << 8)
-	knowledgeDocumentResponseFieldMetadata               = big.NewInt(1 << 9)
+	knowledgeDocumentResponseFieldAuthor                 = big.NewInt(1 << 2)
+	knowledgeDocumentResponseFieldKnowledgeDocumentId    = big.NewInt(1 << 3)
+	knowledgeDocumentResponseFieldKnowledgeBaseVersionId = big.NewInt(1 << 4)
+	knowledgeDocumentResponseFieldTitle                  = big.NewInt(1 << 5)
+	knowledgeDocumentResponseFieldLlmInclusionStatus     = big.NewInt(1 << 6)
+	knowledgeDocumentResponseFieldCreatedAt              = big.NewInt(1 << 7)
+	knowledgeDocumentResponseFieldUpdatedAt              = big.NewInt(1 << 8)
+	knowledgeDocumentResponseFieldContent                = big.NewInt(1 << 9)
+	knowledgeDocumentResponseFieldMetadata               = big.NewInt(1 << 10)
 )
 
 type KnowledgeDocumentResponse struct {
@@ -2592,10 +2663,6 @@ type KnowledgeDocumentResponse struct {
 	Url *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
-	// The time at which this document was created.
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The time at which this document was last modified.
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 	// ID that uniquely identifies this knowledge document within its knowledge base
@@ -2605,6 +2672,12 @@ type KnowledgeDocumentResponse struct {
 	KnowledgeBaseVersionId *EntityId `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
 	// The title of the document. Will be shown as part of answers. May be missing on legacy documents.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
+	// Whether the document is included in the agent's knowledge.
+	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
+	// The time at which this document was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// The time at which this document was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 	// The content of the document in markdown format. Not shown directly to users.
 	Content string `json:"content" url:"content"`
 	// Metadata for the knowledge document.
@@ -2629,20 +2702,6 @@ func (k *KnowledgeDocumentResponse) GetLanguage() *string {
 		return nil
 	}
 	return k.Language
-}
-
-func (k *KnowledgeDocumentResponse) GetCreatedAt() *time.Time {
-	if k == nil {
-		return nil
-	}
-	return k.CreatedAt
-}
-
-func (k *KnowledgeDocumentResponse) GetUpdatedAt() *time.Time {
-	if k == nil {
-		return nil
-	}
-	return k.UpdatedAt
 }
 
 func (k *KnowledgeDocumentResponse) GetAuthor() *string {
@@ -2671,6 +2730,27 @@ func (k *KnowledgeDocumentResponse) GetTitle() *string {
 		return nil
 	}
 	return k.Title
+}
+
+func (k *KnowledgeDocumentResponse) GetLlmInclusionStatus() LlmInclusionStatus {
+	if k == nil {
+		return ""
+	}
+	return k.LlmInclusionStatus
+}
+
+func (k *KnowledgeDocumentResponse) GetCreatedAt() time.Time {
+	if k == nil {
+		return time.Time{}
+	}
+	return k.CreatedAt
+}
+
+func (k *KnowledgeDocumentResponse) GetUpdatedAt() time.Time {
+	if k == nil {
+		return time.Time{}
+	}
+	return k.UpdatedAt
 }
 
 func (k *KnowledgeDocumentResponse) GetContent() string {
@@ -2712,20 +2792,6 @@ func (k *KnowledgeDocumentResponse) SetLanguage(language *string) {
 	k.require(knowledgeDocumentResponseFieldLanguage)
 }
 
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetCreatedAt(createdAt *time.Time) {
-	k.CreatedAt = createdAt
-	k.require(knowledgeDocumentResponseFieldCreatedAt)
-}
-
-// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetUpdatedAt(updatedAt *time.Time) {
-	k.UpdatedAt = updatedAt
-	k.require(knowledgeDocumentResponseFieldUpdatedAt)
-}
-
 // SetAuthor sets the Author field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (k *KnowledgeDocumentResponse) SetAuthor(author *string) {
@@ -2754,6 +2820,27 @@ func (k *KnowledgeDocumentResponse) SetTitle(title *string) {
 	k.require(knowledgeDocumentResponseFieldTitle)
 }
 
+// SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetLlmInclusionStatus(llmInclusionStatus LlmInclusionStatus) {
+	k.LlmInclusionStatus = llmInclusionStatus
+	k.require(knowledgeDocumentResponseFieldLlmInclusionStatus)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetCreatedAt(createdAt time.Time) {
+	k.CreatedAt = createdAt
+	k.require(knowledgeDocumentResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetUpdatedAt(updatedAt time.Time) {
+	k.UpdatedAt = updatedAt
+	k.require(knowledgeDocumentResponseFieldUpdatedAt)
+}
+
 // SetContent sets the Content field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (k *KnowledgeDocumentResponse) SetContent(content string) {
@@ -2772,8 +2859,8 @@ func (k *KnowledgeDocumentResponse) UnmarshalJSON(data []byte) error {
 	type embed KnowledgeDocumentResponse
 	var unmarshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed: embed(*k),
 	}
@@ -2781,8 +2868,8 @@ func (k *KnowledgeDocumentResponse) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*k = KnowledgeDocumentResponse(unmarshaler.embed)
-	k.CreatedAt = unmarshaler.CreatedAt.TimePtr()
-	k.UpdatedAt = unmarshaler.UpdatedAt.TimePtr()
+	k.CreatedAt = unmarshaler.CreatedAt.Time()
+	k.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *k)
 	if err != nil {
 		return err
@@ -2796,12 +2883,12 @@ func (k *KnowledgeDocumentResponse) MarshalJSON() ([]byte, error) {
 	type embed KnowledgeDocumentResponse
 	var marshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed:     embed(*k),
-		CreatedAt: internal.NewOptionalDateTime(k.CreatedAt),
-		UpdatedAt: internal.NewOptionalDateTime(k.UpdatedAt),
+		CreatedAt: internal.NewDateTime(k.CreatedAt),
+		UpdatedAt: internal.NewDateTime(k.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2967,12 +3054,13 @@ func (k *KnowledgeDocumentSearchRequest) String() string {
 var (
 	knowledgeDocumentSearchResponseFieldUrl                    = big.NewInt(1 << 0)
 	knowledgeDocumentSearchResponseFieldLanguage               = big.NewInt(1 << 1)
-	knowledgeDocumentSearchResponseFieldCreatedAt              = big.NewInt(1 << 2)
-	knowledgeDocumentSearchResponseFieldUpdatedAt              = big.NewInt(1 << 3)
-	knowledgeDocumentSearchResponseFieldAuthor                 = big.NewInt(1 << 4)
-	knowledgeDocumentSearchResponseFieldKnowledgeDocumentId    = big.NewInt(1 << 5)
-	knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId = big.NewInt(1 << 6)
-	knowledgeDocumentSearchResponseFieldTitle                  = big.NewInt(1 << 7)
+	knowledgeDocumentSearchResponseFieldAuthor                 = big.NewInt(1 << 2)
+	knowledgeDocumentSearchResponseFieldKnowledgeDocumentId    = big.NewInt(1 << 3)
+	knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId = big.NewInt(1 << 4)
+	knowledgeDocumentSearchResponseFieldTitle                  = big.NewInt(1 << 5)
+	knowledgeDocumentSearchResponseFieldLlmInclusionStatus     = big.NewInt(1 << 6)
+	knowledgeDocumentSearchResponseFieldCreatedAt              = big.NewInt(1 << 7)
+	knowledgeDocumentSearchResponseFieldUpdatedAt              = big.NewInt(1 << 8)
 )
 
 type KnowledgeDocumentSearchResponse struct {
@@ -2980,10 +3068,6 @@ type KnowledgeDocumentSearchResponse struct {
 	Url *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
-	// The time at which this document was created.
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The time at which this document was last modified.
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 	// ID that uniquely identifies this knowledge document within its knowledge base
@@ -2993,6 +3077,12 @@ type KnowledgeDocumentSearchResponse struct {
 	KnowledgeBaseVersionId *EntityId `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
 	// The title of the document. Will be shown as part of answers. May be missing on legacy documents.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
+	// Whether the document is included in the agent's knowledge.
+	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
+	// The time at which this document was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// The time at which this document was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3013,20 +3103,6 @@ func (k *KnowledgeDocumentSearchResponse) GetLanguage() *string {
 		return nil
 	}
 	return k.Language
-}
-
-func (k *KnowledgeDocumentSearchResponse) GetCreatedAt() *time.Time {
-	if k == nil {
-		return nil
-	}
-	return k.CreatedAt
-}
-
-func (k *KnowledgeDocumentSearchResponse) GetUpdatedAt() *time.Time {
-	if k == nil {
-		return nil
-	}
-	return k.UpdatedAt
 }
 
 func (k *KnowledgeDocumentSearchResponse) GetAuthor() *string {
@@ -3057,6 +3133,27 @@ func (k *KnowledgeDocumentSearchResponse) GetTitle() *string {
 	return k.Title
 }
 
+func (k *KnowledgeDocumentSearchResponse) GetLlmInclusionStatus() LlmInclusionStatus {
+	if k == nil {
+		return ""
+	}
+	return k.LlmInclusionStatus
+}
+
+func (k *KnowledgeDocumentSearchResponse) GetCreatedAt() time.Time {
+	if k == nil {
+		return time.Time{}
+	}
+	return k.CreatedAt
+}
+
+func (k *KnowledgeDocumentSearchResponse) GetUpdatedAt() time.Time {
+	if k == nil {
+		return time.Time{}
+	}
+	return k.UpdatedAt
+}
+
 func (k *KnowledgeDocumentSearchResponse) GetExtraProperties() map[string]interface{} {
 	return k.extraProperties
 }
@@ -3080,20 +3177,6 @@ func (k *KnowledgeDocumentSearchResponse) SetUrl(url *string) {
 func (k *KnowledgeDocumentSearchResponse) SetLanguage(language *string) {
 	k.Language = language
 	k.require(knowledgeDocumentSearchResponseFieldLanguage)
-}
-
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentSearchResponse) SetCreatedAt(createdAt *time.Time) {
-	k.CreatedAt = createdAt
-	k.require(knowledgeDocumentSearchResponseFieldCreatedAt)
-}
-
-// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentSearchResponse) SetUpdatedAt(updatedAt *time.Time) {
-	k.UpdatedAt = updatedAt
-	k.require(knowledgeDocumentSearchResponseFieldUpdatedAt)
 }
 
 // SetAuthor sets the Author field and marks it as non-optional;
@@ -3124,12 +3207,33 @@ func (k *KnowledgeDocumentSearchResponse) SetTitle(title *string) {
 	k.require(knowledgeDocumentSearchResponseFieldTitle)
 }
 
+// SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentSearchResponse) SetLlmInclusionStatus(llmInclusionStatus LlmInclusionStatus) {
+	k.LlmInclusionStatus = llmInclusionStatus
+	k.require(knowledgeDocumentSearchResponseFieldLlmInclusionStatus)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentSearchResponse) SetCreatedAt(createdAt time.Time) {
+	k.CreatedAt = createdAt
+	k.require(knowledgeDocumentSearchResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentSearchResponse) SetUpdatedAt(updatedAt time.Time) {
+	k.UpdatedAt = updatedAt
+	k.require(knowledgeDocumentSearchResponseFieldUpdatedAt)
+}
+
 func (k *KnowledgeDocumentSearchResponse) UnmarshalJSON(data []byte) error {
 	type embed KnowledgeDocumentSearchResponse
 	var unmarshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed: embed(*k),
 	}
@@ -3137,8 +3241,8 @@ func (k *KnowledgeDocumentSearchResponse) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*k = KnowledgeDocumentSearchResponse(unmarshaler.embed)
-	k.CreatedAt = unmarshaler.CreatedAt.TimePtr()
-	k.UpdatedAt = unmarshaler.UpdatedAt.TimePtr()
+	k.CreatedAt = unmarshaler.CreatedAt.Time()
+	k.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *k)
 	if err != nil {
 		return err
@@ -3152,12 +3256,12 @@ func (k *KnowledgeDocumentSearchResponse) MarshalJSON() ([]byte, error) {
 	type embed KnowledgeDocumentSearchResponse
 	var marshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed:     embed(*k),
-		CreatedAt: internal.NewOptionalDateTime(k.CreatedAt),
-		UpdatedAt: internal.NewOptionalDateTime(k.UpdatedAt),
+		CreatedAt: internal.NewDateTime(k.CreatedAt),
+		UpdatedAt: internal.NewDateTime(k.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
 	return json.Marshal(explicitMarshaler)

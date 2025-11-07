@@ -290,3 +290,31 @@ func (c *Client) GetKnowledgeDocument(
 	}
 	return response.Body, nil
 }
+
+// Update mutable knowledge document fields that can be set independently of a knowledge base version.
+//
+// For any changes in document content see the `createKnowledgeBaseVersion` and `createKnowledgeDocument` endpoints.
+//
+// The `knowledgeBaseAppId` field can be provided to update a knowledge document in a knowledge base owned by a different app.
+// All other fields will overwrite the existing value on the knowledge document only if provided.
+func (c *Client) PatchKnowledgeDocument(
+	ctx context.Context,
+	// The reference ID of the knowledge base to patch.
+	knowledgeBaseReferenceId string,
+	// The reference ID of the knowledge document to patch.
+	knowledgeDocumentReferenceId string,
+	request *mavenagigo.KnowledgeDocumentPatchRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.KnowledgeDocumentResponse, error) {
+	response, err := c.WithRawResponse.PatchKnowledgeDocument(
+		ctx,
+		knowledgeBaseReferenceId,
+		knowledgeDocumentReferenceId,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}

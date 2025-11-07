@@ -7121,8 +7121,9 @@ var (
 	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 9)
 	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 10)
 	conversationSummaryFieldUsers                   = big.NewInt(1 << 11)
-	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 12)
-	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 13)
+	conversationSummaryFieldUserIdentifiers         = big.NewInt(1 << 12)
+	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 13)
+	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 14)
 )
 
 type ConversationSummary struct {
@@ -7155,6 +7156,8 @@ type ConversationSummary struct {
 	HumanAgentsWithInserts []string `json:"humanAgentsWithInserts" url:"humanAgentsWithInserts"`
 	// The names of all users that have a message of type `USER` on the conversation.
 	Users []string `json:"users" url:"users"`
+	// The user identifiers (typically email addresses or phone numbers) of all users that have a message of type `USER` on the conversation.
+	UserIdentifiers []string `json:"userIdentifiers" url:"userIdentifiers"`
 	// The text of the last user message in the conversation.
 	LastUserMessage *string `json:"lastUserMessage,omitempty" url:"lastUserMessage,omitempty"`
 	// The text of the last bot message in the conversation.
@@ -7249,6 +7252,13 @@ func (c *ConversationSummary) GetUsers() []string {
 		return nil
 	}
 	return c.Users
+}
+
+func (c *ConversationSummary) GetUserIdentifiers() []string {
+	if c == nil {
+		return nil
+	}
+	return c.UserIdentifiers
 }
 
 func (c *ConversationSummary) GetLastUserMessage() *string {
@@ -7358,6 +7368,13 @@ func (c *ConversationSummary) SetHumanAgentsWithInserts(humanAgentsWithInserts [
 func (c *ConversationSummary) SetUsers(users []string) {
 	c.Users = users
 	c.require(conversationSummaryFieldUsers)
+}
+
+// SetUserIdentifiers sets the UserIdentifiers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetUserIdentifiers(userIdentifiers []string) {
+	c.UserIdentifiers = userIdentifiers
+	c.require(conversationSummaryFieldUserIdentifiers)
 }
 
 // SetLastUserMessage sets the LastUserMessage field and marks it as non-optional;

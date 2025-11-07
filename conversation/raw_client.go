@@ -631,6 +631,60 @@ func (r *RawClient) Export(
 	}, nil
 }
 
+func (r *RawClient) ImportSimulations(
+	ctx context.Context,
+	request *mavenagigo.SimulationImportRequest,
+	opts ...option.RequestOption,
+) (*core.Response[any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := baseURL + "/v1/conversations/import_simulations"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	writer := internal.NewMultipartWriter()
+	if err := writer.WriteFile("file", request.File); err != nil {
+		return nil, err
+	}
+	if request.ResponseConfig != nil {
+		if err := writer.WriteJSON("responseConfig", request.ResponseConfig); err != nil {
+			return nil, err
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+	headers.Set("Content-Type", writer.ContentType())
+
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         writer.Buffer(),
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       nil,
+	}, nil
+}
+
 func (r *RawClient) DeliverMessage(
 	ctx context.Context,
 	request *mavenagigo.DeliverMessageRequest,

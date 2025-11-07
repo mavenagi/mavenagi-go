@@ -599,3 +599,54 @@ func (r *RawClient) GetKnowledgeDocument(
 		Body:       response,
 	}, nil
 }
+
+func (r *RawClient) PatchKnowledgeDocument(
+	ctx context.Context,
+	// The reference ID of the knowledge base to patch.
+	knowledgeBaseReferenceId string,
+	// The reference ID of the knowledge document to patch.
+	knowledgeDocumentReferenceId string,
+	request *mavenagigo.KnowledgeDocumentPatchRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*mavenagigo.KnowledgeDocumentResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := internal.EncodeURL(
+		baseURL+"/v1/knowledge/%v/%v/document",
+		knowledgeBaseReferenceId,
+		knowledgeDocumentReferenceId,
+	)
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/merge-patch+json")
+	var response *mavenagigo.KnowledgeDocumentResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPatch,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*mavenagigo.KnowledgeDocumentResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}

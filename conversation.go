@@ -6,6 +6,7 @@ import (
 	json "encoding/json"
 	fmt "fmt"
 	internal "github.com/mavenagi/mavenagi-go/internal"
+	io "io"
 	big "math/big"
 	time "time"
 )
@@ -80,6 +81,22 @@ func (c *ConversationGetRequest) SetAppId(appId *string) {
 func (c *ConversationGetRequest) SetTranslationLanguage(translationLanguage *string) {
 	c.TranslationLanguage = translationLanguage
 	c.require(conversationGetRequestFieldTranslationLanguage)
+}
+
+type SimulationImportRequest struct {
+	File io.Reader `json:"-" url:"-"`
+	// The response config to use for all of the created simulations.
+	ResponseConfig *ResponseConfig `json:"responseConfig,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (s *SimulationImportRequest) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
 }
 
 var (

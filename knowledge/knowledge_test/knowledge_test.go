@@ -298,7 +298,7 @@ func TestKnowledgeCreateKnowledgeBaseVersionWithWireMock(
 		gowiremock.Matching("help-center"),
 	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"versionId": map[string]interface{}{"type": "KNOWLEDGE_BASE_VERSION", "referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support"}, "type": "FULL", "status": "IN_PROGRESS"},
+			map[string]interface{}{"versionId": map[string]interface{}{"type": "KNOWLEDGE_BASE_VERSION", "referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support"}, "type": "FULL", "status": "IN_PROGRESS", "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z"},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -334,7 +334,7 @@ func TestKnowledgeFinalizeKnowledgeBaseVersionWithWireMock(
 		gowiremock.Matching("help-center"),
 	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"versionId": map[string]interface{}{"type": "KNOWLEDGE_BASE_VERSION", "referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support"}, "type": "FULL", "status": "IN_PROGRESS"},
+			map[string]interface{}{"versionId": map[string]interface{}{"type": "KNOWLEDGE_BASE_VERSION", "referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support"}, "type": "FULL", "status": "IN_PROGRESS", "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z"},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -375,7 +375,7 @@ func TestKnowledgeListKnowledgeBaseVersionsWithWireMock(
 		gowiremock.Matching("knowledgeBaseReferenceId"),
 	).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeBaseVersions": []interface{}{map[string]interface{}{"versionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "status": "SUCCEEDED", "errorMessage": "errorMessage", "type": "FULL"}, map[string]interface{}{"versionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "status": "SUCCEEDED", "errorMessage": "errorMessage", "type": "FULL"}}},
+			map[string]interface{}{"knowledgeBaseVersions": []interface{}{map[string]interface{}{"versionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "status": "SUCCEEDED", "errorMessage": "errorMessage", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "type": "FULL"}, map[string]interface{}{"versionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "status": "SUCCEEDED", "errorMessage": "errorMessage", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "type": "FULL"}}},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -406,7 +406,7 @@ func TestKnowledgeSearchKnowledgeDocumentsWithWireMock(
 	defer WireMockClient.Reset()
 	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/documents/search")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeDocuments": []interface{}{map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "url": "url", "language": "language", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "author": "author"}, map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "url": "url", "language": "language", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "author": "author"}}, "number": 1, "size": 1, "totalElements": 1000000, "totalPages": 1},
+			map[string]interface{}{"knowledgeDocuments": []interface{}{map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "llmInclusionStatus": "ALWAYS", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "url": "url", "language": "language", "author": "author"}, map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "llmInclusionStatus": "ALWAYS", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "url": "url", "language": "language", "author": "author"}}, "number": 1, "size": 1, "totalElements": 1000000, "totalPages": 1},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -439,7 +439,7 @@ func TestKnowledgeCreateKnowledgeDocumentWithWireMock(
 		gowiremock.Matching("help-center"),
 	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"referenceId": "getting-started", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_DOCUMENT"}, "knowledgeBaseVersionId": map[string]interface{}{"referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "content": "## Getting started This is a getting started guide for the help center.", "title": "Getting started", "metadata": map[string]interface{}{"category": "getting-started"}},
+			map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"referenceId": "getting-started", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_DOCUMENT"}, "knowledgeBaseVersionId": map[string]interface{}{"referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "content": "## Getting started This is a getting started guide for the help center.", "title": "Getting started", "metadata": map[string]interface{}{"category": "getting-started"}, "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z", "llmInclusionStatus": "WHEN_RELEVANT"},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -535,7 +535,7 @@ func TestKnowledgeGetKnowledgeDocumentWithWireMock(
 		gowiremock.Matching("knowledgeDocumentReferenceId"),
 	).WillReturnResponse(
 		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"content": "content", "metadata": map[string]interface{}{"metadata": "metadata"}, "knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "url": "url", "language": "language", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "author": "author"},
+			map[string]interface{}{"content": "content", "metadata": map[string]interface{}{"metadata": "metadata"}, "knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "llmInclusionStatus": "ALWAYS", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "url": "url", "language": "language", "author": "author"},
 		).WithStatus(http.StatusOK),
 	)
 	err := WireMockClient.StubFor(stub)
@@ -553,6 +553,54 @@ func TestKnowledgeGetKnowledgeDocumentWithWireMock(
 		context.TODO(),
 		"knowledgeBaseVersionReferenceId",
 		"knowledgeDocumentReferenceId",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
+	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
+	require.True(t, ok, "WireMock request was not matched")
+}
+
+func TestKnowledgePatchKnowledgeDocumentWithWireMock(
+	t *testing.T,
+) {
+	// wiremock client and server initialized in shared main_test.go
+	defer WireMockClient.Reset()
+	stub := gowiremock.Patch(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/{knowledgeDocumentReferenceId}/document")).WithPathParam(
+		"knowledgeBaseReferenceId",
+		gowiremock.Matching("help-center"),
+	).WithPathParam(
+		"knowledgeDocumentReferenceId",
+		gowiremock.Matching("how-it-works"),
+	).WithBodyPattern(gowiremock.MatchesJsonSchema(`{
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        
+                    },
+                    "additionalProperties": true
+                }`, "V202012")).WillReturnResponse(
+		gowiremock.NewResponse().WithJSONBody(
+			map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"referenceId": "getting-started", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_DOCUMENT"}, "knowledgeBaseVersionId": map[string]interface{}{"referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "content": "## Getting started This is a getting started guide for the help center.", "title": "Getting started", "metadata": map[string]interface{}{"category": "getting-started"}, "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z", "llmInclusionStatus": "WHEN_RELEVANT"},
+		).WithStatus(http.StatusOK),
+	)
+	err := WireMockClient.StubFor(stub)
+	require.NoError(t, err, "Failed to create WireMock stub")
+
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.KnowledgeDocumentPatchRequest{
+		LlmInclusionStatus: mavenagigo.LlmInclusionStatusAlways.Ptr(),
+	}
+	_, invocationErr := client.Knowledge.PatchKnowledgeDocument(
+		context.TODO(),
+		"help-center",
+		"how-it-works",
 		request,
 	)
 

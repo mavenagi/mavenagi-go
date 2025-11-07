@@ -371,259 +371,6 @@ client.Actions.Delete(
 </dl>
 </details>
 
-## AgentCapabilities
-<details><summary><code>client.AgentCapabilities.List(request) -> *mavenagigo.ListAgentCapabilitiesResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-List all capabilities for an agent.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &mavenagigo.AgentCapabilityListRequest{}
-client.AgentCapabilities.List(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `*mavenagigo.AgentCapabilityListRequest` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AgentCapabilities.Get(IntegrationId, CapabilityId) -> *mavenagigo.AgentCapability</code></summary>
-<dl>
-<dd>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-client.AgentCapabilities.Get(
-        context.TODO(),
-        "integrationId",
-        "capabilityId",
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**integrationId:** `string` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**capabilityId:** `string` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AgentCapabilities.Patch(IntegrationId, CapabilityId, request) -> *mavenagigo.AgentCapability</code></summary>
-<dl>
-<dd>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &mavenagigo.PatchAgentCapabilityRequest{}
-client.AgentCapabilities.Patch(
-        context.TODO(),
-        "integrationId",
-        "capabilityId",
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**integrationId:** `string` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**capabilityId:** `string` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `*mavenagigo.PatchAgentCapabilityRequest` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AgentCapabilities.Execute(IntegrationId, CapabilityId, request) -> *mavenagigo.ExecuteCapabilityResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Execute an action capability.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &mavenagigo.ExecuteCapabilityRequest{}
-client.AgentCapabilities.Execute(
-        context.TODO(),
-        "integrationId",
-        "capabilityId",
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**integrationId:** `string` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**capabilityId:** `string` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `*mavenagigo.ExecuteCapabilityRequest` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
 ## Agents
 <details><summary><code>client.Agents.Search(request) -> *mavenagigo.AgentsSearchResponse</code></summary>
 <dl>
@@ -4648,6 +4395,98 @@ client.Knowledge.GetKnowledgeDocument(
 <dd>
 
 **knowledgeBaseVersionAppId:** `string` — The App ID of the knowledge base version.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Knowledge.PatchKnowledgeDocument(KnowledgeBaseReferenceId, KnowledgeDocumentReferenceId, request) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update mutable knowledge document fields that can be set independently of a knowledge base version.
+
+For any changes in document content see the `createKnowledgeBaseVersion` and `createKnowledgeDocument` endpoints.
+
+The `knowledgeBaseAppId` field can be provided to update a knowledge document in a knowledge base owned by a different app. 
+All other fields will overwrite the existing value on the knowledge document only if provided.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.KnowledgeDocumentPatchRequest{
+        LlmInclusionStatus: mavenagigo.LlmInclusionStatusAlways.Ptr(),
+    }
+client.Knowledge.PatchKnowledgeDocument(
+        context.TODO(),
+        "help-center",
+        "how-it-works",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to patch.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**knowledgeDocumentReferenceId:** `string` — The reference ID of the knowledge document to patch.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**knowledgeBaseAppId:** `*string` — The App ID of the knowledge base that contains the knowledge document to patch. If not provided the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**llmInclusionStatus:** `*mavenagigo.LlmInclusionStatus` — Determines whether this document is sent to the LLM as part of a conversation.
     
 </dd>
 </dl>

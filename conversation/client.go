@@ -441,6 +441,29 @@ func (c *Client) Export(
 	return response.Body, nil
 }
 
+// Import simulation conversations from a CSV file.
+//
+// This CSV format is very simple and only allows for one column: `question`. A header containing this column is required.
+// Each row will generate one simulation conversation, using the provided response config, if present.
+//
+// This API is offered for backwards compatibility.
+// Most API callers should create simulations programmatically to allow for more flexibility.
+func (c *Client) ImportSimulations(
+	ctx context.Context,
+	request *mavenagigo.SimulationImportRequest,
+	opts ...option.RequestOption,
+) error {
+	_, err := c.WithRawResponse.ImportSimulations(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Deliver a message to a user or conversation.
 //
 // <Warning>
