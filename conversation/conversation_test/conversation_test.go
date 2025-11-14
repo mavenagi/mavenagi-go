@@ -3,109 +3,69 @@
 package conversation_test
 
 import (
+	bytes "bytes"
 	context "context"
-	fmt "fmt"
+	json "encoding/json"
 	mavenagigo "github.com/mavenagi/mavenagi-go"
 	client "github.com/mavenagi/mavenagi-go/client"
 	option "github.com/mavenagi/mavenagi-go/option"
 	require "github.com/stretchr/testify/require"
-	gowiremock "github.com/wiremock/go-wiremock"
-	wiremocktestcontainersgo "github.com/wiremock/wiremock-testcontainers-go"
 	http "net/http"
-	os "os"
 	testing "testing"
 )
 
-// TestMain sets up shared test fixtures for all tests in this package// Global test fixtures
-var (
-	WireMockContainer *wiremocktestcontainersgo.WireMockContainer
-	WireMockBaseURL   string
-	WireMockClient    *gowiremock.Client
-)
+func ResetWireMockRequests(
+	t *testing.T,
+) {
+	WiremockAdminURL := "http://localhost:8080/__admin"
+	_, err := http.Post(WiremockAdminURL+"/requests/reset", "application/json", nil)
+	require.NoError(t, err)
+}
 
-// TestMain sets up shared test fixtures for all tests in this package
-func TestMain(m *testing.M) {
-	// Setup shared WireMock container
-	ctx := context.Background()
-	container, err := wiremocktestcontainersgo.RunContainerAndStopOnCleanup(
-		ctx,
-		&testing.T{},
-		wiremocktestcontainersgo.WithImage("docker.io/wiremock/wiremock:3.9.1"),
-	)
-	if err != nil {
-		fmt.Printf("Failed to start WireMock container: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Store global references
-	WireMockContainer = container
-
-	// Try to get the base URL using the standard method first
-	baseURL, err := container.Endpoint(ctx, "")
-	if err == nil {
-		// Standard method worked (running outside DinD)
-		// This uses the mapped port (e.g., localhost:59553)
-		WireMockBaseURL = "http://" + baseURL
-		WireMockClient = container.Client
-	} else {
-		// Standard method failed, use internal IP fallback (DinD environment)
-		fmt.Printf("Standard endpoint resolution failed, using internal IP fallback: %v\n", err)
-
-		inspect, err := container.Inspect(ctx)
-		if err != nil {
-			fmt.Printf("Failed to inspect WireMock container: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Find the IP address from the container's networks
-		var containerIP string
-		for _, network := range inspect.NetworkSettings.Networks {
-			if network.IPAddress != "" {
-				containerIP = network.IPAddress
-				break
+func VerifyRequestCount(
+	t *testing.T,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
+) {
+	WiremockAdminURL := "http://localhost:8080/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`"}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
 			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
 		}
-
-		if containerIP == "" {
-			fmt.Printf("Failed to get WireMock container IP address\n")
-			os.Exit(1)
-		}
-
-		// In DinD, use the internal port directly (8080 for WireMock HTTP)
-		// Don't use the mapped port since it doesn't exist in this environment
-		WireMockBaseURL = fmt.Sprintf("http://%s:8080", containerIP)
-
-		// The container.Client was created with a bad URL, so we need a new one
-		WireMockClient = gowiremock.NewClient(WireMockBaseURL)
+		reqBody.WriteString("}")
 	}
-
-	fmt.Printf("WireMock available at: %s\n", WireMockBaseURL)
-
-	// Run all tests
-	code := m.Run()
-
-	// Cleanup
-	if WireMockContainer != nil {
-		WireMockContainer.Terminate(ctx)
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
 	}
-
-	// Exit with the same code as the tests
-	os.Exit(code)
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestConversationInitializeWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"messages": []interface{}{map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}, map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}}, "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "responseConfig": map[string]interface{}{"capabilities": []interface{}{"MARKDOWN", "MARKDOWN"}, "isCopilot": true, "responseLength": "SHORT"}, "subject": "subject", "url": "url", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "tags": []interface{}{"tags"}, "metadata": map[string]interface{}{"metadata": "metadata"}, "allMetadata": map[string]interface{}{"allMetadata": map[string]interface{}{"allMetadata": "allMetadata"}}, "conversationId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "analysis": map[string]interface{}{"userRequest": "userRequest", "agentResponse": "agentResponse", "resolutionStatus": "resolutionStatus", "category": "category", "sentiment": "POSITIVE", "quality": "GOOD", "qualityReason": "MISSING_KNOWLEDGE", "resolvedByMaven": true, "primaryLanguage": "primaryLanguage", "predictedNps": 1.1}, "summary": map[string]interface{}{"actionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "incompleteActionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "insertCount": 1, "thumbsUpCount": 1, "thumbsDownCount": 1, "handoffCount": 1, "userMessageCount": 1, "handleTime": 1000000, "humanAgentResponseDelay": 1000000, "humanAgents": []interface{}{"humanAgents", "humanAgents"}, "humanAgentsWithInserts": []interface{}{"humanAgentsWithInserts", "humanAgentsWithInserts"}, "users": []interface{}{"users", "users"}, "userIdentifiers": []interface{}{"userIdentifiers", "userIdentifiers"}, "lastUserMessage": "lastUserMessage", "lastBotMessage": "lastBotMessage"}, "deleted": true, "open": true, "llmEnabled": true, "simulationContext": map[string]interface{}{"additionalPromptText": "additionalPromptText", "persona": "CASUAL_BUDDY", "availableKnowledgeBases": []interface{}{map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -113,25 +73,25 @@ func TestConversationInitializeWithWireMock(
 	)
 	request := &mavenagigo.ConversationRequest{
 		ConversationId: &mavenagigo.EntityIdBase{
-			ReferenceId: "referenceId",
+			ReferenceId: "x",
 		},
 		Messages: []*mavenagigo.ConversationMessageRequest{
 			&mavenagigo.ConversationMessageRequest{
 				ConversationMessageId: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 				UserId: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 				Text:            "text",
 				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
 			},
 			&mavenagigo.ConversationMessageRequest{
 				ConversationMessageId: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 				UserId: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 				Text:            "text",
 				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -144,27 +104,14 @@ func TestConversationInitializeWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations", nil, 1)
 }
 
 func TestConversationPatchWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Patch(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversation-0"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"conversationId": map[string]interface{}{"referenceId": "conversation-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION"}, "deleted": false, "open": false, "llmEnabled": true, "analysis": map[string]interface{}{"resolutionStatus": "Resolved", "sentiment": "POSITIVE", "resolvedByMaven": true}, "summary": map[string]interface{}{"actionIds": []interface{}{}, "incompleteActionIds": []interface{}{}, "insertCount": 0, "thumbsUpCount": 0, "thumbsDownCount": 0, "handoffCount": 0, "userMessageCount": 1, "humanAgents": []interface{}{}, "humanAgentsWithInserts": []interface{}{}, "users": []interface{}{}, "userIdentifiers": []interface{}{}}, "metadata": map[string]interface{}{}, "allMetadata": map[string]interface{}{}, "attachments": []interface{}{}, "messages": []interface{}{map[string]interface{}{"type": "user", "userMessageType": "USER", "conversationMessageId": map[string]interface{}{"referenceId": "message-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION_MESSAGE"}, "status": "UNKNOWN", "userId": map[string]interface{}{"referenceId": "user-0"}, "text": "How do I reset my password?", "attachments": []interface{}{map[string]interface{}{"url": "https://example.com/attachment-0", "type": "image/png", "status": "ACCEPTED", "sizeBytes": 1234}}}, map[string]interface{}{"type": "bot", "botMessageType": "BOT_RESPONSE", "conversationMessageId": map[string]interface{}{"referenceId": "message-1", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION_MESSAGE"}, "status": "SENT", "responses": []interface{}{map[string]interface{}{"type": "text", "text": "Hi! Go to acme.com/reset-password"}}, "metadata": map[string]interface{}{"followupQuestions": []interface{}{"What if I did not get the reset email?"}, "sources": []interface{}{}}}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -182,27 +129,14 @@ func TestConversationPatchWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "PATCH", "/v1/conversations/conversation-0", nil, 1)
 }
 
 func TestConversationGetWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Get(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversationId"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"messages": []interface{}{map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}, map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}}, "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "responseConfig": map[string]interface{}{"capabilities": []interface{}{"MARKDOWN", "MARKDOWN"}, "isCopilot": true, "responseLength": "SHORT"}, "subject": "subject", "url": "url", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "tags": []interface{}{"tags"}, "metadata": map[string]interface{}{"metadata": "metadata"}, "allMetadata": map[string]interface{}{"allMetadata": map[string]interface{}{"allMetadata": "allMetadata"}}, "conversationId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "analysis": map[string]interface{}{"userRequest": "userRequest", "agentResponse": "agentResponse", "resolutionStatus": "resolutionStatus", "category": "category", "sentiment": "POSITIVE", "quality": "GOOD", "qualityReason": "MISSING_KNOWLEDGE", "resolvedByMaven": true, "primaryLanguage": "primaryLanguage", "predictedNps": 1.1}, "summary": map[string]interface{}{"actionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "incompleteActionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "insertCount": 1, "thumbsUpCount": 1, "thumbsDownCount": 1, "handoffCount": 1, "userMessageCount": 1, "handleTime": 1000000, "humanAgentResponseDelay": 1000000, "humanAgents": []interface{}{"humanAgents", "humanAgents"}, "humanAgentsWithInserts": []interface{}{"humanAgentsWithInserts", "humanAgentsWithInserts"}, "users": []interface{}{"users", "users"}, "userIdentifiers": []interface{}{"userIdentifiers", "userIdentifiers"}, "lastUserMessage": "lastUserMessage", "lastBotMessage": "lastBotMessage"}, "deleted": true, "open": true, "llmEnabled": true, "simulationContext": map[string]interface{}{"additionalPromptText": "additionalPromptText", "persona": "CASUAL_BUDDY", "availableKnowledgeBases": []interface{}{map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -216,27 +150,14 @@ func TestConversationGetWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "GET", "/v1/conversations/conversationId", nil, 1)
 }
 
 func TestConversationDeleteWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Delete(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversation-0"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -252,27 +173,14 @@ func TestConversationDeleteWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "DELETE", "/v1/conversations/conversation-0", map[string]string{"reason": "GDPR deletion request 1234."}, 1)
 }
 
 func TestConversationAppendNewMessagesWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/messages")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversationId"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"messages": []interface{}{map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}, map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}}, "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "responseConfig": map[string]interface{}{"capabilities": []interface{}{"MARKDOWN", "MARKDOWN"}, "isCopilot": true, "responseLength": "SHORT"}, "subject": "subject", "url": "url", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "tags": []interface{}{"tags"}, "metadata": map[string]interface{}{"metadata": "metadata"}, "allMetadata": map[string]interface{}{"allMetadata": map[string]interface{}{"allMetadata": "allMetadata"}}, "conversationId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "analysis": map[string]interface{}{"userRequest": "userRequest", "agentResponse": "agentResponse", "resolutionStatus": "resolutionStatus", "category": "category", "sentiment": "POSITIVE", "quality": "GOOD", "qualityReason": "MISSING_KNOWLEDGE", "resolvedByMaven": true, "primaryLanguage": "primaryLanguage", "predictedNps": 1.1}, "summary": map[string]interface{}{"actionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "incompleteActionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "insertCount": 1, "thumbsUpCount": 1, "thumbsDownCount": 1, "handoffCount": 1, "userMessageCount": 1, "handleTime": 1000000, "humanAgentResponseDelay": 1000000, "humanAgents": []interface{}{"humanAgents", "humanAgents"}, "humanAgentsWithInserts": []interface{}{"humanAgentsWithInserts", "humanAgentsWithInserts"}, "users": []interface{}{"users", "users"}, "userIdentifiers": []interface{}{"userIdentifiers", "userIdentifiers"}, "lastUserMessage": "lastUserMessage", "lastBotMessage": "lastBotMessage"}, "deleted": true, "open": true, "llmEnabled": true, "simulationContext": map[string]interface{}{"additionalPromptText": "additionalPromptText", "persona": "CASUAL_BUDDY", "availableKnowledgeBases": []interface{}{map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -281,20 +189,20 @@ func TestConversationAppendNewMessagesWithWireMock(
 	request := []*mavenagigo.ConversationMessageRequest{
 		&mavenagigo.ConversationMessageRequest{
 			ConversationMessageId: &mavenagigo.EntityIdBase{
-				ReferenceId: "referenceId",
+				ReferenceId: "x",
 			},
 			UserId: &mavenagigo.EntityIdBase{
-				ReferenceId: "referenceId",
+				ReferenceId: "x",
 			},
 			Text:            "text",
 			UserMessageType: mavenagigo.UserConversationMessageTypeUser,
 		},
 		&mavenagigo.ConversationMessageRequest{
 			ConversationMessageId: &mavenagigo.EntityIdBase{
-				ReferenceId: "referenceId",
+				ReferenceId: "x",
 			},
 			UserId: &mavenagigo.EntityIdBase{
-				ReferenceId: "referenceId",
+				ReferenceId: "x",
 			},
 			Text:            "text",
 			UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -307,27 +215,14 @@ func TestConversationAppendNewMessagesWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversationId/messages", nil, 1)
 }
 
 func TestConversationAskWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/ask")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversation-0"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"conversationId": map[string]interface{}{"referenceId": "conversation-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION"}, "deleted": false, "open": false, "llmEnabled": true, "analysis": map[string]interface{}{"resolutionStatus": "Resolved", "sentiment": "POSITIVE", "resolvedByMaven": true}, "summary": map[string]interface{}{"actionIds": []interface{}{}, "incompleteActionIds": []interface{}{}, "insertCount": 0, "thumbsUpCount": 0, "thumbsDownCount": 0, "handoffCount": 0, "userMessageCount": 1, "humanAgents": []interface{}{}, "humanAgentsWithInserts": []interface{}{}, "users": []interface{}{}, "userIdentifiers": []interface{}{}}, "metadata": map[string]interface{}{}, "allMetadata": map[string]interface{}{}, "attachments": []interface{}{}, "messages": []interface{}{map[string]interface{}{"type": "user", "userMessageType": "USER", "conversationMessageId": map[string]interface{}{"referenceId": "message-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION_MESSAGE"}, "status": "UNKNOWN", "userId": map[string]interface{}{"referenceId": "user-0"}, "text": "How do I reset my password?", "attachments": []interface{}{map[string]interface{}{"url": "https://example.com/attachment-0", "type": "image/png", "status": "ACCEPTED", "sizeBytes": 1234}}}, map[string]interface{}{"type": "bot", "botMessageType": "BOT_RESPONSE", "conversationMessageId": map[string]interface{}{"referenceId": "message-1", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION_MESSAGE"}, "status": "SENT", "responses": []interface{}{map[string]interface{}{"type": "text", "text": "Hi! Go to acme.com/reset-password"}}, "metadata": map[string]interface{}{"followupQuestions": []interface{}{"What if I did not get the reset email?"}, "sources": []interface{}{}}}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -362,27 +257,14 @@ func TestConversationAskWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversation-0/ask", nil, 1)
 }
 
 func TestConversationAskStreamWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/ask_stream")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversation-0"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -417,27 +299,14 @@ func TestConversationAskStreamWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversation-0/ask_stream", nil, 1)
 }
 
 func TestConversationAskObjectStreamWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/ask_object_stream")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversationId"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -446,10 +315,10 @@ func TestConversationAskObjectStreamWithWireMock(
 	request := &mavenagigo.AskObjectRequest{
 		Schema: "schema",
 		ConversationMessageId: &mavenagigo.EntityIdBase{
-			ReferenceId: "referenceId",
+			ReferenceId: "x",
 		},
 		UserId: &mavenagigo.EntityIdBase{
-			ReferenceId: "referenceId",
+			ReferenceId: "x",
 		},
 		Text: "text",
 	}
@@ -460,27 +329,14 @@ func TestConversationAskObjectStreamWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversationId/ask_object_stream", nil, 1)
 }
 
 func TestConversationCategorizeWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/categorize")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversationId"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"category": "category"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -492,24 +348,14 @@ func TestConversationCategorizeWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversationId/categorize", nil, 1)
 }
 
 func TestConversationCreateFeedbackWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/feedback")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"feedbackId": map[string]interface{}{"referenceId": "feedback-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "FEEDBACK"}, "conversationId": map[string]interface{}{"referenceId": "conversation-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION"}, "conversationMessageId": map[string]interface{}{"referenceId": "message-1", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "CONVERSATION_MESSAGE"}, "userId": map[string]interface{}{"referenceId": "user-0", "appId": "myapp", "organizationId": "acme", "agentId": "support", "type": "USER"}, "type": "THUMBS_UP", "text": "Great answer!"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -539,27 +385,14 @@ func TestConversationCreateFeedbackWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/feedback", nil, 1)
 }
 
 func TestConversationSubmitActionFormWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/submit-form")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversationId"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"messages": []interface{}{map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}, map[string]interface{}{"type": "user", "conversationMessageId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "language": "language", "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "agentUserId": "agentUserId", "userDisplayName": "userDisplayName", "status": "SENDING", "responseState": "NOT_ASKED", "userId": map[string]interface{}{"referenceId": "referenceId"}, "text": "text", "userMessageType": "USER", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z"}}, "attachments": []interface{}{map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}, map[string]interface{}{"url": "url", "sizeBytes": 1000000, "status": "PENDING", "type": "type", "name": "name"}}, "responseConfig": map[string]interface{}{"capabilities": []interface{}{"MARKDOWN", "MARKDOWN"}, "isCopilot": true, "responseLength": "SHORT"}, "subject": "subject", "url": "url", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "tags": []interface{}{"tags"}, "metadata": map[string]interface{}{"metadata": "metadata"}, "allMetadata": map[string]interface{}{"allMetadata": map[string]interface{}{"allMetadata": "allMetadata"}}, "conversationId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "analysis": map[string]interface{}{"userRequest": "userRequest", "agentResponse": "agentResponse", "resolutionStatus": "resolutionStatus", "category": "category", "sentiment": "POSITIVE", "quality": "GOOD", "qualityReason": "MISSING_KNOWLEDGE", "resolvedByMaven": true, "primaryLanguage": "primaryLanguage", "predictedNps": 1.1}, "summary": map[string]interface{}{"actionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "incompleteActionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "insertCount": 1, "thumbsUpCount": 1, "thumbsDownCount": 1, "handoffCount": 1, "userMessageCount": 1, "handleTime": 1000000, "humanAgentResponseDelay": 1000000, "humanAgents": []interface{}{"humanAgents", "humanAgents"}, "humanAgentsWithInserts": []interface{}{"humanAgentsWithInserts", "humanAgentsWithInserts"}, "users": []interface{}{"users", "users"}, "userIdentifiers": []interface{}{"userIdentifiers", "userIdentifiers"}, "lastUserMessage": "lastUserMessage", "lastBotMessage": "lastBotMessage"}, "deleted": true, "open": true, "llmEnabled": true, "simulationContext": map[string]interface{}{"additionalPromptText": "additionalPromptText", "persona": "CASUAL_BUDDY", "availableKnowledgeBases": []interface{}{map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -582,27 +415,14 @@ func TestConversationSubmitActionFormWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversationId/submit-form", nil, 1)
 }
 
 func TestConversationAddConversationMetadataWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/metadata")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversationId"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"string": "string"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -618,27 +438,14 @@ func TestConversationAddConversationMetadataWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/conversationId/metadata", nil, 1)
 }
 
 func TestConversationUpdateConversationMetadataWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Put(gowiremock.URLPathTemplate("/v1/conversations/{conversationId}/metadata")).WithPathParam(
-		"conversationId",
-		gowiremock.Matching("conversation-0"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"metadata": map[string]interface{}{"myapp": map[string]interface{}{"key": "newValue"}, "conversation-owning-app": map[string]interface{}{"existingKey": "existingValue"}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -659,24 +466,14 @@ func TestConversationUpdateConversationMetadataWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "PUT", "/v1/conversations/conversation-0/metadata", nil, 1)
 }
 
 func TestConversationSearchWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/search")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"conversations": []interface{}{map[string]interface{}{"responseConfig": map[string]interface{}{"capabilities": []interface{}{"MARKDOWN", "MARKDOWN"}, "isCopilot": true, "responseLength": "SHORT"}, "subject": "subject", "url": "url", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "tags": []interface{}{"tags"}, "metadata": map[string]interface{}{"metadata": "metadata"}, "allMetadata": map[string]interface{}{"allMetadata": map[string]interface{}{"allMetadata": "allMetadata"}}, "conversationId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "analysis": map[string]interface{}{"userRequest": "userRequest", "agentResponse": "agentResponse", "resolutionStatus": "resolutionStatus", "category": "category", "sentiment": "POSITIVE", "quality": "GOOD", "qualityReason": "MISSING_KNOWLEDGE", "resolvedByMaven": true, "primaryLanguage": "primaryLanguage", "predictedNps": 1.1}, "summary": map[string]interface{}{"actionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "incompleteActionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "insertCount": 1, "thumbsUpCount": 1, "thumbsDownCount": 1, "handoffCount": 1, "userMessageCount": 1, "handleTime": 1000000, "humanAgentResponseDelay": 1000000, "humanAgents": []interface{}{"humanAgents", "humanAgents"}, "humanAgentsWithInserts": []interface{}{"humanAgentsWithInserts", "humanAgentsWithInserts"}, "users": []interface{}{"users", "users"}, "userIdentifiers": []interface{}{"userIdentifiers", "userIdentifiers"}, "lastUserMessage": "lastUserMessage", "lastBotMessage": "lastBotMessage"}, "deleted": true, "open": true, "llmEnabled": true, "simulationContext": map[string]interface{}{"additionalPromptText": "additionalPromptText", "persona": "CASUAL_BUDDY", "availableKnowledgeBases": []interface{}{map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}}, map[string]interface{}{"responseConfig": map[string]interface{}{"capabilities": []interface{}{"MARKDOWN", "MARKDOWN"}, "isCopilot": true, "responseLength": "SHORT"}, "subject": "subject", "url": "url", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "tags": []interface{}{"tags"}, "metadata": map[string]interface{}{"metadata": "metadata"}, "allMetadata": map[string]interface{}{"allMetadata": map[string]interface{}{"allMetadata": "allMetadata"}}, "conversationId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "analysis": map[string]interface{}{"userRequest": "userRequest", "agentResponse": "agentResponse", "resolutionStatus": "resolutionStatus", "category": "category", "sentiment": "POSITIVE", "quality": "GOOD", "qualityReason": "MISSING_KNOWLEDGE", "resolvedByMaven": true, "primaryLanguage": "primaryLanguage", "predictedNps": 1.1}, "summary": map[string]interface{}{"actionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "incompleteActionIds": []interface{}{map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, map[string]interface{}{"type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}, "insertCount": 1, "thumbsUpCount": 1, "thumbsDownCount": 1, "handoffCount": 1, "userMessageCount": 1, "handleTime": 1000000, "humanAgentResponseDelay": 1000000, "humanAgents": []interface{}{"humanAgents", "humanAgents"}, "humanAgentsWithInserts": []interface{}{"humanAgentsWithInserts", "humanAgentsWithInserts"}, "users": []interface{}{"users", "users"}, "userIdentifiers": []interface{}{"userIdentifiers", "userIdentifiers"}, "lastUserMessage": "lastUserMessage", "lastBotMessage": "lastBotMessage"}, "deleted": true, "open": true, "llmEnabled": true, "simulationContext": map[string]interface{}{"additionalPromptText": "additionalPromptText", "persona": "CASUAL_BUDDY", "availableKnowledgeBases": []interface{}{map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}}}, "number": 1, "size": 1, "totalElements": 1000000, "totalPages": 1},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -689,24 +486,14 @@ func TestConversationSearchWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/search", nil, 1)
 }
 
 func TestConversationExportWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/export")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -719,24 +506,14 @@ func TestConversationExportWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/export", nil, 1)
 }
 
 func TestConversationDeliverMessageWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/conversations/deliver-message")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"status": "DELIVERED"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -747,14 +524,14 @@ func TestConversationDeliverMessageWithWireMock(
 			UserId: &mavenagigo.EntityIdWithoutAgent{
 				Type:        mavenagigo.EntityTypeAgent,
 				AppId:       "appId",
-				ReferenceId: "referenceId",
+				ReferenceId: "x",
 			},
 			Message: &mavenagigo.ConversationMessageRequest{
 				ConversationMessageId: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 				UserId: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 				Text:            "text",
 				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -767,7 +544,5 @@ func TestConversationDeliverMessageWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/conversations/deliver-message", nil, 1)
 }

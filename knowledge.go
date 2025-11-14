@@ -2392,10 +2392,11 @@ var (
 	knowledgeDocumentRequestFieldVersionId           = big.NewInt(1 << 4)
 	knowledgeDocumentRequestFieldContentType         = big.NewInt(1 << 5)
 	knowledgeDocumentRequestFieldTitle               = big.NewInt(1 << 6)
-	knowledgeDocumentRequestFieldContent             = big.NewInt(1 << 7)
-	knowledgeDocumentRequestFieldMetadata            = big.NewInt(1 << 8)
-	knowledgeDocumentRequestFieldCreatedAt           = big.NewInt(1 << 9)
-	knowledgeDocumentRequestFieldUpdatedAt           = big.NewInt(1 << 10)
+	knowledgeDocumentRequestFieldAssetId             = big.NewInt(1 << 7)
+	knowledgeDocumentRequestFieldContent             = big.NewInt(1 << 8)
+	knowledgeDocumentRequestFieldMetadata            = big.NewInt(1 << 9)
+	knowledgeDocumentRequestFieldCreatedAt           = big.NewInt(1 << 10)
+	knowledgeDocumentRequestFieldUpdatedAt           = big.NewInt(1 << 11)
 )
 
 type KnowledgeDocumentRequest struct {
@@ -2408,12 +2409,15 @@ type KnowledgeDocumentRequest struct {
 	// ID that uniquely identifies this knowledge document within its knowledge base
 	KnowledgeDocumentId *EntityIdBase `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
 	// ID that uniquely identifies which knowledge base version to create the document in. If not provided will use the most recent version of the knowledge base.
-	VersionId   *EntityIdWithoutAgent        `json:"versionId,omitempty" url:"versionId,omitempty"`
+	VersionId *EntityIdWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
+	// Type of knowledge document content, if content is provided. This does not need to be set if content is not provided
 	ContentType KnowledgeDocumentContentType `json:"contentType" url:"contentType"`
 	// The title of the document. Will be shown as part of answers.
 	Title string `json:"title" url:"title"`
-	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored.
-	Content string `json:"content" url:"content"`
+	// ID of the asset associated with this document. Either this or content is required, but not both
+	AssetId *EntityIdBase `json:"assetId,omitempty" url:"assetId,omitempty"`
+	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
+	Content *string `json:"content,omitempty" url:"content,omitempty"`
 	// Metadata for the knowledge document.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
 	// The time at which this document was created.
@@ -2477,9 +2481,16 @@ func (k *KnowledgeDocumentRequest) GetTitle() string {
 	return k.Title
 }
 
-func (k *KnowledgeDocumentRequest) GetContent() string {
+func (k *KnowledgeDocumentRequest) GetAssetId() *EntityIdBase {
 	if k == nil {
-		return ""
+		return nil
+	}
+	return k.AssetId
+}
+
+func (k *KnowledgeDocumentRequest) GetContent() *string {
+	if k == nil {
+		return nil
 	}
 	return k.Content
 }
@@ -2565,9 +2576,16 @@ func (k *KnowledgeDocumentRequest) SetTitle(title string) {
 	k.require(knowledgeDocumentRequestFieldTitle)
 }
 
+// SetAssetId sets the AssetId field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentRequest) SetAssetId(assetId *EntityIdBase) {
+	k.AssetId = assetId
+	k.require(knowledgeDocumentRequestFieldAssetId)
+}
+
 // SetContent sets the Content field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetContent(content string) {
+func (k *KnowledgeDocumentRequest) SetContent(content *string) {
 	k.Content = content
 	k.require(knowledgeDocumentRequestFieldContent)
 }
@@ -2654,8 +2672,10 @@ var (
 	knowledgeDocumentResponseFieldLlmInclusionStatus     = big.NewInt(1 << 6)
 	knowledgeDocumentResponseFieldCreatedAt              = big.NewInt(1 << 7)
 	knowledgeDocumentResponseFieldUpdatedAt              = big.NewInt(1 << 8)
-	knowledgeDocumentResponseFieldContent                = big.NewInt(1 << 9)
-	knowledgeDocumentResponseFieldMetadata               = big.NewInt(1 << 10)
+	knowledgeDocumentResponseFieldProcessingStatus       = big.NewInt(1 << 9)
+	knowledgeDocumentResponseFieldContent                = big.NewInt(1 << 10)
+	knowledgeDocumentResponseFieldAsset                  = big.NewInt(1 << 11)
+	knowledgeDocumentResponseFieldMetadata               = big.NewInt(1 << 12)
 )
 
 type KnowledgeDocumentResponse struct {
@@ -2678,8 +2698,12 @@ type KnowledgeDocumentResponse struct {
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The time at which this document was last modified.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// The current processing status of the knowledge document
+	ProcessingStatus *KnowledgeDocumentStatus `json:"processingStatus,omitempty" url:"processingStatus,omitempty"`
 	// The content of the document in markdown format. Not shown directly to users.
 	Content string `json:"content" url:"content"`
+	// If the document is associated with an asset, this will contain the asset metadata
+	Asset *AttachmentResponse `json:"asset,omitempty" url:"asset,omitempty"`
 	// Metadata for the knowledge document.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
 
@@ -2753,11 +2777,25 @@ func (k *KnowledgeDocumentResponse) GetUpdatedAt() time.Time {
 	return k.UpdatedAt
 }
 
+func (k *KnowledgeDocumentResponse) GetProcessingStatus() *KnowledgeDocumentStatus {
+	if k == nil {
+		return nil
+	}
+	return k.ProcessingStatus
+}
+
 func (k *KnowledgeDocumentResponse) GetContent() string {
 	if k == nil {
 		return ""
 	}
 	return k.Content
+}
+
+func (k *KnowledgeDocumentResponse) GetAsset() *AttachmentResponse {
+	if k == nil {
+		return nil
+	}
+	return k.Asset
 }
 
 func (k *KnowledgeDocumentResponse) GetMetadata() map[string]string {
@@ -2841,11 +2879,25 @@ func (k *KnowledgeDocumentResponse) SetUpdatedAt(updatedAt time.Time) {
 	k.require(knowledgeDocumentResponseFieldUpdatedAt)
 }
 
+// SetProcessingStatus sets the ProcessingStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetProcessingStatus(processingStatus *KnowledgeDocumentStatus) {
+	k.ProcessingStatus = processingStatus
+	k.require(knowledgeDocumentResponseFieldProcessingStatus)
+}
+
 // SetContent sets the Content field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (k *KnowledgeDocumentResponse) SetContent(content string) {
 	k.Content = content
 	k.require(knowledgeDocumentResponseFieldContent)
+}
+
+// SetAsset sets the Asset field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetAsset(asset *AttachmentResponse) {
+	k.Asset = asset
+	k.require(knowledgeDocumentResponseFieldAsset)
 }
 
 // SetMetadata sets the Metadata field and marks it as non-optional;
@@ -3277,6 +3329,29 @@ func (k *KnowledgeDocumentSearchResponse) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", k)
+}
+
+// The current processing status of the knowledge document
+type KnowledgeDocumentStatus string
+
+const (
+	KnowledgeDocumentStatusSucceeded  KnowledgeDocumentStatus = "SUCCEEDED"
+	KnowledgeDocumentStatusInProgress KnowledgeDocumentStatus = "IN_PROGRESS"
+)
+
+func NewKnowledgeDocumentStatusFromString(s string) (KnowledgeDocumentStatus, error) {
+	switch s {
+	case "SUCCEEDED":
+		return KnowledgeDocumentStatusSucceeded, nil
+	case "IN_PROGRESS":
+		return KnowledgeDocumentStatusInProgress, nil
+	}
+	var t KnowledgeDocumentStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (k KnowledgeDocumentStatus) Ptr() *KnowledgeDocumentStatus {
+	return &k
 }
 
 var (

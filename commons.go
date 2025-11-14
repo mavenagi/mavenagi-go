@@ -7724,7 +7724,16 @@ var (
 )
 
 type EntityId struct {
-	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId)
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
+	//
+	// Must be less than 192 characters and contain only:
+	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
+	// - hyphens (`-`)
+	// - underscores (`_`)
+	// - plus signs (`+`)
+	// - periods (`.`)
+	// - at symbol (`@`)
+	// - pipe symbol (`|`)
 	ReferenceId string `json:"referenceId" url:"referenceId"`
 	// The object type
 	Type EntityType `json:"type" url:"type"`
@@ -7868,7 +7877,16 @@ var (
 )
 
 type EntityIdBase struct {
-	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId)
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
+	//
+	// Must be less than 192 characters and contain only:
+	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
+	// - hyphens (`-`)
+	// - underscores (`_`)
+	// - plus signs (`+`)
+	// - periods (`.`)
+	// - at symbol (`@`)
+	// - pipe symbol (`|`)
 	ReferenceId string `json:"referenceId" url:"referenceId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -8044,7 +8062,16 @@ var (
 )
 
 type EntityIdWithoutAgent struct {
-	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId)
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
+	//
+	// Must be less than 192 characters and contain only:
+	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
+	// - hyphens (`-`)
+	// - underscores (`_`)
+	// - plus signs (`+`)
+	// - periods (`.`)
+	// - at symbol (`@`)
+	// - pipe symbol (`|`)
 	ReferenceId string `json:"referenceId" url:"referenceId"`
 	// The object type
 	Type EntityType `json:"type" url:"type"`
@@ -10115,6 +10142,7 @@ type InboxItem struct {
 	Type               string
 	DuplicateDocuments *InboxItemDuplicateDocuments
 	MissingKnowledge   *InboxItemMissingKnowledge
+	Custom             *InboxItemCustom
 }
 
 func (i *InboxItem) GetType() string {
@@ -10136,6 +10164,13 @@ func (i *InboxItem) GetMissingKnowledge() *InboxItemMissingKnowledge {
 		return nil
 	}
 	return i.MissingKnowledge
+}
+
+func (i *InboxItem) GetCustom() *InboxItemCustom {
+	if i == nil {
+		return nil
+	}
+	return i.Custom
 }
 
 func (i *InboxItem) UnmarshalJSON(data []byte) error {
@@ -10162,6 +10197,12 @@ func (i *InboxItem) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		i.MissingKnowledge = value
+	case "custom":
+		value := new(InboxItemCustom)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		i.Custom = value
 	}
 	return nil
 }
@@ -10176,12 +10217,16 @@ func (i InboxItem) MarshalJSON() ([]byte, error) {
 	if i.MissingKnowledge != nil {
 		return internal.MarshalJSONWithExtraProperty(i.MissingKnowledge, "type", "missingKnowledge")
 	}
+	if i.Custom != nil {
+		return internal.MarshalJSONWithExtraProperty(i.Custom, "type", "custom")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", i)
 }
 
 type InboxItemVisitor interface {
 	VisitDuplicateDocuments(*InboxItemDuplicateDocuments) error
 	VisitMissingKnowledge(*InboxItemMissingKnowledge) error
+	VisitCustom(*InboxItemCustom) error
 }
 
 func (i *InboxItem) Accept(visitor InboxItemVisitor) error {
@@ -10190,6 +10235,9 @@ func (i *InboxItem) Accept(visitor InboxItemVisitor) error {
 	}
 	if i.MissingKnowledge != nil {
 		return visitor.VisitMissingKnowledge(i.MissingKnowledge)
+	}
+	if i.Custom != nil {
+		return visitor.VisitCustom(i.Custom)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", i)
 }
@@ -10204,6 +10252,9 @@ func (i *InboxItem) validate() error {
 	}
 	if i.MissingKnowledge != nil {
 		fields = append(fields, "missingKnowledge")
+	}
+	if i.Custom != nil {
+		fields = append(fields, "custom")
 	}
 	if len(fields) == 0 {
 		if i.Type != "" {
@@ -10376,6 +10427,182 @@ func (i *InboxItemBase) MarshalJSON() ([]byte, error) {
 }
 
 func (i *InboxItemBase) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
+var (
+	inboxItemCustomFieldId        = big.NewInt(1 << 0)
+	inboxItemCustomFieldCreatedAt = big.NewInt(1 << 1)
+	inboxItemCustomFieldUpdatedAt = big.NewInt(1 << 2)
+	inboxItemCustomFieldStatus    = big.NewInt(1 << 3)
+	inboxItemCustomFieldSeverity  = big.NewInt(1 << 4)
+	inboxItemCustomFieldMetadata  = big.NewInt(1 << 5)
+)
+
+type InboxItemCustom struct {
+	// Unique identifier for the inbox item.
+	Id *EntityId `json:"id" url:"id"`
+	// Timestamp when the inbox item was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// Timestamp when the inbox item was last updated.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// Status of the inbox item.
+	Status InboxItemStatus `json:"status" url:"status"`
+	// Severity of the inbox item.
+	Severity InboxItemSeverity `json:"severity" url:"severity"`
+	// Additional metadata associated with the inbox item.
+	Metadata map[string]string `json:"metadata" url:"metadata"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *InboxItemCustom) GetId() *EntityId {
+	if i == nil {
+		return nil
+	}
+	return i.Id
+}
+
+func (i *InboxItemCustom) GetCreatedAt() time.Time {
+	if i == nil {
+		return time.Time{}
+	}
+	return i.CreatedAt
+}
+
+func (i *InboxItemCustom) GetUpdatedAt() time.Time {
+	if i == nil {
+		return time.Time{}
+	}
+	return i.UpdatedAt
+}
+
+func (i *InboxItemCustom) GetStatus() InboxItemStatus {
+	if i == nil {
+		return ""
+	}
+	return i.Status
+}
+
+func (i *InboxItemCustom) GetSeverity() InboxItemSeverity {
+	if i == nil {
+		return ""
+	}
+	return i.Severity
+}
+
+func (i *InboxItemCustom) GetMetadata() map[string]string {
+	if i == nil {
+		return nil
+	}
+	return i.Metadata
+}
+
+func (i *InboxItemCustom) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *InboxItemCustom) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetId sets the Id field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetId(id *EntityId) {
+	i.Id = id
+	i.require(inboxItemCustomFieldId)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetCreatedAt(createdAt time.Time) {
+	i.CreatedAt = createdAt
+	i.require(inboxItemCustomFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetUpdatedAt(updatedAt time.Time) {
+	i.UpdatedAt = updatedAt
+	i.require(inboxItemCustomFieldUpdatedAt)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetStatus(status InboxItemStatus) {
+	i.Status = status
+	i.require(inboxItemCustomFieldStatus)
+}
+
+// SetSeverity sets the Severity field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetSeverity(severity InboxItemSeverity) {
+	i.Severity = severity
+	i.require(inboxItemCustomFieldSeverity)
+}
+
+// SetMetadata sets the Metadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetMetadata(metadata map[string]string) {
+	i.Metadata = metadata
+	i.require(inboxItemCustomFieldMetadata)
+}
+
+func (i *InboxItemCustom) UnmarshalJSON(data []byte) error {
+	type embed InboxItemCustom
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*i),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*i = InboxItemCustom(unmarshaler.embed)
+	i.CreatedAt = unmarshaler.CreatedAt.Time()
+	i.UpdatedAt = unmarshaler.UpdatedAt.Time()
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *InboxItemCustom) MarshalJSON() ([]byte, error) {
+	type embed InboxItemCustom
+	var marshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed:     embed(*i),
+		CreatedAt: internal.NewDateTime(i.CreatedAt),
+		UpdatedAt: internal.NewDateTime(i.UpdatedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *InboxItemCustom) String() string {
 	if len(i.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
 			return value

@@ -265,7 +265,8 @@ func (a AgentUserField) Ptr() *AgentUserField {
 var (
 	agentUserFilterFieldSearch      = big.NewInt(1 << 0)
 	agentUserFilterFieldIdentifiers = big.NewInt(1 << 1)
-	agentUserFilterFieldIsAnonymous = big.NewInt(1 << 2)
+	agentUserFilterFieldDisplayName = big.NewInt(1 << 2)
+	agentUserFilterFieldIsAnonymous = big.NewInt(1 << 3)
 )
 
 type AgentUserFilter struct {
@@ -274,6 +275,9 @@ type AgentUserFilter struct {
 	Search *string `json:"search,omitempty" url:"search,omitempty"`
 	// Filter by identifiers
 	Identifiers []string `json:"identifiers,omitempty" url:"identifiers,omitempty"`
+	// Full-text search query for matching agent users by display name.
+	// When you search with this parameter, you're performing a full-text search across the user display names.
+	DisplayName *string `json:"displayName,omitempty" url:"displayName,omitempty"`
 	// Filter by anonymous users. When true, only anonymous users are returned.
 	// When false, only non-anonymous users are returned. An anonymous user is one without any identifiers or name data.
 	IsAnonymous *bool `json:"isAnonymous,omitempty" url:"isAnonymous,omitempty"`
@@ -297,6 +301,13 @@ func (a *AgentUserFilter) GetIdentifiers() []string {
 		return nil
 	}
 	return a.Identifiers
+}
+
+func (a *AgentUserFilter) GetDisplayName() *string {
+	if a == nil {
+		return nil
+	}
+	return a.DisplayName
 }
 
 func (a *AgentUserFilter) GetIsAnonymous() *bool {
@@ -329,6 +340,13 @@ func (a *AgentUserFilter) SetSearch(search *string) {
 func (a *AgentUserFilter) SetIdentifiers(identifiers []string) {
 	a.Identifiers = identifiers
 	a.require(agentUserFilterFieldIdentifiers)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserFilter) SetDisplayName(displayName *string) {
+	a.DisplayName = displayName
+	a.require(agentUserFilterFieldDisplayName)
 }
 
 // SetIsAnonymous sets the IsAnonymous field and marks it as non-optional;

@@ -1623,25 +1623,25 @@ After initialization,
 ```go
 request := &mavenagigo.ConversationRequest{
         ConversationId: &mavenagigo.EntityIdBase{
-            ReferenceId: "referenceId",
+            ReferenceId: "x",
         },
         Messages: []*mavenagigo.ConversationMessageRequest{
             &mavenagigo.ConversationMessageRequest{
                 ConversationMessageId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
                 UserId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
                 Text: "text",
                 UserMessageType: mavenagigo.UserConversationMessageTypeUser,
             },
             &mavenagigo.ConversationMessageRequest{
                 ConversationMessageId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
                 UserId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
                 Text: "text",
                 UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -1947,20 +1947,20 @@ Append messages to an existing conversation. The conversation must be initialize
 request := []*mavenagigo.ConversationMessageRequest{
         &mavenagigo.ConversationMessageRequest{
             ConversationMessageId: &mavenagigo.EntityIdBase{
-                ReferenceId: "referenceId",
+                ReferenceId: "x",
             },
             UserId: &mavenagigo.EntityIdBase{
-                ReferenceId: "referenceId",
+                ReferenceId: "x",
             },
             Text: "text",
             UserMessageType: mavenagigo.UserConversationMessageTypeUser,
         },
         &mavenagigo.ConversationMessageRequest{
             ConversationMessageId: &mavenagigo.EntityIdBase{
-                ReferenceId: "referenceId",
+                ReferenceId: "x",
             },
             UserId: &mavenagigo.EntityIdBase{
-                ReferenceId: "referenceId",
+                ReferenceId: "x",
             },
             Text: "text",
             UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -2246,10 +2246,10 @@ Known Limitations:
 request := &mavenagigo.AskObjectRequest{
         Schema: "schema",
         ConversationMessageId: &mavenagigo.EntityIdBase{
-            ReferenceId: "referenceId",
+            ReferenceId: "x",
         },
         UserId: &mavenagigo.EntityIdBase{
-            ReferenceId: "referenceId",
+            ReferenceId: "x",
         },
         Text: "text",
     }
@@ -2821,14 +2821,14 @@ request := &mavenagigo.DeliverMessageRequest{
             UserId: &mavenagigo.EntityIdWithoutAgent{
                 Type: mavenagigo.EntityTypeAgent,
                 AppId: "appId",
-                ReferenceId: "referenceId",
+                ReferenceId: "x",
             },
             Message: &mavenagigo.ConversationMessageRequest{
                 ConversationMessageId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
                 UserId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
                 Text: "text",
                 UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -2897,12 +2897,12 @@ Create a new event
 request := &mavenagigo.EventRequest{
         UserEvent: &mavenagigo.NovelUserEvent{
             Id: &mavenagigo.EntityIdBase{
-                ReferenceId: "referenceId",
+                ReferenceId: "x",
             },
             EventName: mavenagigo.UserEventNameButtonClicked,
             UserInfo: &mavenagigo.EventUserInfoBase{
                 Id: &mavenagigo.EntityIdBase{
-                    ReferenceId: "referenceId",
+                    ReferenceId: "x",
                 },
             },
         },
@@ -4197,7 +4197,9 @@ request := &mavenagigo.KnowledgeDocumentRequest{
             AppId: "maven",
         },
         ContentType: mavenagigo.KnowledgeDocumentContentTypeMarkdown,
-        Content: "## Getting started\nThis is a getting started guide for the help center.",
+        Content: mavenagigo.String(
+            "## Getting started\nThis is a getting started guide for the help center.",
+        ),
         Title: "Getting started",
         Metadata: map[string]string{
             "category": "getting-started",

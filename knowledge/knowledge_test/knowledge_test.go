@@ -3,109 +3,69 @@
 package knowledge_test
 
 import (
+	bytes "bytes"
 	context "context"
-	fmt "fmt"
+	json "encoding/json"
 	mavenagigo "github.com/mavenagi/mavenagi-go"
 	client "github.com/mavenagi/mavenagi-go/client"
 	option "github.com/mavenagi/mavenagi-go/option"
 	require "github.com/stretchr/testify/require"
-	gowiremock "github.com/wiremock/go-wiremock"
-	wiremocktestcontainersgo "github.com/wiremock/wiremock-testcontainers-go"
 	http "net/http"
-	os "os"
 	testing "testing"
 )
 
-// TestMain sets up shared test fixtures for all tests in this package// Global test fixtures
-var (
-	WireMockContainer *wiremocktestcontainersgo.WireMockContainer
-	WireMockBaseURL   string
-	WireMockClient    *gowiremock.Client
-)
+func ResetWireMockRequests(
+	t *testing.T,
+) {
+	WiremockAdminURL := "http://localhost:8080/__admin"
+	_, err := http.Post(WiremockAdminURL+"/requests/reset", "application/json", nil)
+	require.NoError(t, err)
+}
 
-// TestMain sets up shared test fixtures for all tests in this package
-func TestMain(m *testing.M) {
-	// Setup shared WireMock container
-	ctx := context.Background()
-	container, err := wiremocktestcontainersgo.RunContainerAndStopOnCleanup(
-		ctx,
-		&testing.T{},
-		wiremocktestcontainersgo.WithImage("docker.io/wiremock/wiremock:3.9.1"),
-	)
-	if err != nil {
-		fmt.Printf("Failed to start WireMock container: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Store global references
-	WireMockContainer = container
-
-	// Try to get the base URL using the standard method first
-	baseURL, err := container.Endpoint(ctx, "")
-	if err == nil {
-		// Standard method worked (running outside DinD)
-		// This uses the mapped port (e.g., localhost:59553)
-		WireMockBaseURL = "http://" + baseURL
-		WireMockClient = container.Client
-	} else {
-		// Standard method failed, use internal IP fallback (DinD environment)
-		fmt.Printf("Standard endpoint resolution failed, using internal IP fallback: %v\n", err)
-
-		inspect, err := container.Inspect(ctx)
-		if err != nil {
-			fmt.Printf("Failed to inspect WireMock container: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Find the IP address from the container's networks
-		var containerIP string
-		for _, network := range inspect.NetworkSettings.Networks {
-			if network.IPAddress != "" {
-				containerIP = network.IPAddress
-				break
+func VerifyRequestCount(
+	t *testing.T,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
+) {
+	WiremockAdminURL := "http://localhost:8080/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`"}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
 			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
 		}
-
-		if containerIP == "" {
-			fmt.Printf("Failed to get WireMock container IP address\n")
-			os.Exit(1)
-		}
-
-		// In DinD, use the internal port directly (8080 for WireMock HTTP)
-		// Don't use the mapped port since it doesn't exist in this environment
-		WireMockBaseURL = fmt.Sprintf("http://%s:8080", containerIP)
-
-		// The container.Client was created with a bad URL, so we need a new one
-		WireMockClient = gowiremock.NewClient(WireMockBaseURL)
+		reqBody.WriteString("}")
 	}
-
-	fmt.Printf("WireMock available at: %s\n", WireMockBaseURL)
-
-	// Run all tests
-	code := m.Run()
-
-	// Cleanup
-	if WireMockContainer != nil {
-		WireMockContainer.Terminate(ctx)
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
 	}
-
-	// Exit with the same code as the tests
-	os.Exit(code)
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestKnowledgeSearchKnowledgeBasesWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/search")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeBases": []interface{}{map[string]interface{}{"createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "knowledgeBaseId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "activeVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "mostRecentVersionStatus": "SUCCEEDED", "type": "API", "metadata": map[string]interface{}{"metadata": "metadata"}, "tags": []interface{}{"tags"}, "llmInclusionStatus": "ALWAYS", "refreshFrequency": "NONE", "segmentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "name": "name", "precondition": map[string]interface{}{"preconditionType": "user", "key": "key", "value": "value", "operator": "NOT"}}, map[string]interface{}{"createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "knowledgeBaseId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "activeVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "mostRecentVersionStatus": "SUCCEEDED", "type": "API", "metadata": map[string]interface{}{"metadata": "metadata"}, "tags": []interface{}{"tags"}, "llmInclusionStatus": "ALWAYS", "refreshFrequency": "NONE", "segmentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "name": "name", "precondition": map[string]interface{}{"preconditionType": "user", "key": "key", "value": "value", "operator": "NOT"}}}, "number": 1, "size": 1, "totalElements": 1000000, "totalPages": 1},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -118,24 +78,14 @@ func TestKnowledgeSearchKnowledgeBasesWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/search", nil, 1)
 }
 
 func TestKnowledgeCreateOrUpdateKnowledgeBaseWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Put(gowiremock.URLPathTemplate("/v1/knowledge")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"createdAt": "2025-01-01T00:00:00Z", "updatedAt": "2025-02-02T00:00:00Z", "knowledgeBaseId": map[string]interface{}{"referenceId": "help-center", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE"}, "activeVersionId": map[string]interface{}{"referenceId": "version-1", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "mostRecentVersionStatus": "SUCCEEDED", "llmInclusionStatus": "WHEN_RELEVANT", "name": "Help center", "type": "API", "metadata": map[string]interface{}{"key": "value"}, "tags": []interface{}{"tag1", "tag2"}, "refreshFrequency": "DAILY", "segmentId": map[string]interface{}{"referenceId": "premium-users", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "SEGMENT"}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -153,27 +103,14 @@ func TestKnowledgeCreateOrUpdateKnowledgeBaseWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "PUT", "/v1/knowledge", nil, 1)
 }
 
 func TestKnowledgeGetKnowledgeBaseWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Get(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"createdAt": "2025-01-01T00:00:00Z", "updatedAt": "2025-02-02T00:00:00Z", "knowledgeBaseId": map[string]interface{}{"referenceId": "help-center", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE"}, "activeVersionId": map[string]interface{}{"referenceId": "version-1", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "mostRecentVersionStatus": "SUCCEEDED", "llmInclusionStatus": "WHEN_RELEVANT", "name": "Help center", "type": "API", "metadata": map[string]interface{}{"key": "value"}, "tags": []interface{}{"tag1", "tag2"}, "refreshFrequency": "DAILY", "segmentId": map[string]interface{}{"referenceId": "premium-users", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "SEGMENT"}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -187,27 +124,14 @@ func TestKnowledgeGetKnowledgeBaseWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "GET", "/v1/knowledge/help-center", nil, 1)
 }
 
 func TestKnowledgeRefreshKnowledgeBaseWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/refresh")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -225,35 +149,14 @@ func TestKnowledgeRefreshKnowledgeBaseWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/refresh", nil, 1)
 }
 
 func TestKnowledgePatchKnowledgeBaseWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Patch(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema(`{
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "type": "object",
-                    "required": [],
-                    "properties": {
-                        
-                    },
-                    "additionalProperties": true
-                }`, "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"createdAt": "2025-01-01T00:00:00Z", "updatedAt": "2025-02-02T00:00:00Z", "knowledgeBaseId": map[string]interface{}{"referenceId": "help-center", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE"}, "activeVersionId": map[string]interface{}{"referenceId": "version-1", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "mostRecentVersionStatus": "SUCCEEDED", "llmInclusionStatus": "WHEN_RELEVANT", "name": "Help center", "type": "API", "metadata": map[string]interface{}{"key": "value"}, "tags": []interface{}{"tag1", "tag2"}, "refreshFrequency": "DAILY", "segmentId": map[string]interface{}{"referenceId": "premium-users", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "SEGMENT"}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -283,27 +186,14 @@ func TestKnowledgePatchKnowledgeBaseWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "PATCH", "/v1/knowledge/help-center", nil, 1)
 }
 
 func TestKnowledgeCreateKnowledgeBaseVersionWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/version")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"versionId": map[string]interface{}{"type": "KNOWLEDGE_BASE_VERSION", "referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support"}, "type": "FULL", "status": "IN_PROGRESS", "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -319,27 +209,14 @@ func TestKnowledgeCreateKnowledgeBaseVersionWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/version", nil, 1)
 }
 
 func TestKnowledgeFinalizeKnowledgeBaseVersionWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/version/finalize")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"versionId": map[string]interface{}{"type": "KNOWLEDGE_BASE_VERSION", "referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support"}, "type": "FULL", "status": "IN_PROGRESS", "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -360,27 +237,14 @@ func TestKnowledgeFinalizeKnowledgeBaseVersionWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/version/finalize", nil, 1)
 }
 
 func TestKnowledgeListKnowledgeBaseVersionsWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Get(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/versions")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("knowledgeBaseReferenceId"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeBaseVersions": []interface{}{map[string]interface{}{"versionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "status": "SUCCEEDED", "errorMessage": "errorMessage", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "type": "FULL"}, map[string]interface{}{"versionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "status": "SUCCEEDED", "errorMessage": "errorMessage", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "type": "FULL"}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -394,24 +258,14 @@ func TestKnowledgeListKnowledgeBaseVersionsWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "GET", "/v1/knowledge/knowledgeBaseReferenceId/versions", nil, 1)
 }
 
 func TestKnowledgeSearchKnowledgeDocumentsWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/documents/search")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeDocuments": []interface{}{map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "llmInclusionStatus": "ALWAYS", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "url": "url", "language": "language", "author": "author"}, map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "llmInclusionStatus": "ALWAYS", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "url": "url", "language": "language", "author": "author"}}, "number": 1, "size": 1, "totalElements": 1000000, "totalPages": 1},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -424,27 +278,14 @@ func TestKnowledgeSearchKnowledgeDocumentsWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/documents/search", nil, 1)
 }
 
 func TestKnowledgeCreateKnowledgeDocumentWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/document")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"referenceId": "getting-started", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_DOCUMENT"}, "knowledgeBaseVersionId": map[string]interface{}{"referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "content": "## Getting started This is a getting started guide for the help center.", "title": "Getting started", "metadata": map[string]interface{}{"category": "getting-started"}, "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z", "llmInclusionStatus": "WHEN_RELEVANT"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -460,8 +301,10 @@ func TestKnowledgeCreateKnowledgeDocumentWithWireMock(
 			AppId:       "maven",
 		},
 		ContentType: mavenagigo.KnowledgeDocumentContentTypeMarkdown,
-		Content:     "## Getting started\nThis is a getting started guide for the help center.",
-		Title:       "Getting started",
+		Content: mavenagigo.String(
+			"## Getting started\nThis is a getting started guide for the help center.",
+		),
+		Title: "Getting started",
 		Metadata: map[string]string{
 			"category": "getting-started",
 		},
@@ -473,30 +316,14 @@ func TestKnowledgeCreateKnowledgeDocumentWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/document", nil, 1)
 }
 
 func TestKnowledgeDeleteKnowledgeDocumentWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Delete(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/{knowledgeDocumentReferenceId}/document")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithPathParam(
-		"knowledgeDocumentReferenceId",
-		gowiremock.Matching("getting-started"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -517,30 +344,14 @@ func TestKnowledgeDeleteKnowledgeDocumentWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "DELETE", "/v1/knowledge/help-center/getting-started/document", nil, 1)
 }
 
 func TestKnowledgeGetKnowledgeDocumentWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Get(gowiremock.URLPathTemplate("/v1/knowledge/versions/{knowledgeBaseVersionReferenceId}/documents/{knowledgeDocumentReferenceId}")).WithPathParam(
-		"knowledgeBaseVersionReferenceId",
-		gowiremock.Matching("knowledgeBaseVersionReferenceId"),
-	).WithPathParam(
-		"knowledgeDocumentReferenceId",
-		gowiremock.Matching("knowledgeDocumentReferenceId"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"content": "content", "metadata": map[string]interface{}{"metadata": "metadata"}, "knowledgeDocumentId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "knowledgeBaseVersionId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "title": "title", "llmInclusionStatus": "ALWAYS", "createdAt": "2024-01-15T09:30:00Z", "updatedAt": "2024-01-15T09:30:00Z", "url": "url", "language": "language", "author": "author"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -557,38 +368,14 @@ func TestKnowledgeGetKnowledgeDocumentWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "GET", "/v1/knowledge/versions/knowledgeBaseVersionReferenceId/documents/knowledgeDocumentReferenceId", map[string]string{"knowledgeBaseVersionAppId": "knowledgeBaseVersionAppId"}, 1)
 }
 
 func TestKnowledgePatchKnowledgeDocumentWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Patch(gowiremock.URLPathTemplate("/v1/knowledge/{knowledgeBaseReferenceId}/{knowledgeDocumentReferenceId}/document")).WithPathParam(
-		"knowledgeBaseReferenceId",
-		gowiremock.Matching("help-center"),
-	).WithPathParam(
-		"knowledgeDocumentReferenceId",
-		gowiremock.Matching("how-it-works"),
-	).WithBodyPattern(gowiremock.MatchesJsonSchema(`{
-                    "$schema": "https://json-schema.org/draft/2020-12/schema",
-                    "type": "object",
-                    "required": [],
-                    "properties": {
-                        
-                    },
-                    "additionalProperties": true
-                }`, "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"knowledgeDocumentId": map[string]interface{}{"referenceId": "getting-started", "appId": "readme", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_DOCUMENT"}, "knowledgeBaseVersionId": map[string]interface{}{"referenceId": "versionId", "appId": "maven", "organizationId": "acme", "agentId": "support", "type": "KNOWLEDGE_BASE_VERSION"}, "content": "## Getting started This is a getting started guide for the help center.", "title": "Getting started", "metadata": map[string]interface{}{"category": "getting-started"}, "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-02T00:00:00Z", "llmInclusionStatus": "WHEN_RELEVANT"},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -605,7 +392,5 @@ func TestKnowledgePatchKnowledgeDocumentWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "PATCH", "/v1/knowledge/help-center/how-it-works/document", nil, 1)
 }

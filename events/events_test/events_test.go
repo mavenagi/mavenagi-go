@@ -3,109 +3,69 @@
 package events_test
 
 import (
+	bytes "bytes"
 	context "context"
-	fmt "fmt"
+	json "encoding/json"
 	mavenagigo "github.com/mavenagi/mavenagi-go"
 	client "github.com/mavenagi/mavenagi-go/client"
 	option "github.com/mavenagi/mavenagi-go/option"
 	require "github.com/stretchr/testify/require"
-	gowiremock "github.com/wiremock/go-wiremock"
-	wiremocktestcontainersgo "github.com/wiremock/wiremock-testcontainers-go"
 	http "net/http"
-	os "os"
 	testing "testing"
 )
 
-// TestMain sets up shared test fixtures for all tests in this package// Global test fixtures
-var (
-	WireMockContainer *wiremocktestcontainersgo.WireMockContainer
-	WireMockBaseURL   string
-	WireMockClient    *gowiremock.Client
-)
+func ResetWireMockRequests(
+	t *testing.T,
+) {
+	WiremockAdminURL := "http://localhost:8080/__admin"
+	_, err := http.Post(WiremockAdminURL+"/requests/reset", "application/json", nil)
+	require.NoError(t, err)
+}
 
-// TestMain sets up shared test fixtures for all tests in this package
-func TestMain(m *testing.M) {
-	// Setup shared WireMock container
-	ctx := context.Background()
-	container, err := wiremocktestcontainersgo.RunContainerAndStopOnCleanup(
-		ctx,
-		&testing.T{},
-		wiremocktestcontainersgo.WithImage("docker.io/wiremock/wiremock:3.9.1"),
-	)
-	if err != nil {
-		fmt.Printf("Failed to start WireMock container: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Store global references
-	WireMockContainer = container
-
-	// Try to get the base URL using the standard method first
-	baseURL, err := container.Endpoint(ctx, "")
-	if err == nil {
-		// Standard method worked (running outside DinD)
-		// This uses the mapped port (e.g., localhost:59553)
-		WireMockBaseURL = "http://" + baseURL
-		WireMockClient = container.Client
-	} else {
-		// Standard method failed, use internal IP fallback (DinD environment)
-		fmt.Printf("Standard endpoint resolution failed, using internal IP fallback: %v\n", err)
-
-		inspect, err := container.Inspect(ctx)
-		if err != nil {
-			fmt.Printf("Failed to inspect WireMock container: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Find the IP address from the container's networks
-		var containerIP string
-		for _, network := range inspect.NetworkSettings.Networks {
-			if network.IPAddress != "" {
-				containerIP = network.IPAddress
-				break
+func VerifyRequestCount(
+	t *testing.T,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
+) {
+	WiremockAdminURL := "http://localhost:8080/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`"}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
 			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
 		}
-
-		if containerIP == "" {
-			fmt.Printf("Failed to get WireMock container IP address\n")
-			os.Exit(1)
-		}
-
-		// In DinD, use the internal port directly (8080 for WireMock HTTP)
-		// Don't use the mapped port since it doesn't exist in this environment
-		WireMockBaseURL = fmt.Sprintf("http://%s:8080", containerIP)
-
-		// The container.Client was created with a bad URL, so we need a new one
-		WireMockClient = gowiremock.NewClient(WireMockBaseURL)
+		reqBody.WriteString("}")
 	}
-
-	fmt.Printf("WireMock available at: %s\n", WireMockBaseURL)
-
-	// Run all tests
-	code := m.Run()
-
-	// Cleanup
-	if WireMockContainer != nil {
-		WireMockContainer.Terminate(ctx)
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
 	}
-
-	// Exit with the same code as the tests
-	os.Exit(code)
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestEventsCreateWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/events")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"eventType": "userEvent", "id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "eventName": "BUTTON_CLICKED", "userInfo": map[string]interface{}{"id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "userDisplayName": "userDisplayName"}, "feedbackInfo": []interface{}{map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}, map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}}, "pageInfo": map[string]interface{}{"pageName": "pageName", "pageUrl": "pageUrl", "pageTitle": "pageTitle", "linkUrl": "linkUrl", "elementId": "elementId"}, "timestamp": "2024-01-15T09:30:00Z", "references": []interface{}{map[string]interface{}{"entityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "scopeEntityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}, "sourceInfo": map[string]interface{}{"type": "WEB", "deviceInfo": map[string]interface{}{"type": "DESKTOP", "name": "name", "version": "version", "osInfo": map[string]interface{}{"type": "WINDOWS", "name": "name", "version": "version"}}, "browserInfo": map[string]interface{}{"type": "CHROME", "name": "name", "version": "version", "userAgent": "userAgent"}, "geoInfo": map[string]interface{}{"city": "city", "state": "state", "country": "country", "region": "region", "latitude": 1.1, "longitude": 1.1}, "ipInfo": map[string]interface{}{"ip": "ip"}, "languageInfo": map[string]interface{}{"code": "code"}}, "sessionInfo": map[string]interface{}{"id": "id", "start": "2024-01-15T09:30:00Z", "end": "2024-01-15T09:30:00Z", "duration": 1000000}, "contextInfo": map[string]interface{}{"additionalData": map[string]interface{}{"additionalData": "additionalData"}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -114,12 +74,12 @@ func TestEventsCreateWithWireMock(
 	request := &mavenagigo.EventRequest{
 		UserEvent: &mavenagigo.NovelUserEvent{
 			Id: &mavenagigo.EntityIdBase{
-				ReferenceId: "referenceId",
+				ReferenceId: "x",
 			},
 			EventName: mavenagigo.UserEventNameButtonClicked,
 			UserInfo: &mavenagigo.EventUserInfoBase{
 				Id: &mavenagigo.EntityIdBase{
-					ReferenceId: "referenceId",
+					ReferenceId: "x",
 				},
 			},
 		},
@@ -130,24 +90,14 @@ func TestEventsCreateWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/events", nil, 1)
 }
 
 func TestEventsSearchWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/events/search")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"events": []interface{}{map[string]interface{}{"eventType": "userEvent", "id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "eventName": "BUTTON_CLICKED", "userInfo": map[string]interface{}{"id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "userDisplayName": "userDisplayName"}, "feedbackInfo": []interface{}{map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}, map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}}, "pageInfo": map[string]interface{}{"pageName": "pageName", "pageUrl": "pageUrl", "pageTitle": "pageTitle", "linkUrl": "linkUrl", "elementId": "elementId"}, "timestamp": "2024-01-15T09:30:00Z", "references": []interface{}{map[string]interface{}{"entityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "scopeEntityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}, "sourceInfo": map[string]interface{}{"type": "WEB", "deviceInfo": map[string]interface{}{"type": "DESKTOP", "name": "name", "version": "version", "osInfo": map[string]interface{}{"type": "WINDOWS", "name": "name", "version": "version"}}, "browserInfo": map[string]interface{}{"type": "CHROME", "name": "name", "version": "version", "userAgent": "userAgent"}, "geoInfo": map[string]interface{}{"city": "city", "state": "state", "country": "country", "region": "region", "latitude": 1.1, "longitude": 1.1}, "ipInfo": map[string]interface{}{"ip": "ip"}, "languageInfo": map[string]interface{}{"code": "code"}}, "sessionInfo": map[string]interface{}{"id": "id", "start": "2024-01-15T09:30:00Z", "end": "2024-01-15T09:30:00Z", "duration": 1000000}, "contextInfo": map[string]interface{}{"additionalData": map[string]interface{}{"additionalData": "additionalData"}}}, map[string]interface{}{"eventType": "userEvent", "id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "eventName": "BUTTON_CLICKED", "userInfo": map[string]interface{}{"id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "userDisplayName": "userDisplayName"}, "feedbackInfo": []interface{}{map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}, map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}}, "pageInfo": map[string]interface{}{"pageName": "pageName", "pageUrl": "pageUrl", "pageTitle": "pageTitle", "linkUrl": "linkUrl", "elementId": "elementId"}, "timestamp": "2024-01-15T09:30:00Z", "references": []interface{}{map[string]interface{}{"entityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "scopeEntityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}, "sourceInfo": map[string]interface{}{"type": "WEB", "deviceInfo": map[string]interface{}{"type": "DESKTOP", "name": "name", "version": "version", "osInfo": map[string]interface{}{"type": "WINDOWS", "name": "name", "version": "version"}}, "browserInfo": map[string]interface{}{"type": "CHROME", "name": "name", "version": "version", "userAgent": "userAgent"}, "geoInfo": map[string]interface{}{"city": "city", "state": "state", "country": "country", "region": "region", "latitude": 1.1, "longitude": 1.1}, "ipInfo": map[string]interface{}{"ip": "ip"}, "languageInfo": map[string]interface{}{"code": "code"}}, "sessionInfo": map[string]interface{}{"id": "id", "start": "2024-01-15T09:30:00Z", "end": "2024-01-15T09:30:00Z", "duration": 1000000}, "contextInfo": map[string]interface{}{"additionalData": map[string]interface{}{"additionalData": "additionalData"}}}}, "number": 1, "size": 1, "totalElements": 1000000, "totalPages": 1},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -160,27 +110,14 @@ func TestEventsSearchWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/events/search", nil, 1)
 }
 
 func TestEventsGetWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Get(gowiremock.URLPathTemplate("/v1/events/{eventId}")).WithPathParam(
-		"eventId",
-		gowiremock.Matching("eventId"),
-	).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{"eventType": "userEvent", "id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "eventName": "BUTTON_CLICKED", "userInfo": map[string]interface{}{"id": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "userDisplayName": "userDisplayName"}, "feedbackInfo": []interface{}{map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}, map[string]interface{}{"rating": 1.1, "thumbUp": true, "survey": map[string]interface{}{"surveyQuestion": "surveyQuestion", "surveyAnswer": "surveyAnswer"}}}, "pageInfo": map[string]interface{}{"pageName": "pageName", "pageUrl": "pageUrl", "pageTitle": "pageTitle", "linkUrl": "linkUrl", "elementId": "elementId"}, "timestamp": "2024-01-15T09:30:00Z", "references": []interface{}{map[string]interface{}{"entityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}, "scopeEntityId": map[string]interface{}{"organizationId": "organizationId", "agentId": "agentId", "type": "AGENT", "appId": "appId", "referenceId": "referenceId"}}}, "sourceInfo": map[string]interface{}{"type": "WEB", "deviceInfo": map[string]interface{}{"type": "DESKTOP", "name": "name", "version": "version", "osInfo": map[string]interface{}{"type": "WINDOWS", "name": "name", "version": "version"}}, "browserInfo": map[string]interface{}{"type": "CHROME", "name": "name", "version": "version", "userAgent": "userAgent"}, "geoInfo": map[string]interface{}{"city": "city", "state": "state", "country": "country", "region": "region", "latitude": 1.1, "longitude": 1.1}, "ipInfo": map[string]interface{}{"ip": "ip"}, "languageInfo": map[string]interface{}{"code": "code"}}, "sessionInfo": map[string]interface{}{"id": "id", "start": "2024-01-15T09:30:00Z", "end": "2024-01-15T09:30:00Z", "duration": 1000000}, "contextInfo": map[string]interface{}{"additionalData": map[string]interface{}{"additionalData": "additionalData"}}},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -196,24 +133,14 @@ func TestEventsGetWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "GET", "/v1/events/eventId", map[string]string{"appId": "appId"}, 1)
 }
 
 func TestEventsExportWithWireMock(
 	t *testing.T,
 ) {
-	// wiremock client and server initialized in shared main_test.go
-	defer WireMockClient.Reset()
-	stub := gowiremock.Post(gowiremock.URLPathTemplate("/v1/events/export")).WithBodyPattern(gowiremock.MatchesJsonSchema("{}", "V202012")).WillReturnResponse(
-		gowiremock.NewResponse().WithJSONBody(
-			map[string]interface{}{},
-		).WithStatus(http.StatusOK),
-	)
-	err := WireMockClient.StubFor(stub)
-	require.NoError(t, err, "Failed to create WireMock stub")
-
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
 	client := client.NewMavenAGI(
 		option.WithBaseURL(
 			WireMockBaseURL,
@@ -226,7 +153,5 @@ func TestEventsExportWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	ok, countErr := WireMockClient.Verify(stub.Request(), 1)
-	require.NoError(t, countErr, "Failed to verify WireMock request was matched")
-	require.True(t, ok, "WireMock request was not matched")
+	VerifyRequestCount(t, "POST", "/v1/events/export", nil, 1)
 }
