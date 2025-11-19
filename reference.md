@@ -3753,7 +3753,7 @@ client.Knowledge.RefreshKnowledgeBase(
 
 Update mutable knowledge base fields
 
-The `appId` field can be provided to update a knowledge base owned by a different app. 
+The `appId` field can be provided to update a knowledge base owned by a different app.
 All other fields will overwrite the existing value on the knowledge base only if provided.
 </dd>
 </dl>
@@ -3856,7 +3856,7 @@ client.Knowledge.PatchKnowledgeBase(
 
 **segmentId:** `*mavenagigo.EntityId` 
 
-The ID of the segment that must be matched for the knowledge base to be relevant to a conversation. 
+The ID of the segment that must be matched for the knowledge base to be relevant to a conversation.
 A null value will remove the segment from the knowledge base, it will be available on all conversations.
 
 Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
@@ -4166,11 +4166,11 @@ client.Knowledge.SearchKnowledgeDocuments(
 <dl>
 <dd>
 
-Create or update a knowledge document. Requires an existing knowledge base with an in progress version. 
+Create or update a knowledge document. Requires an existing knowledge base with an in progress version.
 Will throw an exception if the latest version is not in progress.
-        
+
 <Tip>
-This API maintains document version history. If for the same reference ID none of the `title`, `text`, `sourceUrl`, `metadata` fields 
+This API maintains document version history. If for the same reference ID none of the `title`, `text`, `sourceUrl`, `metadata` fields
 have changed, a new document version will not be created. The existing version will be reused.
 </Tip>
 </dd>
@@ -4257,7 +4257,7 @@ client.Knowledge.CreateKnowledgeDocument(
 <dl>
 <dd>
 
-Delete knowledge document from a specific version. 
+Delete knowledge document from a specific version.
 Requires an existing knowledge base with an in progress version of type PARTIAL. Will throw an exception if the version is not in progress.
 </dd>
 </dl>
@@ -4424,7 +4424,7 @@ Update mutable knowledge document fields that can be set independently of a know
 
 For any changes in document content see the `createKnowledgeBaseVersion` and `createKnowledgeDocument` endpoints.
 
-The `knowledgeBaseAppId` field can be provided to update a knowledge document in a knowledge base owned by a different app. 
+The `knowledgeBaseAppId` field can be provided to update a knowledge document in a knowledge base owned by a different app.
 All other fields will overwrite the existing value on the knowledge document only if provided.
 </dd>
 </dl>

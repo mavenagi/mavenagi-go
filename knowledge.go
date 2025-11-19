@@ -2414,7 +2414,7 @@ type KnowledgeDocumentRequest struct {
 	ContentType KnowledgeDocumentContentType `json:"contentType" url:"contentType"`
 	// The title of the document. Will be shown as part of answers.
 	Title string `json:"title" url:"title"`
-	// ID of the asset associated with this document. Either this or content is required, but not both
+	// ID of the asset associated with this document. This asset will be transformed into text and set as the content of the document. The following types are supported: `application/pdf`, `text/plain`.  Either this or content is required, but not both
 	AssetId *EntityIdBase `json:"assetId,omitempty" url:"assetId,omitempty"`
 	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
@@ -2663,19 +2663,21 @@ func (k *KnowledgeDocumentRequest) String() string {
 }
 
 var (
-	knowledgeDocumentResponseFieldUrl                    = big.NewInt(1 << 0)
-	knowledgeDocumentResponseFieldLanguage               = big.NewInt(1 << 1)
-	knowledgeDocumentResponseFieldAuthor                 = big.NewInt(1 << 2)
-	knowledgeDocumentResponseFieldKnowledgeDocumentId    = big.NewInt(1 << 3)
-	knowledgeDocumentResponseFieldKnowledgeBaseVersionId = big.NewInt(1 << 4)
-	knowledgeDocumentResponseFieldTitle                  = big.NewInt(1 << 5)
-	knowledgeDocumentResponseFieldLlmInclusionStatus     = big.NewInt(1 << 6)
-	knowledgeDocumentResponseFieldCreatedAt              = big.NewInt(1 << 7)
-	knowledgeDocumentResponseFieldUpdatedAt              = big.NewInt(1 << 8)
-	knowledgeDocumentResponseFieldProcessingStatus       = big.NewInt(1 << 9)
-	knowledgeDocumentResponseFieldContent                = big.NewInt(1 << 10)
-	knowledgeDocumentResponseFieldAsset                  = big.NewInt(1 << 11)
-	knowledgeDocumentResponseFieldMetadata               = big.NewInt(1 << 12)
+	knowledgeDocumentResponseFieldUrl                             = big.NewInt(1 << 0)
+	knowledgeDocumentResponseFieldLanguage                        = big.NewInt(1 << 1)
+	knowledgeDocumentResponseFieldAuthor                          = big.NewInt(1 << 2)
+	knowledgeDocumentResponseFieldKnowledgeDocumentId             = big.NewInt(1 << 3)
+	knowledgeDocumentResponseFieldKnowledgeBaseVersionId          = big.NewInt(1 << 4)
+	knowledgeDocumentResponseFieldKnowledgeBaseId                 = big.NewInt(1 << 5)
+	knowledgeDocumentResponseFieldTitle                           = big.NewInt(1 << 6)
+	knowledgeDocumentResponseFieldLlmInclusionStatus              = big.NewInt(1 << 7)
+	knowledgeDocumentResponseFieldKnowledgeBaseLlmInclusionStatus = big.NewInt(1 << 8)
+	knowledgeDocumentResponseFieldCreatedAt                       = big.NewInt(1 << 9)
+	knowledgeDocumentResponseFieldUpdatedAt                       = big.NewInt(1 << 10)
+	knowledgeDocumentResponseFieldProcessingStatus                = big.NewInt(1 << 11)
+	knowledgeDocumentResponseFieldContent                         = big.NewInt(1 << 12)
+	knowledgeDocumentResponseFieldAsset                           = big.NewInt(1 << 13)
+	knowledgeDocumentResponseFieldMetadata                        = big.NewInt(1 << 14)
 )
 
 type KnowledgeDocumentResponse struct {
@@ -2690,10 +2692,14 @@ type KnowledgeDocumentResponse struct {
 	// ID that uniquely identifies the knowledge base version that contains this document.
 	// This may be missing on legacy documents.
 	KnowledgeBaseVersionId *EntityId `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
+	// ID that uniquely identifies the knowledge base that contains this document.
+	KnowledgeBaseId *EntityId `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// The title of the document. Will be shown as part of answers. May be missing on legacy documents.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
 	// Whether the document is included in the agent's knowledge.
 	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
+	// Whether the knowledge base is included in the agent's knowledge.
+	KnowledgeBaseLlmInclusionStatus LlmInclusionStatus `json:"knowledgeBaseLlmInclusionStatus" url:"knowledgeBaseLlmInclusionStatus"`
 	// The time at which this document was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The time at which this document was last modified.
@@ -2749,6 +2755,13 @@ func (k *KnowledgeDocumentResponse) GetKnowledgeBaseVersionId() *EntityId {
 	return k.KnowledgeBaseVersionId
 }
 
+func (k *KnowledgeDocumentResponse) GetKnowledgeBaseId() *EntityId {
+	if k == nil {
+		return nil
+	}
+	return k.KnowledgeBaseId
+}
+
 func (k *KnowledgeDocumentResponse) GetTitle() *string {
 	if k == nil {
 		return nil
@@ -2761,6 +2774,13 @@ func (k *KnowledgeDocumentResponse) GetLlmInclusionStatus() LlmInclusionStatus {
 		return ""
 	}
 	return k.LlmInclusionStatus
+}
+
+func (k *KnowledgeDocumentResponse) GetKnowledgeBaseLlmInclusionStatus() LlmInclusionStatus {
+	if k == nil {
+		return ""
+	}
+	return k.KnowledgeBaseLlmInclusionStatus
 }
 
 func (k *KnowledgeDocumentResponse) GetCreatedAt() time.Time {
@@ -2851,6 +2871,13 @@ func (k *KnowledgeDocumentResponse) SetKnowledgeBaseVersionId(knowledgeBaseVersi
 	k.require(knowledgeDocumentResponseFieldKnowledgeBaseVersionId)
 }
 
+// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetKnowledgeBaseId(knowledgeBaseId *EntityId) {
+	k.KnowledgeBaseId = knowledgeBaseId
+	k.require(knowledgeDocumentResponseFieldKnowledgeBaseId)
+}
+
 // SetTitle sets the Title field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (k *KnowledgeDocumentResponse) SetTitle(title *string) {
@@ -2863,6 +2890,13 @@ func (k *KnowledgeDocumentResponse) SetTitle(title *string) {
 func (k *KnowledgeDocumentResponse) SetLlmInclusionStatus(llmInclusionStatus LlmInclusionStatus) {
 	k.LlmInclusionStatus = llmInclusionStatus
 	k.require(knowledgeDocumentResponseFieldLlmInclusionStatus)
+}
+
+// SetKnowledgeBaseLlmInclusionStatus sets the KnowledgeBaseLlmInclusionStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetKnowledgeBaseLlmInclusionStatus(knowledgeBaseLlmInclusionStatus LlmInclusionStatus) {
+	k.KnowledgeBaseLlmInclusionStatus = knowledgeBaseLlmInclusionStatus
+	k.require(knowledgeDocumentResponseFieldKnowledgeBaseLlmInclusionStatus)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -3104,15 +3138,17 @@ func (k *KnowledgeDocumentSearchRequest) String() string {
 }
 
 var (
-	knowledgeDocumentSearchResponseFieldUrl                    = big.NewInt(1 << 0)
-	knowledgeDocumentSearchResponseFieldLanguage               = big.NewInt(1 << 1)
-	knowledgeDocumentSearchResponseFieldAuthor                 = big.NewInt(1 << 2)
-	knowledgeDocumentSearchResponseFieldKnowledgeDocumentId    = big.NewInt(1 << 3)
-	knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId = big.NewInt(1 << 4)
-	knowledgeDocumentSearchResponseFieldTitle                  = big.NewInt(1 << 5)
-	knowledgeDocumentSearchResponseFieldLlmInclusionStatus     = big.NewInt(1 << 6)
-	knowledgeDocumentSearchResponseFieldCreatedAt              = big.NewInt(1 << 7)
-	knowledgeDocumentSearchResponseFieldUpdatedAt              = big.NewInt(1 << 8)
+	knowledgeDocumentSearchResponseFieldUrl                             = big.NewInt(1 << 0)
+	knowledgeDocumentSearchResponseFieldLanguage                        = big.NewInt(1 << 1)
+	knowledgeDocumentSearchResponseFieldAuthor                          = big.NewInt(1 << 2)
+	knowledgeDocumentSearchResponseFieldKnowledgeDocumentId             = big.NewInt(1 << 3)
+	knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId          = big.NewInt(1 << 4)
+	knowledgeDocumentSearchResponseFieldKnowledgeBaseId                 = big.NewInt(1 << 5)
+	knowledgeDocumentSearchResponseFieldTitle                           = big.NewInt(1 << 6)
+	knowledgeDocumentSearchResponseFieldLlmInclusionStatus              = big.NewInt(1 << 7)
+	knowledgeDocumentSearchResponseFieldKnowledgeBaseLlmInclusionStatus = big.NewInt(1 << 8)
+	knowledgeDocumentSearchResponseFieldCreatedAt                       = big.NewInt(1 << 9)
+	knowledgeDocumentSearchResponseFieldUpdatedAt                       = big.NewInt(1 << 10)
 )
 
 type KnowledgeDocumentSearchResponse struct {
@@ -3127,10 +3163,14 @@ type KnowledgeDocumentSearchResponse struct {
 	// ID that uniquely identifies the knowledge base version that contains this document.
 	// This may be missing on legacy documents.
 	KnowledgeBaseVersionId *EntityId `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
+	// ID that uniquely identifies the knowledge base that contains this document.
+	KnowledgeBaseId *EntityId `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// The title of the document. Will be shown as part of answers. May be missing on legacy documents.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
 	// Whether the document is included in the agent's knowledge.
 	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
+	// Whether the knowledge base is included in the agent's knowledge.
+	KnowledgeBaseLlmInclusionStatus LlmInclusionStatus `json:"knowledgeBaseLlmInclusionStatus" url:"knowledgeBaseLlmInclusionStatus"`
 	// The time at which this document was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The time at which this document was last modified.
@@ -3178,6 +3218,13 @@ func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseVersionId() *EntityId 
 	return k.KnowledgeBaseVersionId
 }
 
+func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseId() *EntityId {
+	if k == nil {
+		return nil
+	}
+	return k.KnowledgeBaseId
+}
+
 func (k *KnowledgeDocumentSearchResponse) GetTitle() *string {
 	if k == nil {
 		return nil
@@ -3190,6 +3237,13 @@ func (k *KnowledgeDocumentSearchResponse) GetLlmInclusionStatus() LlmInclusionSt
 		return ""
 	}
 	return k.LlmInclusionStatus
+}
+
+func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseLlmInclusionStatus() LlmInclusionStatus {
+	if k == nil {
+		return ""
+	}
+	return k.KnowledgeBaseLlmInclusionStatus
 }
 
 func (k *KnowledgeDocumentSearchResponse) GetCreatedAt() time.Time {
@@ -3252,6 +3306,13 @@ func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseVersionId(knowledgeBas
 	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId)
 }
 
+// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseId(knowledgeBaseId *EntityId) {
+	k.KnowledgeBaseId = knowledgeBaseId
+	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseId)
+}
+
 // SetTitle sets the Title field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (k *KnowledgeDocumentSearchResponse) SetTitle(title *string) {
@@ -3264,6 +3325,13 @@ func (k *KnowledgeDocumentSearchResponse) SetTitle(title *string) {
 func (k *KnowledgeDocumentSearchResponse) SetLlmInclusionStatus(llmInclusionStatus LlmInclusionStatus) {
 	k.LlmInclusionStatus = llmInclusionStatus
 	k.require(knowledgeDocumentSearchResponseFieldLlmInclusionStatus)
+}
+
+// SetKnowledgeBaseLlmInclusionStatus sets the KnowledgeBaseLlmInclusionStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseLlmInclusionStatus(knowledgeBaseLlmInclusionStatus LlmInclusionStatus) {
+	k.KnowledgeBaseLlmInclusionStatus = knowledgeBaseLlmInclusionStatus
+	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseLlmInclusionStatus)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
