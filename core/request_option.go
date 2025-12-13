@@ -25,10 +25,10 @@ type RequestOptions struct {
 	BodyProperties  map[string]interface{}
 	QueryParameters url.Values
 	MaxAttempts     uint
-	AppId           string
+	AppID           string
 	AppSecret       string
-	OrganizationId  string
-	AgentId         string
+	OrganizationID  string
+	AgentID         string
 }
 
 // NewRequestOptions returns a new *RequestOptions value.
@@ -51,11 +51,11 @@ func NewRequestOptions(opts ...RequestOption) *RequestOptions {
 // for the request(s).
 func (r *RequestOptions) ToHeader() http.Header {
 	header := r.cloneHeader()
-	if r.AppId != "" && r.AppSecret != "" {
-		header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.AppId+": "+r.AppSecret)))
+	if r.AppID != "" && r.AppSecret != "" {
+		header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.AppID+": "+r.AppSecret)))
 	}
-	header.Set("X-Organization-Id", fmt.Sprintf("%v", r.OrganizationId))
-	header.Set("X-Agent-Id", fmt.Sprintf("%v", r.AgentId))
+	header.Set("X-Organization-Id", fmt.Sprintf("%v", r.OrganizationID))
+	header.Set("X-Agent-Id", fmt.Sprintf("%v", r.AgentID))
 	return header
 }
 
@@ -63,8 +63,8 @@ func (r *RequestOptions) cloneHeader() http.Header {
 	headers := r.HTTPHeader.Clone()
 	headers.Set("X-Fern-Language", "Go")
 	headers.Set("X-Fern-SDK-Name", "github.com/mavenagi/mavenagi-go")
-	headers.Set("X-Fern-SDK-Version", "v1.2.9")
-	headers.Set("User-Agent", "github.com/mavenagi/mavenagi-go/1.2.9")
+	headers.Set("X-Fern-SDK-Version", "v1.2.10")
+	headers.Set("User-Agent", "github.com/mavenagi/mavenagi-go/1.2.10")
 	return headers
 }
 
@@ -124,29 +124,29 @@ func (m *MaxAttemptsOption) applyRequestOptions(opts *RequestOptions) {
 
 // BasicAuthOption implements the RequestOption interface.
 type BasicAuthOption struct {
-	AppId     string
+	AppID     string
 	AppSecret string
 }
 
 func (b *BasicAuthOption) applyRequestOptions(opts *RequestOptions) {
-	opts.AppId = b.AppId
+	opts.AppID = b.AppID
 	opts.AppSecret = b.AppSecret
 }
 
-// OrganizationIdOption implements the RequestOption interface.
-type OrganizationIdOption struct {
-	OrganizationId string
+// OrganizationIDOption implements the RequestOption interface.
+type OrganizationIDOption struct {
+	OrganizationID string
 }
 
-func (o *OrganizationIdOption) applyRequestOptions(opts *RequestOptions) {
-	opts.OrganizationId = o.OrganizationId
+func (o *OrganizationIDOption) applyRequestOptions(opts *RequestOptions) {
+	opts.OrganizationID = o.OrganizationID
 }
 
-// AgentIdOption implements the RequestOption interface.
-type AgentIdOption struct {
-	AgentId string
+// AgentIDOption implements the RequestOption interface.
+type AgentIDOption struct {
+	AgentID string
 }
 
-func (a *AgentIdOption) applyRequestOptions(opts *RequestOptions) {
-	opts.AgentId = a.AgentId
+func (a *AgentIDOption) applyRequestOptions(opts *RequestOptions) {
+	opts.AgentID = a.AgentID
 }

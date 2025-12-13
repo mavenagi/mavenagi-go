@@ -3596,6 +3596,1478 @@ func (d *DateHistogramResponse) String() string {
 }
 
 var (
+	eventAnalyticsRequestFieldEventFilter = big.NewInt(1 << 0)
+	eventAnalyticsRequestFieldTimezone    = big.NewInt(1 << 1)
+)
+
+type EventAnalyticsRequest struct {
+	// Optional filter applied to refine the event data before processing.
+	EventFilter *EventFilter `json:"eventFilter,omitempty" url:"eventFilter,omitempty"`
+	// IANA timezone identifier (e.g., "America/Los_Angeles").
+	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
+	// otherwise UTC is used.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventAnalyticsRequest) GetEventFilter() *EventFilter {
+	if e == nil {
+		return nil
+	}
+	return e.EventFilter
+}
+
+func (e *EventAnalyticsRequest) GetTimezone() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Timezone
+}
+
+func (e *EventAnalyticsRequest) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventAnalyticsRequest) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetEventFilter sets the EventFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventAnalyticsRequest) SetEventFilter(eventFilter *EventFilter) {
+	e.EventFilter = eventFilter
+	e.require(eventAnalyticsRequestFieldEventFilter)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventAnalyticsRequest) SetTimezone(timezone *string) {
+	e.Timezone = timezone
+	e.require(eventAnalyticsRequestFieldTimezone)
+}
+
+func (e *EventAnalyticsRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventAnalyticsRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventAnalyticsRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventAnalyticsRequest) MarshalJSON() ([]byte, error) {
+	type embed EventAnalyticsRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventAnalyticsRequest) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventBarChartRequestFieldEventFilter      = big.NewInt(1 << 0)
+	eventBarChartRequestFieldTimezone         = big.NewInt(1 << 1)
+	eventBarChartRequestFieldBarDefinition    = big.NewInt(1 << 2)
+	eventBarChartRequestFieldMetric           = big.NewInt(1 << 3)
+	eventBarChartRequestFieldVerticalGrouping = big.NewInt(1 << 4)
+)
+
+type EventBarChartRequest struct {
+	// Optional filter applied to refine the event data before processing.
+	EventFilter *EventFilter `json:"eventFilter,omitempty" url:"eventFilter,omitempty"`
+	// IANA timezone identifier (e.g., "America/Los_Angeles").
+	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
+	// otherwise UTC is used.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Determines how data is grouped along the x-axis. Each unique value forms a separate bar.
+	BarDefinition *EventGroupBy `json:"barDefinition" url:"barDefinition"`
+	// Metric defining the y-axis values for the bar chart.
+	Metric *EventMetric `json:"metric" url:"metric"`
+	// Optionally defines vertical grouping within each bar, producing multiple series.
+	// If omitted, a single series is generated.
+	VerticalGrouping *EventGroupBy `json:"verticalGrouping,omitempty" url:"verticalGrouping,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventBarChartRequest) GetEventFilter() *EventFilter {
+	if e == nil {
+		return nil
+	}
+	return e.EventFilter
+}
+
+func (e *EventBarChartRequest) GetTimezone() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Timezone
+}
+
+func (e *EventBarChartRequest) GetBarDefinition() *EventGroupBy {
+	if e == nil {
+		return nil
+	}
+	return e.BarDefinition
+}
+
+func (e *EventBarChartRequest) GetMetric() *EventMetric {
+	if e == nil {
+		return nil
+	}
+	return e.Metric
+}
+
+func (e *EventBarChartRequest) GetVerticalGrouping() *EventGroupBy {
+	if e == nil {
+		return nil
+	}
+	return e.VerticalGrouping
+}
+
+func (e *EventBarChartRequest) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventBarChartRequest) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetEventFilter sets the EventFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventBarChartRequest) SetEventFilter(eventFilter *EventFilter) {
+	e.EventFilter = eventFilter
+	e.require(eventBarChartRequestFieldEventFilter)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventBarChartRequest) SetTimezone(timezone *string) {
+	e.Timezone = timezone
+	e.require(eventBarChartRequestFieldTimezone)
+}
+
+// SetBarDefinition sets the BarDefinition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventBarChartRequest) SetBarDefinition(barDefinition *EventGroupBy) {
+	e.BarDefinition = barDefinition
+	e.require(eventBarChartRequestFieldBarDefinition)
+}
+
+// SetMetric sets the Metric field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventBarChartRequest) SetMetric(metric *EventMetric) {
+	e.Metric = metric
+	e.require(eventBarChartRequestFieldMetric)
+}
+
+// SetVerticalGrouping sets the VerticalGrouping field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventBarChartRequest) SetVerticalGrouping(verticalGrouping *EventGroupBy) {
+	e.VerticalGrouping = verticalGrouping
+	e.require(eventBarChartRequestFieldVerticalGrouping)
+}
+
+func (e *EventBarChartRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventBarChartRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventBarChartRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventBarChartRequest) MarshalJSON() ([]byte, error) {
+	type embed EventBarChartRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventBarChartRequest) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+type EventChartRequest struct {
+	Type          string
+	PieChart      *EventPieChartRequest
+	DateHistogram *EventDateHistogramRequest
+	BarChart      *EventBarChartRequest
+}
+
+func (e *EventChartRequest) GetType() string {
+	if e == nil {
+		return ""
+	}
+	return e.Type
+}
+
+func (e *EventChartRequest) GetPieChart() *EventPieChartRequest {
+	if e == nil {
+		return nil
+	}
+	return e.PieChart
+}
+
+func (e *EventChartRequest) GetDateHistogram() *EventDateHistogramRequest {
+	if e == nil {
+		return nil
+	}
+	return e.DateHistogram
+}
+
+func (e *EventChartRequest) GetBarChart() *EventBarChartRequest {
+	if e == nil {
+		return nil
+	}
+	return e.BarChart
+}
+
+func (e *EventChartRequest) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	e.Type = unmarshaler.Type
+	if unmarshaler.Type == "" {
+		return fmt.Errorf("%T did not include discriminant type", e)
+	}
+	switch unmarshaler.Type {
+	case "pieChart":
+		value := new(EventPieChartRequest)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.PieChart = value
+	case "dateHistogram":
+		value := new(EventDateHistogramRequest)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.DateHistogram = value
+	case "barChart":
+		value := new(EventBarChartRequest)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.BarChart = value
+	}
+	return nil
+}
+
+func (e EventChartRequest) MarshalJSON() ([]byte, error) {
+	if err := e.validate(); err != nil {
+		return nil, err
+	}
+	if e.PieChart != nil {
+		return internal.MarshalJSONWithExtraProperty(e.PieChart, "type", "pieChart")
+	}
+	if e.DateHistogram != nil {
+		return internal.MarshalJSONWithExtraProperty(e.DateHistogram, "type", "dateHistogram")
+	}
+	if e.BarChart != nil {
+		return internal.MarshalJSONWithExtraProperty(e.BarChart, "type", "barChart")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", e)
+}
+
+type EventChartRequestVisitor interface {
+	VisitPieChart(*EventPieChartRequest) error
+	VisitDateHistogram(*EventDateHistogramRequest) error
+	VisitBarChart(*EventBarChartRequest) error
+}
+
+func (e *EventChartRequest) Accept(visitor EventChartRequestVisitor) error {
+	if e.PieChart != nil {
+		return visitor.VisitPieChart(e.PieChart)
+	}
+	if e.DateHistogram != nil {
+		return visitor.VisitDateHistogram(e.DateHistogram)
+	}
+	if e.BarChart != nil {
+		return visitor.VisitBarChart(e.BarChart)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", e)
+}
+
+func (e *EventChartRequest) validate() error {
+	if e == nil {
+		return fmt.Errorf("type %T is nil", e)
+	}
+	var fields []string
+	if e.PieChart != nil {
+		fields = append(fields, "pieChart")
+	}
+	if e.DateHistogram != nil {
+		fields = append(fields, "dateHistogram")
+	}
+	if e.BarChart != nil {
+		fields = append(fields, "barChart")
+	}
+	if len(fields) == 0 {
+		if e.Type != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", e, e.Type)
+		}
+		return fmt.Errorf("type %T is empty", e)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", e, fields)
+	}
+	if e.Type != "" {
+		field := fields[0]
+		if e.Type != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				e,
+				e.Type,
+				e,
+			)
+		}
+	}
+	return nil
+}
+
+var (
+	eventColumnDefinitionFieldHeader = big.NewInt(1 << 0)
+	eventColumnDefinitionFieldMetric = big.NewInt(1 << 1)
+)
+
+type EventColumnDefinition struct {
+	// Unique column header, serving as the key for corresponding metric values.
+	Header string `json:"header" url:"header"`
+	// The metric calculated for this column, stored in the row data under the specified header.
+	Metric *EventMetric `json:"metric" url:"metric"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventColumnDefinition) GetHeader() string {
+	if e == nil {
+		return ""
+	}
+	return e.Header
+}
+
+func (e *EventColumnDefinition) GetMetric() *EventMetric {
+	if e == nil {
+		return nil
+	}
+	return e.Metric
+}
+
+func (e *EventColumnDefinition) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventColumnDefinition) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetHeader sets the Header field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventColumnDefinition) SetHeader(header string) {
+	e.Header = header
+	e.require(eventColumnDefinitionFieldHeader)
+}
+
+// SetMetric sets the Metric field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventColumnDefinition) SetMetric(metric *EventMetric) {
+	e.Metric = metric
+	e.require(eventColumnDefinitionFieldMetric)
+}
+
+func (e *EventColumnDefinition) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventColumnDefinition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventColumnDefinition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventColumnDefinition) MarshalJSON() ([]byte, error) {
+	type embed EventColumnDefinition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventColumnDefinition) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+// Returns the total count of records in a group.
+type EventCount struct {
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventCount) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventCount) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+func (e *EventCount) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventCount
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventCount(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventCount) MarshalJSON() ([]byte, error) {
+	type embed EventCount
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventCount) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventDateHistogramRequestFieldEventFilter  = big.NewInt(1 << 0)
+	eventDateHistogramRequestFieldTimezone     = big.NewInt(1 << 1)
+	eventDateHistogramRequestFieldTimeInterval = big.NewInt(1 << 2)
+	eventDateHistogramRequestFieldGroupBy      = big.NewInt(1 << 3)
+	eventDateHistogramRequestFieldMetric       = big.NewInt(1 << 4)
+)
+
+type EventDateHistogramRequest struct {
+	// Optional filter applied to refine the event data before processing.
+	EventFilter *EventFilter `json:"eventFilter,omitempty" url:"eventFilter,omitempty"`
+	// IANA timezone identifier (e.g., "America/Los_Angeles").
+	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
+	// otherwise UTC is used.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Time-based grouping interval (e.g., HOUR, DAY, WEEK) for the date histogram.
+	TimeInterval TimeInterval `json:"timeInterval" url:"timeInterval"`
+	// Groups data before applying calculations, forming a separate time series for each group.
+	GroupBy *EventGroupBy `json:"groupBy,omitempty" url:"groupBy,omitempty"`
+	// Defines the y-axis values for the date histogram.
+	Metric *EventMetric `json:"metric" url:"metric"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventDateHistogramRequest) GetEventFilter() *EventFilter {
+	if e == nil {
+		return nil
+	}
+	return e.EventFilter
+}
+
+func (e *EventDateHistogramRequest) GetTimezone() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Timezone
+}
+
+func (e *EventDateHistogramRequest) GetTimeInterval() TimeInterval {
+	if e == nil {
+		return ""
+	}
+	return e.TimeInterval
+}
+
+func (e *EventDateHistogramRequest) GetGroupBy() *EventGroupBy {
+	if e == nil {
+		return nil
+	}
+	return e.GroupBy
+}
+
+func (e *EventDateHistogramRequest) GetMetric() *EventMetric {
+	if e == nil {
+		return nil
+	}
+	return e.Metric
+}
+
+func (e *EventDateHistogramRequest) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventDateHistogramRequest) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetEventFilter sets the EventFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventDateHistogramRequest) SetEventFilter(eventFilter *EventFilter) {
+	e.EventFilter = eventFilter
+	e.require(eventDateHistogramRequestFieldEventFilter)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventDateHistogramRequest) SetTimezone(timezone *string) {
+	e.Timezone = timezone
+	e.require(eventDateHistogramRequestFieldTimezone)
+}
+
+// SetTimeInterval sets the TimeInterval field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventDateHistogramRequest) SetTimeInterval(timeInterval TimeInterval) {
+	e.TimeInterval = timeInterval
+	e.require(eventDateHistogramRequestFieldTimeInterval)
+}
+
+// SetGroupBy sets the GroupBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventDateHistogramRequest) SetGroupBy(groupBy *EventGroupBy) {
+	e.GroupBy = groupBy
+	e.require(eventDateHistogramRequestFieldGroupBy)
+}
+
+// SetMetric sets the Metric field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventDateHistogramRequest) SetMetric(metric *EventMetric) {
+	e.Metric = metric
+	e.require(eventDateHistogramRequestFieldMetric)
+}
+
+func (e *EventDateHistogramRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventDateHistogramRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventDateHistogramRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventDateHistogramRequest) MarshalJSON() ([]byte, error) {
+	type embed EventDateHistogramRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventDateHistogramRequest) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+// Calculates the number of unique values in the specified field.
+var (
+	eventDistinctCountFieldTargetField = big.NewInt(1 << 0)
+)
+
+type EventDistinctCount struct {
+	// All the distinct values of this field will be counted.
+	TargetField EventField `json:"targetField" url:"targetField"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventDistinctCount) GetTargetField() EventField {
+	if e == nil {
+		return ""
+	}
+	return e.TargetField
+}
+
+func (e *EventDistinctCount) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventDistinctCount) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetTargetField sets the TargetField field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventDistinctCount) SetTargetField(targetField EventField) {
+	e.TargetField = targetField
+	e.require(eventDistinctCountFieldTargetField)
+}
+
+func (e *EventDistinctCount) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventDistinctCount
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventDistinctCount(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventDistinctCount) MarshalJSON() ([]byte, error) {
+	type embed EventDistinctCount
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventDistinctCount) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventGroupByFieldLimit = big.NewInt(1 << 0)
+	eventGroupByFieldField = big.NewInt(1 << 1)
+)
+
+type EventGroupBy struct {
+	// Limits the number of groups returned (defaults to 100 if omitted).
+	Limit *int `json:"limit,omitempty" url:"limit,omitempty"`
+	// Field used for data grouping.
+	Field EventField `json:"field" url:"field"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventGroupBy) GetLimit() *int {
+	if e == nil {
+		return nil
+	}
+	return e.Limit
+}
+
+func (e *EventGroupBy) GetField() EventField {
+	if e == nil {
+		return ""
+	}
+	return e.Field
+}
+
+func (e *EventGroupBy) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventGroupBy) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetLimit sets the Limit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventGroupBy) SetLimit(limit *int) {
+	e.Limit = limit
+	e.require(eventGroupByFieldLimit)
+}
+
+// SetField sets the Field field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventGroupBy) SetField(field EventField) {
+	e.Field = field
+	e.require(eventGroupByFieldField)
+}
+
+func (e *EventGroupBy) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventGroupBy
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventGroupBy(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventGroupBy) MarshalJSON() ([]byte, error) {
+	type embed EventGroupBy
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventGroupBy) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+// Defines the metric to be calculated for a column or chart.
+// Currently only count metric is supported for events.
+type EventMetric struct {
+	Type          string
+	Count         *EventCount
+	DistinctCount *EventDistinctCount
+}
+
+func (e *EventMetric) GetType() string {
+	if e == nil {
+		return ""
+	}
+	return e.Type
+}
+
+func (e *EventMetric) GetCount() *EventCount {
+	if e == nil {
+		return nil
+	}
+	return e.Count
+}
+
+func (e *EventMetric) GetDistinctCount() *EventDistinctCount {
+	if e == nil {
+		return nil
+	}
+	return e.DistinctCount
+}
+
+func (e *EventMetric) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	e.Type = unmarshaler.Type
+	if unmarshaler.Type == "" {
+		return fmt.Errorf("%T did not include discriminant type", e)
+	}
+	switch unmarshaler.Type {
+	case "count":
+		value := new(EventCount)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.Count = value
+	case "distinctCount":
+		value := new(EventDistinctCount)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.DistinctCount = value
+	}
+	return nil
+}
+
+func (e EventMetric) MarshalJSON() ([]byte, error) {
+	if err := e.validate(); err != nil {
+		return nil, err
+	}
+	if e.Count != nil {
+		return internal.MarshalJSONWithExtraProperty(e.Count, "type", "count")
+	}
+	if e.DistinctCount != nil {
+		return internal.MarshalJSONWithExtraProperty(e.DistinctCount, "type", "distinctCount")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", e)
+}
+
+type EventMetricVisitor interface {
+	VisitCount(*EventCount) error
+	VisitDistinctCount(*EventDistinctCount) error
+}
+
+func (e *EventMetric) Accept(visitor EventMetricVisitor) error {
+	if e.Count != nil {
+		return visitor.VisitCount(e.Count)
+	}
+	if e.DistinctCount != nil {
+		return visitor.VisitDistinctCount(e.DistinctCount)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", e)
+}
+
+func (e *EventMetric) validate() error {
+	if e == nil {
+		return fmt.Errorf("type %T is nil", e)
+	}
+	var fields []string
+	if e.Count != nil {
+		fields = append(fields, "count")
+	}
+	if e.DistinctCount != nil {
+		fields = append(fields, "distinctCount")
+	}
+	if len(fields) == 0 {
+		if e.Type != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", e, e.Type)
+		}
+		return fmt.Errorf("type %T is empty", e)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", e, fields)
+	}
+	if e.Type != "" {
+		field := fields[0]
+		if e.Type != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				e,
+				e.Type,
+				e,
+			)
+		}
+	}
+	return nil
+}
+
+var (
+	eventPieChartRequestFieldEventFilter = big.NewInt(1 << 0)
+	eventPieChartRequestFieldTimezone    = big.NewInt(1 << 1)
+	eventPieChartRequestFieldGroupBy     = big.NewInt(1 << 2)
+	eventPieChartRequestFieldMetric      = big.NewInt(1 << 3)
+)
+
+type EventPieChartRequest struct {
+	// Optional filter applied to refine the event data before processing.
+	EventFilter *EventFilter `json:"eventFilter,omitempty" url:"eventFilter,omitempty"`
+	// IANA timezone identifier (e.g., "America/Los_Angeles").
+	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
+	// otherwise UTC is used.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Field used to group data into slices for the pie chart.
+	GroupBy *EventGroupBy `json:"groupBy" url:"groupBy"`
+	// Metric defining the value for each pie slice, stored in the y-axis value.
+	Metric *EventMetric `json:"metric" url:"metric"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventPieChartRequest) GetEventFilter() *EventFilter {
+	if e == nil {
+		return nil
+	}
+	return e.EventFilter
+}
+
+func (e *EventPieChartRequest) GetTimezone() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Timezone
+}
+
+func (e *EventPieChartRequest) GetGroupBy() *EventGroupBy {
+	if e == nil {
+		return nil
+	}
+	return e.GroupBy
+}
+
+func (e *EventPieChartRequest) GetMetric() *EventMetric {
+	if e == nil {
+		return nil
+	}
+	return e.Metric
+}
+
+func (e *EventPieChartRequest) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventPieChartRequest) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetEventFilter sets the EventFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventPieChartRequest) SetEventFilter(eventFilter *EventFilter) {
+	e.EventFilter = eventFilter
+	e.require(eventPieChartRequestFieldEventFilter)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventPieChartRequest) SetTimezone(timezone *string) {
+	e.Timezone = timezone
+	e.require(eventPieChartRequestFieldTimezone)
+}
+
+// SetGroupBy sets the GroupBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventPieChartRequest) SetGroupBy(groupBy *EventGroupBy) {
+	e.GroupBy = groupBy
+	e.require(eventPieChartRequestFieldGroupBy)
+}
+
+// SetMetric sets the Metric field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventPieChartRequest) SetMetric(metric *EventMetric) {
+	e.Metric = metric
+	e.require(eventPieChartRequestFieldMetric)
+}
+
+func (e *EventPieChartRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventPieChartRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventPieChartRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventPieChartRequest) MarshalJSON() ([]byte, error) {
+	type embed EventPieChartRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventPieChartRequest) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventRowFieldData       = big.NewInt(1 << 0)
+	eventRowFieldIdentifier = big.NewInt(1 << 1)
+)
+
+type EventRow struct {
+	// The actual row data, where keys represent column headers and values contain the respective metric results.
+	Data map[string]*CellData `json:"data" url:"data"`
+	// A unique identifier for each row, consisting of field names mapped to their respective values.
+	// This includes time groupings and any specified field groupings.
+	Identifier map[EventField]*FieldValue `json:"identifier" url:"identifier"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventRow) GetData() map[string]*CellData {
+	if e == nil {
+		return nil
+	}
+	return e.Data
+}
+
+func (e *EventRow) GetIdentifier() map[EventField]*FieldValue {
+	if e == nil {
+		return nil
+	}
+	return e.Identifier
+}
+
+func (e *EventRow) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventRow) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventRow) SetData(data map[string]*CellData) {
+	e.Data = data
+	e.require(eventRowFieldData)
+}
+
+// SetIdentifier sets the Identifier field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventRow) SetIdentifier(identifier map[EventField]*FieldValue) {
+	e.Identifier = identifier
+	e.require(eventRowFieldIdentifier)
+}
+
+func (e *EventRow) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventRow
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventRow(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventRow) MarshalJSON() ([]byte, error) {
+	type embed EventRow
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventRow) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventTableRequestFieldEventFilter       = big.NewInt(1 << 0)
+	eventTableRequestFieldTimezone          = big.NewInt(1 << 1)
+	eventTableRequestFieldTimeGrouping      = big.NewInt(1 << 2)
+	eventTableRequestFieldFieldGroupings    = big.NewInt(1 << 3)
+	eventTableRequestFieldColumnDefinitions = big.NewInt(1 << 4)
+)
+
+type EventTableRequest struct {
+	// Optional filter applied to refine the event data before processing.
+	EventFilter *EventFilter `json:"eventFilter,omitempty" url:"eventFilter,omitempty"`
+	// IANA timezone identifier (e.g., "America/Los_Angeles").
+	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
+	// otherwise UTC is used.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Defines the time interval for grouping data. If specified, data is grouped accordingly based on the time they were created.
+	//
+	//	Example: If set to "DAY," data will be aggregated by day.
+	TimeGrouping *TimeInterval `json:"timeGrouping,omitempty" url:"timeGrouping,omitempty"`
+	// Specifies the fields by which data should be grouped. Each unique combination forms a row.
+	// If multiple fields are provided, the result is grouped by their unique value combinations.
+	// If empty, all data is aggregated into a single row.
+	// Note: The field CreatedAt should not be used here, all the time-based grouping should be done using the timeGrouping field.
+	FieldGroupings []*EventGroupBy `json:"fieldGroupings" url:"fieldGroupings"`
+	// Specifies the metrics to be displayed as columns.
+	// Column headers act as keys, with computed metric values as their mapped values.
+	// There needs to be at least one column definition in the table request.
+	ColumnDefinitions []*EventColumnDefinition `json:"columnDefinitions" url:"columnDefinitions"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventTableRequest) GetEventFilter() *EventFilter {
+	if e == nil {
+		return nil
+	}
+	return e.EventFilter
+}
+
+func (e *EventTableRequest) GetTimezone() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Timezone
+}
+
+func (e *EventTableRequest) GetTimeGrouping() *TimeInterval {
+	if e == nil {
+		return nil
+	}
+	return e.TimeGrouping
+}
+
+func (e *EventTableRequest) GetFieldGroupings() []*EventGroupBy {
+	if e == nil {
+		return nil
+	}
+	return e.FieldGroupings
+}
+
+func (e *EventTableRequest) GetColumnDefinitions() []*EventColumnDefinition {
+	if e == nil {
+		return nil
+	}
+	return e.ColumnDefinitions
+}
+
+func (e *EventTableRequest) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventTableRequest) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetEventFilter sets the EventFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableRequest) SetEventFilter(eventFilter *EventFilter) {
+	e.EventFilter = eventFilter
+	e.require(eventTableRequestFieldEventFilter)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableRequest) SetTimezone(timezone *string) {
+	e.Timezone = timezone
+	e.require(eventTableRequestFieldTimezone)
+}
+
+// SetTimeGrouping sets the TimeGrouping field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableRequest) SetTimeGrouping(timeGrouping *TimeInterval) {
+	e.TimeGrouping = timeGrouping
+	e.require(eventTableRequestFieldTimeGrouping)
+}
+
+// SetFieldGroupings sets the FieldGroupings field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableRequest) SetFieldGroupings(fieldGroupings []*EventGroupBy) {
+	e.FieldGroupings = fieldGroupings
+	e.require(eventTableRequestFieldFieldGroupings)
+}
+
+// SetColumnDefinitions sets the ColumnDefinitions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableRequest) SetColumnDefinitions(columnDefinitions []*EventColumnDefinition) {
+	e.ColumnDefinitions = columnDefinitions
+	e.require(eventTableRequestFieldColumnDefinitions)
+}
+
+func (e *EventTableRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventTableRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventTableRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventTableRequest) MarshalJSON() ([]byte, error) {
+	type embed EventTableRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventTableRequest) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventTableResponseFieldHeaders = big.NewInt(1 << 0)
+	eventTableResponseFieldRows    = big.NewInt(1 << 1)
+)
+
+type EventTableResponse struct {
+	// Column headers in the table, aligning with the column definitions specified in the request.
+	Headers []string `json:"headers" url:"headers"`
+	// The dataset rows, where each row represents a unique combination of grouping field values.
+	// The identifier map contains grouping field names mapped to their respective values.
+	// The data map contains column headers mapped to their respective metric values.
+	Rows []*EventRow `json:"rows" url:"rows"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventTableResponse) GetHeaders() []string {
+	if e == nil {
+		return nil
+	}
+	return e.Headers
+}
+
+func (e *EventTableResponse) GetRows() []*EventRow {
+	if e == nil {
+		return nil
+	}
+	return e.Rows
+}
+
+func (e *EventTableResponse) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventTableResponse) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetHeaders sets the Headers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableResponse) SetHeaders(headers []string) {
+	e.Headers = headers
+	e.require(eventTableResponseFieldHeaders)
+}
+
+// SetRows sets the Rows field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTableResponse) SetRows(rows []*EventRow) {
+	e.Rows = rows
+	e.require(eventTableResponseFieldRows)
+}
+
+func (e *EventTableResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventTableResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventTableResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventTableResponse) MarshalJSON() ([]byte, error) {
+	type embed EventTableResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventTableResponse) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
 	feedbackAnalyticsRequestFieldFeedbackFilter = big.NewInt(1 << 0)
 	feedbackAnalyticsRequestFieldTimezone       = big.NewInt(1 << 1)
 )
@@ -4503,7 +5975,7 @@ type FieldValue struct {
 	Long     int64
 	Range    *Range
 	Boolean  bool
-	EntityId *EntityResult
+	EntityID *EntityResult
 }
 
 func (f *FieldValue) GetType() string {
@@ -4555,11 +6027,11 @@ func (f *FieldValue) GetBoolean() bool {
 	return f.Boolean
 }
 
-func (f *FieldValue) GetEntityId() *EntityResult {
+func (f *FieldValue) GetEntityID() *EntityResult {
 	if f == nil {
 		return nil
 	}
-	return f.EntityId
+	return f.EntityID
 }
 
 func (f *FieldValue) UnmarshalJSON(data []byte) error {
@@ -4625,7 +6097,7 @@ func (f *FieldValue) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &value); err != nil {
 			return err
 		}
-		f.EntityId = value
+		f.EntityID = value
 	}
 	return nil
 }
@@ -4687,8 +6159,8 @@ func (f FieldValue) MarshalJSON() ([]byte, error) {
 		}
 		return json.Marshal(marshaler)
 	}
-	if f.EntityId != nil {
-		return internal.MarshalJSONWithExtraProperty(f.EntityId, "type", "entityId")
+	if f.EntityID != nil {
+		return internal.MarshalJSONWithExtraProperty(f.EntityID, "type", "entityId")
 	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", f)
 }
@@ -4700,7 +6172,7 @@ type FieldValueVisitor interface {
 	VisitLong(int64) error
 	VisitRange(*Range) error
 	VisitBoolean(bool) error
-	VisitEntityId(*EntityResult) error
+	VisitEntityID(*EntityResult) error
 }
 
 func (f *FieldValue) Accept(visitor FieldValueVisitor) error {
@@ -4722,8 +6194,8 @@ func (f *FieldValue) Accept(visitor FieldValueVisitor) error {
 	if f.Boolean != false {
 		return visitor.VisitBoolean(f.Boolean)
 	}
-	if f.EntityId != nil {
-		return visitor.VisitEntityId(f.EntityId)
+	if f.EntityID != nil {
+		return visitor.VisitEntityID(f.EntityID)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", f)
 }
@@ -4751,7 +6223,7 @@ func (f *FieldValue) validate() error {
 	if f.Boolean != false {
 		fields = append(fields, "boolean")
 	}
-	if f.EntityId != nil {
+	if f.EntityID != nil {
 		fields = append(fields, "entityId")
 	}
 	if len(fields) == 0 {

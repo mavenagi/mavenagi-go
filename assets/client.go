@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -62,13 +62,13 @@ func (c *Client) InitiateUpload(
 func (c *Client) CommitUpload(
 	ctx context.Context,
 	// The reference ID of the asset to commit (provided by the initiate call). All other entity ID fields are inferred from the API request.
-	assetReferenceId string,
+	assetReferenceID string,
 	request *mavenagigo.CommitAssetUploadRequest,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.CommitUpload(
 		ctx,
-		assetReferenceId,
+		assetReferenceID,
 		request,
 		opts...,
 	)

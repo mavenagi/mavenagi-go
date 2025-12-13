@@ -127,7 +127,7 @@ func (a *AgentPatchRequest) SetRejectQuestionsWithoutKnowledge(rejectQuestionsWi
 }
 
 var (
-	agentFieldAgentId               = big.NewInt(1 << 0)
+	agentFieldAgentID               = big.NewInt(1 << 0)
 	agentFieldName                  = big.NewInt(1 << 1)
 	agentFieldCreatedAt             = big.NewInt(1 << 2)
 	agentFieldEnvironment           = big.NewInt(1 << 3)
@@ -139,7 +139,7 @@ var (
 
 type Agent struct {
 	// ID that uniquely identifies this action
-	AgentId *EntityId `json:"agentId" url:"agentId"`
+	AgentID *EntityID `json:"agentId" url:"agentId"`
 	// The name of the agent.
 	Name string `json:"name" url:"name"`
 	// When the agent was created.
@@ -170,11 +170,11 @@ type Agent struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *Agent) GetAgentId() *EntityId {
+func (a *Agent) GetAgentID() *EntityID {
 	if a == nil {
 		return nil
 	}
-	return a.AgentId
+	return a.AgentID
 }
 
 func (a *Agent) GetName() string {
@@ -237,11 +237,11 @@ func (a *Agent) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetAgentId sets the AgentId field and marks it as non-optional;
+// SetAgentID sets the AgentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *Agent) SetAgentId(agentId *EntityId) {
-	a.AgentId = agentId
-	a.require(agentFieldAgentId)
+func (a *Agent) SetAgentID(agentID *EntityID) {
+	a.AgentID = agentID
+	a.require(agentFieldAgentID)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -1004,191 +1004,4 @@ func (c *CreateAgentRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
-}
-
-type PiiCategory string
-
-const (
-	PiiCategoryName                               PiiCategory = "Name"
-	PiiCategoryEmail                              PiiCategory = "Email"
-	PiiCategoryPhoneNumber                        PiiCategory = "PhoneNumber"
-	PiiCategoryStreetAddress                      PiiCategory = "StreetAddress"
-	PiiCategoryCreditCardNumber                   PiiCategory = "CreditCardNumber"
-	PiiCategoryUsBankAccountNumber                PiiCategory = "UsBankAccountNumber"
-	PiiCategoryUsSocialSecurityNumber             PiiCategory = "UsSocialSecurityNumber"
-	PiiCategoryUsUkPassportNumber                 PiiCategory = "UsUkPassportNumber"
-	PiiCategoryUsDriversLicenseNumber             PiiCategory = "UsDriversLicenseNumber"
-	PiiCategoryUsIndividualTaxpayerIdentification PiiCategory = "UsIndividualTaxpayerIdentification"
-	PiiCategoryDate                               PiiCategory = "Date"
-	PiiCategoryIpAddress                          PiiCategory = "IpAddress"
-	PiiCategoryUrl                                PiiCategory = "Url"
-	PiiCategoryAbaRoutingNumber                   PiiCategory = "AbaRoutingNumber"
-	PiiCategoryAge                                PiiCategory = "Age"
-	PiiCategorySwiftCode                          PiiCategory = "SwiftCode"
-	PiiCategoryAuBankAccountNumber                PiiCategory = "AuBankAccountNumber"
-	PiiCategoryAuBusinessNumber                   PiiCategory = "AuBusinessNumber"
-	PiiCategoryAuCompanyNumber                    PiiCategory = "AuCompanyNumber"
-	PiiCategoryAuDriversLicenseNumber             PiiCategory = "AuDriversLicenseNumber"
-	PiiCategoryAuMedicalAccountNumber             PiiCategory = "AuMedicalAccountNumber"
-	PiiCategoryAuPassportNumber                   PiiCategory = "AuPassportNumber"
-	PiiCategoryAuTaxFileNumber                    PiiCategory = "AuTaxFileNumber"
-	PiiCategoryCaBankAccountNumber                PiiCategory = "CaBankAccountNumber"
-	PiiCategoryCaDriversLicenseNumber             PiiCategory = "CaDriversLicenseNumber"
-	PiiCategoryCaHealthServiceNumber              PiiCategory = "CaHealthServiceNumber"
-	PiiCategoryCaPassportNumber                   PiiCategory = "CaPassportNumber"
-	PiiCategoryCaPersonalHealthIdentification     PiiCategory = "CaPersonalHealthIdentification"
-	PiiCategoryCaSocialInsuranceNumber            PiiCategory = "CaSocialInsuranceNumber"
-	PiiCategoryEsDni                              PiiCategory = "EsDni"
-	PiiCategoryEsSocialSecurityNumber             PiiCategory = "EsSocialSecurityNumber"
-	PiiCategoryEsTaxIdentificationNumber          PiiCategory = "EsTaxIdentificationNumber"
-	PiiCategoryEuDebitCardNumber                  PiiCategory = "EuDebitCardNumber"
-	PiiCategoryEuDriversLicenseNumber             PiiCategory = "EuDriversLicenseNumber"
-	PiiCategoryEuGpsCoordinates                   PiiCategory = "EuGpsCoordinates"
-	PiiCategoryEuNationalIdentificationNumber     PiiCategory = "EuNationalIdentificationNumber"
-	PiiCategoryEuPassportNumber                   PiiCategory = "EuPassportNumber"
-	PiiCategoryEuSocialSecurityNumber             PiiCategory = "EuSocialSecurityNumber"
-	PiiCategoryEuTaxIdentificationNumber          PiiCategory = "EuTaxIdentificationNumber"
-	PiiCategoryFrDriversLicenseNumber             PiiCategory = "FrDriversLicenseNumber"
-	PiiCategoryFrHealthInsuranceNumber            PiiCategory = "FrHealthInsuranceNumber"
-	PiiCategoryFrNationalId                       PiiCategory = "FrNationalId"
-	PiiCategoryFrPassportNumber                   PiiCategory = "FrPassportNumber"
-	PiiCategoryFrSocialSecurityNumber             PiiCategory = "FrSocialSecurityNumber"
-	PiiCategoryFrTaxIdentificationNumber          PiiCategory = "FrTaxIdentificationNumber"
-	PiiCategoryFrValueAddedTaxNumber              PiiCategory = "FrValueAddedTaxNumber"
-	PiiCategoryInternationalBankingAccountNumber  PiiCategory = "InternationalBankingAccountNumber"
-	PiiCategoryNzBankAccountNumber                PiiCategory = "NzBankAccountNumber"
-	PiiCategoryNzDriversLicenseNumber             PiiCategory = "NzDriversLicenseNumber"
-	PiiCategoryNzInlandRevenueNumber              PiiCategory = "NzInlandRevenueNumber"
-	PiiCategoryNzMinistryOfHealthNumber           PiiCategory = "NzMinistryOfHealthNumber"
-	PiiCategoryNzSocialWelfareNumber              PiiCategory = "NzSocialWelfareNumber"
-	PiiCategoryUkDriversLicenseNumber             PiiCategory = "UkDriversLicenseNumber"
-	PiiCategoryUkElectoralRollNumber              PiiCategory = "UkElectoralRollNumber"
-	PiiCategoryUkNationalHealthNumber             PiiCategory = "UkNationalHealthNumber"
-	PiiCategoryUkNationalInsuranceNumber          PiiCategory = "UkNationalInsuranceNumber"
-	PiiCategoryUkUniqueTaxpayerNumber             PiiCategory = "UkUniqueTaxpayerNumber"
-)
-
-func NewPiiCategoryFromString(s string) (PiiCategory, error) {
-	switch s {
-	case "Name":
-		return PiiCategoryName, nil
-	case "Email":
-		return PiiCategoryEmail, nil
-	case "PhoneNumber":
-		return PiiCategoryPhoneNumber, nil
-	case "StreetAddress":
-		return PiiCategoryStreetAddress, nil
-	case "CreditCardNumber":
-		return PiiCategoryCreditCardNumber, nil
-	case "UsBankAccountNumber":
-		return PiiCategoryUsBankAccountNumber, nil
-	case "UsSocialSecurityNumber":
-		return PiiCategoryUsSocialSecurityNumber, nil
-	case "UsUkPassportNumber":
-		return PiiCategoryUsUkPassportNumber, nil
-	case "UsDriversLicenseNumber":
-		return PiiCategoryUsDriversLicenseNumber, nil
-	case "UsIndividualTaxpayerIdentification":
-		return PiiCategoryUsIndividualTaxpayerIdentification, nil
-	case "Date":
-		return PiiCategoryDate, nil
-	case "IpAddress":
-		return PiiCategoryIpAddress, nil
-	case "Url":
-		return PiiCategoryUrl, nil
-	case "AbaRoutingNumber":
-		return PiiCategoryAbaRoutingNumber, nil
-	case "Age":
-		return PiiCategoryAge, nil
-	case "SwiftCode":
-		return PiiCategorySwiftCode, nil
-	case "AuBankAccountNumber":
-		return PiiCategoryAuBankAccountNumber, nil
-	case "AuBusinessNumber":
-		return PiiCategoryAuBusinessNumber, nil
-	case "AuCompanyNumber":
-		return PiiCategoryAuCompanyNumber, nil
-	case "AuDriversLicenseNumber":
-		return PiiCategoryAuDriversLicenseNumber, nil
-	case "AuMedicalAccountNumber":
-		return PiiCategoryAuMedicalAccountNumber, nil
-	case "AuPassportNumber":
-		return PiiCategoryAuPassportNumber, nil
-	case "AuTaxFileNumber":
-		return PiiCategoryAuTaxFileNumber, nil
-	case "CaBankAccountNumber":
-		return PiiCategoryCaBankAccountNumber, nil
-	case "CaDriversLicenseNumber":
-		return PiiCategoryCaDriversLicenseNumber, nil
-	case "CaHealthServiceNumber":
-		return PiiCategoryCaHealthServiceNumber, nil
-	case "CaPassportNumber":
-		return PiiCategoryCaPassportNumber, nil
-	case "CaPersonalHealthIdentification":
-		return PiiCategoryCaPersonalHealthIdentification, nil
-	case "CaSocialInsuranceNumber":
-		return PiiCategoryCaSocialInsuranceNumber, nil
-	case "EsDni":
-		return PiiCategoryEsDni, nil
-	case "EsSocialSecurityNumber":
-		return PiiCategoryEsSocialSecurityNumber, nil
-	case "EsTaxIdentificationNumber":
-		return PiiCategoryEsTaxIdentificationNumber, nil
-	case "EuDebitCardNumber":
-		return PiiCategoryEuDebitCardNumber, nil
-	case "EuDriversLicenseNumber":
-		return PiiCategoryEuDriversLicenseNumber, nil
-	case "EuGpsCoordinates":
-		return PiiCategoryEuGpsCoordinates, nil
-	case "EuNationalIdentificationNumber":
-		return PiiCategoryEuNationalIdentificationNumber, nil
-	case "EuPassportNumber":
-		return PiiCategoryEuPassportNumber, nil
-	case "EuSocialSecurityNumber":
-		return PiiCategoryEuSocialSecurityNumber, nil
-	case "EuTaxIdentificationNumber":
-		return PiiCategoryEuTaxIdentificationNumber, nil
-	case "FrDriversLicenseNumber":
-		return PiiCategoryFrDriversLicenseNumber, nil
-	case "FrHealthInsuranceNumber":
-		return PiiCategoryFrHealthInsuranceNumber, nil
-	case "FrNationalId":
-		return PiiCategoryFrNationalId, nil
-	case "FrPassportNumber":
-		return PiiCategoryFrPassportNumber, nil
-	case "FrSocialSecurityNumber":
-		return PiiCategoryFrSocialSecurityNumber, nil
-	case "FrTaxIdentificationNumber":
-		return PiiCategoryFrTaxIdentificationNumber, nil
-	case "FrValueAddedTaxNumber":
-		return PiiCategoryFrValueAddedTaxNumber, nil
-	case "InternationalBankingAccountNumber":
-		return PiiCategoryInternationalBankingAccountNumber, nil
-	case "NzBankAccountNumber":
-		return PiiCategoryNzBankAccountNumber, nil
-	case "NzDriversLicenseNumber":
-		return PiiCategoryNzDriversLicenseNumber, nil
-	case "NzInlandRevenueNumber":
-		return PiiCategoryNzInlandRevenueNumber, nil
-	case "NzMinistryOfHealthNumber":
-		return PiiCategoryNzMinistryOfHealthNumber, nil
-	case "NzSocialWelfareNumber":
-		return PiiCategoryNzSocialWelfareNumber, nil
-	case "UkDriversLicenseNumber":
-		return PiiCategoryUkDriversLicenseNumber, nil
-	case "UkElectoralRollNumber":
-		return PiiCategoryUkElectoralRollNumber, nil
-	case "UkNationalHealthNumber":
-		return PiiCategoryUkNationalHealthNumber, nil
-	case "UkNationalInsuranceNumber":
-		return PiiCategoryUkNationalInsuranceNumber, nil
-	case "UkUniqueTaxpayerNumber":
-		return PiiCategoryUkUniqueTaxpayerNumber, nil
-	}
-	var t PiiCategory
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (p PiiCategory) Ptr() *PiiCategory {
-	return &p
 }

@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")

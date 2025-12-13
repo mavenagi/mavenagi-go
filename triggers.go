@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	partialUpdateRequestFieldAppId = big.NewInt(1 << 0)
+	partialUpdateRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type PartialUpdateRequest struct {
 	// The App ID of the trigger to update. If not provided, the ID of the calling app will be used.
-	AppId *string               `json:"-" url:"appId,omitempty"`
+	AppID *string               `json:"-" url:"appId,omitempty"`
 	Body  *TriggerPartialUpdate `json:"-" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -29,11 +29,11 @@ func (p *PartialUpdateRequest) require(field *big.Int) {
 	p.explicitFields.Or(p.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (p *PartialUpdateRequest) SetAppId(appId *string) {
-	p.AppId = appId
-	p.require(partialUpdateRequestFieldAppId)
+func (p *PartialUpdateRequest) SetAppID(appID *string) {
+	p.AppID = appID
+	p.require(partialUpdateRequestFieldAppID)
 }
 
 func (p *PartialUpdateRequest) UnmarshalJSON(data []byte) error {
@@ -153,7 +153,7 @@ func (e *EventTriggerBase) String() string {
 var (
 	eventTriggerRequestFieldDescription = big.NewInt(1 << 0)
 	eventTriggerRequestFieldType        = big.NewInt(1 << 1)
-	eventTriggerRequestFieldTriggerId   = big.NewInt(1 << 2)
+	eventTriggerRequestFieldTriggerID   = big.NewInt(1 << 2)
 )
 
 type EventTriggerRequest struct {
@@ -167,7 +167,7 @@ type EventTriggerRequest struct {
 	// Feedback can not be modified, so the feedback trigger fires immediately after feedback is created.
 	Type EventTriggerType `json:"type" url:"type"`
 	// ID that uniquely identifies this event trigger
-	TriggerId *EntityIdBase `json:"triggerId" url:"triggerId"`
+	TriggerID *EntityIDBase `json:"triggerId" url:"triggerId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -190,11 +190,11 @@ func (e *EventTriggerRequest) GetType() EventTriggerType {
 	return e.Type
 }
 
-func (e *EventTriggerRequest) GetTriggerId() *EntityIdBase {
+func (e *EventTriggerRequest) GetTriggerID() *EntityIDBase {
 	if e == nil {
 		return nil
 	}
-	return e.TriggerId
+	return e.TriggerID
 }
 
 func (e *EventTriggerRequest) GetExtraProperties() map[string]interface{} {
@@ -222,11 +222,11 @@ func (e *EventTriggerRequest) SetType(type_ EventTriggerType) {
 	e.require(eventTriggerRequestFieldType)
 }
 
-// SetTriggerId sets the TriggerId field and marks it as non-optional;
+// SetTriggerID sets the TriggerID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerRequest) SetTriggerId(triggerId *EntityIdBase) {
-	e.TriggerId = triggerId
-	e.require(eventTriggerRequestFieldTriggerId)
+func (e *EventTriggerRequest) SetTriggerID(triggerID *EntityIDBase) {
+	e.TriggerID = triggerID
+	e.require(eventTriggerRequestFieldTriggerID)
 }
 
 func (e *EventTriggerRequest) UnmarshalJSON(data []byte) error {
@@ -271,7 +271,7 @@ func (e *EventTriggerRequest) String() string {
 var (
 	eventTriggerResponseFieldDescription = big.NewInt(1 << 0)
 	eventTriggerResponseFieldType        = big.NewInt(1 << 1)
-	eventTriggerResponseFieldTriggerId   = big.NewInt(1 << 2)
+	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 2)
 	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 3)
 )
 
@@ -286,7 +286,7 @@ type EventTriggerResponse struct {
 	// Feedback can not be modified, so the feedback trigger fires immediately after feedback is created.
 	Type EventTriggerType `json:"type" url:"type"`
 	// ID that uniquely identifies this event trigger
-	TriggerId *EntityId `json:"triggerId" url:"triggerId"`
+	TriggerID *EntityID `json:"triggerId" url:"triggerId"`
 	// Whether this trigger will be called by Maven.
 	Enabled bool `json:"enabled" url:"enabled"`
 
@@ -311,11 +311,11 @@ func (e *EventTriggerResponse) GetType() EventTriggerType {
 	return e.Type
 }
 
-func (e *EventTriggerResponse) GetTriggerId() *EntityId {
+func (e *EventTriggerResponse) GetTriggerID() *EntityID {
 	if e == nil {
 		return nil
 	}
-	return e.TriggerId
+	return e.TriggerID
 }
 
 func (e *EventTriggerResponse) GetEnabled() bool {
@@ -350,11 +350,11 @@ func (e *EventTriggerResponse) SetType(type_ EventTriggerType) {
 	e.require(eventTriggerResponseFieldType)
 }
 
-// SetTriggerId sets the TriggerId field and marks it as non-optional;
+// SetTriggerID sets the TriggerID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerResponse) SetTriggerId(triggerId *EntityId) {
-	e.TriggerId = triggerId
-	e.require(eventTriggerResponseFieldTriggerId)
+func (e *EventTriggerResponse) SetTriggerID(triggerID *EntityID) {
+	e.TriggerID = triggerID
+	e.require(eventTriggerResponseFieldTriggerID)
 }
 
 // SetEnabled sets the Enabled field and marks it as non-optional;

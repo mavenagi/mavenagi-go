@@ -207,16 +207,16 @@ func (i *InitiateAssetUploadRequest) String() string {
 }
 
 var (
-	initiateAssetUploadResponseFieldAssetId   = big.NewInt(1 << 0)
-	initiateAssetUploadResponseFieldUploadUrl = big.NewInt(1 << 1)
+	initiateAssetUploadResponseFieldAssetID   = big.NewInt(1 << 0)
+	initiateAssetUploadResponseFieldUploadURL = big.NewInt(1 << 1)
 	initiateAssetUploadResponseFieldExpiresAt = big.NewInt(1 << 2)
 )
 
 type InitiateAssetUploadResponse struct {
 	// The ID of the asset. Use this ID to commit the asset after upload.
-	AssetId *EntityIdBase `json:"assetId" url:"assetId"`
+	AssetID *EntityIDBase `json:"assetId" url:"assetId"`
 	// Pre-signed URL for file upload. Use this URL to upload the file directly to storage.
-	UploadUrl string `json:"uploadUrl" url:"uploadUrl"`
+	UploadURL string `json:"uploadUrl" url:"uploadUrl"`
 	// The expiration time for the upload URL
 	ExpiresAt time.Time `json:"expiresAt" url:"expiresAt"`
 
@@ -227,18 +227,18 @@ type InitiateAssetUploadResponse struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InitiateAssetUploadResponse) GetAssetId() *EntityIdBase {
+func (i *InitiateAssetUploadResponse) GetAssetID() *EntityIDBase {
 	if i == nil {
 		return nil
 	}
-	return i.AssetId
+	return i.AssetID
 }
 
-func (i *InitiateAssetUploadResponse) GetUploadUrl() string {
+func (i *InitiateAssetUploadResponse) GetUploadURL() string {
 	if i == nil {
 		return ""
 	}
-	return i.UploadUrl
+	return i.UploadURL
 }
 
 func (i *InitiateAssetUploadResponse) GetExpiresAt() time.Time {
@@ -259,18 +259,18 @@ func (i *InitiateAssetUploadResponse) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetAssetId sets the AssetId field and marks it as non-optional;
+// SetAssetID sets the AssetID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InitiateAssetUploadResponse) SetAssetId(assetId *EntityIdBase) {
-	i.AssetId = assetId
-	i.require(initiateAssetUploadResponseFieldAssetId)
+func (i *InitiateAssetUploadResponse) SetAssetID(assetID *EntityIDBase) {
+	i.AssetID = assetID
+	i.require(initiateAssetUploadResponseFieldAssetID)
 }
 
-// SetUploadUrl sets the UploadUrl field and marks it as non-optional;
+// SetUploadURL sets the UploadURL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InitiateAssetUploadResponse) SetUploadUrl(uploadUrl string) {
-	i.UploadUrl = uploadUrl
-	i.require(initiateAssetUploadResponseFieldUploadUrl)
+func (i *InitiateAssetUploadResponse) SetUploadURL(uploadURL string) {
+	i.UploadURL = uploadURL
+	i.require(initiateAssetUploadResponseFieldUploadURL)
 }
 
 // SetExpiresAt sets the ExpiresAt field and marks it as non-optional;

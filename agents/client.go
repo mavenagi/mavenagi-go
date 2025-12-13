@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -64,12 +64,12 @@ func (c *Client) Search(
 func (c *Client) List(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	opts ...option.RequestOption,
 ) ([]*mavenagigo.Agent, error) {
 	response, err := c.WithRawResponse.List(
 		ctx,
-		organizationReferenceId,
+		organizationReferenceID,
 		opts...,
 	)
 	if err != nil {
@@ -86,16 +86,16 @@ func (c *Client) List(
 func (c *Client) Create(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	request *mavenagigo.CreateAgentRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.Agent, error) {
 	response, err := c.WithRawResponse.Create(
 		ctx,
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 		request,
 		opts...,
 	)
@@ -109,15 +109,15 @@ func (c *Client) Create(
 func (c *Client) Get(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	opts ...option.RequestOption,
 ) (*mavenagigo.Agent, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 		opts...,
 	)
 	if err != nil {
@@ -135,16 +135,16 @@ func (c *Client) Get(
 func (c *Client) Patch(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	request *mavenagigo.AgentPatchRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.Agent, error) {
 	response, err := c.WithRawResponse.Patch(
 		ctx,
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 		request,
 		opts...,
 	)
@@ -162,15 +162,15 @@ func (c *Client) Patch(
 func (c *Client) Delete(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.Delete(
 		ctx,
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 		opts...,
 	)
 	if err != nil {

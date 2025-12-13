@@ -77,7 +77,7 @@ func (r *RawClient) Initialize(
 func (r *RawClient) Patch(
 	ctx context.Context,
 	// The ID of the conversation to patch
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.ConversationPatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ConversationResponse], error) {
@@ -89,7 +89,7 @@ func (r *RawClient) Patch(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -124,7 +124,7 @@ func (r *RawClient) Patch(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The ID of the conversation to get
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.ConversationGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ConversationResponse], error) {
@@ -136,7 +136,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v",
-		conversationId,
+		conversationID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -177,7 +177,7 @@ func (r *RawClient) Get(
 func (r *RawClient) Delete(
 	ctx context.Context,
 	// The ID of the conversation to delete
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.ConversationDeleteRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
@@ -189,7 +189,7 @@ func (r *RawClient) Delete(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v",
-		conversationId,
+		conversationID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -228,7 +228,7 @@ func (r *RawClient) Delete(
 func (r *RawClient) AppendNewMessages(
 	ctx context.Context,
 	// The ID of the conversation to append messages to
-	conversationId string,
+	conversationID string,
 	request []*mavenagigo.ConversationMessageRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ConversationResponse], error) {
@@ -240,7 +240,7 @@ func (r *RawClient) AppendNewMessages(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/messages",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -275,7 +275,7 @@ func (r *RawClient) AppendNewMessages(
 func (r *RawClient) Ask(
 	ctx context.Context,
 	// The ID of a new or existing conversation to use as context for the question
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.AskRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ConversationResponse], error) {
@@ -287,7 +287,7 @@ func (r *RawClient) Ask(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/ask",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -322,7 +322,7 @@ func (r *RawClient) Ask(
 func (r *RawClient) Categorize(
 	ctx context.Context,
 	// The ID of the conversation to categorize
-	conversationId string,
+	conversationID string,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.CategorizationResponse], error) {
 	options := core.NewRequestOptions(opts...)
@@ -333,7 +333,7 @@ func (r *RawClient) Categorize(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/categorize",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -409,7 +409,7 @@ func (r *RawClient) CreateFeedback(
 func (r *RawClient) SubmitActionForm(
 	ctx context.Context,
 	// The ID of a conversation the form being submitted belongs to
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.SubmitActionFormRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ConversationResponse], error) {
@@ -421,7 +421,7 @@ func (r *RawClient) SubmitActionForm(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/submit-form",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -456,7 +456,7 @@ func (r *RawClient) SubmitActionForm(
 func (r *RawClient) AddConversationMetadata(
 	ctx context.Context,
 	// The ID of a conversation the metadata being added belongs to
-	conversationId string,
+	conversationID string,
 	request map[string]string,
 	opts ...option.RequestOption,
 ) (*core.Response[map[string]string], error) {
@@ -468,7 +468,7 @@ func (r *RawClient) AddConversationMetadata(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/metadata",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -503,7 +503,7 @@ func (r *RawClient) AddConversationMetadata(
 func (r *RawClient) UpdateConversationMetadata(
 	ctx context.Context,
 	// The ID of the conversation to modify metadata for
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.UpdateMetadataRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ConversationMetadata], error) {
@@ -515,7 +515,7 @@ func (r *RawClient) UpdateConversationMetadata(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/metadata",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

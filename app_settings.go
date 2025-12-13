@@ -36,16 +36,16 @@ func (s *SearchAppSettingsRequest) SetIndex(index string) {
 }
 
 var (
-	appSettingsFieldOrganizationId = big.NewInt(1 << 0)
-	appSettingsFieldAgentId        = big.NewInt(1 << 1)
+	appSettingsFieldOrganizationID = big.NewInt(1 << 0)
+	appSettingsFieldAgentID        = big.NewInt(1 << 1)
 	appSettingsFieldSettings       = big.NewInt(1 << 2)
 )
 
 type AppSettings struct {
 	// The ID of an organization.
-	OrganizationId string `json:"organizationId" url:"organizationId"`
+	OrganizationID string `json:"organizationId" url:"organizationId"`
 	// The ID of an agent.
-	AgentId string `json:"agentId" url:"agentId"`
+	AgentID string `json:"agentId" url:"agentId"`
 	// The settings that were set during installation.
 	Settings map[string]interface{} `json:"settings" url:"settings"`
 
@@ -56,18 +56,18 @@ type AppSettings struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AppSettings) GetOrganizationId() string {
+func (a *AppSettings) GetOrganizationID() string {
 	if a == nil {
 		return ""
 	}
-	return a.OrganizationId
+	return a.OrganizationID
 }
 
-func (a *AppSettings) GetAgentId() string {
+func (a *AppSettings) GetAgentID() string {
 	if a == nil {
 		return ""
 	}
-	return a.AgentId
+	return a.AgentID
 }
 
 func (a *AppSettings) GetSettings() map[string]interface{} {
@@ -88,18 +88,18 @@ func (a *AppSettings) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetOrganizationId sets the OrganizationId field and marks it as non-optional;
+// SetOrganizationID sets the OrganizationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppSettings) SetOrganizationId(organizationId string) {
-	a.OrganizationId = organizationId
-	a.require(appSettingsFieldOrganizationId)
+func (a *AppSettings) SetOrganizationID(organizationID string) {
+	a.OrganizationID = organizationID
+	a.require(appSettingsFieldOrganizationID)
 }
 
-// SetAgentId sets the AgentId field and marks it as non-optional;
+// SetAgentID sets the AgentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppSettings) SetAgentId(agentId string) {
-	a.AgentId = agentId
-	a.require(appSettingsFieldAgentId)
+func (a *AppSettings) SetAgentID(agentID string) {
+	a.AgentID = agentID
+	a.require(appSettingsFieldAgentID)
 }
 
 // SetSettings sets the Settings field and marks it as non-optional;

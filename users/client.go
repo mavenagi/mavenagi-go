@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -64,12 +64,12 @@ func (c *Client) Search(
 func (c *Client) GetAgentUser(
 	ctx context.Context,
 	// The ID of the agent user to get.
-	agentUserId string,
+	agentUserID string,
 	opts ...option.RequestOption,
 ) (*mavenagigo.AgentUser, error) {
 	response, err := c.WithRawResponse.GetAgentUser(
 		ctx,
-		agentUserId,
+		agentUserID,
 		opts...,
 	)
 	if err != nil {
@@ -99,13 +99,13 @@ func (c *Client) CreateOrUpdate(
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the app user to get. All other entity ID fields are inferred from the request.
-	userId string,
+	userID string,
 	request *mavenagigo.UserGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.AppUserResponse, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		userId,
+		userID,
 		request,
 		opts...,
 	)
@@ -124,13 +124,13 @@ func (c *Client) Get(
 func (c *Client) Delete(
 	ctx context.Context,
 	// The reference ID of the app user to delete. All other entity ID fields are inferred from the request.
-	userId string,
+	userID string,
 	request *mavenagigo.UserDeleteRequest,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.Delete(
 		ctx,
-		userId,
+		userID,
 		request,
 		opts...,
 	)

@@ -75,7 +75,7 @@ func (r *RawClient) Search(
 func (r *RawClient) GetAgentUser(
 	ctx context.Context,
 	// The ID of the agent user to get.
-	agentUserId string,
+	agentUserID string,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.AgentUser], error) {
 	options := core.NewRequestOptions(opts...)
@@ -86,7 +86,7 @@ func (r *RawClient) GetAgentUser(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/agentusers/%v",
-		agentUserId,
+		agentUserID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -162,7 +162,7 @@ func (r *RawClient) CreateOrUpdate(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The reference ID of the app user to get. All other entity ID fields are inferred from the request.
-	userId string,
+	userID string,
 	request *mavenagigo.UserGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.AppUserResponse], error) {
@@ -174,7 +174,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/users/%v",
-		userId,
+		userID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -215,7 +215,7 @@ func (r *RawClient) Get(
 func (r *RawClient) Delete(
 	ctx context.Context,
 	// The reference ID of the app user to delete. All other entity ID fields are inferred from the request.
-	userId string,
+	userID string,
 	request *mavenagigo.UserDeleteRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
@@ -227,7 +227,7 @@ func (r *RawClient) Delete(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/users/%v",
-		userId,
+		userID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {

@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -77,13 +77,13 @@ func (c *Client) CreateOrUpdateKnowledgeBase(
 func (c *Client) GetKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to get. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeBaseResponse, error) {
 	response, err := c.WithRawResponse.GetKnowledgeBase(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -100,13 +100,13 @@ func (c *Client) GetKnowledgeBase(
 func (c *Client) RefreshKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to refresh. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseRefreshRequest,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.RefreshKnowledgeBase(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -123,13 +123,13 @@ func (c *Client) RefreshKnowledgeBase(
 func (c *Client) PatchKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBasePatchRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeBaseResponse, error) {
 	response, err := c.WithRawResponse.PatchKnowledgeBase(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -145,13 +145,13 @@ func (c *Client) PatchKnowledgeBase(
 func (c *Client) CreateKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to create a version for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseVersionRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeBaseVersion, error) {
 	response, err := c.WithRawResponse.CreateKnowledgeBaseVersion(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -165,13 +165,13 @@ func (c *Client) CreateKnowledgeBaseVersion(
 func (c *Client) FinalizeKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to finalize a version for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.FinalizeKnowledgeBaseVersionRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeBaseVersion, error) {
 	response, err := c.WithRawResponse.FinalizeKnowledgeBaseVersion(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -185,13 +185,13 @@ func (c *Client) FinalizeKnowledgeBaseVersion(
 func (c *Client) ListKnowledgeBaseVersions(
 	ctx context.Context,
 	// The reference ID of the knowledge base to list versions for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseVersionsListRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeBaseVersionsListResponse, error) {
 	response, err := c.WithRawResponse.ListKnowledgeBaseVersions(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -228,13 +228,13 @@ func (c *Client) SearchKnowledgeDocuments(
 func (c *Client) CreateKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base to create a document for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeDocumentRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeDocumentResponse, error) {
 	response, err := c.WithRawResponse.CreateKnowledgeDocument(
 		ctx,
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 		request,
 		opts...,
 	)
@@ -249,16 +249,16 @@ func (c *Client) CreateKnowledgeDocument(
 func (c *Client) DeleteKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base that contains the document to delete. All other entity ID fields are inferred from the request
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	// The reference ID of the knowledge document to delete. All other entity ID fields are inferred from the request.
-	knowledgeDocumentReferenceId string,
+	knowledgeDocumentReferenceID string,
 	request *mavenagigo.KnowledgeDeleteRequest,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.DeleteKnowledgeDocument(
 		ctx,
-		knowledgeBaseReferenceId,
-		knowledgeDocumentReferenceId,
+		knowledgeBaseReferenceID,
+		knowledgeDocumentReferenceID,
 		request,
 		opts...,
 	)
@@ -272,16 +272,16 @@ func (c *Client) DeleteKnowledgeDocument(
 func (c *Client) GetKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base version that contains the document. All other entity ID fields are inferred from the request.
-	knowledgeBaseVersionReferenceId string,
+	knowledgeBaseVersionReferenceID string,
 	// The reference ID of the knowledge document to get. All other entity ID fields are inferred from the request.
-	knowledgeDocumentReferenceId string,
+	knowledgeDocumentReferenceID string,
 	request *mavenagigo.KnowledgeDocumentGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeDocumentResponse, error) {
 	response, err := c.WithRawResponse.GetKnowledgeDocument(
 		ctx,
-		knowledgeBaseVersionReferenceId,
-		knowledgeDocumentReferenceId,
+		knowledgeBaseVersionReferenceID,
+		knowledgeDocumentReferenceID,
 		request,
 		opts...,
 	)
@@ -300,16 +300,16 @@ func (c *Client) GetKnowledgeDocument(
 func (c *Client) PatchKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	// The reference ID of the knowledge document to patch.
-	knowledgeDocumentReferenceId string,
+	knowledgeDocumentReferenceID string,
 	request *mavenagigo.KnowledgeDocumentPatchRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.KnowledgeDocumentResponse, error) {
 	response, err := c.WithRawResponse.PatchKnowledgeDocument(
 		ctx,
-		knowledgeBaseReferenceId,
-		knowledgeDocumentReferenceId,
+		knowledgeBaseReferenceID,
+		knowledgeDocumentReferenceID,
 		request,
 		opts...,
 	)

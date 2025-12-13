@@ -111,8 +111,8 @@ func TestUsersCreateOrUpdateWithWireMock(
 		),
 	)
 	request := &mavenagigo.AppUserRequest{
-		UserId: &mavenagigo.EntityIdBase{
-			ReferenceId: "user-0",
+		UserID: &mavenagigo.EntityIDBase{
+			ReferenceID: "user-0",
 		},
 		Identifiers: []*mavenagigo.AppUserIdentifier{
 			&mavenagigo.AppUserIdentifier{

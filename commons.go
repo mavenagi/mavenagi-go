@@ -414,7 +414,7 @@ func (a *ActionExecutionParamValue) validate() error {
 }
 
 var (
-	actionFormFieldFieldId          = big.NewInt(1 << 0)
+	actionFormFieldFieldID          = big.NewInt(1 << 0)
 	actionFormFieldFieldLabel       = big.NewInt(1 << 1)
 	actionFormFieldFieldDescription = big.NewInt(1 << 2)
 	actionFormFieldFieldRequired    = big.NewInt(1 << 3)
@@ -425,7 +425,7 @@ var (
 
 type ActionFormField struct {
 	// The ID field should be used as the key in the `submitActionForm` API.
-	Id string `json:"id" url:"id"`
+	ID string `json:"id" url:"id"`
 	// The title of the field to show on the form. Provided in the user's language.
 	Label string `json:"label" url:"label"`
 	// A longer description of the field which should be shown in smaller text near the label. Provided in the user's language.
@@ -446,11 +446,11 @@ type ActionFormField struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *ActionFormField) GetId() string {
+func (a *ActionFormField) GetID() string {
 	if a == nil {
 		return ""
 	}
-	return a.Id
+	return a.ID
 }
 
 func (a *ActionFormField) GetLabel() string {
@@ -506,11 +506,11 @@ func (a *ActionFormField) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionFormField) SetId(id string) {
-	a.Id = id
-	a.require(actionFormFieldFieldId)
+func (a *ActionFormField) SetID(id string) {
+	a.ID = id
+	a.require(actionFormFieldFieldID)
 }
 
 // SetLabel sets the Label field and marks it as non-optional;
@@ -595,9 +595,9 @@ func (a *ActionFormField) String() string {
 }
 
 var (
-	actionOAuthConfigurationFieldAuthorizationUrl = big.NewInt(1 << 0)
-	actionOAuthConfigurationFieldTokenUrl         = big.NewInt(1 << 1)
-	actionOAuthConfigurationFieldClientId         = big.NewInt(1 << 2)
+	actionOAuthConfigurationFieldAuthorizationURL = big.NewInt(1 << 0)
+	actionOAuthConfigurationFieldTokenURL         = big.NewInt(1 << 1)
+	actionOAuthConfigurationFieldClientID         = big.NewInt(1 << 2)
 	actionOAuthConfigurationFieldClientSecret     = big.NewInt(1 << 3)
 	actionOAuthConfigurationFieldScopes           = big.NewInt(1 << 4)
 	actionOAuthConfigurationFieldExtraAuthParams  = big.NewInt(1 << 5)
@@ -605,9 +605,9 @@ var (
 )
 
 type ActionOAuthConfiguration struct {
-	AuthorizationUrl string            `json:"authorizationUrl" url:"authorizationUrl"`
-	TokenUrl         string            `json:"tokenUrl" url:"tokenUrl"`
-	ClientId         string            `json:"clientId" url:"clientId"`
+	AuthorizationURL string            `json:"authorizationUrl" url:"authorizationUrl"`
+	TokenURL         string            `json:"tokenUrl" url:"tokenUrl"`
+	ClientID         string            `json:"clientId" url:"clientId"`
 	ClientSecret     string            `json:"clientSecret" url:"clientSecret"`
 	Scopes           []string          `json:"scopes" url:"scopes"`
 	ExtraAuthParams  map[string]string `json:"extraAuthParams,omitempty" url:"extraAuthParams,omitempty"`
@@ -620,25 +620,25 @@ type ActionOAuthConfiguration struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *ActionOAuthConfiguration) GetAuthorizationUrl() string {
+func (a *ActionOAuthConfiguration) GetAuthorizationURL() string {
 	if a == nil {
 		return ""
 	}
-	return a.AuthorizationUrl
+	return a.AuthorizationURL
 }
 
-func (a *ActionOAuthConfiguration) GetTokenUrl() string {
+func (a *ActionOAuthConfiguration) GetTokenURL() string {
 	if a == nil {
 		return ""
 	}
-	return a.TokenUrl
+	return a.TokenURL
 }
 
-func (a *ActionOAuthConfiguration) GetClientId() string {
+func (a *ActionOAuthConfiguration) GetClientID() string {
 	if a == nil {
 		return ""
 	}
-	return a.ClientId
+	return a.ClientID
 }
 
 func (a *ActionOAuthConfiguration) GetClientSecret() string {
@@ -680,25 +680,25 @@ func (a *ActionOAuthConfiguration) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetAuthorizationUrl sets the AuthorizationUrl field and marks it as non-optional;
+// SetAuthorizationURL sets the AuthorizationURL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionOAuthConfiguration) SetAuthorizationUrl(authorizationUrl string) {
-	a.AuthorizationUrl = authorizationUrl
-	a.require(actionOAuthConfigurationFieldAuthorizationUrl)
+func (a *ActionOAuthConfiguration) SetAuthorizationURL(authorizationURL string) {
+	a.AuthorizationURL = authorizationURL
+	a.require(actionOAuthConfigurationFieldAuthorizationURL)
 }
 
-// SetTokenUrl sets the TokenUrl field and marks it as non-optional;
+// SetTokenURL sets the TokenURL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionOAuthConfiguration) SetTokenUrl(tokenUrl string) {
-	a.TokenUrl = tokenUrl
-	a.require(actionOAuthConfigurationFieldTokenUrl)
+func (a *ActionOAuthConfiguration) SetTokenURL(tokenURL string) {
+	a.TokenURL = tokenURL
+	a.require(actionOAuthConfigurationFieldTokenURL)
 }
 
-// SetClientId sets the ClientId field and marks it as non-optional;
+// SetClientID sets the ClientID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionOAuthConfiguration) SetClientId(clientId string) {
-	a.ClientId = clientId
-	a.require(actionOAuthConfigurationFieldClientId)
+func (a *ActionOAuthConfiguration) SetClientID(clientID string) {
+	a.ClientID = clientID
+	a.require(actionOAuthConfigurationFieldClientID)
 }
 
 // SetClientSecret sets the ClientSecret field and marks it as non-optional;
@@ -769,7 +769,7 @@ func (a *ActionOAuthConfiguration) String() string {
 }
 
 var (
-	actionParameterFieldId                 = big.NewInt(1 << 0)
+	actionParameterFieldID                 = big.NewInt(1 << 0)
 	actionParameterFieldLabel              = big.NewInt(1 << 1)
 	actionParameterFieldDescription        = big.NewInt(1 << 2)
 	actionParameterFieldRequired           = big.NewInt(1 << 3)
@@ -782,7 +782,7 @@ var (
 
 type ActionParameter struct {
 	// The ID field will be used when parameters are supplied to `executeAction`.
-	Id string `json:"id" url:"id"`
+	ID string `json:"id" url:"id"`
 	// The title of the field that will be shown on action forms.
 	Label string `json:"label" url:"label"`
 	// A longer description of the field which will be shown in smaller text near the label on action forms.
@@ -820,11 +820,11 @@ type ActionParameter struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *ActionParameter) GetId() string {
+func (a *ActionParameter) GetID() string {
 	if a == nil {
 		return ""
 	}
-	return a.Id
+	return a.ID
 }
 
 func (a *ActionParameter) GetLabel() string {
@@ -894,11 +894,11 @@ func (a *ActionParameter) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionParameter) SetId(id string) {
-	a.Id = id
-	a.require(actionParameterFieldId)
+func (a *ActionParameter) SetID(id string) {
+	a.ID = id
+	a.require(actionParameterFieldID)
 }
 
 // SetLabel sets the Label field and marks it as non-optional;
@@ -1064,10 +1064,10 @@ var (
 	actionResponseFieldPrecondition            = big.NewInt(1 << 4)
 	actionResponseFieldUserFormParameters      = big.NewInt(1 << 5)
 	actionResponseFieldLanguage                = big.NewInt(1 << 6)
-	actionResponseFieldActionId                = big.NewInt(1 << 7)
+	actionResponseFieldActionID                = big.NewInt(1 << 7)
 	actionResponseFieldInstructions            = big.NewInt(1 << 8)
 	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 9)
-	actionResponseFieldSegmentId               = big.NewInt(1 << 10)
+	actionResponseFieldSegmentID               = big.NewInt(1 << 10)
 	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 11)
 	actionResponseFieldDeleted                 = big.NewInt(1 << 12)
 )
@@ -1088,7 +1088,7 @@ type ActionResponse struct {
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// ID that uniquely identifies this action
-	ActionId *EntityId `json:"actionId" url:"actionId"`
+	ActionID *EntityID `json:"actionId" url:"actionId"`
 	// The instructions given to the LLM when determining whether to execute the action.
 	// This field defaults to the `description` field if not provided. Use the `patch` API to update.
 	Instructions *string `json:"instructions,omitempty" url:"instructions,omitempty"`
@@ -1101,7 +1101,7 @@ type ActionResponse struct {
 	// The IDs of the segment that must be matched for the action to be relevant to a conversation.
 	// Segments are replacing inline preconditions - an Action may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
-	SegmentId *EntityId `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
 	// A human-readable explanation of the precondition associated with this action, if present.
 	PreconditionExplanation *string `json:"preconditionExplanation,omitempty" url:"preconditionExplanation,omitempty"`
 	// Whether the action has been deleted. Deleted actions will not sent to the LLM nor returned in search results.
@@ -1163,11 +1163,11 @@ func (a *ActionResponse) GetLanguage() *string {
 	return a.Language
 }
 
-func (a *ActionResponse) GetActionId() *EntityId {
+func (a *ActionResponse) GetActionID() *EntityID {
 	if a == nil {
 		return nil
 	}
-	return a.ActionId
+	return a.ActionID
 }
 
 func (a *ActionResponse) GetInstructions() *string {
@@ -1184,11 +1184,11 @@ func (a *ActionResponse) GetLlmInclusionStatus() LlmInclusionStatus {
 	return a.LlmInclusionStatus
 }
 
-func (a *ActionResponse) GetSegmentId() *EntityId {
+func (a *ActionResponse) GetSegmentID() *EntityID {
 	if a == nil {
 		return nil
 	}
-	return a.SegmentId
+	return a.SegmentID
 }
 
 func (a *ActionResponse) GetPreconditionExplanation() *string {
@@ -1265,11 +1265,11 @@ func (a *ActionResponse) SetLanguage(language *string) {
 	a.require(actionResponseFieldLanguage)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionResponse) SetActionId(actionId *EntityId) {
-	a.ActionId = actionId
-	a.require(actionResponseFieldActionId)
+func (a *ActionResponse) SetActionID(actionID *EntityID) {
+	a.ActionID = actionID
+	a.require(actionResponseFieldActionID)
 }
 
 // SetInstructions sets the Instructions field and marks it as non-optional;
@@ -1286,11 +1286,11 @@ func (a *ActionResponse) SetLlmInclusionStatus(llmInclusionStatus LlmInclusionSt
 	a.require(actionResponseFieldLlmInclusionStatus)
 }
 
-// SetSegmentId sets the SegmentId field and marks it as non-optional;
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionResponse) SetSegmentId(segmentId *EntityId) {
-	a.SegmentId = segmentId
-	a.require(actionResponseFieldSegmentId)
+func (a *ActionResponse) SetSegmentID(segmentID *EntityID) {
+	a.SegmentID = segmentID
+	a.require(actionResponseFieldSegmentID)
 }
 
 // SetPreconditionExplanation sets the PreconditionExplanation field and marks it as non-optional;
@@ -1348,14 +1348,14 @@ func (a *ActionResponse) String() string {
 
 var (
 	appPreconditionFieldOperator = big.NewInt(1 << 0)
-	appPreconditionFieldAppId    = big.NewInt(1 << 1)
+	appPreconditionFieldAppID    = big.NewInt(1 << 1)
 )
 
 type AppPrecondition struct {
 	// Operator to apply to this precondition
 	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
 	// Match only conversations created by this appId
-	AppId string `json:"appId" url:"appId"`
+	AppID string `json:"appId" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1371,11 +1371,11 @@ func (a *AppPrecondition) GetOperator() *PreconditionOperator {
 	return a.Operator
 }
 
-func (a *AppPrecondition) GetAppId() string {
+func (a *AppPrecondition) GetAppID() string {
 	if a == nil {
 		return ""
 	}
-	return a.AppId
+	return a.AppID
 }
 
 func (a *AppPrecondition) GetExtraProperties() map[string]interface{} {
@@ -1396,11 +1396,11 @@ func (a *AppPrecondition) SetOperator(operator *PreconditionOperator) {
 	a.require(appPreconditionFieldOperator)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppPrecondition) SetAppId(appId string) {
-	a.AppId = appId
-	a.require(appPreconditionFieldAppId)
+func (a *AppPrecondition) SetAppID(appID string) {
+	a.AppID = appID
+	a.require(appPreconditionFieldAppID)
 }
 
 func (a *AppPrecondition) UnmarshalJSON(data []byte) error {
@@ -1657,7 +1657,7 @@ func (a AppUserIdentifyingPropertyType) Ptr() *AppUserIdentifyingPropertyType {
 var (
 	appUserRequestFieldIdentifiers = big.NewInt(1 << 0)
 	appUserRequestFieldData        = big.NewInt(1 << 1)
-	appUserRequestFieldUserId      = big.NewInt(1 << 2)
+	appUserRequestFieldUserID      = big.NewInt(1 << 2)
 )
 
 type AppUserRequest struct {
@@ -1665,7 +1665,7 @@ type AppUserRequest struct {
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
 	Data        map[string]*UserData `json:"data" url:"data"`
 	// ID that uniquely identifies this app user
-	UserId *EntityIdBase `json:"userId" url:"userId"`
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1688,11 +1688,11 @@ func (a *AppUserRequest) GetData() map[string]*UserData {
 	return a.Data
 }
 
-func (a *AppUserRequest) GetUserId() *EntityIdBase {
+func (a *AppUserRequest) GetUserID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.UserId
+	return a.UserID
 }
 
 func (a *AppUserRequest) GetExtraProperties() map[string]interface{} {
@@ -1720,11 +1720,11 @@ func (a *AppUserRequest) SetData(data map[string]*UserData) {
 	a.require(appUserRequestFieldData)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppUserRequest) SetUserId(userId *EntityIdBase) {
-	a.UserId = userId
-	a.require(appUserRequestFieldUserId)
+func (a *AppUserRequest) SetUserID(userID *EntityIDBase) {
+	a.UserID = userID
+	a.require(appUserRequestFieldUserID)
 }
 
 func (a *AppUserRequest) UnmarshalJSON(data []byte) error {
@@ -1769,8 +1769,8 @@ func (a *AppUserRequest) String() string {
 var (
 	appUserResponseFieldIdentifiers     = big.NewInt(1 << 0)
 	appUserResponseFieldData            = big.NewInt(1 << 1)
-	appUserResponseFieldUserId          = big.NewInt(1 << 2)
-	appUserResponseFieldAgentUserId     = big.NewInt(1 << 3)
+	appUserResponseFieldUserID          = big.NewInt(1 << 2)
+	appUserResponseFieldAgentUserID     = big.NewInt(1 << 3)
 	appUserResponseFieldAllUserData     = big.NewInt(1 << 4)
 	appUserResponseFieldDefaultUserData = big.NewInt(1 << 5)
 	appUserResponseFieldAgentUserData   = big.NewInt(1 << 6)
@@ -1781,9 +1781,9 @@ type AppUserResponse struct {
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
 	Data        map[string]*UserData `json:"data" url:"data"`
 	// ID that uniquely identifies this user
-	UserId *EntityId `json:"userId" url:"userId"`
+	UserID *EntityID `json:"userId" url:"userId"`
 	// The ID of the agent user (merged view) that this app user is associated with
-	AgentUserId string `json:"agentUserId" url:"agentUserId"`
+	AgentUserID string `json:"agentUserId" url:"agentUserId"`
 	// Data from all apps
 	AllUserData map[string]map[string]string `json:"allUserData" url:"allUserData"`
 	// Default data for this user
@@ -1812,18 +1812,18 @@ func (a *AppUserResponse) GetData() map[string]*UserData {
 	return a.Data
 }
 
-func (a *AppUserResponse) GetUserId() *EntityId {
+func (a *AppUserResponse) GetUserID() *EntityID {
 	if a == nil {
 		return nil
 	}
-	return a.UserId
+	return a.UserID
 }
 
-func (a *AppUserResponse) GetAgentUserId() string {
+func (a *AppUserResponse) GetAgentUserID() string {
 	if a == nil {
 		return ""
 	}
-	return a.AgentUserId
+	return a.AgentUserID
 }
 
 func (a *AppUserResponse) GetAllUserData() map[string]map[string]string {
@@ -1872,18 +1872,18 @@ func (a *AppUserResponse) SetData(data map[string]*UserData) {
 	a.require(appUserResponseFieldData)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppUserResponse) SetUserId(userId *EntityId) {
-	a.UserId = userId
-	a.require(appUserResponseFieldUserId)
+func (a *AppUserResponse) SetUserID(userID *EntityID) {
+	a.UserID = userID
+	a.require(appUserResponseFieldUserID)
 }
 
-// SetAgentUserId sets the AgentUserId field and marks it as non-optional;
+// SetAgentUserID sets the AgentUserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppUserResponse) SetAgentUserId(agentUserId string) {
-	a.AgentUserId = agentUserId
-	a.require(appUserResponseFieldAgentUserId)
+func (a *AppUserResponse) SetAgentUserID(agentUserID string) {
+	a.AgentUserID = agentUserID
+	a.require(appUserResponseFieldAgentUserID)
 }
 
 // SetAllUserData sets the AllUserData field and marks it as non-optional;
@@ -1962,7 +1962,7 @@ var (
 	attachmentRequestFieldType    = big.NewInt(1 << 0)
 	attachmentRequestFieldName    = big.NewInt(1 << 1)
 	attachmentRequestFieldContent = big.NewInt(1 << 2)
-	attachmentRequestFieldAssetId = big.NewInt(1 << 3)
+	attachmentRequestFieldAssetID = big.NewInt(1 << 3)
 )
 
 type AttachmentRequest struct {
@@ -1994,7 +1994,7 @@ type AttachmentRequest struct {
 	// Inline attachment data, up to 5MB.
 	Content *[]byte `json:"content,omitempty" url:"content,omitempty"`
 	// The ID of an asynchronously uploaded asset.
-	AssetId *EntityIdBase `json:"assetId,omitempty" url:"assetId,omitempty"`
+	AssetID *EntityIDBase `json:"assetId,omitempty" url:"assetId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2024,11 +2024,11 @@ func (a *AttachmentRequest) GetContent() *[]byte {
 	return a.Content
 }
 
-func (a *AttachmentRequest) GetAssetId() *EntityIdBase {
+func (a *AttachmentRequest) GetAssetID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.AssetId
+	return a.AssetID
 }
 
 func (a *AttachmentRequest) GetExtraProperties() map[string]interface{} {
@@ -2063,11 +2063,11 @@ func (a *AttachmentRequest) SetContent(content *[]byte) {
 	a.require(attachmentRequestFieldContent)
 }
 
-// SetAssetId sets the AssetId field and marks it as non-optional;
+// SetAssetID sets the AssetID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AttachmentRequest) SetAssetId(assetId *EntityIdBase) {
-	a.AssetId = assetId
-	a.require(attachmentRequestFieldAssetId)
+func (a *AttachmentRequest) SetAssetID(assetID *EntityIDBase) {
+	a.AssetID = assetID
+	a.require(attachmentRequestFieldAssetID)
 }
 
 func (a *AttachmentRequest) UnmarshalJSON(data []byte) error {
@@ -2112,7 +2112,7 @@ func (a *AttachmentRequest) String() string {
 var (
 	attachmentResponseFieldType      = big.NewInt(1 << 0)
 	attachmentResponseFieldName      = big.NewInt(1 << 1)
-	attachmentResponseFieldUrl       = big.NewInt(1 << 2)
+	attachmentResponseFieldURL       = big.NewInt(1 << 2)
 	attachmentResponseFieldSizeBytes = big.NewInt(1 << 3)
 	attachmentResponseFieldStatus    = big.NewInt(1 << 4)
 )
@@ -2144,7 +2144,7 @@ type AttachmentResponse struct {
 	// An optional name for the attachment.
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
 	// The URL to access the attachment, The URL will be valid for 20 minutes. Only present when status is `ACCEPTED`.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The size of the attachment in bytes
 	SizeBytes *int64 `json:"sizeBytes,omitempty" url:"sizeBytes,omitempty"`
 	// The processing status of the attachment.
@@ -2171,11 +2171,11 @@ func (a *AttachmentResponse) GetName() *string {
 	return a.Name
 }
 
-func (a *AttachmentResponse) GetUrl() *string {
+func (a *AttachmentResponse) GetURL() *string {
 	if a == nil {
 		return nil
 	}
-	return a.Url
+	return a.URL
 }
 
 func (a *AttachmentResponse) GetSizeBytes() *int64 {
@@ -2217,11 +2217,11 @@ func (a *AttachmentResponse) SetName(name *string) {
 	a.require(attachmentResponseFieldName)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AttachmentResponse) SetUrl(url *string) {
-	a.Url = url
-	a.require(attachmentResponseFieldUrl)
+func (a *AttachmentResponse) SetURL(url *string) {
+	a.URL = url
+	a.require(attachmentResponseFieldURL)
 }
 
 // SetSizeBytes sets the SizeBytes field and marks it as non-optional;
@@ -2425,13 +2425,13 @@ func (b *BaseAttachment) String() string {
 var (
 	baseConversationResponseFieldResponseConfig    = big.NewInt(1 << 0)
 	baseConversationResponseFieldSubject           = big.NewInt(1 << 1)
-	baseConversationResponseFieldUrl               = big.NewInt(1 << 2)
+	baseConversationResponseFieldURL               = big.NewInt(1 << 2)
 	baseConversationResponseFieldCreatedAt         = big.NewInt(1 << 3)
 	baseConversationResponseFieldUpdatedAt         = big.NewInt(1 << 4)
 	baseConversationResponseFieldTags              = big.NewInt(1 << 5)
 	baseConversationResponseFieldMetadata          = big.NewInt(1 << 6)
 	baseConversationResponseFieldAllMetadata       = big.NewInt(1 << 7)
-	baseConversationResponseFieldConversationId    = big.NewInt(1 << 8)
+	baseConversationResponseFieldConversationID    = big.NewInt(1 << 8)
 	baseConversationResponseFieldAnalysis          = big.NewInt(1 << 9)
 	baseConversationResponseFieldSummary           = big.NewInt(1 << 10)
 	baseConversationResponseFieldDeleted           = big.NewInt(1 << 11)
@@ -2446,7 +2446,7 @@ type BaseConversationResponse struct {
 	// The subject of the conversation
 	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
 	// The url of the conversation
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The date and time the conversation was created
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
@@ -2458,7 +2458,7 @@ type BaseConversationResponse struct {
 	// All metadata for the conversation. Keyed by appId.
 	AllMetadata map[string]map[string]string `json:"allMetadata" url:"allMetadata"`
 	// The ID that uniquely identifies this conversation
-	ConversationId *EntityId `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityID `json:"conversationId" url:"conversationId"`
 	// An analysis of the conversation. Fields are generated by Maven via an analysis of user messages. This object is calculated on a delay. Fields will not be up to date on ask requests.
 	Analysis *ConversationAnalysis `json:"analysis" url:"analysis"`
 	// A summary of the conversation. Fields are calculated from conversation data. Unlike analysis, all fields can be derived from other data available in the API. This object is provided as a convenience and is calculated on a delay. Fields will not be up to date on ask requests.
@@ -2497,11 +2497,11 @@ func (b *BaseConversationResponse) GetSubject() *string {
 	return b.Subject
 }
 
-func (b *BaseConversationResponse) GetUrl() *string {
+func (b *BaseConversationResponse) GetURL() *string {
 	if b == nil {
 		return nil
 	}
-	return b.Url
+	return b.URL
 }
 
 func (b *BaseConversationResponse) GetCreatedAt() *time.Time {
@@ -2539,11 +2539,11 @@ func (b *BaseConversationResponse) GetAllMetadata() map[string]map[string]string
 	return b.AllMetadata
 }
 
-func (b *BaseConversationResponse) GetConversationId() *EntityId {
+func (b *BaseConversationResponse) GetConversationID() *EntityID {
 	if b == nil {
 		return nil
 	}
-	return b.ConversationId
+	return b.ConversationID
 }
 
 func (b *BaseConversationResponse) GetAnalysis() *ConversationAnalysis {
@@ -2613,11 +2613,11 @@ func (b *BaseConversationResponse) SetSubject(subject *string) {
 	b.require(baseConversationResponseFieldSubject)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BaseConversationResponse) SetUrl(url *string) {
-	b.Url = url
-	b.require(baseConversationResponseFieldUrl)
+func (b *BaseConversationResponse) SetURL(url *string) {
+	b.URL = url
+	b.require(baseConversationResponseFieldURL)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -2655,11 +2655,11 @@ func (b *BaseConversationResponse) SetAllMetadata(allMetadata map[string]map[str
 	b.require(baseConversationResponseFieldAllMetadata)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BaseConversationResponse) SetConversationId(conversationId *EntityId) {
-	b.ConversationId = conversationId
-	b.require(baseConversationResponseFieldConversationId)
+func (b *BaseConversationResponse) SetConversationID(conversationID *EntityID) {
+	b.ConversationID = conversationID
+	b.require(baseConversationResponseFieldConversationID)
 }
 
 // SetAnalysis sets the Analysis field and marks it as non-optional;
@@ -2872,7 +2872,7 @@ var (
 	baseSearchRequestFieldPage     = big.NewInt(1 << 0)
 	baseSearchRequestFieldSize     = big.NewInt(1 << 1)
 	baseSearchRequestFieldSortDesc = big.NewInt(1 << 2)
-	baseSearchRequestFieldSortId   = big.NewInt(1 << 3)
+	baseSearchRequestFieldSortID   = big.NewInt(1 << 3)
 )
 
 type BaseSearchRequest struct {
@@ -2883,7 +2883,7 @@ type BaseSearchRequest struct {
 	// Whether to sort descending, defaults to true
 	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
 	// The field to sort by, defaults to created timestamp
-	SortId *string `json:"sortId,omitempty" url:"sortId,omitempty"`
+	SortID *string `json:"sortId,omitempty" url:"sortId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2913,11 +2913,11 @@ func (b *BaseSearchRequest) GetSortDesc() *bool {
 	return b.SortDesc
 }
 
-func (b *BaseSearchRequest) GetSortId() *string {
+func (b *BaseSearchRequest) GetSortID() *string {
 	if b == nil {
 		return nil
 	}
-	return b.SortId
+	return b.SortID
 }
 
 func (b *BaseSearchRequest) GetExtraProperties() map[string]interface{} {
@@ -2952,11 +2952,11 @@ func (b *BaseSearchRequest) SetSortDesc(sortDesc *bool) {
 	b.require(baseSearchRequestFieldSortDesc)
 }
 
-// SetSortId sets the SortId field and marks it as non-optional;
+// SetSortID sets the SortID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BaseSearchRequest) SetSortId(sortId *string) {
-	b.SortId = sortId
-	b.require(baseSearchRequestFieldSortId)
+func (b *BaseSearchRequest) SetSortID(sortID *string) {
+	b.SortID = sortID
+	b.require(baseSearchRequestFieldSortID)
 }
 
 func (b *BaseSearchRequest) UnmarshalJSON(data []byte) error {
@@ -3000,8 +3000,8 @@ func (b *BaseSearchRequest) String() string {
 
 // This response should be rendered as a form which users can submit. Upon submission call the `submitActionForm` API.
 var (
-	botActionFormResponseFieldId          = big.NewInt(1 << 0)
-	botActionFormResponseFieldActionId    = big.NewInt(1 << 1)
+	botActionFormResponseFieldID          = big.NewInt(1 << 0)
+	botActionFormResponseFieldActionID    = big.NewInt(1 << 1)
 	botActionFormResponseFieldFormLabel   = big.NewInt(1 << 2)
 	botActionFormResponseFieldFields      = big.NewInt(1 << 3)
 	botActionFormResponseFieldSubmitLabel = big.NewInt(1 << 4)
@@ -3009,9 +3009,9 @@ var (
 
 type BotActionFormResponse struct {
 	// The ID to use when submitting the form via the `submitActionForm` API.
-	Id string `json:"id" url:"id"`
+	ID string `json:"id" url:"id"`
 	// The ID of the action that will be executed when the form is submitted.
-	ActionId *EntityIdWithoutAgent `json:"actionId" url:"actionId"`
+	ActionID *EntityIDWithoutAgent `json:"actionId" url:"actionId"`
 	// Text which should be displayed to the user at the top of the form. Provided in the user's language.
 	FormLabel string `json:"formLabel" url:"formLabel"`
 	// The fields that should be displayed within the form.
@@ -3026,18 +3026,18 @@ type BotActionFormResponse struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BotActionFormResponse) GetId() string {
+func (b *BotActionFormResponse) GetID() string {
 	if b == nil {
 		return ""
 	}
-	return b.Id
+	return b.ID
 }
 
-func (b *BotActionFormResponse) GetActionId() *EntityIdWithoutAgent {
+func (b *BotActionFormResponse) GetActionID() *EntityIDWithoutAgent {
 	if b == nil {
 		return nil
 	}
-	return b.ActionId
+	return b.ActionID
 }
 
 func (b *BotActionFormResponse) GetFormLabel() string {
@@ -3072,18 +3072,18 @@ func (b *BotActionFormResponse) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotActionFormResponse) SetId(id string) {
-	b.Id = id
-	b.require(botActionFormResponseFieldId)
+func (b *BotActionFormResponse) SetID(id string) {
+	b.ID = id
+	b.require(botActionFormResponseFieldID)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotActionFormResponse) SetActionId(actionId *EntityIdWithoutAgent) {
-	b.ActionId = actionId
-	b.require(botActionFormResponseFieldActionId)
+func (b *BotActionFormResponse) SetActionID(actionID *EntityIDWithoutAgent) {
+	b.ActionID = actionID
+	b.require(botActionFormResponseFieldActionID)
 }
 
 // SetFormLabel sets the FormLabel field and marks it as non-optional;
@@ -3360,7 +3360,7 @@ func (b *BotLogic) String() string {
 }
 
 var (
-	botLogicActionExecutedDetailFieldActionId         = big.NewInt(1 << 0)
+	botLogicActionExecutedDetailFieldActionID         = big.NewInt(1 << 0)
 	botLogicActionExecutedDetailFieldActionName       = big.NewInt(1 << 1)
 	botLogicActionExecutedDetailFieldActionParameters = big.NewInt(1 << 2)
 	botLogicActionExecutedDetailFieldExecutionResult  = big.NewInt(1 << 3)
@@ -3368,7 +3368,7 @@ var (
 )
 
 type BotLogicActionExecutedDetail struct {
-	ActionId         *EntityIdWithoutAgent                 `json:"actionId" url:"actionId"`
+	ActionID         *EntityIDWithoutAgent                 `json:"actionId" url:"actionId"`
 	ActionName       string                                `json:"actionName" url:"actionName"`
 	ActionParameters map[string]*ActionExecutionParamValue `json:"actionParameters" url:"actionParameters"`
 	ExecutionResult  *string                               `json:"executionResult,omitempty" url:"executionResult,omitempty"`
@@ -3381,11 +3381,11 @@ type BotLogicActionExecutedDetail struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BotLogicActionExecutedDetail) GetActionId() *EntityIdWithoutAgent {
+func (b *BotLogicActionExecutedDetail) GetActionID() *EntityIDWithoutAgent {
 	if b == nil {
 		return nil
 	}
-	return b.ActionId
+	return b.ActionID
 }
 
 func (b *BotLogicActionExecutedDetail) GetActionName() string {
@@ -3427,11 +3427,11 @@ func (b *BotLogicActionExecutedDetail) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotLogicActionExecutedDetail) SetActionId(actionId *EntityIdWithoutAgent) {
-	b.ActionId = actionId
-	b.require(botLogicActionExecutedDetailFieldActionId)
+func (b *BotLogicActionExecutedDetail) SetActionID(actionID *EntityIDWithoutAgent) {
+	b.ActionID = actionID
+	b.require(botLogicActionExecutedDetailFieldActionID)
 }
 
 // SetActionName sets the ActionName field and marks it as non-optional;
@@ -3596,12 +3596,12 @@ func (b *BotLogicActionItem) String() string {
 }
 
 var (
-	botLogicActionReviewedDetailFieldActionId   = big.NewInt(1 << 0)
+	botLogicActionReviewedDetailFieldActionID   = big.NewInt(1 << 0)
 	botLogicActionReviewedDetailFieldActionName = big.NewInt(1 << 1)
 )
 
 type BotLogicActionReviewedDetail struct {
-	ActionId   *EntityIdWithoutAgent `json:"actionId" url:"actionId"`
+	ActionID   *EntityIDWithoutAgent `json:"actionId" url:"actionId"`
 	ActionName string                `json:"actionName" url:"actionName"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -3611,11 +3611,11 @@ type BotLogicActionReviewedDetail struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BotLogicActionReviewedDetail) GetActionId() *EntityIdWithoutAgent {
+func (b *BotLogicActionReviewedDetail) GetActionID() *EntityIDWithoutAgent {
 	if b == nil {
 		return nil
 	}
-	return b.ActionId
+	return b.ActionID
 }
 
 func (b *BotLogicActionReviewedDetail) GetActionName() string {
@@ -3636,11 +3636,11 @@ func (b *BotLogicActionReviewedDetail) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotLogicActionReviewedDetail) SetActionId(actionId *EntityIdWithoutAgent) {
-	b.ActionId = actionId
-	b.require(botLogicActionReviewedDetailFieldActionId)
+func (b *BotLogicActionReviewedDetail) SetActionID(actionID *EntityIDWithoutAgent) {
+	b.ActionID = actionID
+	b.require(botLogicActionReviewedDetailFieldActionID)
 }
 
 // SetActionName sets the ActionName field and marks it as non-optional;
@@ -3690,7 +3690,7 @@ func (b *BotLogicActionReviewedDetail) String() string {
 }
 
 var (
-	botLogicFormSubmissionItemFieldActionId         = big.NewInt(1 << 0)
+	botLogicFormSubmissionItemFieldActionID         = big.NewInt(1 << 0)
 	botLogicFormSubmissionItemFieldActionName       = big.NewInt(1 << 1)
 	botLogicFormSubmissionItemFieldActionParameters = big.NewInt(1 << 2)
 	botLogicFormSubmissionItemFieldExecutionResult  = big.NewInt(1 << 3)
@@ -3698,7 +3698,7 @@ var (
 )
 
 type BotLogicFormSubmissionItem struct {
-	ActionId         *EntityIdWithoutAgent                 `json:"actionId" url:"actionId"`
+	ActionID         *EntityIDWithoutAgent                 `json:"actionId" url:"actionId"`
 	ActionName       string                                `json:"actionName" url:"actionName"`
 	ActionParameters map[string]*ActionExecutionParamValue `json:"actionParameters" url:"actionParameters"`
 	ExecutionResult  *string                               `json:"executionResult,omitempty" url:"executionResult,omitempty"`
@@ -3711,11 +3711,11 @@ type BotLogicFormSubmissionItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BotLogicFormSubmissionItem) GetActionId() *EntityIdWithoutAgent {
+func (b *BotLogicFormSubmissionItem) GetActionID() *EntityIDWithoutAgent {
 	if b == nil {
 		return nil
 	}
-	return b.ActionId
+	return b.ActionID
 }
 
 func (b *BotLogicFormSubmissionItem) GetActionName() string {
@@ -3757,11 +3757,11 @@ func (b *BotLogicFormSubmissionItem) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotLogicFormSubmissionItem) SetActionId(actionId *EntityIdWithoutAgent) {
-	b.ActionId = actionId
-	b.require(botLogicFormSubmissionItemFieldActionId)
+func (b *BotLogicFormSubmissionItem) SetActionID(actionID *EntityIDWithoutAgent) {
+	b.ActionID = actionID
+	b.require(botLogicFormSubmissionItemFieldActionID)
 }
 
 // SetActionName sets the ActionName field and marks it as non-optional;
@@ -4045,15 +4045,15 @@ func (b *BotLogicItem) validate() error {
 }
 
 var (
-	botLogicKnowledgeDetailFieldKnowledgeBaseId = big.NewInt(1 << 0)
-	botLogicKnowledgeDetailFieldDocumentId      = big.NewInt(1 << 1)
+	botLogicKnowledgeDetailFieldKnowledgeBaseID = big.NewInt(1 << 0)
+	botLogicKnowledgeDetailFieldDocumentID      = big.NewInt(1 << 1)
 	botLogicKnowledgeDetailFieldDocumentName    = big.NewInt(1 << 2)
 	botLogicKnowledgeDetailFieldDocumentExcerpt = big.NewInt(1 << 3)
 )
 
 type BotLogicKnowledgeDetail struct {
-	KnowledgeBaseId *EntityIdWithoutAgent `json:"knowledgeBaseId" url:"knowledgeBaseId"`
-	DocumentId      *EntityIdWithoutAgent `json:"documentId" url:"documentId"`
+	KnowledgeBaseID *EntityIDWithoutAgent `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	DocumentID      *EntityIDWithoutAgent `json:"documentId" url:"documentId"`
 	DocumentName    string                `json:"documentName" url:"documentName"`
 	DocumentExcerpt string                `json:"documentExcerpt" url:"documentExcerpt"`
 
@@ -4064,18 +4064,18 @@ type BotLogicKnowledgeDetail struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BotLogicKnowledgeDetail) GetKnowledgeBaseId() *EntityIdWithoutAgent {
+func (b *BotLogicKnowledgeDetail) GetKnowledgeBaseID() *EntityIDWithoutAgent {
 	if b == nil {
 		return nil
 	}
-	return b.KnowledgeBaseId
+	return b.KnowledgeBaseID
 }
 
-func (b *BotLogicKnowledgeDetail) GetDocumentId() *EntityIdWithoutAgent {
+func (b *BotLogicKnowledgeDetail) GetDocumentID() *EntityIDWithoutAgent {
 	if b == nil {
 		return nil
 	}
-	return b.DocumentId
+	return b.DocumentID
 }
 
 func (b *BotLogicKnowledgeDetail) GetDocumentName() string {
@@ -4103,18 +4103,18 @@ func (b *BotLogicKnowledgeDetail) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotLogicKnowledgeDetail) SetKnowledgeBaseId(knowledgeBaseId *EntityIdWithoutAgent) {
-	b.KnowledgeBaseId = knowledgeBaseId
-	b.require(botLogicKnowledgeDetailFieldKnowledgeBaseId)
+func (b *BotLogicKnowledgeDetail) SetKnowledgeBaseID(knowledgeBaseID *EntityIDWithoutAgent) {
+	b.KnowledgeBaseID = knowledgeBaseID
+	b.require(botLogicKnowledgeDetailFieldKnowledgeBaseID)
 }
 
-// SetDocumentId sets the DocumentId field and marks it as non-optional;
+// SetDocumentID sets the DocumentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotLogicKnowledgeDetail) SetDocumentId(documentId *EntityIdWithoutAgent) {
-	b.DocumentId = documentId
-	b.require(botLogicKnowledgeDetailFieldDocumentId)
+func (b *BotLogicKnowledgeDetail) SetDocumentID(documentID *EntityIDWithoutAgent) {
+	b.DocumentID = documentID
+	b.require(botLogicKnowledgeDetailFieldDocumentID)
 }
 
 // SetDocumentName sets the DocumentName field and marks it as non-optional;
@@ -4266,10 +4266,13 @@ func (b *BotLogicKnowledgeItem) String() string {
 
 var (
 	botLogicSafetyItemFieldSafetyCheckPassed = big.NewInt(1 << 0)
+	botLogicSafetyItemFieldReport            = big.NewInt(1 << 1)
 )
 
 type BotLogicSafetyItem struct {
 	SafetyCheckPassed bool `json:"safetyCheckPassed" url:"safetyCheckPassed"`
+	// If the safety check failed, this contains more details about the failure.
+	Report *SafetyCheckReport `json:"report,omitempty" url:"report,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4283,6 +4286,13 @@ func (b *BotLogicSafetyItem) GetSafetyCheckPassed() bool {
 		return false
 	}
 	return b.SafetyCheckPassed
+}
+
+func (b *BotLogicSafetyItem) GetReport() *SafetyCheckReport {
+	if b == nil {
+		return nil
+	}
+	return b.Report
 }
 
 func (b *BotLogicSafetyItem) GetExtraProperties() map[string]interface{} {
@@ -4301,6 +4311,13 @@ func (b *BotLogicSafetyItem) require(field *big.Int) {
 func (b *BotLogicSafetyItem) SetSafetyCheckPassed(safetyCheckPassed bool) {
 	b.SafetyCheckPassed = safetyCheckPassed
 	b.require(botLogicSafetyItemFieldSafetyCheckPassed)
+}
+
+// SetReport sets the Report field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicSafetyItem) SetReport(report *SafetyCheckReport) {
+	b.Report = report
+	b.require(botLogicSafetyItemFieldReport)
 }
 
 func (b *BotLogicSafetyItem) UnmarshalJSON(data []byte) error {
@@ -4343,11 +4360,11 @@ func (b *BotLogicSafetyItem) String() string {
 }
 
 var (
-	botLogicSegmentsItemFieldMatchingSegmentIds = big.NewInt(1 << 0)
+	botLogicSegmentsItemFieldMatchingSegmentIDs = big.NewInt(1 << 0)
 )
 
 type BotLogicSegmentsItem struct {
-	MatchingSegmentIds []*EntityId `json:"matchingSegmentIds" url:"matchingSegmentIds"`
+	MatchingSegmentIDs []*EntityID `json:"matchingSegmentIds" url:"matchingSegmentIds"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4356,11 +4373,11 @@ type BotLogicSegmentsItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BotLogicSegmentsItem) GetMatchingSegmentIds() []*EntityId {
+func (b *BotLogicSegmentsItem) GetMatchingSegmentIDs() []*EntityID {
 	if b == nil {
 		return nil
 	}
-	return b.MatchingSegmentIds
+	return b.MatchingSegmentIDs
 }
 
 func (b *BotLogicSegmentsItem) GetExtraProperties() map[string]interface{} {
@@ -4374,11 +4391,11 @@ func (b *BotLogicSegmentsItem) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetMatchingSegmentIds sets the MatchingSegmentIds field and marks it as non-optional;
+// SetMatchingSegmentIDs sets the MatchingSegmentIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotLogicSegmentsItem) SetMatchingSegmentIds(matchingSegmentIds []*EntityId) {
-	b.MatchingSegmentIds = matchingSegmentIds
-	b.require(botLogicSegmentsItemFieldMatchingSegmentIds)
+func (b *BotLogicSegmentsItem) SetMatchingSegmentIDs(matchingSegmentIDs []*EntityID) {
+	b.MatchingSegmentIDs = matchingSegmentIDs
+	b.require(botLogicSegmentsItemFieldMatchingSegmentIDs)
 }
 
 func (b *BotLogicSegmentsItem) UnmarshalJSON(data []byte) error {
@@ -4501,7 +4518,7 @@ func (b *BotLogicUserItem) String() string {
 var (
 	botMessageFieldCreatedAt             = big.NewInt(1 << 0)
 	botMessageFieldUpdatedAt             = big.NewInt(1 << 1)
-	botMessageFieldConversationMessageId = big.NewInt(1 << 2)
+	botMessageFieldConversationMessageID = big.NewInt(1 << 2)
 	botMessageFieldBotMessageType        = big.NewInt(1 << 3)
 	botMessageFieldResponses             = big.NewInt(1 << 4)
 	botMessageFieldMetadata              = big.NewInt(1 << 5)
@@ -4515,7 +4532,7 @@ type BotMessage struct {
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The ID that uniquely identifies this message within the conversation
-	ConversationMessageId *EntityId                  `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityID                  `json:"conversationMessageId" url:"conversationMessageId"`
 	BotMessageType        BotConversationMessageType `json:"botMessageType" url:"botMessageType"`
 	Responses             []*BotResponse             `json:"responses" url:"responses"`
 	Metadata              *BotResponseMetadata       `json:"metadata" url:"metadata"`
@@ -4544,11 +4561,11 @@ func (b *BotMessage) GetUpdatedAt() *time.Time {
 	return b.UpdatedAt
 }
 
-func (b *BotMessage) GetConversationMessageId() *EntityId {
+func (b *BotMessage) GetConversationMessageID() *EntityID {
 	if b == nil {
 		return nil
 	}
-	return b.ConversationMessageId
+	return b.ConversationMessageID
 }
 
 func (b *BotMessage) GetBotMessageType() BotConversationMessageType {
@@ -4611,11 +4628,11 @@ func (b *BotMessage) SetUpdatedAt(updatedAt *time.Time) {
 	b.require(botMessageFieldUpdatedAt)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotMessage) SetConversationMessageId(conversationMessageId *EntityId) {
-	b.ConversationMessageId = conversationMessageId
-	b.require(botMessageFieldConversationMessageId)
+func (b *BotMessage) SetConversationMessageID(conversationMessageID *EntityID) {
+	b.ConversationMessageID = conversationMessageID
+	b.require(botMessageFieldConversationMessageID)
 }
 
 // SetBotMessageType sets the BotMessageType field and marks it as non-optional;
@@ -4707,14 +4724,14 @@ func (b *BotMessage) String() string {
 // This response should be rendered as a single button that starts an OAuth authorization flow.
 var (
 	botOAuthButtonResponseFieldButtonName = big.NewInt(1 << 0)
-	botOAuthButtonResponseFieldUrl        = big.NewInt(1 << 1)
+	botOAuthButtonResponseFieldURL        = big.NewInt(1 << 1)
 )
 
 type BotOAuthButtonResponse struct {
 	// Text that should be displayed to the user on the button.
 	ButtonName string `json:"buttonName" url:"buttonName"`
 	// The OAuth authorization URL to open when the button is clicked. Will only be provided on ask responses.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4730,11 +4747,11 @@ func (b *BotOAuthButtonResponse) GetButtonName() string {
 	return b.ButtonName
 }
 
-func (b *BotOAuthButtonResponse) GetUrl() *string {
+func (b *BotOAuthButtonResponse) GetURL() *string {
 	if b == nil {
 		return nil
 	}
-	return b.Url
+	return b.URL
 }
 
 func (b *BotOAuthButtonResponse) GetExtraProperties() map[string]interface{} {
@@ -4755,11 +4772,11 @@ func (b *BotOAuthButtonResponse) SetButtonName(buttonName string) {
 	b.require(botOAuthButtonResponseFieldButtonName)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BotOAuthButtonResponse) SetUrl(url *string) {
-	b.Url = url
-	b.require(botOAuthButtonResponseFieldUrl)
+func (b *BotOAuthButtonResponse) SetURL(url *string) {
+	b.URL = url
+	b.require(botOAuthButtonResponseFieldURL)
 }
 
 func (b *BotOAuthButtonResponse) UnmarshalJSON(data []byte) error {
@@ -5802,17 +5819,17 @@ func (c *ConversationAnalysis) String() string {
 
 var (
 	conversationExecutedActionPreconditionFieldOperator = big.NewInt(1 << 0)
-	conversationExecutedActionPreconditionFieldActionId = big.NewInt(1 << 1)
-	conversationExecutedActionPreconditionFieldAppId    = big.NewInt(1 << 2)
+	conversationExecutedActionPreconditionFieldActionID = big.NewInt(1 << 1)
+	conversationExecutedActionPreconditionFieldAppID    = big.NewInt(1 << 2)
 )
 
 type ConversationExecutedActionPrecondition struct {
 	// Operator to apply to this precondition
 	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
 	// ID of an action that must have executed in this conversation for the precondition to be met
-	ActionId string `json:"actionId" url:"actionId"`
+	ActionID string `json:"actionId" url:"actionId"`
 	// App ID that the given actionId belongs to. If not provided, the calling appId will be used.
-	AppId *string `json:"appId,omitempty" url:"appId,omitempty"`
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -5828,18 +5845,18 @@ func (c *ConversationExecutedActionPrecondition) GetOperator() *PreconditionOper
 	return c.Operator
 }
 
-func (c *ConversationExecutedActionPrecondition) GetActionId() string {
+func (c *ConversationExecutedActionPrecondition) GetActionID() string {
 	if c == nil {
 		return ""
 	}
-	return c.ActionId
+	return c.ActionID
 }
 
-func (c *ConversationExecutedActionPrecondition) GetAppId() *string {
+func (c *ConversationExecutedActionPrecondition) GetAppID() *string {
 	if c == nil {
 		return nil
 	}
-	return c.AppId
+	return c.AppID
 }
 
 func (c *ConversationExecutedActionPrecondition) GetExtraProperties() map[string]interface{} {
@@ -5860,18 +5877,18 @@ func (c *ConversationExecutedActionPrecondition) SetOperator(operator *Precondit
 	c.require(conversationExecutedActionPreconditionFieldOperator)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationExecutedActionPrecondition) SetActionId(actionId string) {
-	c.ActionId = actionId
-	c.require(conversationExecutedActionPreconditionFieldActionId)
+func (c *ConversationExecutedActionPrecondition) SetActionID(actionID string) {
+	c.ActionID = actionID
+	c.require(conversationExecutedActionPreconditionFieldActionID)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationExecutedActionPrecondition) SetAppId(appId *string) {
-	c.AppId = appId
-	c.require(conversationExecutedActionPreconditionFieldAppId)
+func (c *ConversationExecutedActionPrecondition) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(conversationExecutedActionPreconditionFieldAppID)
 }
 
 func (c *ConversationExecutedActionPrecondition) UnmarshalJSON(data []byte) error {
@@ -5914,12 +5931,12 @@ func (c *ConversationExecutedActionPrecondition) String() string {
 }
 
 var (
-	conversationInformationFieldConversationId = big.NewInt(1 << 0)
+	conversationInformationFieldConversationID = big.NewInt(1 << 0)
 )
 
 type ConversationInformation struct {
 	// Unique identifier for the conversation.
-	ConversationId *EntityIdWithoutAgent `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityIDWithoutAgent `json:"conversationId" url:"conversationId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -5928,11 +5945,11 @@ type ConversationInformation struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *ConversationInformation) GetConversationId() *EntityIdWithoutAgent {
+func (c *ConversationInformation) GetConversationID() *EntityIDWithoutAgent {
 	if c == nil {
 		return nil
 	}
-	return c.ConversationId
+	return c.ConversationID
 }
 
 func (c *ConversationInformation) GetExtraProperties() map[string]interface{} {
@@ -5946,11 +5963,11 @@ func (c *ConversationInformation) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationInformation) SetConversationId(conversationId *EntityIdWithoutAgent) {
-	c.ConversationId = conversationId
-	c.require(conversationInformationFieldConversationId)
+func (c *ConversationInformation) SetConversationID(conversationID *EntityIDWithoutAgent) {
+	c.ConversationID = conversationID
+	c.require(conversationInformationFieldConversationID)
 }
 
 func (c *ConversationInformation) UnmarshalJSON(data []byte) error {
@@ -6409,13 +6426,13 @@ func (c *ConversationPrecondition) validate() error {
 var (
 	conversationPreviewFieldResponseConfig    = big.NewInt(1 << 0)
 	conversationPreviewFieldSubject           = big.NewInt(1 << 1)
-	conversationPreviewFieldUrl               = big.NewInt(1 << 2)
+	conversationPreviewFieldURL               = big.NewInt(1 << 2)
 	conversationPreviewFieldCreatedAt         = big.NewInt(1 << 3)
 	conversationPreviewFieldUpdatedAt         = big.NewInt(1 << 4)
 	conversationPreviewFieldTags              = big.NewInt(1 << 5)
 	conversationPreviewFieldMetadata          = big.NewInt(1 << 6)
 	conversationPreviewFieldAllMetadata       = big.NewInt(1 << 7)
-	conversationPreviewFieldConversationId    = big.NewInt(1 << 8)
+	conversationPreviewFieldConversationID    = big.NewInt(1 << 8)
 	conversationPreviewFieldAnalysis          = big.NewInt(1 << 9)
 	conversationPreviewFieldSummary           = big.NewInt(1 << 10)
 	conversationPreviewFieldDeleted           = big.NewInt(1 << 11)
@@ -6430,7 +6447,7 @@ type ConversationPreview struct {
 	// The subject of the conversation
 	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
 	// The url of the conversation
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The date and time the conversation was created
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
@@ -6442,7 +6459,7 @@ type ConversationPreview struct {
 	// All metadata for the conversation. Keyed by appId.
 	AllMetadata map[string]map[string]string `json:"allMetadata" url:"allMetadata"`
 	// The ID that uniquely identifies this conversation
-	ConversationId *EntityId `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityID `json:"conversationId" url:"conversationId"`
 	// An analysis of the conversation. Fields are generated by Maven via an analysis of user messages. This object is calculated on a delay. Fields will not be up to date on ask requests.
 	Analysis *ConversationAnalysis `json:"analysis" url:"analysis"`
 	// A summary of the conversation. Fields are calculated from conversation data. Unlike analysis, all fields can be derived from other data available in the API. This object is provided as a convenience and is calculated on a delay. Fields will not be up to date on ask requests.
@@ -6481,11 +6498,11 @@ func (c *ConversationPreview) GetSubject() *string {
 	return c.Subject
 }
 
-func (c *ConversationPreview) GetUrl() *string {
+func (c *ConversationPreview) GetURL() *string {
 	if c == nil {
 		return nil
 	}
-	return c.Url
+	return c.URL
 }
 
 func (c *ConversationPreview) GetCreatedAt() *time.Time {
@@ -6523,11 +6540,11 @@ func (c *ConversationPreview) GetAllMetadata() map[string]map[string]string {
 	return c.AllMetadata
 }
 
-func (c *ConversationPreview) GetConversationId() *EntityId {
+func (c *ConversationPreview) GetConversationID() *EntityID {
 	if c == nil {
 		return nil
 	}
-	return c.ConversationId
+	return c.ConversationID
 }
 
 func (c *ConversationPreview) GetAnalysis() *ConversationAnalysis {
@@ -6597,11 +6614,11 @@ func (c *ConversationPreview) SetSubject(subject *string) {
 	c.require(conversationPreviewFieldSubject)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationPreview) SetUrl(url *string) {
-	c.Url = url
-	c.require(conversationPreviewFieldUrl)
+func (c *ConversationPreview) SetURL(url *string) {
+	c.URL = url
+	c.require(conversationPreviewFieldURL)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -6639,11 +6656,11 @@ func (c *ConversationPreview) SetAllMetadata(allMetadata map[string]map[string]s
 	c.require(conversationPreviewFieldAllMetadata)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationPreview) SetConversationId(conversationId *EntityId) {
-	c.ConversationId = conversationId
-	c.require(conversationPreviewFieldConversationId)
+func (c *ConversationPreview) SetConversationID(conversationID *EntityID) {
+	c.ConversationID = conversationID
+	c.require(conversationPreviewFieldConversationID)
 }
 
 // SetAnalysis sets the Analysis field and marks it as non-optional;
@@ -6742,13 +6759,13 @@ func (c *ConversationPreview) String() string {
 var (
 	conversationResponseFieldResponseConfig    = big.NewInt(1 << 0)
 	conversationResponseFieldSubject           = big.NewInt(1 << 1)
-	conversationResponseFieldUrl               = big.NewInt(1 << 2)
+	conversationResponseFieldURL               = big.NewInt(1 << 2)
 	conversationResponseFieldCreatedAt         = big.NewInt(1 << 3)
 	conversationResponseFieldUpdatedAt         = big.NewInt(1 << 4)
 	conversationResponseFieldTags              = big.NewInt(1 << 5)
 	conversationResponseFieldMetadata          = big.NewInt(1 << 6)
 	conversationResponseFieldAllMetadata       = big.NewInt(1 << 7)
-	conversationResponseFieldConversationId    = big.NewInt(1 << 8)
+	conversationResponseFieldConversationID    = big.NewInt(1 << 8)
 	conversationResponseFieldAnalysis          = big.NewInt(1 << 9)
 	conversationResponseFieldSummary           = big.NewInt(1 << 10)
 	conversationResponseFieldDeleted           = big.NewInt(1 << 11)
@@ -6765,7 +6782,7 @@ type ConversationResponse struct {
 	// The subject of the conversation
 	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
 	// The url of the conversation
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The date and time the conversation was created
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
@@ -6777,7 +6794,7 @@ type ConversationResponse struct {
 	// All metadata for the conversation. Keyed by appId.
 	AllMetadata map[string]map[string]string `json:"allMetadata" url:"allMetadata"`
 	// The ID that uniquely identifies this conversation
-	ConversationId *EntityId `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityID `json:"conversationId" url:"conversationId"`
 	// An analysis of the conversation. Fields are generated by Maven via an analysis of user messages. This object is calculated on a delay. Fields will not be up to date on ask requests.
 	Analysis *ConversationAnalysis `json:"analysis" url:"analysis"`
 	// A summary of the conversation. Fields are calculated from conversation data. Unlike analysis, all fields can be derived from other data available in the API. This object is provided as a convenience and is calculated on a delay. Fields will not be up to date on ask requests.
@@ -6822,11 +6839,11 @@ func (c *ConversationResponse) GetSubject() *string {
 	return c.Subject
 }
 
-func (c *ConversationResponse) GetUrl() *string {
+func (c *ConversationResponse) GetURL() *string {
 	if c == nil {
 		return nil
 	}
-	return c.Url
+	return c.URL
 }
 
 func (c *ConversationResponse) GetCreatedAt() *time.Time {
@@ -6864,11 +6881,11 @@ func (c *ConversationResponse) GetAllMetadata() map[string]map[string]string {
 	return c.AllMetadata
 }
 
-func (c *ConversationResponse) GetConversationId() *EntityId {
+func (c *ConversationResponse) GetConversationID() *EntityID {
 	if c == nil {
 		return nil
 	}
-	return c.ConversationId
+	return c.ConversationID
 }
 
 func (c *ConversationResponse) GetAnalysis() *ConversationAnalysis {
@@ -6952,11 +6969,11 @@ func (c *ConversationResponse) SetSubject(subject *string) {
 	c.require(conversationResponseFieldSubject)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationResponse) SetUrl(url *string) {
-	c.Url = url
-	c.require(conversationResponseFieldUrl)
+func (c *ConversationResponse) SetURL(url *string) {
+	c.URL = url
+	c.require(conversationResponseFieldURL)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -6994,11 +7011,11 @@ func (c *ConversationResponse) SetAllMetadata(allMetadata map[string]map[string]
 	c.require(conversationResponseFieldAllMetadata)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationResponse) SetConversationId(conversationId *EntityId) {
-	c.ConversationId = conversationId
-	c.require(conversationResponseFieldConversationId)
+func (c *ConversationResponse) SetConversationID(conversationID *EntityID) {
+	c.ConversationID = conversationID
+	c.require(conversationResponseFieldConversationID)
 }
 
 // SetAnalysis sets the Analysis field and marks it as non-optional;
@@ -7109,28 +7126,30 @@ func (c *ConversationResponse) String() string {
 }
 
 var (
-	conversationSummaryFieldActionIds               = big.NewInt(1 << 0)
-	conversationSummaryFieldIncompleteActionIds     = big.NewInt(1 << 1)
+	conversationSummaryFieldActionIDs               = big.NewInt(1 << 0)
+	conversationSummaryFieldIncompleteActionIDs     = big.NewInt(1 << 1)
 	conversationSummaryFieldInsertCount             = big.NewInt(1 << 2)
 	conversationSummaryFieldThumbsUpCount           = big.NewInt(1 << 3)
 	conversationSummaryFieldThumbsDownCount         = big.NewInt(1 << 4)
 	conversationSummaryFieldHandoffCount            = big.NewInt(1 << 5)
 	conversationSummaryFieldUserMessageCount        = big.NewInt(1 << 6)
-	conversationSummaryFieldHandleTime              = big.NewInt(1 << 7)
-	conversationSummaryFieldHumanAgentResponseDelay = big.NewInt(1 << 8)
-	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 9)
-	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 10)
-	conversationSummaryFieldUsers                   = big.NewInt(1 << 11)
-	conversationSummaryFieldUserIdentifiers         = big.NewInt(1 << 12)
-	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 13)
-	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 14)
+	conversationSummaryFieldBotMessageCount         = big.NewInt(1 << 7)
+	conversationSummaryFieldHandleTime              = big.NewInt(1 << 8)
+	conversationSummaryFieldHumanAgentResponseDelay = big.NewInt(1 << 9)
+	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 10)
+	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 11)
+	conversationSummaryFieldUsers                   = big.NewInt(1 << 12)
+	conversationSummaryFieldUserIdentifiers         = big.NewInt(1 << 13)
+	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 14)
+	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 15)
+	conversationSummaryFieldInvolvedAppIDs          = big.NewInt(1 << 16)
 )
 
 type ConversationSummary struct {
 	// The IDs of the actions that were taken by Maven in the conversation
-	ActionIds []*EntityIdWithoutAgent `json:"actionIds" url:"actionIds"`
+	ActionIDs []*EntityIDWithoutAgent `json:"actionIds" url:"actionIds"`
 	// The IDs of the actions that were taken by Maven but not completed in the conversation. Occurs when the user is shown an action form but does not submit it.
-	IncompleteActionIds []*EntityIdWithoutAgent `json:"incompleteActionIds" url:"incompleteActionIds"`
+	IncompleteActionIDs []*EntityIDWithoutAgent `json:"incompleteActionIds" url:"incompleteActionIds"`
 	// The number of insert events on messages in the conversation.
 	InsertCount int `json:"insertCount" url:"insertCount"`
 	// The number of thumbs up events on messages in the conversation.
@@ -7141,6 +7160,8 @@ type ConversationSummary struct {
 	HandoffCount int `json:"handoffCount" url:"handoffCount"`
 	// The number of messages of type `USER` in the conversation.
 	UserMessageCount int `json:"userMessageCount" url:"userMessageCount"`
+	// The number of bot answer messages in the conversation.
+	BotMessageCount int `json:"botMessageCount" url:"botMessageCount"`
 	// The total time in milliseconds that the user spent interacting with the conversation.
 	// Calculated by taking the timestamp of the last message in the conversation minus the timestamp of the first message.
 	HandleTime *int64 `json:"handleTime,omitempty" url:"handleTime,omitempty"`
@@ -7162,6 +7183,12 @@ type ConversationSummary struct {
 	LastUserMessage *string `json:"lastUserMessage,omitempty" url:"lastUserMessage,omitempty"`
 	// The text of the last bot message in the conversation.
 	LastBotMessage *string `json:"lastBotMessage,omitempty" url:"lastBotMessage,omitempty"`
+	// The set of app IDs that are involved in this conversation. This includes:
+	// - The app ID that created the conversation
+	// - The app IDs of all messages created in the conversation
+	// - The app IDs of all actions selected by the LLM in the conversation (including unsubmitted forms)
+	// - The app IDs of all documents referenced by LLM responses in the conversation (does not include document search results not utilized by the LLM)
+	InvolvedAppIDs []string `json:"involvedAppIds" url:"involvedAppIds"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7170,18 +7197,18 @@ type ConversationSummary struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *ConversationSummary) GetActionIds() []*EntityIdWithoutAgent {
+func (c *ConversationSummary) GetActionIDs() []*EntityIDWithoutAgent {
 	if c == nil {
 		return nil
 	}
-	return c.ActionIds
+	return c.ActionIDs
 }
 
-func (c *ConversationSummary) GetIncompleteActionIds() []*EntityIdWithoutAgent {
+func (c *ConversationSummary) GetIncompleteActionIDs() []*EntityIDWithoutAgent {
 	if c == nil {
 		return nil
 	}
-	return c.IncompleteActionIds
+	return c.IncompleteActionIDs
 }
 
 func (c *ConversationSummary) GetInsertCount() int {
@@ -7217,6 +7244,13 @@ func (c *ConversationSummary) GetUserMessageCount() int {
 		return 0
 	}
 	return c.UserMessageCount
+}
+
+func (c *ConversationSummary) GetBotMessageCount() int {
+	if c == nil {
+		return 0
+	}
+	return c.BotMessageCount
 }
 
 func (c *ConversationSummary) GetHandleTime() *int64 {
@@ -7275,6 +7309,13 @@ func (c *ConversationSummary) GetLastBotMessage() *string {
 	return c.LastBotMessage
 }
 
+func (c *ConversationSummary) GetInvolvedAppIDs() []string {
+	if c == nil {
+		return nil
+	}
+	return c.InvolvedAppIDs
+}
+
 func (c *ConversationSummary) GetExtraProperties() map[string]interface{} {
 	return c.extraProperties
 }
@@ -7286,18 +7327,18 @@ func (c *ConversationSummary) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetActionIds sets the ActionIds field and marks it as non-optional;
+// SetActionIDs sets the ActionIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationSummary) SetActionIds(actionIds []*EntityIdWithoutAgent) {
-	c.ActionIds = actionIds
-	c.require(conversationSummaryFieldActionIds)
+func (c *ConversationSummary) SetActionIDs(actionIDs []*EntityIDWithoutAgent) {
+	c.ActionIDs = actionIDs
+	c.require(conversationSummaryFieldActionIDs)
 }
 
-// SetIncompleteActionIds sets the IncompleteActionIds field and marks it as non-optional;
+// SetIncompleteActionIDs sets the IncompleteActionIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationSummary) SetIncompleteActionIds(incompleteActionIds []*EntityIdWithoutAgent) {
-	c.IncompleteActionIds = incompleteActionIds
-	c.require(conversationSummaryFieldIncompleteActionIds)
+func (c *ConversationSummary) SetIncompleteActionIDs(incompleteActionIDs []*EntityIDWithoutAgent) {
+	c.IncompleteActionIDs = incompleteActionIDs
+	c.require(conversationSummaryFieldIncompleteActionIDs)
 }
 
 // SetInsertCount sets the InsertCount field and marks it as non-optional;
@@ -7333,6 +7374,13 @@ func (c *ConversationSummary) SetHandoffCount(handoffCount int) {
 func (c *ConversationSummary) SetUserMessageCount(userMessageCount int) {
 	c.UserMessageCount = userMessageCount
 	c.require(conversationSummaryFieldUserMessageCount)
+}
+
+// SetBotMessageCount sets the BotMessageCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetBotMessageCount(botMessageCount int) {
+	c.BotMessageCount = botMessageCount
+	c.require(conversationSummaryFieldBotMessageCount)
 }
 
 // SetHandleTime sets the HandleTime field and marks it as non-optional;
@@ -7389,6 +7437,13 @@ func (c *ConversationSummary) SetLastUserMessage(lastUserMessage *string) {
 func (c *ConversationSummary) SetLastBotMessage(lastBotMessage *string) {
 	c.LastBotMessage = lastBotMessage
 	c.require(conversationSummaryFieldLastBotMessage)
+}
+
+// SetInvolvedAppIDs sets the InvolvedAppIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetInvolvedAppIDs(involvedAppIDs []string) {
+	c.InvolvedAppIDs = involvedAppIDs
+	c.require(conversationSummaryFieldInvolvedAppIDs)
 }
 
 func (c *ConversationSummary) UnmarshalJSON(data []byte) error {
@@ -7585,17 +7640,17 @@ func (d DeviceType) Ptr() *DeviceType {
 }
 
 var (
-	documentInformationFieldKnowledgeBaseId = big.NewInt(1 << 0)
-	documentInformationFieldDocumentId      = big.NewInt(1 << 1)
+	documentInformationFieldKnowledgeBaseID = big.NewInt(1 << 0)
+	documentInformationFieldDocumentID      = big.NewInt(1 << 1)
 	documentInformationFieldTitle           = big.NewInt(1 << 2)
 	documentInformationFieldSnippet         = big.NewInt(1 << 3)
 )
 
 type DocumentInformation struct {
 	// Unique identifier for the knowledge base.
-	KnowledgeBaseId *EntityIdWithoutAgent `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	KnowledgeBaseID *EntityIDWithoutAgent `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// Unique identifier for the document.
-	DocumentId *EntityIdWithoutAgent `json:"documentId" url:"documentId"`
+	DocumentID *EntityIDWithoutAgent `json:"documentId" url:"documentId"`
 	// Title of the document.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
 	// Snippet or summary of the document.
@@ -7608,18 +7663,18 @@ type DocumentInformation struct {
 	rawJSON         json.RawMessage
 }
 
-func (d *DocumentInformation) GetKnowledgeBaseId() *EntityIdWithoutAgent {
+func (d *DocumentInformation) GetKnowledgeBaseID() *EntityIDWithoutAgent {
 	if d == nil {
 		return nil
 	}
-	return d.KnowledgeBaseId
+	return d.KnowledgeBaseID
 }
 
-func (d *DocumentInformation) GetDocumentId() *EntityIdWithoutAgent {
+func (d *DocumentInformation) GetDocumentID() *EntityIDWithoutAgent {
 	if d == nil {
 		return nil
 	}
-	return d.DocumentId
+	return d.DocumentID
 }
 
 func (d *DocumentInformation) GetTitle() *string {
@@ -7647,18 +7702,18 @@ func (d *DocumentInformation) require(field *big.Int) {
 	d.explicitFields.Or(d.explicitFields, field)
 }
 
-// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DocumentInformation) SetKnowledgeBaseId(knowledgeBaseId *EntityIdWithoutAgent) {
-	d.KnowledgeBaseId = knowledgeBaseId
-	d.require(documentInformationFieldKnowledgeBaseId)
+func (d *DocumentInformation) SetKnowledgeBaseID(knowledgeBaseID *EntityIDWithoutAgent) {
+	d.KnowledgeBaseID = knowledgeBaseID
+	d.require(documentInformationFieldKnowledgeBaseID)
 }
 
-// SetDocumentId sets the DocumentId field and marks it as non-optional;
+// SetDocumentID sets the DocumentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DocumentInformation) SetDocumentId(documentId *EntityIdWithoutAgent) {
-	d.DocumentId = documentId
-	d.require(documentInformationFieldDocumentId)
+func (d *DocumentInformation) SetDocumentID(documentID *EntityIDWithoutAgent) {
+	d.DocumentID = documentID
+	d.require(documentInformationFieldDocumentID)
 }
 
 // SetTitle sets the Title field and marks it as non-optional;
@@ -7716,14 +7771,14 @@ func (d *DocumentInformation) String() string {
 
 // A fully specified object ID, unique across the entire system.
 var (
-	entityIdFieldReferenceId    = big.NewInt(1 << 0)
-	entityIdFieldType           = big.NewInt(1 << 1)
-	entityIdFieldAppId          = big.NewInt(1 << 2)
-	entityIdFieldOrganizationId = big.NewInt(1 << 3)
-	entityIdFieldAgentId        = big.NewInt(1 << 4)
+	entityIDFieldReferenceID    = big.NewInt(1 << 0)
+	entityIDFieldType           = big.NewInt(1 << 1)
+	entityIDFieldAppID          = big.NewInt(1 << 2)
+	entityIDFieldOrganizationID = big.NewInt(1 << 3)
+	entityIDFieldAgentID        = big.NewInt(1 << 4)
 )
 
-type EntityId struct {
+type EntityID struct {
 	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
 	//
 	// Must be less than 192 characters and contain only:
@@ -7734,15 +7789,15 @@ type EntityId struct {
 	// - periods (`.`)
 	// - at symbol (`@`)
 	// - pipe symbol (`|`)
-	ReferenceId string `json:"referenceId" url:"referenceId"`
+	ReferenceID string `json:"referenceId" url:"referenceId"`
 	// The object type
 	Type EntityType `json:"type" url:"type"`
 	// The ID of the application that created this object
-	AppId string `json:"appId" url:"appId"`
+	AppID string `json:"appId" url:"appId"`
 	// The ID of the organization that this object belongs to
-	OrganizationId string `json:"organizationId" url:"organizationId"`
+	OrganizationID string `json:"organizationId" url:"organizationId"`
 	// The ID of the agent that this object belongs to
-	AgentId string `json:"agentId" url:"agentId"`
+	AgentID string `json:"agentId" url:"agentId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7751,94 +7806,94 @@ type EntityId struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EntityId) GetReferenceId() string {
+func (e *EntityID) GetReferenceID() string {
 	if e == nil {
 		return ""
 	}
-	return e.ReferenceId
+	return e.ReferenceID
 }
 
-func (e *EntityId) GetType() EntityType {
+func (e *EntityID) GetType() EntityType {
 	if e == nil {
 		return ""
 	}
 	return e.Type
 }
 
-func (e *EntityId) GetAppId() string {
+func (e *EntityID) GetAppID() string {
 	if e == nil {
 		return ""
 	}
-	return e.AppId
+	return e.AppID
 }
 
-func (e *EntityId) GetOrganizationId() string {
+func (e *EntityID) GetOrganizationID() string {
 	if e == nil {
 		return ""
 	}
-	return e.OrganizationId
+	return e.OrganizationID
 }
 
-func (e *EntityId) GetAgentId() string {
+func (e *EntityID) GetAgentID() string {
 	if e == nil {
 		return ""
 	}
-	return e.AgentId
+	return e.AgentID
 }
 
-func (e *EntityId) GetExtraProperties() map[string]interface{} {
+func (e *EntityID) GetExtraProperties() map[string]interface{} {
 	return e.extraProperties
 }
 
-func (e *EntityId) require(field *big.Int) {
+func (e *EntityID) require(field *big.Int) {
 	if e.explicitFields == nil {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetReferenceId sets the ReferenceId field and marks it as non-optional;
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityId) SetReferenceId(referenceId string) {
-	e.ReferenceId = referenceId
-	e.require(entityIdFieldReferenceId)
+func (e *EntityID) SetReferenceID(referenceID string) {
+	e.ReferenceID = referenceID
+	e.require(entityIDFieldReferenceID)
 }
 
 // SetType sets the Type field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityId) SetType(type_ EntityType) {
+func (e *EntityID) SetType(type_ EntityType) {
 	e.Type = type_
-	e.require(entityIdFieldType)
+	e.require(entityIDFieldType)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityId) SetAppId(appId string) {
-	e.AppId = appId
-	e.require(entityIdFieldAppId)
+func (e *EntityID) SetAppID(appID string) {
+	e.AppID = appID
+	e.require(entityIDFieldAppID)
 }
 
-// SetOrganizationId sets the OrganizationId field and marks it as non-optional;
+// SetOrganizationID sets the OrganizationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityId) SetOrganizationId(organizationId string) {
-	e.OrganizationId = organizationId
-	e.require(entityIdFieldOrganizationId)
+func (e *EntityID) SetOrganizationID(organizationID string) {
+	e.OrganizationID = organizationID
+	e.require(entityIDFieldOrganizationID)
 }
 
-// SetAgentId sets the AgentId field and marks it as non-optional;
+// SetAgentID sets the AgentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityId) SetAgentId(agentId string) {
-	e.AgentId = agentId
-	e.require(entityIdFieldAgentId)
+func (e *EntityID) SetAgentID(agentID string) {
+	e.AgentID = agentID
+	e.require(entityIDFieldAgentID)
 }
 
-func (e *EntityId) UnmarshalJSON(data []byte) error {
-	type unmarshaler EntityId
+func (e *EntityID) UnmarshalJSON(data []byte) error {
+	type unmarshaler EntityID
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*e = EntityId(value)
+	*e = EntityID(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *e)
 	if err != nil {
 		return err
@@ -7848,8 +7903,8 @@ func (e *EntityId) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (e *EntityId) MarshalJSON() ([]byte, error) {
-	type embed EntityId
+func (e *EntityID) MarshalJSON() ([]byte, error) {
+	type embed EntityID
 	var marshaler = struct {
 		embed
 	}{
@@ -7859,7 +7914,7 @@ func (e *EntityId) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (e *EntityId) String() string {
+func (e *EntityID) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -7873,10 +7928,10 @@ func (e *EntityId) String() string {
 
 // All other entityId fields are inferred from the API request.
 var (
-	entityIdBaseFieldReferenceId = big.NewInt(1 << 0)
+	entityIDBaseFieldReferenceID = big.NewInt(1 << 0)
 )
 
-type EntityIdBase struct {
+type EntityIDBase struct {
 	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
 	//
 	// Must be less than 192 characters and contain only:
@@ -7887,7 +7942,7 @@ type EntityIdBase struct {
 	// - periods (`.`)
 	// - at symbol (`@`)
 	// - pipe symbol (`|`)
-	ReferenceId string `json:"referenceId" url:"referenceId"`
+	ReferenceID string `json:"referenceId" url:"referenceId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7896,38 +7951,38 @@ type EntityIdBase struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EntityIdBase) GetReferenceId() string {
+func (e *EntityIDBase) GetReferenceID() string {
 	if e == nil {
 		return ""
 	}
-	return e.ReferenceId
+	return e.ReferenceID
 }
 
-func (e *EntityIdBase) GetExtraProperties() map[string]interface{} {
+func (e *EntityIDBase) GetExtraProperties() map[string]interface{} {
 	return e.extraProperties
 }
 
-func (e *EntityIdBase) require(field *big.Int) {
+func (e *EntityIDBase) require(field *big.Int) {
 	if e.explicitFields == nil {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetReferenceId sets the ReferenceId field and marks it as non-optional;
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityIdBase) SetReferenceId(referenceId string) {
-	e.ReferenceId = referenceId
-	e.require(entityIdBaseFieldReferenceId)
+func (e *EntityIDBase) SetReferenceID(referenceID string) {
+	e.ReferenceID = referenceID
+	e.require(entityIDBaseFieldReferenceID)
 }
 
-func (e *EntityIdBase) UnmarshalJSON(data []byte) error {
-	type unmarshaler EntityIdBase
+func (e *EntityIDBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler EntityIDBase
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*e = EntityIdBase(value)
+	*e = EntityIDBase(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *e)
 	if err != nil {
 		return err
@@ -7937,8 +7992,8 @@ func (e *EntityIdBase) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (e *EntityIdBase) MarshalJSON() ([]byte, error) {
-	type embed EntityIdBase
+func (e *EntityIDBase) MarshalJSON() ([]byte, error) {
+	type embed EntityIDBase
 	var marshaler = struct {
 		embed
 	}{
@@ -7948,7 +8003,7 @@ func (e *EntityIdBase) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (e *EntityIdBase) String() string {
+func (e *EntityIDBase) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -7961,13 +8016,13 @@ func (e *EntityIdBase) String() string {
 }
 
 var (
-	entityIdFilterFieldReferenceId = big.NewInt(1 << 0)
-	entityIdFilterFieldAppId       = big.NewInt(1 << 1)
+	entityIDFilterFieldReferenceID = big.NewInt(1 << 0)
+	entityIDFilterFieldAppID       = big.NewInt(1 << 1)
 )
 
-type EntityIdFilter struct {
-	ReferenceId string `json:"referenceId" url:"referenceId"`
-	AppId       string `json:"appId" url:"appId"`
+type EntityIDFilter struct {
+	ReferenceID string `json:"referenceId" url:"referenceId"`
+	AppID       string `json:"appId" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7976,52 +8031,52 @@ type EntityIdFilter struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EntityIdFilter) GetReferenceId() string {
+func (e *EntityIDFilter) GetReferenceID() string {
 	if e == nil {
 		return ""
 	}
-	return e.ReferenceId
+	return e.ReferenceID
 }
 
-func (e *EntityIdFilter) GetAppId() string {
+func (e *EntityIDFilter) GetAppID() string {
 	if e == nil {
 		return ""
 	}
-	return e.AppId
+	return e.AppID
 }
 
-func (e *EntityIdFilter) GetExtraProperties() map[string]interface{} {
+func (e *EntityIDFilter) GetExtraProperties() map[string]interface{} {
 	return e.extraProperties
 }
 
-func (e *EntityIdFilter) require(field *big.Int) {
+func (e *EntityIDFilter) require(field *big.Int) {
 	if e.explicitFields == nil {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetReferenceId sets the ReferenceId field and marks it as non-optional;
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityIdFilter) SetReferenceId(referenceId string) {
-	e.ReferenceId = referenceId
-	e.require(entityIdFilterFieldReferenceId)
+func (e *EntityIDFilter) SetReferenceID(referenceID string) {
+	e.ReferenceID = referenceID
+	e.require(entityIDFilterFieldReferenceID)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityIdFilter) SetAppId(appId string) {
-	e.AppId = appId
-	e.require(entityIdFilterFieldAppId)
+func (e *EntityIDFilter) SetAppID(appID string) {
+	e.AppID = appID
+	e.require(entityIDFilterFieldAppID)
 }
 
-func (e *EntityIdFilter) UnmarshalJSON(data []byte) error {
-	type unmarshaler EntityIdFilter
+func (e *EntityIDFilter) UnmarshalJSON(data []byte) error {
+	type unmarshaler EntityIDFilter
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*e = EntityIdFilter(value)
+	*e = EntityIDFilter(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *e)
 	if err != nil {
 		return err
@@ -8031,8 +8086,8 @@ func (e *EntityIdFilter) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (e *EntityIdFilter) MarshalJSON() ([]byte, error) {
-	type embed EntityIdFilter
+func (e *EntityIDFilter) MarshalJSON() ([]byte, error) {
+	type embed EntityIDFilter
 	var marshaler = struct {
 		embed
 	}{
@@ -8042,7 +8097,7 @@ func (e *EntityIdFilter) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (e *EntityIdFilter) String() string {
+func (e *EntityIDFilter) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -8056,12 +8111,12 @@ func (e *EntityIdFilter) String() string {
 
 // The organizationId and agentId are inferred from the context.
 var (
-	entityIdWithoutAgentFieldReferenceId = big.NewInt(1 << 0)
-	entityIdWithoutAgentFieldType        = big.NewInt(1 << 1)
-	entityIdWithoutAgentFieldAppId       = big.NewInt(1 << 2)
+	entityIDWithoutAgentFieldReferenceID = big.NewInt(1 << 0)
+	entityIDWithoutAgentFieldType        = big.NewInt(1 << 1)
+	entityIDWithoutAgentFieldAppID       = big.NewInt(1 << 2)
 )
 
-type EntityIdWithoutAgent struct {
+type EntityIDWithoutAgent struct {
 	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
 	//
 	// Must be less than 192 characters and contain only:
@@ -8072,11 +8127,11 @@ type EntityIdWithoutAgent struct {
 	// - periods (`.`)
 	// - at symbol (`@`)
 	// - pipe symbol (`|`)
-	ReferenceId string `json:"referenceId" url:"referenceId"`
+	ReferenceID string `json:"referenceId" url:"referenceId"`
 	// The object type
 	Type EntityType `json:"type" url:"type"`
 	// The ID of the application that created this object
-	AppId string `json:"appId" url:"appId"`
+	AppID string `json:"appId" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -8085,66 +8140,66 @@ type EntityIdWithoutAgent struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EntityIdWithoutAgent) GetReferenceId() string {
+func (e *EntityIDWithoutAgent) GetReferenceID() string {
 	if e == nil {
 		return ""
 	}
-	return e.ReferenceId
+	return e.ReferenceID
 }
 
-func (e *EntityIdWithoutAgent) GetType() EntityType {
+func (e *EntityIDWithoutAgent) GetType() EntityType {
 	if e == nil {
 		return ""
 	}
 	return e.Type
 }
 
-func (e *EntityIdWithoutAgent) GetAppId() string {
+func (e *EntityIDWithoutAgent) GetAppID() string {
 	if e == nil {
 		return ""
 	}
-	return e.AppId
+	return e.AppID
 }
 
-func (e *EntityIdWithoutAgent) GetExtraProperties() map[string]interface{} {
+func (e *EntityIDWithoutAgent) GetExtraProperties() map[string]interface{} {
 	return e.extraProperties
 }
 
-func (e *EntityIdWithoutAgent) require(field *big.Int) {
+func (e *EntityIDWithoutAgent) require(field *big.Int) {
 	if e.explicitFields == nil {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetReferenceId sets the ReferenceId field and marks it as non-optional;
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityIdWithoutAgent) SetReferenceId(referenceId string) {
-	e.ReferenceId = referenceId
-	e.require(entityIdWithoutAgentFieldReferenceId)
+func (e *EntityIDWithoutAgent) SetReferenceID(referenceID string) {
+	e.ReferenceID = referenceID
+	e.require(entityIDWithoutAgentFieldReferenceID)
 }
 
 // SetType sets the Type field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityIdWithoutAgent) SetType(type_ EntityType) {
+func (e *EntityIDWithoutAgent) SetType(type_ EntityType) {
 	e.Type = type_
-	e.require(entityIdWithoutAgentFieldType)
+	e.require(entityIDWithoutAgentFieldType)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityIdWithoutAgent) SetAppId(appId string) {
-	e.AppId = appId
-	e.require(entityIdWithoutAgentFieldAppId)
+func (e *EntityIDWithoutAgent) SetAppID(appID string) {
+	e.AppID = appID
+	e.require(entityIDWithoutAgentFieldAppID)
 }
 
-func (e *EntityIdWithoutAgent) UnmarshalJSON(data []byte) error {
-	type unmarshaler EntityIdWithoutAgent
+func (e *EntityIDWithoutAgent) UnmarshalJSON(data []byte) error {
+	type unmarshaler EntityIDWithoutAgent
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*e = EntityIdWithoutAgent(value)
+	*e = EntityIDWithoutAgent(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *e)
 	if err != nil {
 		return err
@@ -8154,8 +8209,8 @@ func (e *EntityIdWithoutAgent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (e *EntityIdWithoutAgent) MarshalJSON() ([]byte, error) {
-	type embed EntityIdWithoutAgent
+func (e *EntityIDWithoutAgent) MarshalJSON() ([]byte, error) {
+	type embed EntityIDWithoutAgent
 	var marshaler = struct {
 		embed
 	}{
@@ -8165,7 +8220,7 @@ func (e *EntityIdWithoutAgent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (e *EntityIdWithoutAgent) String() string {
+func (e *EntityIDWithoutAgent) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -8178,14 +8233,14 @@ func (e *EntityIdWithoutAgent) String() string {
 }
 
 var (
-	entityResultFieldReferenceId = big.NewInt(1 << 0)
-	entityResultFieldAppId       = big.NewInt(1 << 1)
+	entityResultFieldReferenceID = big.NewInt(1 << 0)
+	entityResultFieldAppID       = big.NewInt(1 << 1)
 	entityResultFieldName        = big.NewInt(1 << 2)
 )
 
 type EntityResult struct {
-	ReferenceId string `json:"referenceId" url:"referenceId"`
-	AppId       string `json:"appId" url:"appId"`
+	ReferenceID string `json:"referenceId" url:"referenceId"`
+	AppID       string `json:"appId" url:"appId"`
 	// Human-readable name for the referenced entity (e.g., action name or document title).
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
 
@@ -8196,18 +8251,18 @@ type EntityResult struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EntityResult) GetReferenceId() string {
+func (e *EntityResult) GetReferenceID() string {
 	if e == nil {
 		return ""
 	}
-	return e.ReferenceId
+	return e.ReferenceID
 }
 
-func (e *EntityResult) GetAppId() string {
+func (e *EntityResult) GetAppID() string {
 	if e == nil {
 		return ""
 	}
-	return e.AppId
+	return e.AppID
 }
 
 func (e *EntityResult) GetName() *string {
@@ -8228,18 +8283,18 @@ func (e *EntityResult) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetReferenceId sets the ReferenceId field and marks it as non-optional;
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityResult) SetReferenceId(referenceId string) {
-	e.ReferenceId = referenceId
-	e.require(entityResultFieldReferenceId)
+func (e *EntityResult) SetReferenceID(referenceID string) {
+	e.ReferenceID = referenceID
+	e.require(entityResultFieldReferenceID)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EntityResult) SetAppId(appId string) {
-	e.AppId = appId
-	e.require(entityResultFieldAppId)
+func (e *EntityResult) SetAppID(appID string) {
+	e.AppID = appID
+	e.require(entityResultFieldAppID)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -8431,14 +8486,14 @@ func (e *ErrorMessage) String() string {
 }
 
 var (
-	eventBaseNoIdFieldTimestamp   = big.NewInt(1 << 0)
-	eventBaseNoIdFieldReferences  = big.NewInt(1 << 1)
-	eventBaseNoIdFieldSourceInfo  = big.NewInt(1 << 2)
-	eventBaseNoIdFieldSessionInfo = big.NewInt(1 << 3)
-	eventBaseNoIdFieldContextInfo = big.NewInt(1 << 4)
+	eventBaseNoIDFieldTimestamp   = big.NewInt(1 << 0)
+	eventBaseNoIDFieldReferences  = big.NewInt(1 << 1)
+	eventBaseNoIDFieldSourceInfo  = big.NewInt(1 << 2)
+	eventBaseNoIDFieldSessionInfo = big.NewInt(1 << 3)
+	eventBaseNoIDFieldContextInfo = big.NewInt(1 << 4)
 )
 
-type EventBaseNoId struct {
+type EventBaseNoID struct {
 	Timestamp   *time.Time      `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	References  []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
@@ -8452,46 +8507,46 @@ type EventBaseNoId struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EventBaseNoId) GetTimestamp() *time.Time {
+func (e *EventBaseNoID) GetTimestamp() *time.Time {
 	if e == nil {
 		return nil
 	}
 	return e.Timestamp
 }
 
-func (e *EventBaseNoId) GetReferences() []*ScopedEntity {
+func (e *EventBaseNoID) GetReferences() []*ScopedEntity {
 	if e == nil {
 		return nil
 	}
 	return e.References
 }
 
-func (e *EventBaseNoId) GetSourceInfo() *SourceInfo {
+func (e *EventBaseNoID) GetSourceInfo() *SourceInfo {
 	if e == nil {
 		return nil
 	}
 	return e.SourceInfo
 }
 
-func (e *EventBaseNoId) GetSessionInfo() *SessionInfo {
+func (e *EventBaseNoID) GetSessionInfo() *SessionInfo {
 	if e == nil {
 		return nil
 	}
 	return e.SessionInfo
 }
 
-func (e *EventBaseNoId) GetContextInfo() *ContextInfo {
+func (e *EventBaseNoID) GetContextInfo() *ContextInfo {
 	if e == nil {
 		return nil
 	}
 	return e.ContextInfo
 }
 
-func (e *EventBaseNoId) GetExtraProperties() map[string]interface{} {
+func (e *EventBaseNoID) GetExtraProperties() map[string]interface{} {
 	return e.extraProperties
 }
 
-func (e *EventBaseNoId) require(field *big.Int) {
+func (e *EventBaseNoID) require(field *big.Int) {
 	if e.explicitFields == nil {
 		e.explicitFields = big.NewInt(0)
 	}
@@ -8500,41 +8555,41 @@ func (e *EventBaseNoId) require(field *big.Int) {
 
 // SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventBaseNoId) SetTimestamp(timestamp *time.Time) {
+func (e *EventBaseNoID) SetTimestamp(timestamp *time.Time) {
 	e.Timestamp = timestamp
-	e.require(eventBaseNoIdFieldTimestamp)
+	e.require(eventBaseNoIDFieldTimestamp)
 }
 
 // SetReferences sets the References field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventBaseNoId) SetReferences(references []*ScopedEntity) {
+func (e *EventBaseNoID) SetReferences(references []*ScopedEntity) {
 	e.References = references
-	e.require(eventBaseNoIdFieldReferences)
+	e.require(eventBaseNoIDFieldReferences)
 }
 
 // SetSourceInfo sets the SourceInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventBaseNoId) SetSourceInfo(sourceInfo *SourceInfo) {
+func (e *EventBaseNoID) SetSourceInfo(sourceInfo *SourceInfo) {
 	e.SourceInfo = sourceInfo
-	e.require(eventBaseNoIdFieldSourceInfo)
+	e.require(eventBaseNoIDFieldSourceInfo)
 }
 
 // SetSessionInfo sets the SessionInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventBaseNoId) SetSessionInfo(sessionInfo *SessionInfo) {
+func (e *EventBaseNoID) SetSessionInfo(sessionInfo *SessionInfo) {
 	e.SessionInfo = sessionInfo
-	e.require(eventBaseNoIdFieldSessionInfo)
+	e.require(eventBaseNoIDFieldSessionInfo)
 }
 
 // SetContextInfo sets the ContextInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventBaseNoId) SetContextInfo(contextInfo *ContextInfo) {
+func (e *EventBaseNoID) SetContextInfo(contextInfo *ContextInfo) {
 	e.ContextInfo = contextInfo
-	e.require(eventBaseNoIdFieldContextInfo)
+	e.require(eventBaseNoIDFieldContextInfo)
 }
 
-func (e *EventBaseNoId) UnmarshalJSON(data []byte) error {
-	type embed EventBaseNoId
+func (e *EventBaseNoID) UnmarshalJSON(data []byte) error {
+	type embed EventBaseNoID
 	var unmarshaler = struct {
 		embed
 		Timestamp *internal.DateTime `json:"timestamp,omitempty"`
@@ -8544,7 +8599,7 @@ func (e *EventBaseNoId) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*e = EventBaseNoId(unmarshaler.embed)
+	*e = EventBaseNoID(unmarshaler.embed)
 	e.Timestamp = unmarshaler.Timestamp.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *e)
 	if err != nil {
@@ -8555,8 +8610,8 @@ func (e *EventBaseNoId) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (e *EventBaseNoId) MarshalJSON() ([]byte, error) {
-	type embed EventBaseNoId
+func (e *EventBaseNoID) MarshalJSON() ([]byte, error) {
+	type embed EventBaseNoID
 	var marshaler = struct {
 		embed
 		Timestamp *internal.DateTime `json:"timestamp,omitempty"`
@@ -8568,7 +8623,7 @@ func (e *EventBaseNoId) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (e *EventBaseNoId) String() string {
+func (e *EventBaseNoID) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -8583,13 +8638,58 @@ func (e *EventBaseNoId) String() string {
 type EventField string
 
 const (
-	EventFieldCreatedAt EventField = "CREATED_AT"
+	EventFieldCreatedAt          EventField = "CREATED_AT"
+	EventFieldEventName          EventField = "EVENT_NAME"
+	EventFieldEventType          EventField = "EVENT_TYPE"
+	EventFieldApp                EventField = "APP"
+	EventFieldSessionID          EventField = "SESSION_ID"
+	EventFieldSourceType         EventField = "SOURCE_TYPE"
+	EventFieldSourceLanguageCode EventField = "SOURCE_LANGUAGE_CODE"
+	EventFieldSourceDeviceType   EventField = "SOURCE_DEVICE_TYPE"
+	EventFieldSourceDeviceName   EventField = "SOURCE_DEVICE_NAME"
+	EventFieldSourceBrowserType  EventField = "SOURCE_BROWSER_TYPE"
+	EventFieldSourceBrowserName  EventField = "SOURCE_BROWSER_NAME"
+	EventFieldSourceGeoCity      EventField = "SOURCE_GEO_CITY"
+	EventFieldSourceGeoState     EventField = "SOURCE_GEO_STATE"
+	EventFieldSourceGeoCountry   EventField = "SOURCE_GEO_COUNTRY"
+	EventFieldUserReferenceID    EventField = "USER_REFERENCE_ID"
+	EventFieldAgentUserID        EventField = "AGENT_USER_ID"
 )
 
 func NewEventFieldFromString(s string) (EventField, error) {
 	switch s {
 	case "CREATED_AT":
 		return EventFieldCreatedAt, nil
+	case "EVENT_NAME":
+		return EventFieldEventName, nil
+	case "EVENT_TYPE":
+		return EventFieldEventType, nil
+	case "APP":
+		return EventFieldApp, nil
+	case "SESSION_ID":
+		return EventFieldSessionID, nil
+	case "SOURCE_TYPE":
+		return EventFieldSourceType, nil
+	case "SOURCE_LANGUAGE_CODE":
+		return EventFieldSourceLanguageCode, nil
+	case "SOURCE_DEVICE_TYPE":
+		return EventFieldSourceDeviceType, nil
+	case "SOURCE_DEVICE_NAME":
+		return EventFieldSourceDeviceName, nil
+	case "SOURCE_BROWSER_TYPE":
+		return EventFieldSourceBrowserType, nil
+	case "SOURCE_BROWSER_NAME":
+		return EventFieldSourceBrowserName, nil
+	case "SOURCE_GEO_CITY":
+		return EventFieldSourceGeoCity, nil
+	case "SOURCE_GEO_STATE":
+		return EventFieldSourceGeoState, nil
+	case "SOURCE_GEO_COUNTRY":
+		return EventFieldSourceGeoCountry, nil
+	case "USER_REFERENCE_ID":
+		return EventFieldUserReferenceID, nil
+	case "AGENT_USER_ID":
+		return EventFieldAgentUserID, nil
 	}
 	var t EventField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -8607,7 +8707,7 @@ var (
 	eventFilterFieldEventTypes          = big.NewInt(1 << 4)
 	eventFilterFieldUserEventNames      = big.NewInt(1 << 5)
 	eventFilterFieldSystemEventNames    = big.NewInt(1 << 6)
-	eventFilterFieldAgentUserIds        = big.NewInt(1 << 7)
+	eventFilterFieldAgentUserIDs        = big.NewInt(1 << 7)
 	eventFilterFieldLegacyFeedbackTypes = big.NewInt(1 << 8)
 	eventFilterFieldHasEventText        = big.NewInt(1 << 9)
 )
@@ -8620,7 +8720,7 @@ type EventFilter struct {
 	EventTypes          []EventType       `json:"eventTypes,omitempty" url:"eventTypes,omitempty"`
 	UserEventNames      []UserEventName   `json:"userEventNames,omitempty" url:"userEventNames,omitempty"`
 	SystemEventNames    []SystemEventName `json:"systemEventNames,omitempty" url:"systemEventNames,omitempty"`
-	AgentUserIds        []string          `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
+	AgentUserIDs        []string          `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
 	LegacyFeedbackTypes []FeedbackType    `json:"legacyFeedbackTypes,omitempty" url:"legacyFeedbackTypes,omitempty"`
 	HasEventText        *bool             `json:"hasEventText,omitempty" url:"hasEventText,omitempty"`
 
@@ -8680,11 +8780,11 @@ func (e *EventFilter) GetSystemEventNames() []SystemEventName {
 	return e.SystemEventNames
 }
 
-func (e *EventFilter) GetAgentUserIds() []string {
+func (e *EventFilter) GetAgentUserIDs() []string {
 	if e == nil {
 		return nil
 	}
-	return e.AgentUserIds
+	return e.AgentUserIDs
 }
 
 func (e *EventFilter) GetLegacyFeedbackTypes() []FeedbackType {
@@ -8761,11 +8861,11 @@ func (e *EventFilter) SetSystemEventNames(systemEventNames []SystemEventName) {
 	e.require(eventFilterFieldSystemEventNames)
 }
 
-// SetAgentUserIds sets the AgentUserIds field and marks it as non-optional;
+// SetAgentUserIDs sets the AgentUserIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventFilter) SetAgentUserIds(agentUserIds []string) {
-	e.AgentUserIds = agentUserIds
-	e.require(eventFilterFieldAgentUserIds)
+func (e *EventFilter) SetAgentUserIDs(agentUserIDs []string) {
+	e.AgentUserIDs = agentUserIDs
+	e.require(eventFilterFieldAgentUserIDs)
 }
 
 // SetLegacyFeedbackTypes sets the LegacyFeedbackTypes field and marks it as non-optional;
@@ -9090,12 +9190,12 @@ func (e EventType) Ptr() *EventType {
 }
 
 var (
-	eventUserInfoFieldId              = big.NewInt(1 << 0)
+	eventUserInfoFieldID              = big.NewInt(1 << 0)
 	eventUserInfoFieldUserDisplayName = big.NewInt(1 << 1)
 )
 
 type EventUserInfo struct {
-	Id              *EntityId `json:"id,omitempty" url:"id,omitempty"`
+	ID              *EntityID `json:"id,omitempty" url:"id,omitempty"`
 	UserDisplayName *string   `json:"userDisplayName,omitempty" url:"userDisplayName,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -9105,11 +9205,11 @@ type EventUserInfo struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EventUserInfo) GetId() *EntityId {
+func (e *EventUserInfo) GetID() *EntityID {
 	if e == nil {
 		return nil
 	}
-	return e.Id
+	return e.ID
 }
 
 func (e *EventUserInfo) GetUserDisplayName() *string {
@@ -9130,11 +9230,11 @@ func (e *EventUserInfo) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventUserInfo) SetId(id *EntityId) {
-	e.Id = id
-	e.require(eventUserInfoFieldId)
+func (e *EventUserInfo) SetID(id *EntityID) {
+	e.ID = id
+	e.require(eventUserInfoFieldID)
 }
 
 // SetUserDisplayName sets the UserDisplayName field and marks it as non-optional;
@@ -9184,11 +9284,11 @@ func (e *EventUserInfo) String() string {
 }
 
 var (
-	eventUserInfoBaseFieldId = big.NewInt(1 << 0)
+	eventUserInfoBaseFieldID = big.NewInt(1 << 0)
 )
 
 type EventUserInfoBase struct {
-	Id *EntityIdBase `json:"id" url:"id"`
+	ID *EntityIDBase `json:"id" url:"id"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -9197,11 +9297,11 @@ type EventUserInfoBase struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EventUserInfoBase) GetId() *EntityIdBase {
+func (e *EventUserInfoBase) GetID() *EntityIDBase {
 	if e == nil {
 		return nil
 	}
-	return e.Id
+	return e.ID
 }
 
 func (e *EventUserInfoBase) GetExtraProperties() map[string]interface{} {
@@ -9215,11 +9315,11 @@ func (e *EventUserInfoBase) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventUserInfoBase) SetId(id *EntityIdBase) {
-	e.Id = id
-	e.require(eventUserInfoBaseFieldId)
+func (e *EventUserInfoBase) SetID(id *EntityIDBase) {
+	e.ID = id
+	e.require(eventUserInfoBaseFieldID)
 }
 
 func (e *EventUserInfoBase) UnmarshalJSON(data []byte) error {
@@ -9556,10 +9656,10 @@ func (e *EventsSearchResponse) String() string {
 var (
 	feedbackFieldType                  = big.NewInt(1 << 0)
 	feedbackFieldText                  = big.NewInt(1 << 1)
-	feedbackFieldFeedbackId            = big.NewInt(1 << 2)
-	feedbackFieldConversationId        = big.NewInt(1 << 3)
-	feedbackFieldConversationMessageId = big.NewInt(1 << 4)
-	feedbackFieldUserId                = big.NewInt(1 << 5)
+	feedbackFieldFeedbackID            = big.NewInt(1 << 2)
+	feedbackFieldConversationID        = big.NewInt(1 << 3)
+	feedbackFieldConversationMessageID = big.NewInt(1 << 4)
+	feedbackFieldUserID                = big.NewInt(1 << 5)
 	feedbackFieldCreatedAt             = big.NewInt(1 << 6)
 )
 
@@ -9569,13 +9669,13 @@ type Feedback struct {
 	// The feedback text
 	Text *string `json:"text,omitempty" url:"text,omitempty"`
 	// The ID of the piece of feedback
-	FeedbackId *EntityId `json:"feedbackId" url:"feedbackId"`
+	FeedbackID *EntityID `json:"feedbackId" url:"feedbackId"`
 	// The ID of the conversation the feedback is about
-	ConversationId *EntityId `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityID `json:"conversationId" url:"conversationId"`
 	// The ID of the conversation message the feedback is about
-	ConversationMessageId *EntityId `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityID `json:"conversationMessageId" url:"conversationMessageId"`
 	// The ID of the user who created the feedback
-	UserId *EntityId `json:"userId,omitempty" url:"userId,omitempty"`
+	UserID *EntityID `json:"userId,omitempty" url:"userId,omitempty"`
 	// The date and time the feedback was created
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 
@@ -9600,32 +9700,32 @@ func (f *Feedback) GetText() *string {
 	return f.Text
 }
 
-func (f *Feedback) GetFeedbackId() *EntityId {
+func (f *Feedback) GetFeedbackID() *EntityID {
 	if f == nil {
 		return nil
 	}
-	return f.FeedbackId
+	return f.FeedbackID
 }
 
-func (f *Feedback) GetConversationId() *EntityId {
+func (f *Feedback) GetConversationID() *EntityID {
 	if f == nil {
 		return nil
 	}
-	return f.ConversationId
+	return f.ConversationID
 }
 
-func (f *Feedback) GetConversationMessageId() *EntityId {
+func (f *Feedback) GetConversationMessageID() *EntityID {
 	if f == nil {
 		return nil
 	}
-	return f.ConversationMessageId
+	return f.ConversationMessageID
 }
 
-func (f *Feedback) GetUserId() *EntityId {
+func (f *Feedback) GetUserID() *EntityID {
 	if f == nil {
 		return nil
 	}
-	return f.UserId
+	return f.UserID
 }
 
 func (f *Feedback) GetCreatedAt() *time.Time {
@@ -9660,32 +9760,32 @@ func (f *Feedback) SetText(text *string) {
 	f.require(feedbackFieldText)
 }
 
-// SetFeedbackId sets the FeedbackId field and marks it as non-optional;
+// SetFeedbackID sets the FeedbackID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *Feedback) SetFeedbackId(feedbackId *EntityId) {
-	f.FeedbackId = feedbackId
-	f.require(feedbackFieldFeedbackId)
+func (f *Feedback) SetFeedbackID(feedbackID *EntityID) {
+	f.FeedbackID = feedbackID
+	f.require(feedbackFieldFeedbackID)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *Feedback) SetConversationId(conversationId *EntityId) {
-	f.ConversationId = conversationId
-	f.require(feedbackFieldConversationId)
+func (f *Feedback) SetConversationID(conversationID *EntityID) {
+	f.ConversationID = conversationID
+	f.require(feedbackFieldConversationID)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *Feedback) SetConversationMessageId(conversationMessageId *EntityId) {
-	f.ConversationMessageId = conversationMessageId
-	f.require(feedbackFieldConversationMessageId)
+func (f *Feedback) SetConversationMessageID(conversationMessageID *EntityID) {
+	f.ConversationMessageID = conversationMessageID
+	f.require(feedbackFieldConversationMessageID)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *Feedback) SetUserId(userId *EntityId) {
-	f.UserId = userId
-	f.require(feedbackFieldUserId)
+func (f *Feedback) SetUserID(userID *EntityID) {
+	f.UserID = userID
+	f.require(feedbackFieldUserID)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -10138,6 +10238,136 @@ func (g *GeoInfo) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
+var (
+	harmfulContentAnalysisFieldCategory               = big.NewInt(1 << 0)
+	harmfulContentAnalysisFieldHarmfulContentDetected = big.NewInt(1 << 1)
+	harmfulContentAnalysisFieldSeverity               = big.NewInt(1 << 2)
+	harmfulContentAnalysisFieldThreshold              = big.NewInt(1 << 3)
+)
+
+type HarmfulContentAnalysis struct {
+	// The category of harmful content analysis.
+	Category string `json:"category" url:"category"`
+	// Whether the analysis detected harmful content for this category. Will be true if the severity is greater than or equal to the threshold.
+	HarmfulContentDetected bool `json:"harmfulContentDetected" url:"harmfulContentDetected"`
+	// The severity of the harmful content analysis. Will be 0 if the category was not detected.
+	Severity int `json:"severity" url:"severity"`
+	// The threshold for the content safety analysis. If the severity is greater than or equal to the threshold, the analysis will be considered harmful.
+	Threshold int `json:"threshold" url:"threshold"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (h *HarmfulContentAnalysis) GetCategory() string {
+	if h == nil {
+		return ""
+	}
+	return h.Category
+}
+
+func (h *HarmfulContentAnalysis) GetHarmfulContentDetected() bool {
+	if h == nil {
+		return false
+	}
+	return h.HarmfulContentDetected
+}
+
+func (h *HarmfulContentAnalysis) GetSeverity() int {
+	if h == nil {
+		return 0
+	}
+	return h.Severity
+}
+
+func (h *HarmfulContentAnalysis) GetThreshold() int {
+	if h == nil {
+		return 0
+	}
+	return h.Threshold
+}
+
+func (h *HarmfulContentAnalysis) GetExtraProperties() map[string]interface{} {
+	return h.extraProperties
+}
+
+func (h *HarmfulContentAnalysis) require(field *big.Int) {
+	if h.explicitFields == nil {
+		h.explicitFields = big.NewInt(0)
+	}
+	h.explicitFields.Or(h.explicitFields, field)
+}
+
+// SetCategory sets the Category field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (h *HarmfulContentAnalysis) SetCategory(category string) {
+	h.Category = category
+	h.require(harmfulContentAnalysisFieldCategory)
+}
+
+// SetHarmfulContentDetected sets the HarmfulContentDetected field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (h *HarmfulContentAnalysis) SetHarmfulContentDetected(harmfulContentDetected bool) {
+	h.HarmfulContentDetected = harmfulContentDetected
+	h.require(harmfulContentAnalysisFieldHarmfulContentDetected)
+}
+
+// SetSeverity sets the Severity field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (h *HarmfulContentAnalysis) SetSeverity(severity int) {
+	h.Severity = severity
+	h.require(harmfulContentAnalysisFieldSeverity)
+}
+
+// SetThreshold sets the Threshold field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (h *HarmfulContentAnalysis) SetThreshold(threshold int) {
+	h.Threshold = threshold
+	h.require(harmfulContentAnalysisFieldThreshold)
+}
+
+func (h *HarmfulContentAnalysis) UnmarshalJSON(data []byte) error {
+	type unmarshaler HarmfulContentAnalysis
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*h = HarmfulContentAnalysis(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *h)
+	if err != nil {
+		return err
+	}
+	h.extraProperties = extraProperties
+	h.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (h *HarmfulContentAnalysis) MarshalJSON() ([]byte, error) {
+	type embed HarmfulContentAnalysis
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*h),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, h.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (h *HarmfulContentAnalysis) String() string {
+	if len(h.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(h.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(h); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", h)
+}
+
 type InboxItem struct {
 	Type               string
 	DuplicateDocuments *InboxItemDuplicateDocuments
@@ -10280,7 +10510,7 @@ func (i *InboxItem) validate() error {
 }
 
 var (
-	inboxItemBaseFieldId        = big.NewInt(1 << 0)
+	inboxItemBaseFieldID        = big.NewInt(1 << 0)
 	inboxItemBaseFieldCreatedAt = big.NewInt(1 << 1)
 	inboxItemBaseFieldUpdatedAt = big.NewInt(1 << 2)
 	inboxItemBaseFieldStatus    = big.NewInt(1 << 3)
@@ -10289,7 +10519,7 @@ var (
 
 type InboxItemBase struct {
 	// Unique identifier for the inbox item.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// Timestamp when the inbox item was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Timestamp when the inbox item was last updated.
@@ -10306,11 +10536,11 @@ type InboxItemBase struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemBase) GetId() *EntityId {
+func (i *InboxItemBase) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemBase) GetCreatedAt() time.Time {
@@ -10352,11 +10582,11 @@ func (i *InboxItemBase) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemBase) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemBaseFieldId)
+func (i *InboxItemBase) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemBaseFieldID)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -10439,7 +10669,7 @@ func (i *InboxItemBase) String() string {
 }
 
 var (
-	inboxItemCustomFieldId        = big.NewInt(1 << 0)
+	inboxItemCustomFieldID        = big.NewInt(1 << 0)
 	inboxItemCustomFieldCreatedAt = big.NewInt(1 << 1)
 	inboxItemCustomFieldUpdatedAt = big.NewInt(1 << 2)
 	inboxItemCustomFieldStatus    = big.NewInt(1 << 3)
@@ -10449,7 +10679,7 @@ var (
 
 type InboxItemCustom struct {
 	// Unique identifier for the inbox item.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// Timestamp when the inbox item was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Timestamp when the inbox item was last updated.
@@ -10468,11 +10698,11 @@ type InboxItemCustom struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemCustom) GetId() *EntityId {
+func (i *InboxItemCustom) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemCustom) GetCreatedAt() time.Time {
@@ -10521,11 +10751,11 @@ func (i *InboxItemCustom) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCustom) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemCustomFieldId)
+func (i *InboxItemCustom) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemCustomFieldID)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -10615,7 +10845,7 @@ func (i *InboxItemCustom) String() string {
 }
 
 var (
-	inboxItemDuplicateDocumentsFieldId               = big.NewInt(1 << 0)
+	inboxItemDuplicateDocumentsFieldID               = big.NewInt(1 << 0)
 	inboxItemDuplicateDocumentsFieldCreatedAt        = big.NewInt(1 << 1)
 	inboxItemDuplicateDocumentsFieldUpdatedAt        = big.NewInt(1 << 2)
 	inboxItemDuplicateDocumentsFieldStatus           = big.NewInt(1 << 3)
@@ -10628,7 +10858,7 @@ var (
 
 type InboxItemDuplicateDocuments struct {
 	// Unique identifier for the inbox item.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// Timestamp when the inbox item was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Timestamp when the inbox item was last updated.
@@ -10653,11 +10883,11 @@ type InboxItemDuplicateDocuments struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemDuplicateDocuments) GetId() *EntityId {
+func (i *InboxItemDuplicateDocuments) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemDuplicateDocuments) GetCreatedAt() time.Time {
@@ -10727,11 +10957,11 @@ func (i *InboxItemDuplicateDocuments) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemDuplicateDocuments) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemDuplicateDocumentsFieldId)
+func (i *InboxItemDuplicateDocuments) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemDuplicateDocumentsFieldID)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -10959,14 +11189,14 @@ func (i *InboxItemFix) validate() error {
 }
 
 var (
-	inboxItemFixAddDocumentFieldId                 = big.NewInt(1 << 0)
+	inboxItemFixAddDocumentFieldID                 = big.NewInt(1 << 0)
 	inboxItemFixAddDocumentFieldSuggestedTextTitle = big.NewInt(1 << 1)
 	inboxItemFixAddDocumentFieldSuggestedText      = big.NewInt(1 << 2)
 )
 
 type InboxItemFixAddDocument struct {
 	// Unique identifier for the inbox item fix.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// Suggested document title if the fix type is ADD_DOCUMENT.
 	SuggestedTextTitle string `json:"suggestedTextTitle" url:"suggestedTextTitle"`
 	// Suggested document text if the fix type is ADD_DOCUMENT.
@@ -10979,11 +11209,11 @@ type InboxItemFixAddDocument struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemFixAddDocument) GetId() *EntityId {
+func (i *InboxItemFixAddDocument) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemFixAddDocument) GetSuggestedTextTitle() string {
@@ -11011,11 +11241,11 @@ func (i *InboxItemFixAddDocument) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemFixAddDocument) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemFixAddDocumentFieldId)
+func (i *InboxItemFixAddDocument) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemFixAddDocumentFieldID)
 }
 
 // SetSuggestedTextTitle sets the SuggestedTextTitle field and marks it as non-optional;
@@ -11072,12 +11302,12 @@ func (i *InboxItemFixAddDocument) String() string {
 }
 
 var (
-	inboxItemFixBaseFieldId = big.NewInt(1 << 0)
+	inboxItemFixBaseFieldID = big.NewInt(1 << 0)
 )
 
 type InboxItemFixBase struct {
 	// Unique identifier for the inbox item fix.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -11086,11 +11316,11 @@ type InboxItemFixBase struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemFixBase) GetId() *EntityId {
+func (i *InboxItemFixBase) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemFixBase) GetExtraProperties() map[string]interface{} {
@@ -11104,11 +11334,11 @@ func (i *InboxItemFixBase) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemFixBase) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemFixBaseFieldId)
+func (i *InboxItemFixBase) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemFixBaseFieldID)
 }
 
 func (i *InboxItemFixBase) UnmarshalJSON(data []byte) error {
@@ -11151,13 +11381,13 @@ func (i *InboxItemFixBase) String() string {
 }
 
 var (
-	inboxItemFixDeactivateDocumentFieldId                  = big.NewInt(1 << 0)
+	inboxItemFixDeactivateDocumentFieldID                  = big.NewInt(1 << 0)
 	inboxItemFixDeactivateDocumentFieldDocumentInformation = big.NewInt(1 << 1)
 )
 
 type InboxItemFixDeactivateDocument struct {
 	// Unique identifier for the inbox item fix.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// Information about the document associated with this fix.
 	DocumentInformation *DocumentInformation `json:"documentInformation" url:"documentInformation"`
 
@@ -11168,11 +11398,11 @@ type InboxItemFixDeactivateDocument struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemFixDeactivateDocument) GetId() *EntityId {
+func (i *InboxItemFixDeactivateDocument) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemFixDeactivateDocument) GetDocumentInformation() *DocumentInformation {
@@ -11193,11 +11423,11 @@ func (i *InboxItemFixDeactivateDocument) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemFixDeactivateDocument) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemFixDeactivateDocumentFieldId)
+func (i *InboxItemFixDeactivateDocument) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemFixDeactivateDocumentFieldID)
 }
 
 // SetDocumentInformation sets the DocumentInformation field and marks it as non-optional;
@@ -11247,7 +11477,7 @@ func (i *InboxItemFixDeactivateDocument) String() string {
 }
 
 var (
-	inboxItemMissingKnowledgeFieldId            = big.NewInt(1 << 0)
+	inboxItemMissingKnowledgeFieldID            = big.NewInt(1 << 0)
 	inboxItemMissingKnowledgeFieldCreatedAt     = big.NewInt(1 << 1)
 	inboxItemMissingKnowledgeFieldUpdatedAt     = big.NewInt(1 << 2)
 	inboxItemMissingKnowledgeFieldStatus        = big.NewInt(1 << 3)
@@ -11258,7 +11488,7 @@ var (
 
 type InboxItemMissingKnowledge struct {
 	// Unique identifier for the inbox item.
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// Timestamp when the inbox item was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Timestamp when the inbox item was last updated.
@@ -11279,11 +11509,11 @@ type InboxItemMissingKnowledge struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *InboxItemMissingKnowledge) GetId() *EntityId {
+func (i *InboxItemMissingKnowledge) GetID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.Id
+	return i.ID
 }
 
 func (i *InboxItemMissingKnowledge) GetCreatedAt() time.Time {
@@ -11339,11 +11569,11 @@ func (i *InboxItemMissingKnowledge) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemMissingKnowledge) SetId(id *EntityId) {
-	i.Id = id
-	i.require(inboxItemMissingKnowledgeFieldId)
+func (i *InboxItemMissingKnowledge) SetID(id *EntityID) {
+	i.ID = id
+	i.require(inboxItemMissingKnowledgeFieldID)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -11507,6 +11737,8 @@ const (
 	InboxItemTypeDuplicateDocument InboxItemType = "DUPLICATE_DOCUMENT"
 	// The inbox item is missing knowledge.
 	InboxItemTypeMissingKnowledge InboxItemType = "MISSING_KNOWLEDGE"
+	// The inbox item is a custom api-provided inbox item.
+	InboxItemTypeCustom InboxItemType = "CUSTOM"
 )
 
 func NewInboxItemTypeFromString(s string) (InboxItemType, error) {
@@ -11515,6 +11747,8 @@ func NewInboxItemTypeFromString(s string) (InboxItemType, error) {
 		return InboxItemTypeDuplicateDocument, nil
 	case "MISSING_KNOWLEDGE":
 		return InboxItemTypeMissingKnowledge, nil
+	case "CUSTOM":
+		return InboxItemTypeCustom, nil
 	}
 	var t InboxItemType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -11525,11 +11759,11 @@ func (i InboxItemType) Ptr() *InboxItemType {
 }
 
 var (
-	ipInfoFieldIp = big.NewInt(1 << 0)
+	iPInfoFieldIP = big.NewInt(1 << 0)
 )
 
-type IpInfo struct {
-	Ip *string `json:"ip,omitempty" url:"ip,omitempty"`
+type IPInfo struct {
+	IP *string `json:"ip,omitempty" url:"ip,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -11538,38 +11772,38 @@ type IpInfo struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *IpInfo) GetIp() *string {
+func (i *IPInfo) GetIP() *string {
 	if i == nil {
 		return nil
 	}
-	return i.Ip
+	return i.IP
 }
 
-func (i *IpInfo) GetExtraProperties() map[string]interface{} {
+func (i *IPInfo) GetExtraProperties() map[string]interface{} {
 	return i.extraProperties
 }
 
-func (i *IpInfo) require(field *big.Int) {
+func (i *IPInfo) require(field *big.Int) {
 	if i.explicitFields == nil {
 		i.explicitFields = big.NewInt(0)
 	}
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetIp sets the Ip field and marks it as non-optional;
+// SetIP sets the IP field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IpInfo) SetIp(ip *string) {
-	i.Ip = ip
-	i.require(ipInfoFieldIp)
+func (i *IPInfo) SetIP(ip *string) {
+	i.IP = ip
+	i.require(iPInfoFieldIP)
 }
 
-func (i *IpInfo) UnmarshalJSON(data []byte) error {
-	type unmarshaler IpInfo
+func (i *IPInfo) UnmarshalJSON(data []byte) error {
+	type unmarshaler IPInfo
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*i = IpInfo(value)
+	*i = IPInfo(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *i)
 	if err != nil {
 		return err
@@ -11579,8 +11813,8 @@ func (i *IpInfo) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (i *IpInfo) MarshalJSON() ([]byte, error) {
-	type embed IpInfo
+func (i *IPInfo) MarshalJSON() ([]byte, error) {
+	type embed IPInfo
 	var marshaler = struct {
 		embed
 	}{
@@ -11590,7 +11824,7 @@ func (i *IpInfo) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (i *IpInfo) String() string {
+func (i *IPInfo) String() string {
 	if len(i.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
 			return value
@@ -11600,6 +11834,279 @@ func (i *IpInfo) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", i)
+}
+
+var (
+	knowledgeContextByEntitiesFieldEntities = big.NewInt(1 << 0)
+)
+
+type KnowledgeContextByEntities struct {
+	Entities []*ScopedEntity `json:"entities" url:"entities"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeContextByEntities) GetEntities() []*ScopedEntity {
+	if k == nil {
+		return nil
+	}
+	return k.Entities
+}
+
+func (k *KnowledgeContextByEntities) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeContextByEntities) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetEntities sets the Entities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeContextByEntities) SetEntities(entities []*ScopedEntity) {
+	k.Entities = entities
+	k.require(knowledgeContextByEntitiesFieldEntities)
+}
+
+func (k *KnowledgeContextByEntities) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeContextByEntities
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeContextByEntities(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeContextByEntities) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeContextByEntities
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeContextByEntities) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
+}
+
+var (
+	knowledgeContextByEntityTypesFieldEntityTypes = big.NewInt(1 << 0)
+)
+
+type KnowledgeContextByEntityTypes struct {
+	EntityTypes []EntityType `json:"entityTypes" url:"entityTypes"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeContextByEntityTypes) GetEntityTypes() []EntityType {
+	if k == nil {
+		return nil
+	}
+	return k.EntityTypes
+}
+
+func (k *KnowledgeContextByEntityTypes) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeContextByEntityTypes) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetEntityTypes sets the EntityTypes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeContextByEntityTypes) SetEntityTypes(entityTypes []EntityType) {
+	k.EntityTypes = entityTypes
+	k.require(knowledgeContextByEntityTypesFieldEntityTypes)
+}
+
+func (k *KnowledgeContextByEntityTypes) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeContextByEntityTypes
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeContextByEntityTypes(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeContextByEntityTypes) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeContextByEntityTypes
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeContextByEntityTypes) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
+}
+
+type KnowledgeContextFilter struct {
+	ScopeType     string
+	ByEntities    *KnowledgeContextByEntities
+	ByEntityTypes *KnowledgeContextByEntityTypes
+}
+
+func (k *KnowledgeContextFilter) GetScopeType() string {
+	if k == nil {
+		return ""
+	}
+	return k.ScopeType
+}
+
+func (k *KnowledgeContextFilter) GetByEntities() *KnowledgeContextByEntities {
+	if k == nil {
+		return nil
+	}
+	return k.ByEntities
+}
+
+func (k *KnowledgeContextFilter) GetByEntityTypes() *KnowledgeContextByEntityTypes {
+	if k == nil {
+		return nil
+	}
+	return k.ByEntityTypes
+}
+
+func (k *KnowledgeContextFilter) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		ScopeType string `json:"scopeType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	k.ScopeType = unmarshaler.ScopeType
+	if unmarshaler.ScopeType == "" {
+		return fmt.Errorf("%T did not include discriminant scopeType", k)
+	}
+	switch unmarshaler.ScopeType {
+	case "byEntities":
+		value := new(KnowledgeContextByEntities)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		k.ByEntities = value
+	case "byEntityTypes":
+		value := new(KnowledgeContextByEntityTypes)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		k.ByEntityTypes = value
+	}
+	return nil
+}
+
+func (k KnowledgeContextFilter) MarshalJSON() ([]byte, error) {
+	if err := k.validate(); err != nil {
+		return nil, err
+	}
+	if k.ByEntities != nil {
+		return internal.MarshalJSONWithExtraProperty(k.ByEntities, "scopeType", "byEntities")
+	}
+	if k.ByEntityTypes != nil {
+		return internal.MarshalJSONWithExtraProperty(k.ByEntityTypes, "scopeType", "byEntityTypes")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", k)
+}
+
+type KnowledgeContextFilterVisitor interface {
+	VisitByEntities(*KnowledgeContextByEntities) error
+	VisitByEntityTypes(*KnowledgeContextByEntityTypes) error
+}
+
+func (k *KnowledgeContextFilter) Accept(visitor KnowledgeContextFilterVisitor) error {
+	if k.ByEntities != nil {
+		return visitor.VisitByEntities(k.ByEntities)
+	}
+	if k.ByEntityTypes != nil {
+		return visitor.VisitByEntityTypes(k.ByEntityTypes)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", k)
+}
+
+func (k *KnowledgeContextFilter) validate() error {
+	if k == nil {
+		return fmt.Errorf("type %T is nil", k)
+	}
+	var fields []string
+	if k.ByEntities != nil {
+		fields = append(fields, "byEntities")
+	}
+	if k.ByEntityTypes != nil {
+		fields = append(fields, "byEntityTypes")
+	}
+	if len(fields) == 0 {
+		if k.ScopeType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", k, k.ScopeType)
+		}
+		return fmt.Errorf("type %T is empty", k)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", k, fields)
+	}
+	if k.ScopeType != "" {
+		field := fields[0]
+		if k.ScopeType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				k,
+				k.ScopeType,
+				k,
+			)
+		}
+	}
+	return nil
 }
 
 var (
@@ -11904,7 +12411,7 @@ var (
 	novelSystemEventFieldSessionInfo = big.NewInt(1 << 3)
 	novelSystemEventFieldContextInfo = big.NewInt(1 << 4)
 	novelSystemEventFieldEventName   = big.NewInt(1 << 5)
-	novelSystemEventFieldId          = big.NewInt(1 << 6)
+	novelSystemEventFieldID          = big.NewInt(1 << 6)
 )
 
 type NovelSystemEvent struct {
@@ -11916,7 +12423,7 @@ type NovelSystemEvent struct {
 	// The name of the event
 	EventName SystemEventName `json:"eventName" url:"eventName"`
 	// The unique ID of the event
-	Id *EntityIdBase `json:"id" url:"id"`
+	ID *EntityIDBase `json:"id" url:"id"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -11967,11 +12474,11 @@ func (n *NovelSystemEvent) GetEventName() SystemEventName {
 	return n.EventName
 }
 
-func (n *NovelSystemEvent) GetId() *EntityIdBase {
+func (n *NovelSystemEvent) GetID() *EntityIDBase {
 	if n == nil {
 		return nil
 	}
-	return n.Id
+	return n.ID
 }
 
 func (n *NovelSystemEvent) GetExtraProperties() map[string]interface{} {
@@ -12027,11 +12534,11 @@ func (n *NovelSystemEvent) SetEventName(eventName SystemEventName) {
 	n.require(novelSystemEventFieldEventName)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEvent) SetId(id *EntityIdBase) {
-	n.Id = id
-	n.require(novelSystemEventFieldId)
+func (n *NovelSystemEvent) SetID(id *EntityIDBase) {
+	n.ID = id
+	n.require(novelSystemEventFieldID)
 }
 
 func (n *NovelSystemEvent) UnmarshalJSON(data []byte) error {
@@ -12082,15 +12589,15 @@ func (n *NovelSystemEvent) String() string {
 }
 
 var (
-	novelSystemEventNoIdFieldTimestamp   = big.NewInt(1 << 0)
-	novelSystemEventNoIdFieldReferences  = big.NewInt(1 << 1)
-	novelSystemEventNoIdFieldSourceInfo  = big.NewInt(1 << 2)
-	novelSystemEventNoIdFieldSessionInfo = big.NewInt(1 << 3)
-	novelSystemEventNoIdFieldContextInfo = big.NewInt(1 << 4)
-	novelSystemEventNoIdFieldEventName   = big.NewInt(1 << 5)
+	novelSystemEventNoIDFieldTimestamp   = big.NewInt(1 << 0)
+	novelSystemEventNoIDFieldReferences  = big.NewInt(1 << 1)
+	novelSystemEventNoIDFieldSourceInfo  = big.NewInt(1 << 2)
+	novelSystemEventNoIDFieldSessionInfo = big.NewInt(1 << 3)
+	novelSystemEventNoIDFieldContextInfo = big.NewInt(1 << 4)
+	novelSystemEventNoIDFieldEventName   = big.NewInt(1 << 5)
 )
 
-type NovelSystemEventNoId struct {
+type NovelSystemEventNoID struct {
 	Timestamp   *time.Time      `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	References  []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
@@ -12106,53 +12613,53 @@ type NovelSystemEventNoId struct {
 	rawJSON         json.RawMessage
 }
 
-func (n *NovelSystemEventNoId) GetTimestamp() *time.Time {
+func (n *NovelSystemEventNoID) GetTimestamp() *time.Time {
 	if n == nil {
 		return nil
 	}
 	return n.Timestamp
 }
 
-func (n *NovelSystemEventNoId) GetReferences() []*ScopedEntity {
+func (n *NovelSystemEventNoID) GetReferences() []*ScopedEntity {
 	if n == nil {
 		return nil
 	}
 	return n.References
 }
 
-func (n *NovelSystemEventNoId) GetSourceInfo() *SourceInfo {
+func (n *NovelSystemEventNoID) GetSourceInfo() *SourceInfo {
 	if n == nil {
 		return nil
 	}
 	return n.SourceInfo
 }
 
-func (n *NovelSystemEventNoId) GetSessionInfo() *SessionInfo {
+func (n *NovelSystemEventNoID) GetSessionInfo() *SessionInfo {
 	if n == nil {
 		return nil
 	}
 	return n.SessionInfo
 }
 
-func (n *NovelSystemEventNoId) GetContextInfo() *ContextInfo {
+func (n *NovelSystemEventNoID) GetContextInfo() *ContextInfo {
 	if n == nil {
 		return nil
 	}
 	return n.ContextInfo
 }
 
-func (n *NovelSystemEventNoId) GetEventName() SystemEventName {
+func (n *NovelSystemEventNoID) GetEventName() SystemEventName {
 	if n == nil {
 		return ""
 	}
 	return n.EventName
 }
 
-func (n *NovelSystemEventNoId) GetExtraProperties() map[string]interface{} {
+func (n *NovelSystemEventNoID) GetExtraProperties() map[string]interface{} {
 	return n.extraProperties
 }
 
-func (n *NovelSystemEventNoId) require(field *big.Int) {
+func (n *NovelSystemEventNoID) require(field *big.Int) {
 	if n.explicitFields == nil {
 		n.explicitFields = big.NewInt(0)
 	}
@@ -12161,48 +12668,48 @@ func (n *NovelSystemEventNoId) require(field *big.Int) {
 
 // SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEventNoId) SetTimestamp(timestamp *time.Time) {
+func (n *NovelSystemEventNoID) SetTimestamp(timestamp *time.Time) {
 	n.Timestamp = timestamp
-	n.require(novelSystemEventNoIdFieldTimestamp)
+	n.require(novelSystemEventNoIDFieldTimestamp)
 }
 
 // SetReferences sets the References field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEventNoId) SetReferences(references []*ScopedEntity) {
+func (n *NovelSystemEventNoID) SetReferences(references []*ScopedEntity) {
 	n.References = references
-	n.require(novelSystemEventNoIdFieldReferences)
+	n.require(novelSystemEventNoIDFieldReferences)
 }
 
 // SetSourceInfo sets the SourceInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEventNoId) SetSourceInfo(sourceInfo *SourceInfo) {
+func (n *NovelSystemEventNoID) SetSourceInfo(sourceInfo *SourceInfo) {
 	n.SourceInfo = sourceInfo
-	n.require(novelSystemEventNoIdFieldSourceInfo)
+	n.require(novelSystemEventNoIDFieldSourceInfo)
 }
 
 // SetSessionInfo sets the SessionInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEventNoId) SetSessionInfo(sessionInfo *SessionInfo) {
+func (n *NovelSystemEventNoID) SetSessionInfo(sessionInfo *SessionInfo) {
 	n.SessionInfo = sessionInfo
-	n.require(novelSystemEventNoIdFieldSessionInfo)
+	n.require(novelSystemEventNoIDFieldSessionInfo)
 }
 
 // SetContextInfo sets the ContextInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEventNoId) SetContextInfo(contextInfo *ContextInfo) {
+func (n *NovelSystemEventNoID) SetContextInfo(contextInfo *ContextInfo) {
 	n.ContextInfo = contextInfo
-	n.require(novelSystemEventNoIdFieldContextInfo)
+	n.require(novelSystemEventNoIDFieldContextInfo)
 }
 
 // SetEventName sets the EventName field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelSystemEventNoId) SetEventName(eventName SystemEventName) {
+func (n *NovelSystemEventNoID) SetEventName(eventName SystemEventName) {
 	n.EventName = eventName
-	n.require(novelSystemEventNoIdFieldEventName)
+	n.require(novelSystemEventNoIDFieldEventName)
 }
 
-func (n *NovelSystemEventNoId) UnmarshalJSON(data []byte) error {
-	type embed NovelSystemEventNoId
+func (n *NovelSystemEventNoID) UnmarshalJSON(data []byte) error {
+	type embed NovelSystemEventNoID
 	var unmarshaler = struct {
 		embed
 		Timestamp *internal.DateTime `json:"timestamp,omitempty"`
@@ -12212,7 +12719,7 @@ func (n *NovelSystemEventNoId) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*n = NovelSystemEventNoId(unmarshaler.embed)
+	*n = NovelSystemEventNoID(unmarshaler.embed)
 	n.Timestamp = unmarshaler.Timestamp.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *n)
 	if err != nil {
@@ -12223,8 +12730,8 @@ func (n *NovelSystemEventNoId) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (n *NovelSystemEventNoId) MarshalJSON() ([]byte, error) {
-	type embed NovelSystemEventNoId
+func (n *NovelSystemEventNoID) MarshalJSON() ([]byte, error) {
+	type embed NovelSystemEventNoID
 	var marshaler = struct {
 		embed
 		Timestamp *internal.DateTime `json:"timestamp,omitempty"`
@@ -12236,7 +12743,7 @@ func (n *NovelSystemEventNoId) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (n *NovelSystemEventNoId) String() string {
+func (n *NovelSystemEventNoID) String() string {
 	if len(n.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(n.rawJSON); err == nil {
 			return value
@@ -12254,7 +12761,7 @@ var (
 	novelUserEventFieldSourceInfo   = big.NewInt(1 << 2)
 	novelUserEventFieldSessionInfo  = big.NewInt(1 << 3)
 	novelUserEventFieldContextInfo  = big.NewInt(1 << 4)
-	novelUserEventFieldId           = big.NewInt(1 << 5)
+	novelUserEventFieldID           = big.NewInt(1 << 5)
 	novelUserEventFieldEventName    = big.NewInt(1 << 6)
 	novelUserEventFieldUserInfo     = big.NewInt(1 << 7)
 	novelUserEventFieldFeedbackInfo = big.NewInt(1 << 8)
@@ -12268,7 +12775,7 @@ type NovelUserEvent struct {
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
 	// The unique ID of the event
-	Id *EntityIdBase `json:"id" url:"id"`
+	ID *EntityIDBase `json:"id" url:"id"`
 	// The name of the event
 	EventName UserEventName `json:"eventName" url:"eventName"`
 	// Information about the user who triggered the event
@@ -12320,11 +12827,11 @@ func (n *NovelUserEvent) GetContextInfo() *ContextInfo {
 	return n.ContextInfo
 }
 
-func (n *NovelUserEvent) GetId() *EntityIdBase {
+func (n *NovelUserEvent) GetID() *EntityIDBase {
 	if n == nil {
 		return nil
 	}
-	return n.Id
+	return n.ID
 }
 
 func (n *NovelUserEvent) GetEventName() UserEventName {
@@ -12401,11 +12908,11 @@ func (n *NovelUserEvent) SetContextInfo(contextInfo *ContextInfo) {
 	n.require(novelUserEventFieldContextInfo)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NovelUserEvent) SetId(id *EntityIdBase) {
-	n.Id = id
-	n.require(novelUserEventFieldId)
+func (n *NovelUserEvent) SetID(id *EntityIDBase) {
+	n.ID = id
+	n.require(novelUserEventFieldID)
 }
 
 // SetEventName sets the EventName field and marks it as non-optional;
@@ -12856,18 +13363,18 @@ func (p *Page) String() string {
 
 var (
 	pageInfoFieldPageName  = big.NewInt(1 << 0)
-	pageInfoFieldPageUrl   = big.NewInt(1 << 1)
+	pageInfoFieldPageURL   = big.NewInt(1 << 1)
 	pageInfoFieldPageTitle = big.NewInt(1 << 2)
-	pageInfoFieldLinkUrl   = big.NewInt(1 << 3)
-	pageInfoFieldElementId = big.NewInt(1 << 4)
+	pageInfoFieldLinkURL   = big.NewInt(1 << 3)
+	pageInfoFieldElementID = big.NewInt(1 << 4)
 )
 
 type PageInfo struct {
 	PageName  *string `json:"pageName,omitempty" url:"pageName,omitempty"`
-	PageUrl   *string `json:"pageUrl,omitempty" url:"pageUrl,omitempty"`
+	PageURL   *string `json:"pageUrl,omitempty" url:"pageUrl,omitempty"`
 	PageTitle *string `json:"pageTitle,omitempty" url:"pageTitle,omitempty"`
-	LinkUrl   *string `json:"linkUrl,omitempty" url:"linkUrl,omitempty"`
-	ElementId *string `json:"elementId,omitempty" url:"elementId,omitempty"`
+	LinkURL   *string `json:"linkUrl,omitempty" url:"linkUrl,omitempty"`
+	ElementID *string `json:"elementId,omitempty" url:"elementId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12883,11 +13390,11 @@ func (p *PageInfo) GetPageName() *string {
 	return p.PageName
 }
 
-func (p *PageInfo) GetPageUrl() *string {
+func (p *PageInfo) GetPageURL() *string {
 	if p == nil {
 		return nil
 	}
-	return p.PageUrl
+	return p.PageURL
 }
 
 func (p *PageInfo) GetPageTitle() *string {
@@ -12897,18 +13404,18 @@ func (p *PageInfo) GetPageTitle() *string {
 	return p.PageTitle
 }
 
-func (p *PageInfo) GetLinkUrl() *string {
+func (p *PageInfo) GetLinkURL() *string {
 	if p == nil {
 		return nil
 	}
-	return p.LinkUrl
+	return p.LinkURL
 }
 
-func (p *PageInfo) GetElementId() *string {
+func (p *PageInfo) GetElementID() *string {
 	if p == nil {
 		return nil
 	}
-	return p.ElementId
+	return p.ElementID
 }
 
 func (p *PageInfo) GetExtraProperties() map[string]interface{} {
@@ -12929,11 +13436,11 @@ func (p *PageInfo) SetPageName(pageName *string) {
 	p.require(pageInfoFieldPageName)
 }
 
-// SetPageUrl sets the PageUrl field and marks it as non-optional;
+// SetPageURL sets the PageURL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (p *PageInfo) SetPageUrl(pageUrl *string) {
-	p.PageUrl = pageUrl
-	p.require(pageInfoFieldPageUrl)
+func (p *PageInfo) SetPageURL(pageURL *string) {
+	p.PageURL = pageURL
+	p.require(pageInfoFieldPageURL)
 }
 
 // SetPageTitle sets the PageTitle field and marks it as non-optional;
@@ -12943,18 +13450,18 @@ func (p *PageInfo) SetPageTitle(pageTitle *string) {
 	p.require(pageInfoFieldPageTitle)
 }
 
-// SetLinkUrl sets the LinkUrl field and marks it as non-optional;
+// SetLinkURL sets the LinkURL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (p *PageInfo) SetLinkUrl(linkUrl *string) {
-	p.LinkUrl = linkUrl
-	p.require(pageInfoFieldLinkUrl)
+func (p *PageInfo) SetLinkURL(linkURL *string) {
+	p.LinkURL = linkURL
+	p.require(pageInfoFieldLinkURL)
 }
 
-// SetElementId sets the ElementId field and marks it as non-optional;
+// SetElementID sets the ElementID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (p *PageInfo) SetElementId(elementId *string) {
-	p.ElementId = elementId
-	p.require(pageInfoFieldElementId)
+func (p *PageInfo) SetElementID(elementID *string) {
+	p.ElementID = elementID
+	p.require(pageInfoFieldElementID)
 }
 
 func (p *PageInfo) UnmarshalJSON(data []byte) error {
@@ -12994,6 +13501,193 @@ func (p *PageInfo) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", p)
+}
+
+type PiiCategory string
+
+const (
+	PiiCategoryName                               PiiCategory = "Name"
+	PiiCategoryEmail                              PiiCategory = "Email"
+	PiiCategoryPhoneNumber                        PiiCategory = "PhoneNumber"
+	PiiCategoryStreetAddress                      PiiCategory = "StreetAddress"
+	PiiCategoryCreditCardNumber                   PiiCategory = "CreditCardNumber"
+	PiiCategoryUsBankAccountNumber                PiiCategory = "UsBankAccountNumber"
+	PiiCategoryUsSocialSecurityNumber             PiiCategory = "UsSocialSecurityNumber"
+	PiiCategoryUsUkPassportNumber                 PiiCategory = "UsUkPassportNumber"
+	PiiCategoryUsDriversLicenseNumber             PiiCategory = "UsDriversLicenseNumber"
+	PiiCategoryUsIndividualTaxpayerIdentification PiiCategory = "UsIndividualTaxpayerIdentification"
+	PiiCategoryDate                               PiiCategory = "Date"
+	PiiCategoryIPAddress                          PiiCategory = "IpAddress"
+	PiiCategoryURL                                PiiCategory = "Url"
+	PiiCategoryAbaRoutingNumber                   PiiCategory = "AbaRoutingNumber"
+	PiiCategoryAge                                PiiCategory = "Age"
+	PiiCategorySwiftCode                          PiiCategory = "SwiftCode"
+	PiiCategoryAuBankAccountNumber                PiiCategory = "AuBankAccountNumber"
+	PiiCategoryAuBusinessNumber                   PiiCategory = "AuBusinessNumber"
+	PiiCategoryAuCompanyNumber                    PiiCategory = "AuCompanyNumber"
+	PiiCategoryAuDriversLicenseNumber             PiiCategory = "AuDriversLicenseNumber"
+	PiiCategoryAuMedicalAccountNumber             PiiCategory = "AuMedicalAccountNumber"
+	PiiCategoryAuPassportNumber                   PiiCategory = "AuPassportNumber"
+	PiiCategoryAuTaxFileNumber                    PiiCategory = "AuTaxFileNumber"
+	PiiCategoryCaBankAccountNumber                PiiCategory = "CaBankAccountNumber"
+	PiiCategoryCaDriversLicenseNumber             PiiCategory = "CaDriversLicenseNumber"
+	PiiCategoryCaHealthServiceNumber              PiiCategory = "CaHealthServiceNumber"
+	PiiCategoryCaPassportNumber                   PiiCategory = "CaPassportNumber"
+	PiiCategoryCaPersonalHealthIdentification     PiiCategory = "CaPersonalHealthIdentification"
+	PiiCategoryCaSocialInsuranceNumber            PiiCategory = "CaSocialInsuranceNumber"
+	PiiCategoryEsDni                              PiiCategory = "EsDni"
+	PiiCategoryEsSocialSecurityNumber             PiiCategory = "EsSocialSecurityNumber"
+	PiiCategoryEsTaxIdentificationNumber          PiiCategory = "EsTaxIdentificationNumber"
+	PiiCategoryEuDebitCardNumber                  PiiCategory = "EuDebitCardNumber"
+	PiiCategoryEuDriversLicenseNumber             PiiCategory = "EuDriversLicenseNumber"
+	PiiCategoryEuGpsCoordinates                   PiiCategory = "EuGpsCoordinates"
+	PiiCategoryEuNationalIdentificationNumber     PiiCategory = "EuNationalIdentificationNumber"
+	PiiCategoryEuPassportNumber                   PiiCategory = "EuPassportNumber"
+	PiiCategoryEuSocialSecurityNumber             PiiCategory = "EuSocialSecurityNumber"
+	PiiCategoryEuTaxIdentificationNumber          PiiCategory = "EuTaxIdentificationNumber"
+	PiiCategoryFrDriversLicenseNumber             PiiCategory = "FrDriversLicenseNumber"
+	PiiCategoryFrHealthInsuranceNumber            PiiCategory = "FrHealthInsuranceNumber"
+	PiiCategoryFrNationalID                       PiiCategory = "FrNationalId"
+	PiiCategoryFrPassportNumber                   PiiCategory = "FrPassportNumber"
+	PiiCategoryFrSocialSecurityNumber             PiiCategory = "FrSocialSecurityNumber"
+	PiiCategoryFrTaxIdentificationNumber          PiiCategory = "FrTaxIdentificationNumber"
+	PiiCategoryFrValueAddedTaxNumber              PiiCategory = "FrValueAddedTaxNumber"
+	PiiCategoryInternationalBankingAccountNumber  PiiCategory = "InternationalBankingAccountNumber"
+	PiiCategoryNzBankAccountNumber                PiiCategory = "NzBankAccountNumber"
+	PiiCategoryNzDriversLicenseNumber             PiiCategory = "NzDriversLicenseNumber"
+	PiiCategoryNzInlandRevenueNumber              PiiCategory = "NzInlandRevenueNumber"
+	PiiCategoryNzMinistryOfHealthNumber           PiiCategory = "NzMinistryOfHealthNumber"
+	PiiCategoryNzSocialWelfareNumber              PiiCategory = "NzSocialWelfareNumber"
+	PiiCategoryUkDriversLicenseNumber             PiiCategory = "UkDriversLicenseNumber"
+	PiiCategoryUkElectoralRollNumber              PiiCategory = "UkElectoralRollNumber"
+	PiiCategoryUkNationalHealthNumber             PiiCategory = "UkNationalHealthNumber"
+	PiiCategoryUkNationalInsuranceNumber          PiiCategory = "UkNationalInsuranceNumber"
+	PiiCategoryUkUniqueTaxpayerNumber             PiiCategory = "UkUniqueTaxpayerNumber"
+)
+
+func NewPiiCategoryFromString(s string) (PiiCategory, error) {
+	switch s {
+	case "Name":
+		return PiiCategoryName, nil
+	case "Email":
+		return PiiCategoryEmail, nil
+	case "PhoneNumber":
+		return PiiCategoryPhoneNumber, nil
+	case "StreetAddress":
+		return PiiCategoryStreetAddress, nil
+	case "CreditCardNumber":
+		return PiiCategoryCreditCardNumber, nil
+	case "UsBankAccountNumber":
+		return PiiCategoryUsBankAccountNumber, nil
+	case "UsSocialSecurityNumber":
+		return PiiCategoryUsSocialSecurityNumber, nil
+	case "UsUkPassportNumber":
+		return PiiCategoryUsUkPassportNumber, nil
+	case "UsDriversLicenseNumber":
+		return PiiCategoryUsDriversLicenseNumber, nil
+	case "UsIndividualTaxpayerIdentification":
+		return PiiCategoryUsIndividualTaxpayerIdentification, nil
+	case "Date":
+		return PiiCategoryDate, nil
+	case "IpAddress":
+		return PiiCategoryIPAddress, nil
+	case "Url":
+		return PiiCategoryURL, nil
+	case "AbaRoutingNumber":
+		return PiiCategoryAbaRoutingNumber, nil
+	case "Age":
+		return PiiCategoryAge, nil
+	case "SwiftCode":
+		return PiiCategorySwiftCode, nil
+	case "AuBankAccountNumber":
+		return PiiCategoryAuBankAccountNumber, nil
+	case "AuBusinessNumber":
+		return PiiCategoryAuBusinessNumber, nil
+	case "AuCompanyNumber":
+		return PiiCategoryAuCompanyNumber, nil
+	case "AuDriversLicenseNumber":
+		return PiiCategoryAuDriversLicenseNumber, nil
+	case "AuMedicalAccountNumber":
+		return PiiCategoryAuMedicalAccountNumber, nil
+	case "AuPassportNumber":
+		return PiiCategoryAuPassportNumber, nil
+	case "AuTaxFileNumber":
+		return PiiCategoryAuTaxFileNumber, nil
+	case "CaBankAccountNumber":
+		return PiiCategoryCaBankAccountNumber, nil
+	case "CaDriversLicenseNumber":
+		return PiiCategoryCaDriversLicenseNumber, nil
+	case "CaHealthServiceNumber":
+		return PiiCategoryCaHealthServiceNumber, nil
+	case "CaPassportNumber":
+		return PiiCategoryCaPassportNumber, nil
+	case "CaPersonalHealthIdentification":
+		return PiiCategoryCaPersonalHealthIdentification, nil
+	case "CaSocialInsuranceNumber":
+		return PiiCategoryCaSocialInsuranceNumber, nil
+	case "EsDni":
+		return PiiCategoryEsDni, nil
+	case "EsSocialSecurityNumber":
+		return PiiCategoryEsSocialSecurityNumber, nil
+	case "EsTaxIdentificationNumber":
+		return PiiCategoryEsTaxIdentificationNumber, nil
+	case "EuDebitCardNumber":
+		return PiiCategoryEuDebitCardNumber, nil
+	case "EuDriversLicenseNumber":
+		return PiiCategoryEuDriversLicenseNumber, nil
+	case "EuGpsCoordinates":
+		return PiiCategoryEuGpsCoordinates, nil
+	case "EuNationalIdentificationNumber":
+		return PiiCategoryEuNationalIdentificationNumber, nil
+	case "EuPassportNumber":
+		return PiiCategoryEuPassportNumber, nil
+	case "EuSocialSecurityNumber":
+		return PiiCategoryEuSocialSecurityNumber, nil
+	case "EuTaxIdentificationNumber":
+		return PiiCategoryEuTaxIdentificationNumber, nil
+	case "FrDriversLicenseNumber":
+		return PiiCategoryFrDriversLicenseNumber, nil
+	case "FrHealthInsuranceNumber":
+		return PiiCategoryFrHealthInsuranceNumber, nil
+	case "FrNationalId":
+		return PiiCategoryFrNationalID, nil
+	case "FrPassportNumber":
+		return PiiCategoryFrPassportNumber, nil
+	case "FrSocialSecurityNumber":
+		return PiiCategoryFrSocialSecurityNumber, nil
+	case "FrTaxIdentificationNumber":
+		return PiiCategoryFrTaxIdentificationNumber, nil
+	case "FrValueAddedTaxNumber":
+		return PiiCategoryFrValueAddedTaxNumber, nil
+	case "InternationalBankingAccountNumber":
+		return PiiCategoryInternationalBankingAccountNumber, nil
+	case "NzBankAccountNumber":
+		return PiiCategoryNzBankAccountNumber, nil
+	case "NzDriversLicenseNumber":
+		return PiiCategoryNzDriversLicenseNumber, nil
+	case "NzInlandRevenueNumber":
+		return PiiCategoryNzInlandRevenueNumber, nil
+	case "NzMinistryOfHealthNumber":
+		return PiiCategoryNzMinistryOfHealthNumber, nil
+	case "NzSocialWelfareNumber":
+		return PiiCategoryNzSocialWelfareNumber, nil
+	case "UkDriversLicenseNumber":
+		return PiiCategoryUkDriversLicenseNumber, nil
+	case "UkElectoralRollNumber":
+		return PiiCategoryUkElectoralRollNumber, nil
+	case "UkNationalHealthNumber":
+		return PiiCategoryUkNationalHealthNumber, nil
+	case "UkNationalInsuranceNumber":
+		return PiiCategoryUkNationalInsuranceNumber, nil
+	case "UkUniqueTaxpayerNumber":
+		return PiiCategoryUkUniqueTaxpayerNumber, nil
+	}
+	var t PiiCategory
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (p PiiCategory) Ptr() *PiiCategory {
+	return &p
 }
 
 type Precondition struct {
@@ -13432,6 +14126,7 @@ var (
 	responseConfigFieldCapabilities   = big.NewInt(1 << 0)
 	responseConfigFieldIsCopilot      = big.NewInt(1 << 1)
 	responseConfigFieldResponseLength = big.NewInt(1 << 2)
+	responseConfigFieldContextFilter  = big.NewInt(1 << 3)
 )
 
 type ResponseConfig struct {
@@ -13448,6 +14143,10 @@ type ResponseConfig struct {
 	IsCopilot bool `json:"isCopilot" url:"isCopilot"`
 	// The desired response length. Defaults to ResponseLength.MEDIUM.
 	ResponseLength ResponseLength `json:"responseLength" url:"responseLength"`
+	// Filters that restrict the knowledge retrieval candidate pool.
+	// - entities: specific entities to scope by
+	// - entityTypes: entity types to scope by (e.g., AGENT, CUSTOMER)
+	ContextFilter *KnowledgeContextFilter `json:"contextFilter,omitempty" url:"contextFilter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -13475,6 +14174,13 @@ func (r *ResponseConfig) GetResponseLength() ResponseLength {
 		return ""
 	}
 	return r.ResponseLength
+}
+
+func (r *ResponseConfig) GetContextFilter() *KnowledgeContextFilter {
+	if r == nil {
+		return nil
+	}
+	return r.ContextFilter
 }
 
 func (r *ResponseConfig) GetExtraProperties() map[string]interface{} {
@@ -13507,6 +14213,13 @@ func (r *ResponseConfig) SetIsCopilot(isCopilot bool) {
 func (r *ResponseConfig) SetResponseLength(responseLength ResponseLength) {
 	r.ResponseLength = responseLength
 	r.require(responseConfigFieldResponseLength)
+}
+
+// SetContextFilter sets the ContextFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (r *ResponseConfig) SetContextFilter(contextFilter *KnowledgeContextFilter) {
+	r.ContextFilter = contextFilter
+	r.require(responseConfigFieldContextFilter)
 }
 
 func (r *ResponseConfig) UnmarshalJSON(data []byte) error {
@@ -13733,13 +14446,18 @@ func (r ResponseLength) Ptr() *ResponseLength {
 }
 
 var (
-	scopedEntityFieldEntityId      = big.NewInt(1 << 0)
-	scopedEntityFieldScopeEntityId = big.NewInt(1 << 1)
+	safetyCheckReportFieldAttackDetected         = big.NewInt(1 << 0)
+	safetyCheckReportFieldHarmfulContentDetected = big.NewInt(1 << 1)
+	safetyCheckReportFieldHarmfulContentAnalysis = big.NewInt(1 << 2)
 )
 
-type ScopedEntity struct {
-	EntityId      *EntityId `json:"entityId" url:"entityId"`
-	ScopeEntityId *EntityId `json:"scopeEntityId,omitempty" url:"scopeEntityId,omitempty"`
+type SafetyCheckReport struct {
+	// Whether the check detected a malicious attack.
+	AttackDetected bool `json:"attackDetected" url:"attackDetected"`
+	// Whether the check detected harmful content such as hate speech, references to self-harm, violence or sexual references.
+	HarmfulContentDetected bool `json:"harmfulContentDetected" url:"harmfulContentDetected"`
+	// Includes details on each category of harmful content.
+	HarmfulContentAnalysis []*HarmfulContentAnalysis `json:"harmfulContentAnalysis" url:"harmfulContentAnalysis"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -13748,18 +14466,126 @@ type ScopedEntity struct {
 	rawJSON         json.RawMessage
 }
 
-func (s *ScopedEntity) GetEntityId() *EntityId {
+func (s *SafetyCheckReport) GetAttackDetected() bool {
 	if s == nil {
-		return nil
+		return false
 	}
-	return s.EntityId
+	return s.AttackDetected
 }
 
-func (s *ScopedEntity) GetScopeEntityId() *EntityId {
+func (s *SafetyCheckReport) GetHarmfulContentDetected() bool {
+	if s == nil {
+		return false
+	}
+	return s.HarmfulContentDetected
+}
+
+func (s *SafetyCheckReport) GetHarmfulContentAnalysis() []*HarmfulContentAnalysis {
 	if s == nil {
 		return nil
 	}
-	return s.ScopeEntityId
+	return s.HarmfulContentAnalysis
+}
+
+func (s *SafetyCheckReport) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SafetyCheckReport) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetAttackDetected sets the AttackDetected field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SafetyCheckReport) SetAttackDetected(attackDetected bool) {
+	s.AttackDetected = attackDetected
+	s.require(safetyCheckReportFieldAttackDetected)
+}
+
+// SetHarmfulContentDetected sets the HarmfulContentDetected field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SafetyCheckReport) SetHarmfulContentDetected(harmfulContentDetected bool) {
+	s.HarmfulContentDetected = harmfulContentDetected
+	s.require(safetyCheckReportFieldHarmfulContentDetected)
+}
+
+// SetHarmfulContentAnalysis sets the HarmfulContentAnalysis field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SafetyCheckReport) SetHarmfulContentAnalysis(harmfulContentAnalysis []*HarmfulContentAnalysis) {
+	s.HarmfulContentAnalysis = harmfulContentAnalysis
+	s.require(safetyCheckReportFieldHarmfulContentAnalysis)
+}
+
+func (s *SafetyCheckReport) UnmarshalJSON(data []byte) error {
+	type unmarshaler SafetyCheckReport
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SafetyCheckReport(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SafetyCheckReport) MarshalJSON() ([]byte, error) {
+	type embed SafetyCheckReport
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SafetyCheckReport) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+var (
+	scopedEntityFieldEntityID      = big.NewInt(1 << 0)
+	scopedEntityFieldScopeEntityID = big.NewInt(1 << 1)
+)
+
+type ScopedEntity struct {
+	EntityID      *EntityID `json:"entityId" url:"entityId"`
+	ScopeEntityID *EntityID `json:"scopeEntityId,omitempty" url:"scopeEntityId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *ScopedEntity) GetEntityID() *EntityID {
+	if s == nil {
+		return nil
+	}
+	return s.EntityID
+}
+
+func (s *ScopedEntity) GetScopeEntityID() *EntityID {
+	if s == nil {
+		return nil
+	}
+	return s.ScopeEntityID
 }
 
 func (s *ScopedEntity) GetExtraProperties() map[string]interface{} {
@@ -13773,18 +14599,18 @@ func (s *ScopedEntity) require(field *big.Int) {
 	s.explicitFields.Or(s.explicitFields, field)
 }
 
-// SetEntityId sets the EntityId field and marks it as non-optional;
+// SetEntityID sets the EntityID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *ScopedEntity) SetEntityId(entityId *EntityId) {
-	s.EntityId = entityId
-	s.require(scopedEntityFieldEntityId)
+func (s *ScopedEntity) SetEntityID(entityID *EntityID) {
+	s.EntityID = entityID
+	s.require(scopedEntityFieldEntityID)
 }
 
-// SetScopeEntityId sets the ScopeEntityId field and marks it as non-optional;
+// SetScopeEntityID sets the ScopeEntityID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *ScopedEntity) SetScopeEntityId(scopeEntityId *EntityId) {
-	s.ScopeEntityId = scopeEntityId
-	s.require(scopedEntityFieldScopeEntityId)
+func (s *ScopedEntity) SetScopeEntityID(scopeEntityID *EntityID) {
+	s.ScopeEntityID = scopeEntityID
+	s.require(scopedEntityFieldScopeEntityID)
 }
 
 func (s *ScopedEntity) UnmarshalJSON(data []byte) error {
@@ -13859,14 +14685,14 @@ func (s Sentiment) Ptr() *Sentiment {
 }
 
 var (
-	sessionInfoFieldId       = big.NewInt(1 << 0)
+	sessionInfoFieldID       = big.NewInt(1 << 0)
 	sessionInfoFieldStart    = big.NewInt(1 << 1)
 	sessionInfoFieldEnd      = big.NewInt(1 << 2)
 	sessionInfoFieldDuration = big.NewInt(1 << 3)
 )
 
 type SessionInfo struct {
-	Id       string     `json:"id" url:"id"`
+	ID       string     `json:"id" url:"id"`
 	Start    *time.Time `json:"start,omitempty" url:"start,omitempty"`
 	End      *time.Time `json:"end,omitempty" url:"end,omitempty"`
 	Duration *int64     `json:"duration,omitempty" url:"duration,omitempty"`
@@ -13878,11 +14704,11 @@ type SessionInfo struct {
 	rawJSON         json.RawMessage
 }
 
-func (s *SessionInfo) GetId() string {
+func (s *SessionInfo) GetID() string {
 	if s == nil {
 		return ""
 	}
-	return s.Id
+	return s.ID
 }
 
 func (s *SessionInfo) GetStart() *time.Time {
@@ -13917,11 +14743,11 @@ func (s *SessionInfo) require(field *big.Int) {
 	s.explicitFields.Or(s.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SessionInfo) SetId(id string) {
-	s.Id = id
-	s.require(sessionInfoFieldId)
+func (s *SessionInfo) SetID(id string) {
+	s.ID = id
+	s.require(sessionInfoFieldID)
 }
 
 // SetStart sets the Start field and marks it as non-optional;
@@ -14010,7 +14836,7 @@ type SimulationContext struct {
 	// The persona to use during the simulation. If not provided, the agent's default persona will be used.
 	Persona *LlmPersona `json:"persona,omitempty" url:"persona,omitempty"`
 	// If provided, knowledge search will be restricted to the provided list of knowledge bases. Otherwise, all active knowledge bases will be used. An empty list means no knowledge bases will be used.
-	AvailableKnowledgeBases []*EntityId `json:"availableKnowledgeBases,omitempty" url:"availableKnowledgeBases,omitempty"`
+	AvailableKnowledgeBases []*EntityID `json:"availableKnowledgeBases,omitempty" url:"availableKnowledgeBases,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14033,7 +14859,7 @@ func (s *SimulationContext) GetPersona() *LlmPersona {
 	return s.Persona
 }
 
-func (s *SimulationContext) GetAvailableKnowledgeBases() []*EntityId {
+func (s *SimulationContext) GetAvailableKnowledgeBases() []*EntityID {
 	if s == nil {
 		return nil
 	}
@@ -14067,7 +14893,7 @@ func (s *SimulationContext) SetPersona(persona *LlmPersona) {
 
 // SetAvailableKnowledgeBases sets the AvailableKnowledgeBases field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SimulationContext) SetAvailableKnowledgeBases(availableKnowledgeBases []*EntityId) {
+func (s *SimulationContext) SetAvailableKnowledgeBases(availableKnowledgeBases []*EntityID) {
 	s.AvailableKnowledgeBases = availableKnowledgeBases
 	s.require(simulationContextFieldAvailableKnowledgeBases)
 }
@@ -14113,12 +14939,12 @@ func (s *SimulationContext) String() string {
 
 var (
 	sourceFieldTitle = big.NewInt(1 << 0)
-	sourceFieldUrl   = big.NewInt(1 << 1)
+	sourceFieldURL   = big.NewInt(1 << 1)
 )
 
 type Source struct {
 	Title string `json:"title" url:"title"`
-	Url   string `json:"url" url:"url"`
+	URL   string `json:"url" url:"url"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14134,11 +14960,11 @@ func (s *Source) GetTitle() string {
 	return s.Title
 }
 
-func (s *Source) GetUrl() string {
+func (s *Source) GetURL() string {
 	if s == nil {
 		return ""
 	}
-	return s.Url
+	return s.URL
 }
 
 func (s *Source) GetExtraProperties() map[string]interface{} {
@@ -14159,11 +14985,11 @@ func (s *Source) SetTitle(title string) {
 	s.require(sourceFieldTitle)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *Source) SetUrl(url string) {
-	s.Url = url
-	s.require(sourceFieldUrl)
+func (s *Source) SetURL(url string) {
+	s.URL = url
+	s.require(sourceFieldURL)
 }
 
 func (s *Source) UnmarshalJSON(data []byte) error {
@@ -14210,7 +15036,7 @@ var (
 	sourceInfoFieldDeviceInfo   = big.NewInt(1 << 1)
 	sourceInfoFieldBrowserInfo  = big.NewInt(1 << 2)
 	sourceInfoFieldGeoInfo      = big.NewInt(1 << 3)
-	sourceInfoFieldIpInfo       = big.NewInt(1 << 4)
+	sourceInfoFieldIPInfo       = big.NewInt(1 << 4)
 	sourceInfoFieldLanguageInfo = big.NewInt(1 << 5)
 )
 
@@ -14219,7 +15045,7 @@ type SourceInfo struct {
 	DeviceInfo   *DeviceInfo   `json:"deviceInfo,omitempty" url:"deviceInfo,omitempty"`
 	BrowserInfo  *BrowserInfo  `json:"browserInfo,omitempty" url:"browserInfo,omitempty"`
 	GeoInfo      *GeoInfo      `json:"geoInfo,omitempty" url:"geoInfo,omitempty"`
-	IpInfo       *IpInfo       `json:"ipInfo,omitempty" url:"ipInfo,omitempty"`
+	IPInfo       *IPInfo       `json:"ipInfo,omitempty" url:"ipInfo,omitempty"`
 	LanguageInfo *LanguageInfo `json:"languageInfo,omitempty" url:"languageInfo,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -14257,11 +15083,11 @@ func (s *SourceInfo) GetGeoInfo() *GeoInfo {
 	return s.GeoInfo
 }
 
-func (s *SourceInfo) GetIpInfo() *IpInfo {
+func (s *SourceInfo) GetIPInfo() *IPInfo {
 	if s == nil {
 		return nil
 	}
-	return s.IpInfo
+	return s.IPInfo
 }
 
 func (s *SourceInfo) GetLanguageInfo() *LanguageInfo {
@@ -14310,11 +15136,11 @@ func (s *SourceInfo) SetGeoInfo(geoInfo *GeoInfo) {
 	s.require(sourceInfoFieldGeoInfo)
 }
 
-// SetIpInfo sets the IpInfo field and marks it as non-optional;
+// SetIPInfo sets the IPInfo field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SourceInfo) SetIpInfo(ipInfo *IpInfo) {
-	s.IpInfo = ipInfo
-	s.require(sourceInfoFieldIpInfo)
+func (s *SourceInfo) SetIPInfo(ipInfo *IPInfo) {
+	s.IPInfo = ipInfo
+	s.require(sourceInfoFieldIPInfo)
 }
 
 // SetLanguageInfo sets the LanguageInfo field and marks it as non-optional;
@@ -14367,7 +15193,7 @@ type SourceType string
 
 const (
 	SourceTypeWeb    SourceType = "WEB"
-	SourceTypeApi    SourceType = "API"
+	SourceTypeAPI    SourceType = "API"
 	SourceTypeSystem SourceType = "SYSTEM"
 )
 
@@ -14376,7 +15202,7 @@ func NewSourceTypeFromString(s string) (SourceType, error) {
 	case "WEB":
 		return SourceTypeWeb, nil
 	case "API":
-		return SourceTypeApi, nil
+		return SourceTypeAPI, nil
 	case "SYSTEM":
 		return SourceTypeSystem, nil
 	}
@@ -14489,7 +15315,7 @@ var (
 	systemEventFieldSessionInfo = big.NewInt(1 << 3)
 	systemEventFieldContextInfo = big.NewInt(1 << 4)
 	systemEventFieldEventName   = big.NewInt(1 << 5)
-	systemEventFieldId          = big.NewInt(1 << 6)
+	systemEventFieldID          = big.NewInt(1 << 6)
 )
 
 type SystemEvent struct {
@@ -14501,7 +15327,7 @@ type SystemEvent struct {
 	// The name of the event
 	EventName SystemEventName `json:"eventName" url:"eventName"`
 	// The unique ID of the event
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14552,11 +15378,11 @@ func (s *SystemEvent) GetEventName() SystemEventName {
 	return s.EventName
 }
 
-func (s *SystemEvent) GetId() *EntityId {
+func (s *SystemEvent) GetID() *EntityID {
 	if s == nil {
 		return nil
 	}
-	return s.Id
+	return s.ID
 }
 
 func (s *SystemEvent) GetExtraProperties() map[string]interface{} {
@@ -14612,11 +15438,11 @@ func (s *SystemEvent) SetEventName(eventName SystemEventName) {
 	s.require(systemEventFieldEventName)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SystemEvent) SetId(id *EntityId) {
-	s.Id = id
-	s.require(systemEventFieldId)
+func (s *SystemEvent) SetID(id *EntityID) {
+	s.ID = id
+	s.require(systemEventFieldID)
 }
 
 func (s *SystemEvent) UnmarshalJSON(data []byte) error {
@@ -14915,7 +15741,7 @@ func (u *UserData) String() string {
 var (
 	userDataWithReferenceFieldValue      = big.NewInt(1 << 0)
 	userDataWithReferenceFieldVisibility = big.NewInt(1 << 1)
-	userDataWithReferenceFieldUserId     = big.NewInt(1 << 2)
+	userDataWithReferenceFieldUserID     = big.NewInt(1 << 2)
 )
 
 type UserDataWithReference struct {
@@ -14924,7 +15750,7 @@ type UserDataWithReference struct {
 	// The visibility of the user metadata
 	Visibility VisibilityType `json:"visibility" url:"visibility"`
 	// Reverse index containing appId and referenceId data that identifies this app user
-	UserId *EntityIdFilter `json:"userId" url:"userId"`
+	UserID *EntityIDFilter `json:"userId" url:"userId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14947,11 +15773,11 @@ func (u *UserDataWithReference) GetVisibility() VisibilityType {
 	return u.Visibility
 }
 
-func (u *UserDataWithReference) GetUserId() *EntityIdFilter {
+func (u *UserDataWithReference) GetUserID() *EntityIDFilter {
 	if u == nil {
 		return nil
 	}
-	return u.UserId
+	return u.UserID
 }
 
 func (u *UserDataWithReference) GetExtraProperties() map[string]interface{} {
@@ -14979,11 +15805,11 @@ func (u *UserDataWithReference) SetVisibility(visibility VisibilityType) {
 	u.require(userDataWithReferenceFieldVisibility)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserDataWithReference) SetUserId(userId *EntityIdFilter) {
-	u.UserId = userId
-	u.require(userDataWithReferenceFieldUserId)
+func (u *UserDataWithReference) SetUserID(userID *EntityIDFilter) {
+	u.UserID = userID
+	u.require(userDataWithReferenceFieldUserID)
 }
 
 func (u *UserDataWithReference) UnmarshalJSON(data []byte) error {
@@ -15031,7 +15857,7 @@ var (
 	userEventFieldSourceInfo   = big.NewInt(1 << 2)
 	userEventFieldSessionInfo  = big.NewInt(1 << 3)
 	userEventFieldContextInfo  = big.NewInt(1 << 4)
-	userEventFieldId           = big.NewInt(1 << 5)
+	userEventFieldID           = big.NewInt(1 << 5)
 	userEventFieldEventName    = big.NewInt(1 << 6)
 	userEventFieldUserInfo     = big.NewInt(1 << 7)
 	userEventFieldFeedbackInfo = big.NewInt(1 << 8)
@@ -15045,7 +15871,7 @@ type UserEvent struct {
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
 	// The unique ID of the event
-	Id *EntityId `json:"id" url:"id"`
+	ID *EntityID `json:"id" url:"id"`
 	// The name of the event
 	EventName UserEventName `json:"eventName" url:"eventName"`
 	// Information about the user who triggered the event
@@ -15097,11 +15923,11 @@ func (u *UserEvent) GetContextInfo() *ContextInfo {
 	return u.ContextInfo
 }
 
-func (u *UserEvent) GetId() *EntityId {
+func (u *UserEvent) GetID() *EntityID {
 	if u == nil {
 		return nil
 	}
-	return u.Id
+	return u.ID
 }
 
 func (u *UserEvent) GetEventName() UserEventName {
@@ -15178,11 +16004,11 @@ func (u *UserEvent) SetContextInfo(contextInfo *ContextInfo) {
 	u.require(userEventFieldContextInfo)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserEvent) SetId(id *EntityId) {
-	u.Id = id
-	u.require(userEventFieldId)
+func (u *UserEvent) SetID(id *EntityID) {
+	u.ID = id
+	u.require(userEventFieldID)
 }
 
 // SetEventName sets the EventName field and marks it as non-optional;
@@ -15299,13 +16125,13 @@ func (u UserEventName) Ptr() *UserEventName {
 var (
 	userMessageFieldCreatedAt             = big.NewInt(1 << 0)
 	userMessageFieldUpdatedAt             = big.NewInt(1 << 1)
-	userMessageFieldUserId                = big.NewInt(1 << 2)
+	userMessageFieldUserID                = big.NewInt(1 << 2)
 	userMessageFieldText                  = big.NewInt(1 << 3)
 	userMessageFieldUserMessageType       = big.NewInt(1 << 4)
-	userMessageFieldConversationMessageId = big.NewInt(1 << 5)
+	userMessageFieldConversationMessageID = big.NewInt(1 << 5)
 	userMessageFieldLanguage              = big.NewInt(1 << 6)
 	userMessageFieldAttachments           = big.NewInt(1 << 7)
-	userMessageFieldAgentUserId           = big.NewInt(1 << 8)
+	userMessageFieldAgentUserID           = big.NewInt(1 << 8)
 	userMessageFieldUserDisplayName       = big.NewInt(1 << 9)
 	userMessageFieldStatus                = big.NewInt(1 << 10)
 	userMessageFieldResponseState         = big.NewInt(1 << 11)
@@ -15317,18 +16143,18 @@ type UserMessage struct {
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// ID that uniquely identifies the user that created this message
-	UserId *EntityIdBase `json:"userId" url:"userId"`
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message. Cannot be empty
 	Text            string                      `json:"text" url:"text"`
 	UserMessageType UserConversationMessageType `json:"userMessageType" url:"userMessageType"`
 	// The ID that uniquely identifies this message within the conversation
-	ConversationMessageId *EntityId `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityID `json:"conversationMessageId" url:"conversationMessageId"`
 	// The language of the message in ISO 639-1 code format
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The attachments associated with the message
 	Attachments []*AttachmentResponse `json:"attachments" url:"attachments"`
 	// The ID of the agent user that created this message. More detail can be fetched via the agent user APIs. Will be empty only for legacy conversations.
-	AgentUserId *string `json:"agentUserId,omitempty" url:"agentUserId,omitempty"`
+	AgentUserID *string `json:"agentUserId,omitempty" url:"agentUserId,omitempty"`
 	// The display name of the user who created this message. Only available for users who have saved name information.
 	UserDisplayName *string `json:"userDisplayName,omitempty" url:"userDisplayName,omitempty"`
 	// The delivery status of the message. Only applicable to messages sent via the deliverMessage API.
@@ -15367,11 +16193,11 @@ func (u *UserMessage) GetUpdatedAt() *time.Time {
 	return u.UpdatedAt
 }
 
-func (u *UserMessage) GetUserId() *EntityIdBase {
+func (u *UserMessage) GetUserID() *EntityIDBase {
 	if u == nil {
 		return nil
 	}
-	return u.UserId
+	return u.UserID
 }
 
 func (u *UserMessage) GetText() string {
@@ -15388,11 +16214,11 @@ func (u *UserMessage) GetUserMessageType() UserConversationMessageType {
 	return u.UserMessageType
 }
 
-func (u *UserMessage) GetConversationMessageId() *EntityId {
+func (u *UserMessage) GetConversationMessageID() *EntityID {
 	if u == nil {
 		return nil
 	}
-	return u.ConversationMessageId
+	return u.ConversationMessageID
 }
 
 func (u *UserMessage) GetLanguage() *string {
@@ -15409,11 +16235,11 @@ func (u *UserMessage) GetAttachments() []*AttachmentResponse {
 	return u.Attachments
 }
 
-func (u *UserMessage) GetAgentUserId() *string {
+func (u *UserMessage) GetAgentUserID() *string {
 	if u == nil {
 		return nil
 	}
-	return u.AgentUserId
+	return u.AgentUserID
 }
 
 func (u *UserMessage) GetUserDisplayName() *string {
@@ -15462,11 +16288,11 @@ func (u *UserMessage) SetUpdatedAt(updatedAt *time.Time) {
 	u.require(userMessageFieldUpdatedAt)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserMessage) SetUserId(userId *EntityIdBase) {
-	u.UserId = userId
-	u.require(userMessageFieldUserId)
+func (u *UserMessage) SetUserID(userID *EntityIDBase) {
+	u.UserID = userID
+	u.require(userMessageFieldUserID)
 }
 
 // SetText sets the Text field and marks it as non-optional;
@@ -15483,11 +16309,11 @@ func (u *UserMessage) SetUserMessageType(userMessageType UserConversationMessage
 	u.require(userMessageFieldUserMessageType)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserMessage) SetConversationMessageId(conversationMessageId *EntityId) {
-	u.ConversationMessageId = conversationMessageId
-	u.require(userMessageFieldConversationMessageId)
+func (u *UserMessage) SetConversationMessageID(conversationMessageID *EntityID) {
+	u.ConversationMessageID = conversationMessageID
+	u.require(userMessageFieldConversationMessageID)
 }
 
 // SetLanguage sets the Language field and marks it as non-optional;
@@ -15504,11 +16330,11 @@ func (u *UserMessage) SetAttachments(attachments []*AttachmentResponse) {
 	u.require(userMessageFieldAttachments)
 }
 
-// SetAgentUserId sets the AgentUserId field and marks it as non-optional;
+// SetAgentUserID sets the AgentUserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserMessage) SetAgentUserId(agentUserId *string) {
-	u.AgentUserId = agentUserId
-	u.require(userMessageFieldAgentUserId)
+func (u *UserMessage) SetAgentUserID(agentUserID *string) {
+	u.AgentUserID = agentUserID
+	u.require(userMessageFieldAgentUserID)
 }
 
 // SetUserDisplayName sets the UserDisplayName field and marks it as non-optional;
@@ -15586,7 +16412,7 @@ func (u *UserMessage) String() string {
 var (
 	userMessageBaseFieldCreatedAt       = big.NewInt(1 << 0)
 	userMessageBaseFieldUpdatedAt       = big.NewInt(1 << 1)
-	userMessageBaseFieldUserId          = big.NewInt(1 << 2)
+	userMessageBaseFieldUserID          = big.NewInt(1 << 2)
 	userMessageBaseFieldText            = big.NewInt(1 << 3)
 	userMessageBaseFieldUserMessageType = big.NewInt(1 << 4)
 )
@@ -15597,7 +16423,7 @@ type UserMessageBase struct {
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// ID that uniquely identifies the user that created this message
-	UserId *EntityIdBase `json:"userId" url:"userId"`
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message. Cannot be empty
 	Text            string                      `json:"text" url:"text"`
 	UserMessageType UserConversationMessageType `json:"userMessageType" url:"userMessageType"`
@@ -15623,11 +16449,11 @@ func (u *UserMessageBase) GetUpdatedAt() *time.Time {
 	return u.UpdatedAt
 }
 
-func (u *UserMessageBase) GetUserId() *EntityIdBase {
+func (u *UserMessageBase) GetUserID() *EntityIDBase {
 	if u == nil {
 		return nil
 	}
-	return u.UserId
+	return u.UserID
 }
 
 func (u *UserMessageBase) GetText() string {
@@ -15669,11 +16495,11 @@ func (u *UserMessageBase) SetUpdatedAt(updatedAt *time.Time) {
 	u.require(userMessageBaseFieldUpdatedAt)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserMessageBase) SetUserId(userId *EntityIdBase) {
-	u.UserId = userId
-	u.require(userMessageBaseFieldUserId)
+func (u *UserMessageBase) SetUserID(userID *EntityIDBase) {
+	u.UserID = userID
+	u.require(userMessageBaseFieldUserID)
 }
 
 // SetText sets the Text field and marks it as non-optional;

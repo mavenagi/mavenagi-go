@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	actionGetRequestFieldAppId = big.NewInt(1 << 0)
+	actionGetRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type ActionGetRequest struct {
 	// The App ID of the action to get. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -28,23 +28,23 @@ func (a *ActionGetRequest) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionGetRequest) SetAppId(appId *string) {
-	a.AppId = appId
-	a.require(actionGetRequestFieldAppId)
+func (a *ActionGetRequest) SetAppID(appID *string) {
+	a.AppID = appID
+	a.require(actionGetRequestFieldAppID)
 }
 
 var (
-	actionPatchRequestFieldAppId              = big.NewInt(1 << 0)
+	actionPatchRequestFieldAppID              = big.NewInt(1 << 0)
 	actionPatchRequestFieldInstructions       = big.NewInt(1 << 1)
 	actionPatchRequestFieldLlmInclusionStatus = big.NewInt(1 << 2)
-	actionPatchRequestFieldSegmentId          = big.NewInt(1 << 3)
+	actionPatchRequestFieldSegmentID          = big.NewInt(1 << 3)
 )
 
 type ActionPatchRequest struct {
 	// The App ID of the action to patch. If not provided the ID of the calling app will be used.
-	AppId *string `json:"appId,omitempty" url:"-"`
+	AppID *string `json:"appId,omitempty" url:"-"`
 	// The instructions given to the LLM when determining whether to execute the action.
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// Determines whether the action is sent to the LLM as part of a conversation.
@@ -54,7 +54,7 @@ type ActionPatchRequest struct {
 	//
 	// Segments are replacing inline preconditions - an action may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
-	SegmentId *EntityId `json:"segmentId,omitempty" url:"-"`
+	SegmentID *EntityID `json:"segmentId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -67,11 +67,11 @@ func (a *ActionPatchRequest) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionPatchRequest) SetAppId(appId *string) {
-	a.AppId = appId
-	a.require(actionPatchRequestFieldAppId)
+func (a *ActionPatchRequest) SetAppID(appID *string) {
+	a.AppID = appID
+	a.require(actionPatchRequestFieldAppID)
 }
 
 // SetInstructions sets the Instructions field and marks it as non-optional;
@@ -88,17 +88,17 @@ func (a *ActionPatchRequest) SetLlmInclusionStatus(llmInclusionStatus *LlmInclus
 	a.require(actionPatchRequestFieldLlmInclusionStatus)
 }
 
-// SetSegmentId sets the SegmentId field and marks it as non-optional;
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionPatchRequest) SetSegmentId(segmentId *EntityId) {
-	a.SegmentId = segmentId
-	a.require(actionPatchRequestFieldSegmentId)
+func (a *ActionPatchRequest) SetSegmentID(segmentID *EntityID) {
+	a.SegmentID = segmentID
+	a.require(actionPatchRequestFieldSegmentID)
 }
 
 type ActionField string
 
 const (
-	ActionFieldAppId                   ActionField = "AppId"
+	ActionFieldAppID                   ActionField = "AppId"
 	ActionFieldName                    ActionField = "Name"
 	ActionFieldLlmInclusionStatus      ActionField = "LlmInclusionStatus"
 	ActionFieldUserInteractionRequired ActionField = "UserInteractionRequired"
@@ -108,7 +108,7 @@ const (
 func NewActionFieldFromString(s string) (ActionField, error) {
 	switch s {
 	case "AppId":
-		return ActionFieldAppId, nil
+		return ActionFieldAppID, nil
 	case "Name":
 		return ActionFieldName, nil
 	case "LlmInclusionStatus":
@@ -130,7 +130,7 @@ var (
 	actionFilterFieldInstructions            = big.NewInt(1 << 0)
 	actionFilterFieldName                    = big.NewInt(1 << 1)
 	actionFilterFieldLlmInclusionStatuses    = big.NewInt(1 << 2)
-	actionFilterFieldAppIds                  = big.NewInt(1 << 3)
+	actionFilterFieldAppIDs                  = big.NewInt(1 << 3)
 	actionFilterFieldUserInteractionRequired = big.NewInt(1 << 4)
 )
 
@@ -142,7 +142,7 @@ type ActionFilter struct {
 	// Filter by LLM inclusion status
 	LlmInclusionStatuses []LlmInclusionStatus `json:"llmInclusionStatuses,omitempty" url:"llmInclusionStatuses,omitempty"`
 	// Filter by app IDs
-	AppIds []string `json:"appIds,omitempty" url:"appIds,omitempty"`
+	AppIDs []string `json:"appIds,omitempty" url:"appIds,omitempty"`
 	// Filter by user interaction required
 	UserInteractionRequired *bool `json:"userInteractionRequired,omitempty" url:"userInteractionRequired,omitempty"`
 
@@ -174,11 +174,11 @@ func (a *ActionFilter) GetLlmInclusionStatuses() []LlmInclusionStatus {
 	return a.LlmInclusionStatuses
 }
 
-func (a *ActionFilter) GetAppIds() []string {
+func (a *ActionFilter) GetAppIDs() []string {
 	if a == nil {
 		return nil
 	}
-	return a.AppIds
+	return a.AppIDs
 }
 
 func (a *ActionFilter) GetUserInteractionRequired() *bool {
@@ -220,11 +220,11 @@ func (a *ActionFilter) SetLlmInclusionStatuses(llmInclusionStatuses []LlmInclusi
 	a.require(actionFilterFieldLlmInclusionStatuses)
 }
 
-// SetAppIds sets the AppIds field and marks it as non-optional;
+// SetAppIDs sets the AppIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionFilter) SetAppIds(appIds []string) {
-	a.AppIds = appIds
-	a.require(actionFilterFieldAppIds)
+func (a *ActionFilter) SetAppIDs(appIDs []string) {
+	a.AppIDs = appIDs
+	a.require(actionFilterFieldAppIDs)
 }
 
 // SetUserInteractionRequired sets the UserInteractionRequired field and marks it as non-optional;
@@ -281,7 +281,7 @@ var (
 	actionRequestFieldPrecondition            = big.NewInt(1 << 4)
 	actionRequestFieldUserFormParameters      = big.NewInt(1 << 5)
 	actionRequestFieldLanguage                = big.NewInt(1 << 6)
-	actionRequestFieldActionId                = big.NewInt(1 << 7)
+	actionRequestFieldActionID                = big.NewInt(1 << 7)
 )
 
 type ActionRequest struct {
@@ -300,7 +300,7 @@ type ActionRequest struct {
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// ID that uniquely identifies this action
-	ActionId *EntityIdBase `json:"actionId" url:"actionId"`
+	ActionID *EntityIDBase `json:"actionId" url:"actionId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -358,11 +358,11 @@ func (a *ActionRequest) GetLanguage() *string {
 	return a.Language
 }
 
-func (a *ActionRequest) GetActionId() *EntityIdBase {
+func (a *ActionRequest) GetActionID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.ActionId
+	return a.ActionID
 }
 
 func (a *ActionRequest) GetExtraProperties() map[string]interface{} {
@@ -425,11 +425,11 @@ func (a *ActionRequest) SetLanguage(language *string) {
 	a.require(actionRequestFieldLanguage)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionRequest) SetActionId(actionId *EntityIdBase) {
-	a.ActionId = actionId
-	a.require(actionRequestFieldActionId)
+func (a *ActionRequest) SetActionID(actionID *EntityIDBase) {
+	a.ActionID = actionID
+	a.require(actionRequestFieldActionID)
 }
 
 func (a *ActionRequest) UnmarshalJSON(data []byte) error {

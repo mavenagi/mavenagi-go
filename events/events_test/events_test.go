@@ -73,13 +73,13 @@ func TestEventsCreateWithWireMock(
 	)
 	request := &mavenagigo.EventRequest{
 		UserEvent: &mavenagigo.NovelUserEvent{
-			Id: &mavenagigo.EntityIdBase{
-				ReferenceId: "x",
+			ID: &mavenagigo.EntityIDBase{
+				ReferenceID: "x",
 			},
 			EventName: mavenagigo.UserEventNameButtonClicked,
 			UserInfo: &mavenagigo.EventUserInfoBase{
-				Id: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				ID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
 			},
 		},
@@ -124,7 +124,7 @@ func TestEventsGetWithWireMock(
 		),
 	)
 	request := &mavenagigo.EventGetRequest{
-		AppId: "appId",
+		AppID: "appId",
 	}
 	_, invocationErr := client.Events.Get(
 		context.TODO(),

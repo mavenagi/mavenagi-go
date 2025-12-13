@@ -64,27 +64,27 @@ func WithMaxAttempts(attempts uint) *core.MaxAttemptsOption {
 }
 
 // WithBasicAuth sets the 'Authorization: Basic <base64>' request header.
-func WithBasicAuth(appId, appSecret string) *core.BasicAuthOption {
+func WithBasicAuth(appID, appSecret string) *core.BasicAuthOption {
 	return &core.BasicAuthOption{
-		AppId:     appId,
+		AppID:     appID,
 		AppSecret: appSecret,
 	}
 }
 
-// WithOrganizationId sets the organizationId request header.
+// WithOrganizationID sets the organizationID request header.
 //
 // The organization id
-func WithOrganizationId(organizationId string) *core.OrganizationIdOption {
-	return &core.OrganizationIdOption{
-		OrganizationId: organizationId,
+func WithOrganizationID(organizationID string) *core.OrganizationIDOption {
+	return &core.OrganizationIDOption{
+		OrganizationID: organizationID,
 	}
 }
 
-// WithAgentId sets the agentId request header.
+// WithAgentID sets the agentID request header.
 //
 // The agent id
-func WithAgentId(agentId string) *core.AgentIdOption {
-	return &core.AgentIdOption{
-		AgentId: agentId,
+func WithAgentID(agentID string) *core.AgentIDOption {
+	return &core.AgentIDOption{
+		AgentID: agentID,
 	}
 }

@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -76,13 +76,13 @@ func (c *Client) CreateOrUpdate(
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the segment to get. All other entity ID fields are inferred from the request.
-	segmentReferenceId string,
+	segmentReferenceID string,
 	request *mavenagigo.SegmentGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.SegmentResponse, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		segmentReferenceId,
+		segmentReferenceID,
 		request,
 		opts...,
 	)
@@ -99,13 +99,13 @@ func (c *Client) Get(
 func (c *Client) Patch(
 	ctx context.Context,
 	// The reference ID of the segment to update. All other entity ID fields are inferred from the request.
-	segmentReferenceId string,
+	segmentReferenceID string,
 	request *mavenagigo.SegmentPatchRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.SegmentResponse, error) {
 	response, err := c.WithRawResponse.Patch(
 		ctx,
-		segmentReferenceId,
+		segmentReferenceID,
 		request,
 		opts...,
 	)

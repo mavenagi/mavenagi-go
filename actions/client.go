@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -76,13 +76,13 @@ func (c *Client) CreateOrUpdate(
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the action to get. All other entity ID fields are inferred from the request.
-	actionReferenceId string,
+	actionReferenceID string,
 	request *mavenagigo.ActionGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ActionResponse, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		actionReferenceId,
+		actionReferenceID,
 		request,
 		opts...,
 	)
@@ -99,13 +99,13 @@ func (c *Client) Get(
 func (c *Client) Patch(
 	ctx context.Context,
 	// The reference ID of the action to patch.
-	actionReferenceId string,
+	actionReferenceID string,
 	request *mavenagigo.ActionPatchRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ActionResponse, error) {
 	response, err := c.WithRawResponse.Patch(
 		ctx,
-		actionReferenceId,
+		actionReferenceID,
 		request,
 		opts...,
 	)
@@ -119,12 +119,12 @@ func (c *Client) Patch(
 func (c *Client) Delete(
 	ctx context.Context,
 	// The reference ID of the action to unregister. All other entity ID fields are inferred from the request.
-	actionReferenceId string,
+	actionReferenceID string,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.Delete(
 		ctx,
-		actionReferenceId,
+		actionReferenceID,
 		opts...,
 	)
 	if err != nil {

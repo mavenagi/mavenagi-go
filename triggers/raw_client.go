@@ -117,7 +117,7 @@ func (r *RawClient) CreateOrUpdate(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The reference ID of the event trigger to get. All other entity ID fields are inferred from the request.
-	triggerReferenceId string,
+	triggerReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.EventTriggerResponse], error) {
 	options := core.NewRequestOptions(opts...)
@@ -128,7 +128,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/triggers/%v",
-		triggerReferenceId,
+		triggerReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -162,7 +162,7 @@ func (r *RawClient) Get(
 func (r *RawClient) Delete(
 	ctx context.Context,
 	// The reference ID of the event trigger to delete. All other entity ID fields are inferred from the request.
-	triggerReferenceId string,
+	triggerReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
 	options := core.NewRequestOptions(opts...)
@@ -173,7 +173,7 @@ func (r *RawClient) Delete(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/triggers/%v",
-		triggerReferenceId,
+		triggerReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -205,7 +205,7 @@ func (r *RawClient) Delete(
 func (r *RawClient) PartialUpdate(
 	ctx context.Context,
 	// The reference ID of the event trigger to update. All other entity ID fields are inferred from the request.
-	triggerReferenceId string,
+	triggerReferenceID string,
 	request *mavenagigo.PartialUpdateRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.EventTriggerResponse], error) {
@@ -217,7 +217,7 @@ func (r *RawClient) PartialUpdate(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/triggers/%v",
-		triggerReferenceId,
+		triggerReferenceID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {

@@ -92,8 +92,8 @@ func TestTriggersCreateOrUpdateWithWireMock(
 		),
 	)
 	request := &mavenagigo.EventTriggerRequest{
-		TriggerId: &mavenagigo.EntityIdBase{
-			ReferenceId: "store-in-snowflake",
+		TriggerID: &mavenagigo.EntityIDBase{
+			ReferenceID: "store-in-snowflake",
 		},
 		Description: "Stores conversation data in Snowflake",
 		Type:        mavenagigo.EventTriggerTypeConversationCreated,

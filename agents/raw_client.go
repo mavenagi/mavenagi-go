@@ -75,7 +75,7 @@ func (r *RawClient) Search(
 func (r *RawClient) List(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[[]*mavenagigo.Agent], error) {
 	options := core.NewRequestOptions(opts...)
@@ -86,7 +86,7 @@ func (r *RawClient) List(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v/agents",
-		organizationReferenceId,
+		organizationReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -120,9 +120,9 @@ func (r *RawClient) List(
 func (r *RawClient) Create(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	request *mavenagigo.CreateAgentRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.Agent], error) {
@@ -134,8 +134,8 @@ func (r *RawClient) Create(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v/agents/%v",
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -170,9 +170,9 @@ func (r *RawClient) Create(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.Agent], error) {
 	options := core.NewRequestOptions(opts...)
@@ -183,8 +183,8 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v/agents/%v",
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -218,9 +218,9 @@ func (r *RawClient) Get(
 func (r *RawClient) Patch(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	request *mavenagigo.AgentPatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.Agent], error) {
@@ -232,8 +232,8 @@ func (r *RawClient) Patch(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v/agents/%v",
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -269,9 +269,9 @@ func (r *RawClient) Patch(
 func (r *RawClient) Delete(
 	ctx context.Context,
 	// The ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	// The ID of the agent.
-	agentReferenceId string,
+	agentReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
 	options := core.NewRequestOptions(opts...)
@@ -282,8 +282,8 @@ func (r *RawClient) Delete(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v/agents/%v",
-		organizationReferenceId,
-		agentReferenceId,
+		organizationReferenceID,
+		agentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

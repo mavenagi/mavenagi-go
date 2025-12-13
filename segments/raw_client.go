@@ -117,7 +117,7 @@ func (r *RawClient) CreateOrUpdate(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The reference ID of the segment to get. All other entity ID fields are inferred from the request.
-	segmentReferenceId string,
+	segmentReferenceID string,
 	request *mavenagigo.SegmentGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.SegmentResponse], error) {
@@ -129,7 +129,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/segments/%v",
-		segmentReferenceId,
+		segmentReferenceID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -170,7 +170,7 @@ func (r *RawClient) Get(
 func (r *RawClient) Patch(
 	ctx context.Context,
 	// The reference ID of the segment to update. All other entity ID fields are inferred from the request.
-	segmentReferenceId string,
+	segmentReferenceID string,
 	request *mavenagigo.SegmentPatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.SegmentResponse], error) {
@@ -182,7 +182,7 @@ func (r *RawClient) Patch(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/segments/%v",
-		segmentReferenceId,
+		segmentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	knowledgeBaseGetRequestFieldAppId = big.NewInt(1 << 0)
+	knowledgeBaseGetRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type KnowledgeBaseGetRequest struct {
 	// The App ID of the knowledge base to get. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -29,20 +29,20 @@ func (k *KnowledgeBaseGetRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseGetRequest) SetAppId(appId *string) {
-	k.AppId = appId
-	k.require(knowledgeBaseGetRequestFieldAppId)
+func (k *KnowledgeBaseGetRequest) SetAppID(appID *string) {
+	k.AppID = appID
+	k.require(knowledgeBaseGetRequestFieldAppID)
 }
 
 var (
-	knowledgeDocumentGetRequestFieldKnowledgeBaseVersionAppId = big.NewInt(1 << 0)
+	knowledgeDocumentGetRequestFieldKnowledgeBaseVersionAppID = big.NewInt(1 << 0)
 )
 
 type KnowledgeDocumentGetRequest struct {
 	// The App ID of the knowledge base version.
-	KnowledgeBaseVersionAppId string `json:"-" url:"knowledgeBaseVersionAppId"`
+	KnowledgeBaseVersionAppID string `json:"-" url:"knowledgeBaseVersionAppId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -55,20 +55,20 @@ func (k *KnowledgeDocumentGetRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetKnowledgeBaseVersionAppId sets the KnowledgeBaseVersionAppId field and marks it as non-optional;
+// SetKnowledgeBaseVersionAppID sets the KnowledgeBaseVersionAppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentGetRequest) SetKnowledgeBaseVersionAppId(knowledgeBaseVersionAppId string) {
-	k.KnowledgeBaseVersionAppId = knowledgeBaseVersionAppId
-	k.require(knowledgeDocumentGetRequestFieldKnowledgeBaseVersionAppId)
+func (k *KnowledgeDocumentGetRequest) SetKnowledgeBaseVersionAppID(knowledgeBaseVersionAppID string) {
+	k.KnowledgeBaseVersionAppID = knowledgeBaseVersionAppID
+	k.require(knowledgeDocumentGetRequestFieldKnowledgeBaseVersionAppID)
 }
 
 var (
-	knowledgeBaseVersionsListRequestFieldAppId = big.NewInt(1 << 0)
+	knowledgeBaseVersionsListRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type KnowledgeBaseVersionsListRequest struct {
 	// The App ID of the knowledge base. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -81,26 +81,26 @@ func (k *KnowledgeBaseVersionsListRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseVersionsListRequest) SetAppId(appId *string) {
-	k.AppId = appId
-	k.require(knowledgeBaseVersionsListRequestFieldAppId)
+func (k *KnowledgeBaseVersionsListRequest) SetAppID(appID *string) {
+	k.AppID = appID
+	k.require(knowledgeBaseVersionsListRequestFieldAppID)
 }
 
 var (
-	knowledgeBasePatchRequestFieldAppId              = big.NewInt(1 << 0)
+	knowledgeBasePatchRequestFieldAppID              = big.NewInt(1 << 0)
 	knowledgeBasePatchRequestFieldName               = big.NewInt(1 << 1)
 	knowledgeBasePatchRequestFieldTags               = big.NewInt(1 << 2)
 	knowledgeBasePatchRequestFieldLlmInclusionStatus = big.NewInt(1 << 3)
 	knowledgeBasePatchRequestFieldPrecondition       = big.NewInt(1 << 4)
-	knowledgeBasePatchRequestFieldSegmentId          = big.NewInt(1 << 5)
+	knowledgeBasePatchRequestFieldSegmentID          = big.NewInt(1 << 5)
 	knowledgeBasePatchRequestFieldRefreshFrequency   = big.NewInt(1 << 6)
 )
 
 type KnowledgeBasePatchRequest struct {
 	// The App ID of the knowledge base to patch. If not provided the ID of the calling app will be used.
-	AppId *string `json:"appId,omitempty" url:"-"`
+	AppID *string `json:"appId,omitempty" url:"-"`
 	// The name of the knowledge base.
 	Name *string `json:"name,omitempty" url:"-"`
 	// The tags of the knowledge base.
@@ -114,7 +114,7 @@ type KnowledgeBasePatchRequest struct {
 	//
 	// Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
-	SegmentId *EntityId `json:"segmentId,omitempty" url:"-"`
+	SegmentID *EntityID `json:"segmentId,omitempty" url:"-"`
 	// How often the knowledge base should be refreshed.
 	RefreshFrequency *KnowledgeBaseRefreshFrequency `json:"refreshFrequency,omitempty" url:"-"`
 
@@ -129,11 +129,11 @@ func (k *KnowledgeBasePatchRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBasePatchRequest) SetAppId(appId *string) {
-	k.AppId = appId
-	k.require(knowledgeBasePatchRequestFieldAppId)
+func (k *KnowledgeBasePatchRequest) SetAppID(appID *string) {
+	k.AppID = appID
+	k.require(knowledgeBasePatchRequestFieldAppID)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -164,11 +164,11 @@ func (k *KnowledgeBasePatchRequest) SetPrecondition(precondition *Precondition) 
 	k.require(knowledgeBasePatchRequestFieldPrecondition)
 }
 
-// SetSegmentId sets the SegmentId field and marks it as non-optional;
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBasePatchRequest) SetSegmentId(segmentId *EntityId) {
-	k.SegmentId = segmentId
-	k.require(knowledgeBasePatchRequestFieldSegmentId)
+func (k *KnowledgeBasePatchRequest) SetSegmentID(segmentID *EntityID) {
+	k.SegmentID = segmentID
+	k.require(knowledgeBasePatchRequestFieldSegmentID)
 }
 
 // SetRefreshFrequency sets the RefreshFrequency field and marks it as non-optional;
@@ -179,13 +179,13 @@ func (k *KnowledgeBasePatchRequest) SetRefreshFrequency(refreshFrequency *Knowle
 }
 
 var (
-	knowledgeDocumentPatchRequestFieldKnowledgeBaseAppId = big.NewInt(1 << 0)
+	knowledgeDocumentPatchRequestFieldKnowledgeBaseAppID = big.NewInt(1 << 0)
 	knowledgeDocumentPatchRequestFieldLlmInclusionStatus = big.NewInt(1 << 1)
 )
 
 type KnowledgeDocumentPatchRequest struct {
 	// The App ID of the knowledge base that contains the knowledge document to patch. If not provided the ID of the calling app will be used.
-	KnowledgeBaseAppId *string `json:"knowledgeBaseAppId,omitempty" url:"-"`
+	KnowledgeBaseAppID *string `json:"knowledgeBaseAppId,omitempty" url:"-"`
 	// Determines whether this document is sent to the LLM as part of a conversation.
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"-"`
 
@@ -200,11 +200,11 @@ func (k *KnowledgeDocumentPatchRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetKnowledgeBaseAppId sets the KnowledgeBaseAppId field and marks it as non-optional;
+// SetKnowledgeBaseAppID sets the KnowledgeBaseAppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentPatchRequest) SetKnowledgeBaseAppId(knowledgeBaseAppId *string) {
-	k.KnowledgeBaseAppId = knowledgeBaseAppId
-	k.require(knowledgeDocumentPatchRequestFieldKnowledgeBaseAppId)
+func (k *KnowledgeDocumentPatchRequest) SetKnowledgeBaseAppID(knowledgeBaseAppID *string) {
+	k.KnowledgeBaseAppID = knowledgeBaseAppID
+	k.require(knowledgeDocumentPatchRequestFieldKnowledgeBaseAppID)
 }
 
 // SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
@@ -215,14 +215,14 @@ func (k *KnowledgeDocumentPatchRequest) SetLlmInclusionStatus(llmInclusionStatus
 }
 
 var (
-	baseKnowledgeDocumentFieldUrl      = big.NewInt(1 << 0)
+	baseKnowledgeDocumentFieldURL      = big.NewInt(1 << 0)
 	baseKnowledgeDocumentFieldLanguage = big.NewInt(1 << 1)
 	baseKnowledgeDocumentFieldAuthor   = big.NewInt(1 << 2)
 )
 
 type BaseKnowledgeDocument struct {
 	// The URL of the document. Should be visible to end users. Will be shown as part of answers. Not used for crawling.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The name of the author who created this document.
@@ -235,11 +235,11 @@ type BaseKnowledgeDocument struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BaseKnowledgeDocument) GetUrl() *string {
+func (b *BaseKnowledgeDocument) GetURL() *string {
 	if b == nil {
 		return nil
 	}
-	return b.Url
+	return b.URL
 }
 
 func (b *BaseKnowledgeDocument) GetLanguage() *string {
@@ -267,11 +267,11 @@ func (b *BaseKnowledgeDocument) require(field *big.Int) {
 	b.explicitFields.Or(b.explicitFields, field)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BaseKnowledgeDocument) SetUrl(url *string) {
-	b.Url = url
-	b.require(baseKnowledgeDocumentFieldUrl)
+func (b *BaseKnowledgeDocument) SetURL(url *string) {
+	b.URL = url
+	b.require(baseKnowledgeDocumentFieldURL)
 }
 
 // SetLanguage sets the Language field and marks it as non-optional;
@@ -328,14 +328,14 @@ func (b *BaseKnowledgeDocument) String() string {
 }
 
 var (
-	finalizeKnowledgeBaseVersionRequestFieldVersionId    = big.NewInt(1 << 0)
+	finalizeKnowledgeBaseVersionRequestFieldVersionID    = big.NewInt(1 << 0)
 	finalizeKnowledgeBaseVersionRequestFieldStatus       = big.NewInt(1 << 1)
 	finalizeKnowledgeBaseVersionRequestFieldErrorMessage = big.NewInt(1 << 2)
 )
 
 type FinalizeKnowledgeBaseVersionRequest struct {
 	// ID that uniquely identifies which knowledge base version to finalize. If not provided will use the most recent version of the knowledge base.
-	VersionId *EntityIdWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
+	VersionID *EntityIDWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
 	// Whether the knowledge base version processing was successful or not.
 	Status *KnowledgeBaseVersionFinalizeStatus `json:"status,omitempty" url:"status,omitempty"`
 	// A user-facing error message that provides more details about a version failure.
@@ -348,11 +348,11 @@ type FinalizeKnowledgeBaseVersionRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (f *FinalizeKnowledgeBaseVersionRequest) GetVersionId() *EntityIdWithoutAgent {
+func (f *FinalizeKnowledgeBaseVersionRequest) GetVersionID() *EntityIDWithoutAgent {
 	if f == nil {
 		return nil
 	}
-	return f.VersionId
+	return f.VersionID
 }
 
 func (f *FinalizeKnowledgeBaseVersionRequest) GetStatus() *KnowledgeBaseVersionFinalizeStatus {
@@ -380,11 +380,11 @@ func (f *FinalizeKnowledgeBaseVersionRequest) require(field *big.Int) {
 	f.explicitFields.Or(f.explicitFields, field)
 }
 
-// SetVersionId sets the VersionId field and marks it as non-optional;
+// SetVersionID sets the VersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FinalizeKnowledgeBaseVersionRequest) SetVersionId(versionId *EntityIdWithoutAgent) {
-	f.VersionId = versionId
-	f.require(finalizeKnowledgeBaseVersionRequestFieldVersionId)
+func (f *FinalizeKnowledgeBaseVersionRequest) SetVersionID(versionID *EntityIDWithoutAgent) {
+	f.VersionID = versionID
+	f.require(finalizeKnowledgeBaseVersionRequestFieldVersionID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -470,7 +470,7 @@ var (
 	knowledgeBaseFilterFieldTitle                   = big.NewInt(1 << 1)
 	knowledgeBaseFilterFieldCreatedAfter            = big.NewInt(1 << 2)
 	knowledgeBaseFilterFieldCreatedBefore           = big.NewInt(1 << 3)
-	knowledgeBaseFilterFieldAppIds                  = big.NewInt(1 << 4)
+	knowledgeBaseFilterFieldAppIDs                  = big.NewInt(1 << 4)
 	knowledgeBaseFilterFieldMostRecentVersionStatus = big.NewInt(1 << 5)
 	knowledgeBaseFilterFieldLlmInclusionStatus      = big.NewInt(1 << 6)
 )
@@ -496,7 +496,7 @@ type KnowledgeBaseFilter struct {
 	// Filter knowledge bases created on or before this timestamp
 	CreatedBefore *time.Time `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
 	// Filter by app IDs
-	AppIds []string `json:"appIds,omitempty" url:"appIds,omitempty"`
+	AppIDs []string `json:"appIds,omitempty" url:"appIds,omitempty"`
 	// Filter knowledge bases by the most recent version status
 	MostRecentVersionStatus []KnowledgeBaseVersionStatus `json:"mostRecentVersionStatus,omitempty" url:"mostRecentVersionStatus,omitempty"`
 	// Filter knowledge bases by the LLM inclusion status
@@ -537,11 +537,11 @@ func (k *KnowledgeBaseFilter) GetCreatedBefore() *time.Time {
 	return k.CreatedBefore
 }
 
-func (k *KnowledgeBaseFilter) GetAppIds() []string {
+func (k *KnowledgeBaseFilter) GetAppIDs() []string {
 	if k == nil {
 		return nil
 	}
-	return k.AppIds
+	return k.AppIDs
 }
 
 func (k *KnowledgeBaseFilter) GetMostRecentVersionStatus() []KnowledgeBaseVersionStatus {
@@ -597,11 +597,11 @@ func (k *KnowledgeBaseFilter) SetCreatedBefore(createdBefore *time.Time) {
 	k.require(knowledgeBaseFilterFieldCreatedBefore)
 }
 
-// SetAppIds sets the AppIds field and marks it as non-optional;
+// SetAppIDs sets the AppIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseFilter) SetAppIds(appIds []string) {
-	k.AppIds = appIds
-	k.require(knowledgeBaseFilterFieldAppIds)
+func (k *KnowledgeBaseFilter) SetAppIDs(appIDs []string) {
+	k.AppIDs = appIDs
+	k.require(knowledgeBaseFilterFieldAppIDs)
 }
 
 // SetMostRecentVersionStatus sets the MostRecentVersionStatus field and marks it as non-optional;
@@ -794,12 +794,12 @@ func (k KnowledgeBaseRefreshFrequency) Ptr() *KnowledgeBaseRefreshFrequency {
 }
 
 var (
-	knowledgeBaseRefreshRequestFieldAppId = big.NewInt(1 << 0)
+	knowledgeBaseRefreshRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type KnowledgeBaseRefreshRequest struct {
 	// The App ID of the knowledge base to refresh. If not provided the ID of the calling app will be used.
-	AppId *string `json:"appId,omitempty" url:"appId,omitempty"`
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -808,11 +808,11 @@ type KnowledgeBaseRefreshRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (k *KnowledgeBaseRefreshRequest) GetAppId() *string {
+func (k *KnowledgeBaseRefreshRequest) GetAppID() *string {
 	if k == nil {
 		return nil
 	}
-	return k.AppId
+	return k.AppID
 }
 
 func (k *KnowledgeBaseRefreshRequest) GetExtraProperties() map[string]interface{} {
@@ -826,11 +826,11 @@ func (k *KnowledgeBaseRefreshRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseRefreshRequest) SetAppId(appId *string) {
-	k.AppId = appId
-	k.require(knowledgeBaseRefreshRequestFieldAppId)
+func (k *KnowledgeBaseRefreshRequest) SetAppID(appID *string) {
+	k.AppID = appID
+	k.require(knowledgeBaseRefreshRequestFieldAppID)
 }
 
 func (k *KnowledgeBaseRefreshRequest) UnmarshalJSON(data []byte) error {
@@ -875,7 +875,7 @@ func (k *KnowledgeBaseRefreshRequest) String() string {
 var (
 	knowledgeBaseRequestFieldName            = big.NewInt(1 << 0)
 	knowledgeBaseRequestFieldPrecondition    = big.NewInt(1 << 1)
-	knowledgeBaseRequestFieldKnowledgeBaseId = big.NewInt(1 << 2)
+	knowledgeBaseRequestFieldKnowledgeBaseID = big.NewInt(1 << 2)
 	knowledgeBaseRequestFieldMetadata        = big.NewInt(1 << 3)
 )
 
@@ -885,7 +885,7 @@ type KnowledgeBaseRequest struct {
 	// The preconditions that must be met for knowledge base be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// ID that uniquely identifies this knowledge base
-	KnowledgeBaseId *EntityIdBase `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	KnowledgeBaseID *EntityIDBase `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// Metadata for the knowledge base.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
 
@@ -910,11 +910,11 @@ func (k *KnowledgeBaseRequest) GetPrecondition() *Precondition {
 	return k.Precondition
 }
 
-func (k *KnowledgeBaseRequest) GetKnowledgeBaseId() *EntityIdBase {
+func (k *KnowledgeBaseRequest) GetKnowledgeBaseID() *EntityIDBase {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseId
+	return k.KnowledgeBaseID
 }
 
 func (k *KnowledgeBaseRequest) GetMetadata() map[string]string {
@@ -949,11 +949,11 @@ func (k *KnowledgeBaseRequest) SetPrecondition(precondition *Precondition) {
 	k.require(knowledgeBaseRequestFieldPrecondition)
 }
 
-// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseRequest) SetKnowledgeBaseId(knowledgeBaseId *EntityIdBase) {
-	k.KnowledgeBaseId = knowledgeBaseId
-	k.require(knowledgeBaseRequestFieldKnowledgeBaseId)
+func (k *KnowledgeBaseRequest) SetKnowledgeBaseID(knowledgeBaseID *EntityIDBase) {
+	k.KnowledgeBaseID = knowledgeBaseID
+	k.require(knowledgeBaseRequestFieldKnowledgeBaseID)
 }
 
 // SetMetadata sets the Metadata field and marks it as non-optional;
@@ -1007,15 +1007,15 @@ var (
 	knowledgeBaseResponseFieldPrecondition            = big.NewInt(1 << 1)
 	knowledgeBaseResponseFieldCreatedAt               = big.NewInt(1 << 2)
 	knowledgeBaseResponseFieldUpdatedAt               = big.NewInt(1 << 3)
-	knowledgeBaseResponseFieldKnowledgeBaseId         = big.NewInt(1 << 4)
-	knowledgeBaseResponseFieldActiveVersionId         = big.NewInt(1 << 5)
+	knowledgeBaseResponseFieldKnowledgeBaseID         = big.NewInt(1 << 4)
+	knowledgeBaseResponseFieldActiveVersionID         = big.NewInt(1 << 5)
 	knowledgeBaseResponseFieldMostRecentVersionStatus = big.NewInt(1 << 6)
 	knowledgeBaseResponseFieldType                    = big.NewInt(1 << 7)
 	knowledgeBaseResponseFieldMetadata                = big.NewInt(1 << 8)
 	knowledgeBaseResponseFieldTags                    = big.NewInt(1 << 9)
 	knowledgeBaseResponseFieldLlmInclusionStatus      = big.NewInt(1 << 10)
 	knowledgeBaseResponseFieldRefreshFrequency        = big.NewInt(1 << 11)
-	knowledgeBaseResponseFieldSegmentId               = big.NewInt(1 << 12)
+	knowledgeBaseResponseFieldSegmentID               = big.NewInt(1 << 12)
 )
 
 type KnowledgeBaseResponse struct {
@@ -1028,9 +1028,9 @@ type KnowledgeBaseResponse struct {
 	// The date and time when the knowledge base was last updated.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 	// ID that uniquely identifies this knowledge base
-	KnowledgeBaseId *EntityId `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	KnowledgeBaseID *EntityID `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// ID of the knowledge base version that is currently active. Documents can be fetched using this version ID.
-	ActiveVersionId *EntityId `json:"activeVersionId,omitempty" url:"activeVersionId,omitempty"`
+	ActiveVersionID *EntityID `json:"activeVersionId,omitempty" url:"activeVersionId,omitempty"`
 	// The status of the most recent version of the knowledge base.
 	// The `activeVersionId` will only be populated if this status is `SUCCEEDED`.
 	// Use the `listKnowledgeBaseVersions` endpoint to get the full list of versions.
@@ -1048,7 +1048,7 @@ type KnowledgeBaseResponse struct {
 	// The IDs of the segment that must be matched for the knowledge base to be relevant to a conversation.
 	// Segments are replacing inline preconditions - a Knowledge Base may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
-	SegmentId *EntityId `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1085,18 +1085,18 @@ func (k *KnowledgeBaseResponse) GetUpdatedAt() time.Time {
 	return k.UpdatedAt
 }
 
-func (k *KnowledgeBaseResponse) GetKnowledgeBaseId() *EntityId {
+func (k *KnowledgeBaseResponse) GetKnowledgeBaseID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseId
+	return k.KnowledgeBaseID
 }
 
-func (k *KnowledgeBaseResponse) GetActiveVersionId() *EntityId {
+func (k *KnowledgeBaseResponse) GetActiveVersionID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.ActiveVersionId
+	return k.ActiveVersionID
 }
 
 func (k *KnowledgeBaseResponse) GetMostRecentVersionStatus() KnowledgeBaseVersionStatus {
@@ -1141,11 +1141,11 @@ func (k *KnowledgeBaseResponse) GetRefreshFrequency() KnowledgeBaseRefreshFreque
 	return k.RefreshFrequency
 }
 
-func (k *KnowledgeBaseResponse) GetSegmentId() *EntityId {
+func (k *KnowledgeBaseResponse) GetSegmentID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.SegmentId
+	return k.SegmentID
 }
 
 func (k *KnowledgeBaseResponse) GetExtraProperties() map[string]interface{} {
@@ -1187,18 +1187,18 @@ func (k *KnowledgeBaseResponse) SetUpdatedAt(updatedAt time.Time) {
 	k.require(knowledgeBaseResponseFieldUpdatedAt)
 }
 
-// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseResponse) SetKnowledgeBaseId(knowledgeBaseId *EntityId) {
-	k.KnowledgeBaseId = knowledgeBaseId
-	k.require(knowledgeBaseResponseFieldKnowledgeBaseId)
+func (k *KnowledgeBaseResponse) SetKnowledgeBaseID(knowledgeBaseID *EntityID) {
+	k.KnowledgeBaseID = knowledgeBaseID
+	k.require(knowledgeBaseResponseFieldKnowledgeBaseID)
 }
 
-// SetActiveVersionId sets the ActiveVersionId field and marks it as non-optional;
+// SetActiveVersionID sets the ActiveVersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseResponse) SetActiveVersionId(activeVersionId *EntityId) {
-	k.ActiveVersionId = activeVersionId
-	k.require(knowledgeBaseResponseFieldActiveVersionId)
+func (k *KnowledgeBaseResponse) SetActiveVersionID(activeVersionID *EntityID) {
+	k.ActiveVersionID = activeVersionID
+	k.require(knowledgeBaseResponseFieldActiveVersionID)
 }
 
 // SetMostRecentVersionStatus sets the MostRecentVersionStatus field and marks it as non-optional;
@@ -1243,11 +1243,11 @@ func (k *KnowledgeBaseResponse) SetRefreshFrequency(refreshFrequency KnowledgeBa
 	k.require(knowledgeBaseResponseFieldRefreshFrequency)
 }
 
-// SetSegmentId sets the SegmentId field and marks it as non-optional;
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseResponse) SetSegmentId(segmentId *EntityId) {
-	k.SegmentId = segmentId
-	k.require(knowledgeBaseResponseFieldSegmentId)
+func (k *KnowledgeBaseResponse) SetSegmentID(segmentID *EntityID) {
+	k.SegmentID = segmentID
+	k.require(knowledgeBaseResponseFieldSegmentID)
 }
 
 func (k *KnowledgeBaseResponse) UnmarshalJSON(data []byte) error {
@@ -1451,8 +1451,8 @@ func (k *KnowledgeBaseSearchRequest) String() string {
 type KnowledgeBaseType string
 
 const (
-	KnowledgeBaseTypeApi    KnowledgeBaseType = "API"
-	KnowledgeBaseTypeUrl    KnowledgeBaseType = "URL"
+	KnowledgeBaseTypeAPI    KnowledgeBaseType = "API"
+	KnowledgeBaseTypeURL    KnowledgeBaseType = "URL"
 	KnowledgeBaseTypeManual KnowledgeBaseType = "MANUAL"
 	KnowledgeBaseTypeRss    KnowledgeBaseType = "RSS"
 	KnowledgeBaseTypeLegacy KnowledgeBaseType = "LEGACY"
@@ -1461,9 +1461,9 @@ const (
 func NewKnowledgeBaseTypeFromString(s string) (KnowledgeBaseType, error) {
 	switch s {
 	case "API":
-		return KnowledgeBaseTypeApi, nil
+		return KnowledgeBaseTypeAPI, nil
 	case "URL":
-		return KnowledgeBaseTypeUrl, nil
+		return KnowledgeBaseTypeURL, nil
 	case "MANUAL":
 		return KnowledgeBaseTypeManual, nil
 	case "RSS":
@@ -1481,7 +1481,7 @@ func (k KnowledgeBaseType) Ptr() *KnowledgeBaseType {
 
 var (
 	knowledgeBaseVersionFieldType         = big.NewInt(1 << 0)
-	knowledgeBaseVersionFieldVersionId    = big.NewInt(1 << 1)
+	knowledgeBaseVersionFieldVersionID    = big.NewInt(1 << 1)
 	knowledgeBaseVersionFieldStatus       = big.NewInt(1 << 2)
 	knowledgeBaseVersionFieldErrorMessage = big.NewInt(1 << 3)
 	knowledgeBaseVersionFieldCreatedAt    = big.NewInt(1 << 4)
@@ -1492,7 +1492,7 @@ type KnowledgeBaseVersion struct {
 	// Indicates whether the completed version constitutes a full or partial refresh of the knowledge base. Deleting and updating documents is only supported for partial refreshes.
 	Type KnowledgeBaseVersionType `json:"type" url:"type"`
 	// The unique ID of the knowledge base version.
-	VersionId *EntityId `json:"versionId" url:"versionId"`
+	VersionID *EntityID `json:"versionId" url:"versionId"`
 	// The status of the knowledge base version
 	Status KnowledgeBaseVersionStatus `json:"status" url:"status"`
 	// A user-facing error message that provides more details about a version failure.
@@ -1516,11 +1516,11 @@ func (k *KnowledgeBaseVersion) GetType() KnowledgeBaseVersionType {
 	return k.Type
 }
 
-func (k *KnowledgeBaseVersion) GetVersionId() *EntityId {
+func (k *KnowledgeBaseVersion) GetVersionID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.VersionId
+	return k.VersionID
 }
 
 func (k *KnowledgeBaseVersion) GetStatus() KnowledgeBaseVersionStatus {
@@ -1569,11 +1569,11 @@ func (k *KnowledgeBaseVersion) SetType(type_ KnowledgeBaseVersionType) {
 	k.require(knowledgeBaseVersionFieldType)
 }
 
-// SetVersionId sets the VersionId field and marks it as non-optional;
+// SetVersionID sets the VersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeBaseVersion) SetVersionId(versionId *EntityId) {
-	k.VersionId = versionId
-	k.require(knowledgeBaseVersionFieldVersionId)
+func (k *KnowledgeBaseVersion) SetVersionID(versionID *EntityID) {
+	k.VersionID = versionID
+	k.require(knowledgeBaseVersionFieldVersionID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -2033,12 +2033,12 @@ func (k *KnowledgeBasesResponse) String() string {
 }
 
 var (
-	knowledgeDeleteRequestFieldVersionId = big.NewInt(1 << 0)
+	knowledgeDeleteRequestFieldVersionID = big.NewInt(1 << 0)
 )
 
 type KnowledgeDeleteRequest struct {
 	// ID that uniquely identifies which knowledge base version to delete the document from.
-	VersionId *EntityIdWithoutAgent `json:"versionId" url:"versionId"`
+	VersionID *EntityIDWithoutAgent `json:"versionId" url:"versionId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2047,11 +2047,11 @@ type KnowledgeDeleteRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (k *KnowledgeDeleteRequest) GetVersionId() *EntityIdWithoutAgent {
+func (k *KnowledgeDeleteRequest) GetVersionID() *EntityIDWithoutAgent {
 	if k == nil {
 		return nil
 	}
-	return k.VersionId
+	return k.VersionID
 }
 
 func (k *KnowledgeDeleteRequest) GetExtraProperties() map[string]interface{} {
@@ -2065,11 +2065,11 @@ func (k *KnowledgeDeleteRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetVersionId sets the VersionId field and marks it as non-optional;
+// SetVersionID sets the VersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDeleteRequest) SetVersionId(versionId *EntityIdWithoutAgent) {
-	k.VersionId = versionId
-	k.require(knowledgeDeleteRequestFieldVersionId)
+func (k *KnowledgeDeleteRequest) SetVersionID(versionID *EntityIDWithoutAgent) {
+	k.VersionID = versionID
+	k.require(knowledgeDeleteRequestFieldVersionID)
 }
 
 func (k *KnowledgeDeleteRequest) UnmarshalJSON(data []byte) error {
@@ -2115,14 +2115,14 @@ func (k *KnowledgeDeleteRequest) String() string {
 type KnowledgeDocumentContentType string
 
 const (
-	KnowledgeDocumentContentTypeHtml     KnowledgeDocumentContentType = "HTML"
+	KnowledgeDocumentContentTypeHTML     KnowledgeDocumentContentType = "HTML"
 	KnowledgeDocumentContentTypeMarkdown KnowledgeDocumentContentType = "MARKDOWN"
 )
 
 func NewKnowledgeDocumentContentTypeFromString(s string) (KnowledgeDocumentContentType, error) {
 	switch s {
 	case "HTML":
-		return KnowledgeDocumentContentTypeHtml, nil
+		return KnowledgeDocumentContentTypeHTML, nil
 	case "MARKDOWN":
 		return KnowledgeDocumentContentTypeMarkdown, nil
 	}
@@ -2165,11 +2165,11 @@ func (k KnowledgeDocumentField) Ptr() *KnowledgeDocumentField {
 var (
 	knowledgeDocumentFilterFieldSearch                 = big.NewInt(1 << 0)
 	knowledgeDocumentFilterFieldTitle                  = big.NewInt(1 << 1)
-	knowledgeDocumentFilterFieldUrl                    = big.NewInt(1 << 2)
+	knowledgeDocumentFilterFieldURL                    = big.NewInt(1 << 2)
 	knowledgeDocumentFilterFieldCreatedAfter           = big.NewInt(1 << 3)
 	knowledgeDocumentFilterFieldCreatedBefore          = big.NewInt(1 << 4)
-	knowledgeDocumentFilterFieldAppIds                 = big.NewInt(1 << 5)
-	knowledgeDocumentFilterFieldKnowledgeBaseVersionId = big.NewInt(1 << 6)
+	knowledgeDocumentFilterFieldAppIDs                 = big.NewInt(1 << 5)
+	knowledgeDocumentFilterFieldKnowledgeBaseVersionID = big.NewInt(1 << 6)
 	knowledgeDocumentFilterFieldLlmInclusionStatus     = big.NewInt(1 << 7)
 )
 
@@ -2190,16 +2190,16 @@ type KnowledgeDocumentFilter struct {
 	// Filter by title
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
 	// Filter by url
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// Filter knowledge documents created on or after this timestamp
 	CreatedAfter *time.Time `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
 	// Filter knowledge documents created on or before this timestamp
 	CreatedBefore *time.Time `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
 	// Filter by app IDs
-	AppIds []string `json:"appIds,omitempty" url:"appIds,omitempty"`
+	AppIDs []string `json:"appIds,omitempty" url:"appIds,omitempty"`
 	// Filter documents within the specified knowledge base version.
 	// If not provided all active knowledge base versions within the agent will be searched.
-	KnowledgeBaseVersionId *EntityIdWithoutAgent `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
+	KnowledgeBaseVersionID *EntityIDWithoutAgent `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
 	// Filter by the LLM inclusion status
 	LlmInclusionStatus []LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
 
@@ -2224,11 +2224,11 @@ func (k *KnowledgeDocumentFilter) GetTitle() *string {
 	return k.Title
 }
 
-func (k *KnowledgeDocumentFilter) GetUrl() *string {
+func (k *KnowledgeDocumentFilter) GetURL() *string {
 	if k == nil {
 		return nil
 	}
-	return k.Url
+	return k.URL
 }
 
 func (k *KnowledgeDocumentFilter) GetCreatedAfter() *time.Time {
@@ -2245,18 +2245,18 @@ func (k *KnowledgeDocumentFilter) GetCreatedBefore() *time.Time {
 	return k.CreatedBefore
 }
 
-func (k *KnowledgeDocumentFilter) GetAppIds() []string {
+func (k *KnowledgeDocumentFilter) GetAppIDs() []string {
 	if k == nil {
 		return nil
 	}
-	return k.AppIds
+	return k.AppIDs
 }
 
-func (k *KnowledgeDocumentFilter) GetKnowledgeBaseVersionId() *EntityIdWithoutAgent {
+func (k *KnowledgeDocumentFilter) GetKnowledgeBaseVersionID() *EntityIDWithoutAgent {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseVersionId
+	return k.KnowledgeBaseVersionID
 }
 
 func (k *KnowledgeDocumentFilter) GetLlmInclusionStatus() []LlmInclusionStatus {
@@ -2291,11 +2291,11 @@ func (k *KnowledgeDocumentFilter) SetTitle(title *string) {
 	k.require(knowledgeDocumentFilterFieldTitle)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentFilter) SetUrl(url *string) {
-	k.Url = url
-	k.require(knowledgeDocumentFilterFieldUrl)
+func (k *KnowledgeDocumentFilter) SetURL(url *string) {
+	k.URL = url
+	k.require(knowledgeDocumentFilterFieldURL)
 }
 
 // SetCreatedAfter sets the CreatedAfter field and marks it as non-optional;
@@ -2312,18 +2312,18 @@ func (k *KnowledgeDocumentFilter) SetCreatedBefore(createdBefore *time.Time) {
 	k.require(knowledgeDocumentFilterFieldCreatedBefore)
 }
 
-// SetAppIds sets the AppIds field and marks it as non-optional;
+// SetAppIDs sets the AppIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentFilter) SetAppIds(appIds []string) {
-	k.AppIds = appIds
-	k.require(knowledgeDocumentFilterFieldAppIds)
+func (k *KnowledgeDocumentFilter) SetAppIDs(appIDs []string) {
+	k.AppIDs = appIDs
+	k.require(knowledgeDocumentFilterFieldAppIDs)
 }
 
-// SetKnowledgeBaseVersionId sets the KnowledgeBaseVersionId field and marks it as non-optional;
+// SetKnowledgeBaseVersionID sets the KnowledgeBaseVersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentFilter) SetKnowledgeBaseVersionId(knowledgeBaseVersionId *EntityIdWithoutAgent) {
-	k.KnowledgeBaseVersionId = knowledgeBaseVersionId
-	k.require(knowledgeDocumentFilterFieldKnowledgeBaseVersionId)
+func (k *KnowledgeDocumentFilter) SetKnowledgeBaseVersionID(knowledgeBaseVersionID *EntityIDWithoutAgent) {
+	k.KnowledgeBaseVersionID = knowledgeBaseVersionID
+	k.require(knowledgeDocumentFilterFieldKnowledgeBaseVersionID)
 }
 
 // SetLlmInclusionStatus sets the LlmInclusionStatus field and marks it as non-optional;
@@ -2385,37 +2385,38 @@ func (k *KnowledgeDocumentFilter) String() string {
 }
 
 var (
-	knowledgeDocumentRequestFieldUrl                 = big.NewInt(1 << 0)
+	knowledgeDocumentRequestFieldURL                 = big.NewInt(1 << 0)
 	knowledgeDocumentRequestFieldLanguage            = big.NewInt(1 << 1)
 	knowledgeDocumentRequestFieldAuthor              = big.NewInt(1 << 2)
-	knowledgeDocumentRequestFieldKnowledgeDocumentId = big.NewInt(1 << 3)
-	knowledgeDocumentRequestFieldVersionId           = big.NewInt(1 << 4)
+	knowledgeDocumentRequestFieldKnowledgeDocumentID = big.NewInt(1 << 3)
+	knowledgeDocumentRequestFieldVersionID           = big.NewInt(1 << 4)
 	knowledgeDocumentRequestFieldContentType         = big.NewInt(1 << 5)
 	knowledgeDocumentRequestFieldTitle               = big.NewInt(1 << 6)
-	knowledgeDocumentRequestFieldAssetId             = big.NewInt(1 << 7)
+	knowledgeDocumentRequestFieldAssetID             = big.NewInt(1 << 7)
 	knowledgeDocumentRequestFieldContent             = big.NewInt(1 << 8)
 	knowledgeDocumentRequestFieldMetadata            = big.NewInt(1 << 9)
 	knowledgeDocumentRequestFieldCreatedAt           = big.NewInt(1 << 10)
 	knowledgeDocumentRequestFieldUpdatedAt           = big.NewInt(1 << 11)
+	knowledgeDocumentRequestFieldRelevantEntities    = big.NewInt(1 << 12)
 )
 
 type KnowledgeDocumentRequest struct {
 	// The URL of the document. Should be visible to end users. Will be shown as part of answers. Not used for crawling.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 	// ID that uniquely identifies this knowledge document within its knowledge base
-	KnowledgeDocumentId *EntityIdBase `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
+	KnowledgeDocumentID *EntityIDBase `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
 	// ID that uniquely identifies which knowledge base version to create the document in. If not provided will use the most recent version of the knowledge base.
-	VersionId *EntityIdWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
+	VersionID *EntityIDWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
 	// Type of knowledge document content, if content is provided. This does not need to be set if content is not provided
 	ContentType KnowledgeDocumentContentType `json:"contentType" url:"contentType"`
 	// The title of the document. Will be shown as part of answers.
 	Title string `json:"title" url:"title"`
 	// ID of the asset associated with this document. This asset will be transformed into text and set as the content of the document. The following types are supported: `application/pdf`, `text/plain`.  Either this or content is required, but not both
-	AssetId *EntityIdBase `json:"assetId,omitempty" url:"assetId,omitempty"`
+	AssetID *EntityIDBase `json:"assetId,omitempty" url:"assetId,omitempty"`
 	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
 	// Metadata for the knowledge document.
@@ -2424,6 +2425,8 @@ type KnowledgeDocumentRequest struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The time at which this document was last modified.
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// Scoped entities this document is associated with for context-based filtering. By default, the document is associated with the agent.
+	RelevantEntities []*ScopedEntity `json:"relevantEntities,omitempty" url:"relevantEntities,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2432,11 +2435,11 @@ type KnowledgeDocumentRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (k *KnowledgeDocumentRequest) GetUrl() *string {
+func (k *KnowledgeDocumentRequest) GetURL() *string {
 	if k == nil {
 		return nil
 	}
-	return k.Url
+	return k.URL
 }
 
 func (k *KnowledgeDocumentRequest) GetLanguage() *string {
@@ -2453,18 +2456,18 @@ func (k *KnowledgeDocumentRequest) GetAuthor() *string {
 	return k.Author
 }
 
-func (k *KnowledgeDocumentRequest) GetKnowledgeDocumentId() *EntityIdBase {
+func (k *KnowledgeDocumentRequest) GetKnowledgeDocumentID() *EntityIDBase {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeDocumentId
+	return k.KnowledgeDocumentID
 }
 
-func (k *KnowledgeDocumentRequest) GetVersionId() *EntityIdWithoutAgent {
+func (k *KnowledgeDocumentRequest) GetVersionID() *EntityIDWithoutAgent {
 	if k == nil {
 		return nil
 	}
-	return k.VersionId
+	return k.VersionID
 }
 
 func (k *KnowledgeDocumentRequest) GetContentType() KnowledgeDocumentContentType {
@@ -2481,11 +2484,11 @@ func (k *KnowledgeDocumentRequest) GetTitle() string {
 	return k.Title
 }
 
-func (k *KnowledgeDocumentRequest) GetAssetId() *EntityIdBase {
+func (k *KnowledgeDocumentRequest) GetAssetID() *EntityIDBase {
 	if k == nil {
 		return nil
 	}
-	return k.AssetId
+	return k.AssetID
 }
 
 func (k *KnowledgeDocumentRequest) GetContent() *string {
@@ -2516,6 +2519,13 @@ func (k *KnowledgeDocumentRequest) GetUpdatedAt() *time.Time {
 	return k.UpdatedAt
 }
 
+func (k *KnowledgeDocumentRequest) GetRelevantEntities() []*ScopedEntity {
+	if k == nil {
+		return nil
+	}
+	return k.RelevantEntities
+}
+
 func (k *KnowledgeDocumentRequest) GetExtraProperties() map[string]interface{} {
 	return k.extraProperties
 }
@@ -2527,11 +2537,11 @@ func (k *KnowledgeDocumentRequest) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetUrl(url *string) {
-	k.Url = url
-	k.require(knowledgeDocumentRequestFieldUrl)
+func (k *KnowledgeDocumentRequest) SetURL(url *string) {
+	k.URL = url
+	k.require(knowledgeDocumentRequestFieldURL)
 }
 
 // SetLanguage sets the Language field and marks it as non-optional;
@@ -2548,18 +2558,18 @@ func (k *KnowledgeDocumentRequest) SetAuthor(author *string) {
 	k.require(knowledgeDocumentRequestFieldAuthor)
 }
 
-// SetKnowledgeDocumentId sets the KnowledgeDocumentId field and marks it as non-optional;
+// SetKnowledgeDocumentID sets the KnowledgeDocumentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetKnowledgeDocumentId(knowledgeDocumentId *EntityIdBase) {
-	k.KnowledgeDocumentId = knowledgeDocumentId
-	k.require(knowledgeDocumentRequestFieldKnowledgeDocumentId)
+func (k *KnowledgeDocumentRequest) SetKnowledgeDocumentID(knowledgeDocumentID *EntityIDBase) {
+	k.KnowledgeDocumentID = knowledgeDocumentID
+	k.require(knowledgeDocumentRequestFieldKnowledgeDocumentID)
 }
 
-// SetVersionId sets the VersionId field and marks it as non-optional;
+// SetVersionID sets the VersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetVersionId(versionId *EntityIdWithoutAgent) {
-	k.VersionId = versionId
-	k.require(knowledgeDocumentRequestFieldVersionId)
+func (k *KnowledgeDocumentRequest) SetVersionID(versionID *EntityIDWithoutAgent) {
+	k.VersionID = versionID
+	k.require(knowledgeDocumentRequestFieldVersionID)
 }
 
 // SetContentType sets the ContentType field and marks it as non-optional;
@@ -2576,11 +2586,11 @@ func (k *KnowledgeDocumentRequest) SetTitle(title string) {
 	k.require(knowledgeDocumentRequestFieldTitle)
 }
 
-// SetAssetId sets the AssetId field and marks it as non-optional;
+// SetAssetID sets the AssetID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetAssetId(assetId *EntityIdBase) {
-	k.AssetId = assetId
-	k.require(knowledgeDocumentRequestFieldAssetId)
+func (k *KnowledgeDocumentRequest) SetAssetID(assetID *EntityIDBase) {
+	k.AssetID = assetID
+	k.require(knowledgeDocumentRequestFieldAssetID)
 }
 
 // SetContent sets the Content field and marks it as non-optional;
@@ -2609,6 +2619,13 @@ func (k *KnowledgeDocumentRequest) SetCreatedAt(createdAt *time.Time) {
 func (k *KnowledgeDocumentRequest) SetUpdatedAt(updatedAt *time.Time) {
 	k.UpdatedAt = updatedAt
 	k.require(knowledgeDocumentRequestFieldUpdatedAt)
+}
+
+// SetRelevantEntities sets the RelevantEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentRequest) SetRelevantEntities(relevantEntities []*ScopedEntity) {
+	k.RelevantEntities = relevantEntities
+	k.require(knowledgeDocumentRequestFieldRelevantEntities)
 }
 
 func (k *KnowledgeDocumentRequest) UnmarshalJSON(data []byte) error {
@@ -2663,12 +2680,12 @@ func (k *KnowledgeDocumentRequest) String() string {
 }
 
 var (
-	knowledgeDocumentResponseFieldUrl                             = big.NewInt(1 << 0)
+	knowledgeDocumentResponseFieldURL                             = big.NewInt(1 << 0)
 	knowledgeDocumentResponseFieldLanguage                        = big.NewInt(1 << 1)
 	knowledgeDocumentResponseFieldAuthor                          = big.NewInt(1 << 2)
-	knowledgeDocumentResponseFieldKnowledgeDocumentId             = big.NewInt(1 << 3)
-	knowledgeDocumentResponseFieldKnowledgeBaseVersionId          = big.NewInt(1 << 4)
-	knowledgeDocumentResponseFieldKnowledgeBaseId                 = big.NewInt(1 << 5)
+	knowledgeDocumentResponseFieldKnowledgeDocumentID             = big.NewInt(1 << 3)
+	knowledgeDocumentResponseFieldKnowledgeBaseVersionID          = big.NewInt(1 << 4)
+	knowledgeDocumentResponseFieldKnowledgeBaseID                 = big.NewInt(1 << 5)
 	knowledgeDocumentResponseFieldTitle                           = big.NewInt(1 << 6)
 	knowledgeDocumentResponseFieldLlmInclusionStatus              = big.NewInt(1 << 7)
 	knowledgeDocumentResponseFieldKnowledgeBaseLlmInclusionStatus = big.NewInt(1 << 8)
@@ -2678,22 +2695,23 @@ var (
 	knowledgeDocumentResponseFieldContent                         = big.NewInt(1 << 12)
 	knowledgeDocumentResponseFieldAsset                           = big.NewInt(1 << 13)
 	knowledgeDocumentResponseFieldMetadata                        = big.NewInt(1 << 14)
+	knowledgeDocumentResponseFieldRelevantEntities                = big.NewInt(1 << 15)
 )
 
 type KnowledgeDocumentResponse struct {
 	// The URL of the document. Should be visible to end users. Will be shown as part of answers. Not used for crawling.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 	// ID that uniquely identifies this knowledge document within its knowledge base
-	KnowledgeDocumentId *EntityId `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
+	KnowledgeDocumentID *EntityID `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
 	// ID that uniquely identifies the knowledge base version that contains this document.
 	// This may be missing on legacy documents.
-	KnowledgeBaseVersionId *EntityId `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
+	KnowledgeBaseVersionID *EntityID `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
 	// ID that uniquely identifies the knowledge base that contains this document.
-	KnowledgeBaseId *EntityId `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	KnowledgeBaseID *EntityID `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// The title of the document. Will be shown as part of answers. May be missing on legacy documents.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
 	// Whether the document is included in the agent's knowledge.
@@ -2712,6 +2730,8 @@ type KnowledgeDocumentResponse struct {
 	Asset *AttachmentResponse `json:"asset,omitempty" url:"asset,omitempty"`
 	// Metadata for the knowledge document.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
+	// Scoped entities this document is associated with for context-based filtering.
+	RelevantEntities []*ScopedEntity `json:"relevantEntities" url:"relevantEntities"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2720,11 +2740,11 @@ type KnowledgeDocumentResponse struct {
 	rawJSON         json.RawMessage
 }
 
-func (k *KnowledgeDocumentResponse) GetUrl() *string {
+func (k *KnowledgeDocumentResponse) GetURL() *string {
 	if k == nil {
 		return nil
 	}
-	return k.Url
+	return k.URL
 }
 
 func (k *KnowledgeDocumentResponse) GetLanguage() *string {
@@ -2741,25 +2761,25 @@ func (k *KnowledgeDocumentResponse) GetAuthor() *string {
 	return k.Author
 }
 
-func (k *KnowledgeDocumentResponse) GetKnowledgeDocumentId() *EntityId {
+func (k *KnowledgeDocumentResponse) GetKnowledgeDocumentID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeDocumentId
+	return k.KnowledgeDocumentID
 }
 
-func (k *KnowledgeDocumentResponse) GetKnowledgeBaseVersionId() *EntityId {
+func (k *KnowledgeDocumentResponse) GetKnowledgeBaseVersionID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseVersionId
+	return k.KnowledgeBaseVersionID
 }
 
-func (k *KnowledgeDocumentResponse) GetKnowledgeBaseId() *EntityId {
+func (k *KnowledgeDocumentResponse) GetKnowledgeBaseID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseId
+	return k.KnowledgeBaseID
 }
 
 func (k *KnowledgeDocumentResponse) GetTitle() *string {
@@ -2825,6 +2845,13 @@ func (k *KnowledgeDocumentResponse) GetMetadata() map[string]string {
 	return k.Metadata
 }
 
+func (k *KnowledgeDocumentResponse) GetRelevantEntities() []*ScopedEntity {
+	if k == nil {
+		return nil
+	}
+	return k.RelevantEntities
+}
+
 func (k *KnowledgeDocumentResponse) GetExtraProperties() map[string]interface{} {
 	return k.extraProperties
 }
@@ -2836,11 +2863,11 @@ func (k *KnowledgeDocumentResponse) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetUrl(url *string) {
-	k.Url = url
-	k.require(knowledgeDocumentResponseFieldUrl)
+func (k *KnowledgeDocumentResponse) SetURL(url *string) {
+	k.URL = url
+	k.require(knowledgeDocumentResponseFieldURL)
 }
 
 // SetLanguage sets the Language field and marks it as non-optional;
@@ -2857,25 +2884,25 @@ func (k *KnowledgeDocumentResponse) SetAuthor(author *string) {
 	k.require(knowledgeDocumentResponseFieldAuthor)
 }
 
-// SetKnowledgeDocumentId sets the KnowledgeDocumentId field and marks it as non-optional;
+// SetKnowledgeDocumentID sets the KnowledgeDocumentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetKnowledgeDocumentId(knowledgeDocumentId *EntityId) {
-	k.KnowledgeDocumentId = knowledgeDocumentId
-	k.require(knowledgeDocumentResponseFieldKnowledgeDocumentId)
+func (k *KnowledgeDocumentResponse) SetKnowledgeDocumentID(knowledgeDocumentID *EntityID) {
+	k.KnowledgeDocumentID = knowledgeDocumentID
+	k.require(knowledgeDocumentResponseFieldKnowledgeDocumentID)
 }
 
-// SetKnowledgeBaseVersionId sets the KnowledgeBaseVersionId field and marks it as non-optional;
+// SetKnowledgeBaseVersionID sets the KnowledgeBaseVersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetKnowledgeBaseVersionId(knowledgeBaseVersionId *EntityId) {
-	k.KnowledgeBaseVersionId = knowledgeBaseVersionId
-	k.require(knowledgeDocumentResponseFieldKnowledgeBaseVersionId)
+func (k *KnowledgeDocumentResponse) SetKnowledgeBaseVersionID(knowledgeBaseVersionID *EntityID) {
+	k.KnowledgeBaseVersionID = knowledgeBaseVersionID
+	k.require(knowledgeDocumentResponseFieldKnowledgeBaseVersionID)
 }
 
-// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetKnowledgeBaseId(knowledgeBaseId *EntityId) {
-	k.KnowledgeBaseId = knowledgeBaseId
-	k.require(knowledgeDocumentResponseFieldKnowledgeBaseId)
+func (k *KnowledgeDocumentResponse) SetKnowledgeBaseID(knowledgeBaseID *EntityID) {
+	k.KnowledgeBaseID = knowledgeBaseID
+	k.require(knowledgeDocumentResponseFieldKnowledgeBaseID)
 }
 
 // SetTitle sets the Title field and marks it as non-optional;
@@ -2939,6 +2966,13 @@ func (k *KnowledgeDocumentResponse) SetAsset(asset *AttachmentResponse) {
 func (k *KnowledgeDocumentResponse) SetMetadata(metadata map[string]string) {
 	k.Metadata = metadata
 	k.require(knowledgeDocumentResponseFieldMetadata)
+}
+
+// SetRelevantEntities sets the RelevantEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetRelevantEntities(relevantEntities []*ScopedEntity) {
+	k.RelevantEntities = relevantEntities
+	k.require(knowledgeDocumentResponseFieldRelevantEntities)
 }
 
 func (k *KnowledgeDocumentResponse) UnmarshalJSON(data []byte) error {
@@ -3138,12 +3172,12 @@ func (k *KnowledgeDocumentSearchRequest) String() string {
 }
 
 var (
-	knowledgeDocumentSearchResponseFieldUrl                             = big.NewInt(1 << 0)
+	knowledgeDocumentSearchResponseFieldURL                             = big.NewInt(1 << 0)
 	knowledgeDocumentSearchResponseFieldLanguage                        = big.NewInt(1 << 1)
 	knowledgeDocumentSearchResponseFieldAuthor                          = big.NewInt(1 << 2)
-	knowledgeDocumentSearchResponseFieldKnowledgeDocumentId             = big.NewInt(1 << 3)
-	knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId          = big.NewInt(1 << 4)
-	knowledgeDocumentSearchResponseFieldKnowledgeBaseId                 = big.NewInt(1 << 5)
+	knowledgeDocumentSearchResponseFieldKnowledgeDocumentID             = big.NewInt(1 << 3)
+	knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionID          = big.NewInt(1 << 4)
+	knowledgeDocumentSearchResponseFieldKnowledgeBaseID                 = big.NewInt(1 << 5)
 	knowledgeDocumentSearchResponseFieldTitle                           = big.NewInt(1 << 6)
 	knowledgeDocumentSearchResponseFieldLlmInclusionStatus              = big.NewInt(1 << 7)
 	knowledgeDocumentSearchResponseFieldKnowledgeBaseLlmInclusionStatus = big.NewInt(1 << 8)
@@ -3153,18 +3187,18 @@ var (
 
 type KnowledgeDocumentSearchResponse struct {
 	// The URL of the document. Should be visible to end users. Will be shown as part of answers. Not used for crawling.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The document language. Must be a valid ISO 639-1 language code.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The name of the author who created this document.
 	Author *string `json:"author,omitempty" url:"author,omitempty"`
 	// ID that uniquely identifies this knowledge document within its knowledge base
-	KnowledgeDocumentId *EntityId `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
+	KnowledgeDocumentID *EntityID `json:"knowledgeDocumentId" url:"knowledgeDocumentId"`
 	// ID that uniquely identifies the knowledge base version that contains this document.
 	// This may be missing on legacy documents.
-	KnowledgeBaseVersionId *EntityId `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
+	KnowledgeBaseVersionID *EntityID `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
 	// ID that uniquely identifies the knowledge base that contains this document.
-	KnowledgeBaseId *EntityId `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	KnowledgeBaseID *EntityID `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// The title of the document. Will be shown as part of answers. May be missing on legacy documents.
 	Title *string `json:"title,omitempty" url:"title,omitempty"`
 	// Whether the document is included in the agent's knowledge.
@@ -3183,11 +3217,11 @@ type KnowledgeDocumentSearchResponse struct {
 	rawJSON         json.RawMessage
 }
 
-func (k *KnowledgeDocumentSearchResponse) GetUrl() *string {
+func (k *KnowledgeDocumentSearchResponse) GetURL() *string {
 	if k == nil {
 		return nil
 	}
-	return k.Url
+	return k.URL
 }
 
 func (k *KnowledgeDocumentSearchResponse) GetLanguage() *string {
@@ -3204,25 +3238,25 @@ func (k *KnowledgeDocumentSearchResponse) GetAuthor() *string {
 	return k.Author
 }
 
-func (k *KnowledgeDocumentSearchResponse) GetKnowledgeDocumentId() *EntityId {
+func (k *KnowledgeDocumentSearchResponse) GetKnowledgeDocumentID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeDocumentId
+	return k.KnowledgeDocumentID
 }
 
-func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseVersionId() *EntityId {
+func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseVersionID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseVersionId
+	return k.KnowledgeBaseVersionID
 }
 
-func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseId() *EntityId {
+func (k *KnowledgeDocumentSearchResponse) GetKnowledgeBaseID() *EntityID {
 	if k == nil {
 		return nil
 	}
-	return k.KnowledgeBaseId
+	return k.KnowledgeBaseID
 }
 
 func (k *KnowledgeDocumentSearchResponse) GetTitle() *string {
@@ -3271,11 +3305,11 @@ func (k *KnowledgeDocumentSearchResponse) require(field *big.Int) {
 	k.explicitFields.Or(k.explicitFields, field)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentSearchResponse) SetUrl(url *string) {
-	k.Url = url
-	k.require(knowledgeDocumentSearchResponseFieldUrl)
+func (k *KnowledgeDocumentSearchResponse) SetURL(url *string) {
+	k.URL = url
+	k.require(knowledgeDocumentSearchResponseFieldURL)
 }
 
 // SetLanguage sets the Language field and marks it as non-optional;
@@ -3292,25 +3326,25 @@ func (k *KnowledgeDocumentSearchResponse) SetAuthor(author *string) {
 	k.require(knowledgeDocumentSearchResponseFieldAuthor)
 }
 
-// SetKnowledgeDocumentId sets the KnowledgeDocumentId field and marks it as non-optional;
+// SetKnowledgeDocumentID sets the KnowledgeDocumentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentSearchResponse) SetKnowledgeDocumentId(knowledgeDocumentId *EntityId) {
-	k.KnowledgeDocumentId = knowledgeDocumentId
-	k.require(knowledgeDocumentSearchResponseFieldKnowledgeDocumentId)
+func (k *KnowledgeDocumentSearchResponse) SetKnowledgeDocumentID(knowledgeDocumentID *EntityID) {
+	k.KnowledgeDocumentID = knowledgeDocumentID
+	k.require(knowledgeDocumentSearchResponseFieldKnowledgeDocumentID)
 }
 
-// SetKnowledgeBaseVersionId sets the KnowledgeBaseVersionId field and marks it as non-optional;
+// SetKnowledgeBaseVersionID sets the KnowledgeBaseVersionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseVersionId(knowledgeBaseVersionId *EntityId) {
-	k.KnowledgeBaseVersionId = knowledgeBaseVersionId
-	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionId)
+func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseVersionID(knowledgeBaseVersionID *EntityID) {
+	k.KnowledgeBaseVersionID = knowledgeBaseVersionID
+	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseVersionID)
 }
 
-// SetKnowledgeBaseId sets the KnowledgeBaseId field and marks it as non-optional;
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseId(knowledgeBaseId *EntityId) {
-	k.KnowledgeBaseId = knowledgeBaseId
-	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseId)
+func (k *KnowledgeDocumentSearchResponse) SetKnowledgeBaseID(knowledgeBaseID *EntityID) {
+	k.KnowledgeBaseID = knowledgeBaseID
+	k.require(knowledgeDocumentSearchResponseFieldKnowledgeBaseID)
 }
 
 // SetTitle sets the Title field and marks it as non-optional;

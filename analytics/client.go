@@ -21,8 +21,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -117,6 +117,40 @@ func (c *Client) GetAgentUserTable(
 	opts ...option.RequestOption,
 ) (*mavenagigo.AgentUserTableResponse, error) {
 	response, err := c.WithRawResponse.GetAgentUserTable(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// Retrieves structured event data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+func (c *Client) GetEventTable(
+	ctx context.Context,
+	request *mavenagigo.EventTableRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.EventTableResponse, error) {
+	response, err := c.WithRawResponse.GetEventTable(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// Fetches event data visualized in a chart format. Supported chart types include pie chart, date histogram, and stacked bar charts.
+func (c *Client) GetEventChart(
+	ctx context.Context,
+	request *mavenagigo.EventChartRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.ChartResponse, error) {
+	response, err := c.WithRawResponse.GetEventChart(
 		ctx,
 		request,
 		opts...,

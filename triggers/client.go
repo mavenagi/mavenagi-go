@@ -20,8 +20,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -76,12 +76,12 @@ func (c *Client) CreateOrUpdate(
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the event trigger to get. All other entity ID fields are inferred from the request.
-	triggerReferenceId string,
+	triggerReferenceID string,
 	opts ...option.RequestOption,
 ) (*mavenagigo.EventTriggerResponse, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		triggerReferenceId,
+		triggerReferenceID,
 		opts...,
 	)
 	if err != nil {
@@ -94,12 +94,12 @@ func (c *Client) Get(
 func (c *Client) Delete(
 	ctx context.Context,
 	// The reference ID of the event trigger to delete. All other entity ID fields are inferred from the request.
-	triggerReferenceId string,
+	triggerReferenceID string,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.Delete(
 		ctx,
-		triggerReferenceId,
+		triggerReferenceID,
 		opts...,
 	)
 	if err != nil {
@@ -112,13 +112,13 @@ func (c *Client) Delete(
 func (c *Client) PartialUpdate(
 	ctx context.Context,
 	// The reference ID of the event trigger to update. All other entity ID fields are inferred from the request.
-	triggerReferenceId string,
+	triggerReferenceID string,
 	request *mavenagigo.PartialUpdateRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.EventTriggerResponse, error) {
 	response, err := c.WithRawResponse.PartialUpdate(
 		ctx,
-		triggerReferenceId,
+		triggerReferenceID,
 		request,
 		opts...,
 	)

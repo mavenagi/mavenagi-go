@@ -75,7 +75,7 @@ func (r *RawClient) InitiateUpload(
 func (r *RawClient) CommitUpload(
 	ctx context.Context,
 	// The reference ID of the asset to commit (provided by the initiate call). All other entity ID fields are inferred from the API request.
-	assetReferenceId string,
+	assetReferenceID string,
 	request *mavenagigo.CommitAssetUploadRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
@@ -87,7 +87,7 @@ func (r *RawClient) CommitUpload(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/assets/%v/commit",
-		assetReferenceId,
+		assetReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

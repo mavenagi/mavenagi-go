@@ -117,7 +117,7 @@ func (r *RawClient) CreateOrUpdate(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The reference ID of the action to get. All other entity ID fields are inferred from the request.
-	actionReferenceId string,
+	actionReferenceID string,
 	request *mavenagigo.ActionGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ActionResponse], error) {
@@ -129,7 +129,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/actions/%v",
-		actionReferenceId,
+		actionReferenceID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -170,7 +170,7 @@ func (r *RawClient) Get(
 func (r *RawClient) Patch(
 	ctx context.Context,
 	// The reference ID of the action to patch.
-	actionReferenceId string,
+	actionReferenceID string,
 	request *mavenagigo.ActionPatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.ActionResponse], error) {
@@ -182,7 +182,7 @@ func (r *RawClient) Patch(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/actions/%v",
-		actionReferenceId,
+		actionReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -218,7 +218,7 @@ func (r *RawClient) Patch(
 func (r *RawClient) Delete(
 	ctx context.Context,
 	// The reference ID of the action to unregister. All other entity ID fields are inferred from the request.
-	actionReferenceId string,
+	actionReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
 	options := core.NewRequestOptions(opts...)
@@ -229,7 +229,7 @@ func (r *RawClient) Delete(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/actions/%v",
-		actionReferenceId,
+		actionReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

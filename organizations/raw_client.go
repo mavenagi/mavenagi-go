@@ -33,7 +33,7 @@ func NewRawClient(options *core.RequestOptions) *RawClient {
 func (r *RawClient) Create(
 	ctx context.Context,
 	// The reference ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	request *mavenagigo.CreateOrganizationRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.Organization], error) {
@@ -45,7 +45,7 @@ func (r *RawClient) Create(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v",
-		organizationReferenceId,
+		organizationReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -80,7 +80,7 @@ func (r *RawClient) Create(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The reference ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.Organization], error) {
 	options := core.NewRequestOptions(opts...)
@@ -91,7 +91,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v",
-		organizationReferenceId,
+		organizationReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -125,7 +125,7 @@ func (r *RawClient) Get(
 func (r *RawClient) Patch(
 	ctx context.Context,
 	// The reference ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	request *mavenagigo.OrganizationPatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.Organization], error) {
@@ -137,7 +137,7 @@ func (r *RawClient) Patch(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v",
-		organizationReferenceId,
+		organizationReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -172,7 +172,7 @@ func (r *RawClient) Patch(
 func (r *RawClient) Delete(
 	ctx context.Context,
 	// The reference ID of the organization.
-	organizationReferenceId string,
+	organizationReferenceID string,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
 	options := core.NewRequestOptions(opts...)
@@ -183,7 +183,7 @@ func (r *RawClient) Delete(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/organizations/%v",
-		organizationReferenceId,
+		organizationReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

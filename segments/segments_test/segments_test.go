@@ -92,8 +92,8 @@ func TestSegmentsCreateOrUpdateWithWireMock(
 		),
 	)
 	request := &mavenagigo.SegmentRequest{
-		SegmentId: &mavenagigo.EntityIdBase{
-			ReferenceId: "admin-users",
+		SegmentID: &mavenagigo.EntityIDBase{
+			ReferenceID: "admin-users",
 		},
 		Name: "Admin users",
 		Precondition: &mavenagigo.Precondition{

@@ -22,8 +22,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -72,13 +72,13 @@ func (c *Client) Initialize(
 func (c *Client) Patch(
 	ctx context.Context,
 	// The ID of the conversation to patch
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.ConversationPatchRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationResponse, error) {
 	response, err := c.WithRawResponse.Patch(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -92,13 +92,13 @@ func (c *Client) Patch(
 func (c *Client) Get(
 	ctx context.Context,
 	// The ID of the conversation to get
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.ConversationGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationResponse, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -121,13 +121,13 @@ func (c *Client) Get(
 func (c *Client) Delete(
 	ctx context.Context,
 	// The ID of the conversation to delete
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.ConversationDeleteRequest,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.Delete(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -141,13 +141,13 @@ func (c *Client) Delete(
 func (c *Client) AppendNewMessages(
 	ctx context.Context,
 	// The ID of the conversation to append messages to
-	conversationId string,
+	conversationID string,
 	request []*mavenagigo.ConversationMessageRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationResponse, error) {
 	response, err := c.WithRawResponse.AppendNewMessages(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -169,13 +169,13 @@ func (c *Client) AppendNewMessages(
 func (c *Client) Ask(
 	ctx context.Context,
 	// The ID of a new or existing conversation to use as context for the question
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.AskRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationResponse, error) {
 	response, err := c.WithRawResponse.Ask(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -201,7 +201,7 @@ func (c *Client) Ask(
 func (c *Client) AskStream(
 	ctx context.Context,
 	// The ID of a new or existing conversation to use as context for the question
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.AskRequest,
 	opts ...option.RequestOption,
 ) (*core.Stream[mavenagigo.StreamResponse], error) {
@@ -213,7 +213,7 @@ func (c *Client) AskStream(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/ask_stream",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		c.options.ToHeader(),
@@ -256,7 +256,7 @@ func (c *Client) AskStream(
 func (c *Client) AskObjectStream(
 	ctx context.Context,
 	// The ID of a new or existing conversation to use as context for the object generation request
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.AskObjectRequest,
 	opts ...option.RequestOption,
 ) (*core.Stream[mavenagigo.ObjectStreamResponse], error) {
@@ -268,7 +268,7 @@ func (c *Client) AskObjectStream(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/conversations/%v/ask_object_stream",
-		conversationId,
+		conversationID,
 	)
 	headers := internal.MergeHeaders(
 		c.options.ToHeader(),
@@ -299,12 +299,12 @@ func (c *Client) AskObjectStream(
 func (c *Client) Categorize(
 	ctx context.Context,
 	// The ID of the conversation to categorize
-	conversationId string,
+	conversationID string,
 	opts ...option.RequestOption,
 ) (*mavenagigo.CategorizationResponse, error) {
 	response, err := c.WithRawResponse.Categorize(
 		ctx,
-		conversationId,
+		conversationID,
 		opts...,
 	)
 	if err != nil {
@@ -338,13 +338,13 @@ func (c *Client) CreateFeedback(
 func (c *Client) SubmitActionForm(
 	ctx context.Context,
 	// The ID of a conversation the form being submitted belongs to
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.SubmitActionFormRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationResponse, error) {
 	response, err := c.WithRawResponse.SubmitActionForm(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -360,13 +360,13 @@ func (c *Client) SubmitActionForm(
 func (c *Client) AddConversationMetadata(
 	ctx context.Context,
 	// The ID of a conversation the metadata being added belongs to
-	conversationId string,
+	conversationID string,
 	request map[string]string,
 	opts ...option.RequestOption,
 ) (map[string]string, error) {
 	response, err := c.WithRawResponse.AddConversationMetadata(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)
@@ -386,13 +386,13 @@ func (c *Client) AddConversationMetadata(
 func (c *Client) UpdateConversationMetadata(
 	ctx context.Context,
 	// The ID of the conversation to modify metadata for
-	conversationId string,
+	conversationID string,
 	request *mavenagigo.UpdateMetadataRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationMetadata, error) {
 	response, err := c.WithRawResponse.UpdateConversationMetadata(
 		ctx,
-		conversationId,
+		conversationID,
 		request,
 		opts...,
 	)

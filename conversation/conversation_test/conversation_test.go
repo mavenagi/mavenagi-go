@@ -72,26 +72,26 @@ func TestConversationInitializeWithWireMock(
 		),
 	)
 	request := &mavenagigo.ConversationRequest{
-		ConversationId: &mavenagigo.EntityIdBase{
-			ReferenceId: "x",
+		ConversationID: &mavenagigo.EntityIDBase{
+			ReferenceID: "x",
 		},
 		Messages: []*mavenagigo.ConversationMessageRequest{
 			&mavenagigo.ConversationMessageRequest{
-				ConversationMessageId: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				ConversationMessageID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
-				UserId: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				UserID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
 				Text:            "text",
 				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
 			},
 			&mavenagigo.ConversationMessageRequest{
-				ConversationMessageId: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				ConversationMessageID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
-				UserId: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				UserID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
 				Text:            "text",
 				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -188,21 +188,21 @@ func TestConversationAppendNewMessagesWithWireMock(
 	)
 	request := []*mavenagigo.ConversationMessageRequest{
 		&mavenagigo.ConversationMessageRequest{
-			ConversationMessageId: &mavenagigo.EntityIdBase{
-				ReferenceId: "x",
+			ConversationMessageID: &mavenagigo.EntityIDBase{
+				ReferenceID: "x",
 			},
-			UserId: &mavenagigo.EntityIdBase{
-				ReferenceId: "x",
+			UserID: &mavenagigo.EntityIDBase{
+				ReferenceID: "x",
 			},
 			Text:            "text",
 			UserMessageType: mavenagigo.UserConversationMessageTypeUser,
 		},
 		&mavenagigo.ConversationMessageRequest{
-			ConversationMessageId: &mavenagigo.EntityIdBase{
-				ReferenceId: "x",
+			ConversationMessageID: &mavenagigo.EntityIDBase{
+				ReferenceID: "x",
 			},
-			UserId: &mavenagigo.EntityIdBase{
-				ReferenceId: "x",
+			UserID: &mavenagigo.EntityIDBase{
+				ReferenceID: "x",
 			},
 			Text:            "text",
 			UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -229,11 +229,11 @@ func TestConversationAskWithWireMock(
 		),
 	)
 	request := &mavenagigo.AskRequest{
-		ConversationMessageId: &mavenagigo.EntityIdBase{
-			ReferenceId: "message-0",
+		ConversationMessageID: &mavenagigo.EntityIDBase{
+			ReferenceID: "message-0",
 		},
-		UserId: &mavenagigo.EntityIdBase{
-			ReferenceId: "user-0",
+		UserID: &mavenagigo.EntityIDBase{
+			ReferenceID: "user-0",
 		},
 		Text: "How do I reset my password?",
 		Attachments: []*mavenagigo.AttachmentRequest{
@@ -271,11 +271,11 @@ func TestConversationAskStreamWithWireMock(
 		),
 	)
 	request := &mavenagigo.AskRequest{
-		ConversationMessageId: &mavenagigo.EntityIdBase{
-			ReferenceId: "message-0",
+		ConversationMessageID: &mavenagigo.EntityIDBase{
+			ReferenceID: "message-0",
 		},
-		UserId: &mavenagigo.EntityIdBase{
-			ReferenceId: "user-0",
+		UserID: &mavenagigo.EntityIDBase{
+			ReferenceID: "user-0",
 		},
 		Text: "How do I reset my password?",
 		Attachments: []*mavenagigo.AttachmentRequest{
@@ -314,11 +314,11 @@ func TestConversationAskObjectStreamWithWireMock(
 	)
 	request := &mavenagigo.AskObjectRequest{
 		Schema: "schema",
-		ConversationMessageId: &mavenagigo.EntityIdBase{
-			ReferenceId: "x",
+		ConversationMessageID: &mavenagigo.EntityIDBase{
+			ReferenceID: "x",
 		},
-		UserId: &mavenagigo.EntityIdBase{
-			ReferenceId: "x",
+		UserID: &mavenagigo.EntityIDBase{
+			ReferenceID: "x",
 		},
 		Text: "text",
 	}
@@ -362,17 +362,17 @@ func TestConversationCreateFeedbackWithWireMock(
 		),
 	)
 	request := &mavenagigo.FeedbackRequest{
-		FeedbackId: &mavenagigo.EntityIdBase{
-			ReferenceId: "feedback-0",
+		FeedbackID: &mavenagigo.EntityIDBase{
+			ReferenceID: "feedback-0",
 		},
-		UserId: &mavenagigo.EntityIdBase{
-			ReferenceId: "user-0",
+		UserID: &mavenagigo.EntityIDBase{
+			ReferenceID: "user-0",
 		},
-		ConversationId: &mavenagigo.EntityIdBase{
-			ReferenceId: "conversation-0",
+		ConversationID: &mavenagigo.EntityIDBase{
+			ReferenceID: "conversation-0",
 		},
-		ConversationMessageId: &mavenagigo.EntityIdBase{
-			ReferenceId: "message-1",
+		ConversationMessageID: &mavenagigo.EntityIDBase{
+			ReferenceID: "message-1",
 		},
 		Type: mavenagigo.FeedbackTypeThumbsUp,
 		Text: mavenagigo.String(
@@ -399,7 +399,7 @@ func TestConversationSubmitActionFormWithWireMock(
 		),
 	)
 	request := &mavenagigo.SubmitActionFormRequest{
-		ActionFormId: "actionFormId",
+		ActionFormID: "actionFormId",
 		Parameters: map[string]*mavenagigo.ActionFormRequestParamValue{
 			"parameters": &mavenagigo.ActionFormRequestParamValue{
 				Unknown: map[string]any{
@@ -452,7 +452,7 @@ func TestConversationUpdateConversationMetadataWithWireMock(
 		),
 	)
 	request := &mavenagigo.UpdateMetadataRequest{
-		AppId: mavenagigo.String(
+		AppID: mavenagigo.String(
 			"conversation-owning-app",
 		),
 		Values: map[string]string{
@@ -521,17 +521,17 @@ func TestConversationDeliverMessageWithWireMock(
 	)
 	request := &mavenagigo.DeliverMessageRequest{
 		User: &mavenagigo.DeliverUserMessageRequest{
-			UserId: &mavenagigo.EntityIdWithoutAgent{
+			UserID: &mavenagigo.EntityIDWithoutAgent{
 				Type:        mavenagigo.EntityTypeAgent,
-				AppId:       "appId",
-				ReferenceId: "x",
+				AppID:       "appId",
+				ReferenceID: "x",
 			},
 			Message: &mavenagigo.ConversationMessageRequest{
-				ConversationMessageId: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				ConversationMessageID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
-				UserId: &mavenagigo.EntityIdBase{
-					ReferenceId: "x",
+				UserID: &mavenagigo.EntityIDBase{
+					ReferenceID: "x",
 				},
 				Text:            "text",
 				UserMessageType: mavenagigo.UserConversationMessageTypeUser,

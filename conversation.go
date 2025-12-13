@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	conversationDeleteRequestFieldAppId  = big.NewInt(1 << 0)
+	conversationDeleteRequestFieldAppID  = big.NewInt(1 << 0)
 	conversationDeleteRequestFieldReason = big.NewInt(1 << 1)
 )
 
 type ConversationDeleteRequest struct {
 	// The App ID of the conversation to delete. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 	// The reason for deleting the conversation. This message will replace all user messages in the conversation.
 	Reason string `json:"-" url:"reason"`
 
@@ -33,11 +33,11 @@ func (c *ConversationDeleteRequest) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationDeleteRequest) SetAppId(appId *string) {
-	c.AppId = appId
-	c.require(conversationDeleteRequestFieldAppId)
+func (c *ConversationDeleteRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(conversationDeleteRequestFieldAppID)
 }
 
 // SetReason sets the Reason field and marks it as non-optional;
@@ -48,13 +48,13 @@ func (c *ConversationDeleteRequest) SetReason(reason string) {
 }
 
 var (
-	conversationGetRequestFieldAppId               = big.NewInt(1 << 0)
+	conversationGetRequestFieldAppID               = big.NewInt(1 << 0)
 	conversationGetRequestFieldTranslationLanguage = big.NewInt(1 << 1)
 )
 
 type ConversationGetRequest struct {
 	// The App ID of the conversation to get. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 	// The language to translate the conversation analysis into
 	TranslationLanguage *string `json:"-" url:"translationLanguage,omitempty"`
 
@@ -69,11 +69,11 @@ func (c *ConversationGetRequest) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationGetRequest) SetAppId(appId *string) {
-	c.AppId = appId
-	c.require(conversationGetRequestFieldAppId)
+func (c *ConversationGetRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(conversationGetRequestFieldAppID)
 }
 
 // SetTranslationLanguage sets the TranslationLanguage field and marks it as non-optional;
@@ -100,12 +100,12 @@ func (s *SimulationImportRequest) require(field *big.Int) {
 }
 
 var (
-	actionFormAttachmentFieldAssetId = big.NewInt(1 << 0)
+	actionFormAttachmentFieldAssetID = big.NewInt(1 << 0)
 )
 
 type ActionFormAttachment struct {
 	// The asset ID of the attachment.
-	AssetId *EntityIdBase `json:"assetId" url:"assetId"`
+	AssetID *EntityIDBase `json:"assetId" url:"assetId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -114,11 +114,11 @@ type ActionFormAttachment struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *ActionFormAttachment) GetAssetId() *EntityIdBase {
+func (a *ActionFormAttachment) GetAssetID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.AssetId
+	return a.AssetID
 }
 
 func (a *ActionFormAttachment) GetExtraProperties() map[string]interface{} {
@@ -132,11 +132,11 @@ func (a *ActionFormAttachment) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetAssetId sets the AssetId field and marks it as non-optional;
+// SetAssetID sets the AssetID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionFormAttachment) SetAssetId(assetId *EntityIdBase) {
-	a.AssetId = assetId
-	a.require(actionFormAttachmentFieldAssetId)
+func (a *ActionFormAttachment) SetAssetID(assetID *EntityIDBase) {
+	a.AssetID = assetID
+	a.require(actionFormAttachmentFieldAssetID)
 }
 
 func (a *ActionFormAttachment) UnmarshalJSON(data []byte) error {
@@ -241,8 +241,8 @@ func (a *ActionFormRequestParamValue) Accept(visitor ActionFormRequestParamValue
 }
 
 var (
-	askObjectRequestFieldConversationMessageId = big.NewInt(1 << 0)
-	askObjectRequestFieldUserId                = big.NewInt(1 << 1)
+	askObjectRequestFieldConversationMessageID = big.NewInt(1 << 0)
+	askObjectRequestFieldUserID                = big.NewInt(1 << 1)
 	askObjectRequestFieldText                  = big.NewInt(1 << 2)
 	askObjectRequestFieldAttachments           = big.NewInt(1 << 3)
 	askObjectRequestFieldTransientData         = big.NewInt(1 << 4)
@@ -252,9 +252,9 @@ var (
 
 type AskObjectRequest struct {
 	// Externally supplied ID to uniquely identify this message within the conversation. If a message with this ID already exists it will be reused and will not be updated.
-	ConversationMessageId *EntityIdBase `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
 	// Externally supplied ID to uniquely identify the user that created this message
-	UserId *EntityIdBase `json:"userId" url:"userId"`
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message
 	Text string `json:"text" url:"text"`
 	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
@@ -274,18 +274,18 @@ type AskObjectRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AskObjectRequest) GetConversationMessageId() *EntityIdBase {
+func (a *AskObjectRequest) GetConversationMessageID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.ConversationMessageId
+	return a.ConversationMessageID
 }
 
-func (a *AskObjectRequest) GetUserId() *EntityIdBase {
+func (a *AskObjectRequest) GetUserID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.UserId
+	return a.UserID
 }
 
 func (a *AskObjectRequest) GetText() string {
@@ -334,18 +334,18 @@ func (a *AskObjectRequest) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskObjectRequest) SetConversationMessageId(conversationMessageId *EntityIdBase) {
-	a.ConversationMessageId = conversationMessageId
-	a.require(askObjectRequestFieldConversationMessageId)
+func (a *AskObjectRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	a.ConversationMessageID = conversationMessageID
+	a.require(askObjectRequestFieldConversationMessageID)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskObjectRequest) SetUserId(userId *EntityIdBase) {
-	a.UserId = userId
-	a.require(askObjectRequestFieldUserId)
+func (a *AskObjectRequest) SetUserID(userID *EntityIDBase) {
+	a.UserID = userID
+	a.require(askObjectRequestFieldUserID)
 }
 
 // SetText sets the Text field and marks it as non-optional;
@@ -423,8 +423,8 @@ func (a *AskObjectRequest) String() string {
 }
 
 var (
-	askRequestFieldConversationMessageId = big.NewInt(1 << 0)
-	askRequestFieldUserId                = big.NewInt(1 << 1)
+	askRequestFieldConversationMessageID = big.NewInt(1 << 0)
+	askRequestFieldUserID                = big.NewInt(1 << 1)
 	askRequestFieldText                  = big.NewInt(1 << 2)
 	askRequestFieldAttachments           = big.NewInt(1 << 3)
 	askRequestFieldTransientData         = big.NewInt(1 << 4)
@@ -433,9 +433,9 @@ var (
 
 type AskRequest struct {
 	// Externally supplied ID to uniquely identify this message within the conversation. If a message with this ID already exists it will be reused and will not be updated.
-	ConversationMessageId *EntityIdBase `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
 	// Externally supplied ID to uniquely identify the user that created this message
-	UserId *EntityIdBase `json:"userId" url:"userId"`
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message
 	Text string `json:"text" url:"text"`
 	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
@@ -453,18 +453,18 @@ type AskRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AskRequest) GetConversationMessageId() *EntityIdBase {
+func (a *AskRequest) GetConversationMessageID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.ConversationMessageId
+	return a.ConversationMessageID
 }
 
-func (a *AskRequest) GetUserId() *EntityIdBase {
+func (a *AskRequest) GetUserID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
-	return a.UserId
+	return a.UserID
 }
 
 func (a *AskRequest) GetText() string {
@@ -506,18 +506,18 @@ func (a *AskRequest) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetConversationMessageId(conversationMessageId *EntityIdBase) {
-	a.ConversationMessageId = conversationMessageId
-	a.require(askRequestFieldConversationMessageId)
+func (a *AskRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	a.ConversationMessageID = conversationMessageID
+	a.require(askRequestFieldConversationMessageID)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetUserId(userId *EntityIdBase) {
-	a.UserId = userId
-	a.require(askRequestFieldUserId)
+func (a *AskRequest) SetUserID(userID *EntityIDBase) {
+	a.UserID = userID
+	a.require(askRequestFieldUserID)
 }
 
 // SetText sets the Text field and marks it as non-optional;
@@ -588,8 +588,8 @@ func (a *AskRequest) String() string {
 }
 
 var (
-	askStreamActionEventFieldId          = big.NewInt(1 << 0)
-	askStreamActionEventFieldActionId    = big.NewInt(1 << 1)
+	askStreamActionEventFieldID          = big.NewInt(1 << 0)
+	askStreamActionEventFieldActionID    = big.NewInt(1 << 1)
 	askStreamActionEventFieldFormLabel   = big.NewInt(1 << 2)
 	askStreamActionEventFieldFields      = big.NewInt(1 << 3)
 	askStreamActionEventFieldSubmitLabel = big.NewInt(1 << 4)
@@ -597,9 +597,9 @@ var (
 
 type AskStreamActionEvent struct {
 	// The ID to use when submitting the form via the `submitActionForm` API.
-	Id string `json:"id" url:"id"`
+	ID string `json:"id" url:"id"`
 	// The ID of the action that will be executed when the form is submitted.
-	ActionId *EntityIdWithoutAgent `json:"actionId" url:"actionId"`
+	ActionID *EntityIDWithoutAgent `json:"actionId" url:"actionId"`
 	// Text which should be displayed to the user at the top of the form. Provided in the user's language.
 	FormLabel string `json:"formLabel" url:"formLabel"`
 	// The fields that should be displayed within the form.
@@ -614,18 +614,18 @@ type AskStreamActionEvent struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AskStreamActionEvent) GetId() string {
+func (a *AskStreamActionEvent) GetID() string {
 	if a == nil {
 		return ""
 	}
-	return a.Id
+	return a.ID
 }
 
-func (a *AskStreamActionEvent) GetActionId() *EntityIdWithoutAgent {
+func (a *AskStreamActionEvent) GetActionID() *EntityIDWithoutAgent {
 	if a == nil {
 		return nil
 	}
-	return a.ActionId
+	return a.ActionID
 }
 
 func (a *AskStreamActionEvent) GetFormLabel() string {
@@ -660,18 +660,18 @@ func (a *AskStreamActionEvent) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskStreamActionEvent) SetId(id string) {
-	a.Id = id
-	a.require(askStreamActionEventFieldId)
+func (a *AskStreamActionEvent) SetID(id string) {
+	a.ID = id
+	a.require(askStreamActionEventFieldID)
 }
 
-// SetActionId sets the ActionId field and marks it as non-optional;
+// SetActionID sets the ActionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskStreamActionEvent) SetActionId(actionId *EntityIdWithoutAgent) {
-	a.ActionId = actionId
-	a.require(askStreamActionEventFieldActionId)
+func (a *AskStreamActionEvent) SetActionID(actionID *EntityIDWithoutAgent) {
+	a.ActionID = actionID
+	a.require(askStreamActionEventFieldActionID)
 }
 
 // SetFormLabel sets the FormLabel field and marks it as non-optional;
@@ -1037,14 +1037,14 @@ func (a *AskStreamMetadataEvent) String() string {
 
 var (
 	askStreamOAuthButtonEventFieldButtonName = big.NewInt(1 << 0)
-	askStreamOAuthButtonEventFieldUrl        = big.NewInt(1 << 1)
+	askStreamOAuthButtonEventFieldURL        = big.NewInt(1 << 1)
 )
 
 type AskStreamOAuthButtonEvent struct {
 	// Text that should be displayed to the user on the button.
 	ButtonName string `json:"buttonName" url:"buttonName"`
 	// The OAuth authorization URL to open when the button is clicked. Will only be provided on ask responses.
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1060,11 +1060,11 @@ func (a *AskStreamOAuthButtonEvent) GetButtonName() string {
 	return a.ButtonName
 }
 
-func (a *AskStreamOAuthButtonEvent) GetUrl() *string {
+func (a *AskStreamOAuthButtonEvent) GetURL() *string {
 	if a == nil {
 		return nil
 	}
-	return a.Url
+	return a.URL
 }
 
 func (a *AskStreamOAuthButtonEvent) GetExtraProperties() map[string]interface{} {
@@ -1085,11 +1085,11 @@ func (a *AskStreamOAuthButtonEvent) SetButtonName(buttonName string) {
 	a.require(askStreamOAuthButtonEventFieldButtonName)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskStreamOAuthButtonEvent) SetUrl(url *string) {
-	a.Url = url
-	a.require(askStreamOAuthButtonEventFieldUrl)
+func (a *AskStreamOAuthButtonEvent) SetURL(url *string) {
+	a.URL = url
+	a.require(askStreamOAuthButtonEventFieldURL)
 }
 
 func (a *AskStreamOAuthButtonEvent) UnmarshalJSON(data []byte) error {
@@ -1132,11 +1132,11 @@ func (a *AskStreamOAuthButtonEvent) String() string {
 }
 
 var (
-	askStreamStartEventFieldConversationMessageId = big.NewInt(1 << 0)
+	askStreamStartEventFieldConversationMessageID = big.NewInt(1 << 0)
 )
 
 type AskStreamStartEvent struct {
-	ConversationMessageId *EntityId `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityID `json:"conversationMessageId" url:"conversationMessageId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1145,11 +1145,11 @@ type AskStreamStartEvent struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AskStreamStartEvent) GetConversationMessageId() *EntityId {
+func (a *AskStreamStartEvent) GetConversationMessageID() *EntityID {
 	if a == nil {
 		return nil
 	}
-	return a.ConversationMessageId
+	return a.ConversationMessageID
 }
 
 func (a *AskStreamStartEvent) GetExtraProperties() map[string]interface{} {
@@ -1163,11 +1163,11 @@ func (a *AskStreamStartEvent) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskStreamStartEvent) SetConversationMessageId(conversationMessageId *EntityId) {
-	a.ConversationMessageId = conversationMessageId
-	a.require(askStreamStartEventFieldConversationMessageId)
+func (a *AskStreamStartEvent) SetConversationMessageID(conversationMessageID *EntityID) {
+	a.ConversationMessageID = conversationMessageID
+	a.require(askStreamStartEventFieldConversationMessageID)
 }
 
 func (a *AskStreamStartEvent) UnmarshalJSON(data []byte) error {
@@ -1387,15 +1387,17 @@ const (
 	ConversationFieldInsertCount            ConversationField = "InsertCount"
 	ConversationFieldTags                   ConversationField = "Tags"
 	ConversationFieldUserMessageCount       ConversationField = "UserMessageCount"
+	ConversationFieldBotMessageCount        ConversationField = "BotMessageCount"
 	ConversationFieldLanguages              ConversationField = "Languages"
 	ConversationFieldActions                ConversationField = "Actions"
 	ConversationFieldIncompleteActions      ConversationField = "IncompleteActions"
 	ConversationFieldSources                ConversationField = "Sources"
 	ConversationFieldCreatedAt              ConversationField = "CreatedAt"
 	ConversationFieldPredictedNps           ConversationField = "PredictedNPS"
-	ConversationFieldOrganizationId         ConversationField = "OrganizationId"
-	ConversationFieldAgentId                ConversationField = "AgentId"
+	ConversationFieldOrganizationID         ConversationField = "OrganizationId"
+	ConversationFieldAgentID                ConversationField = "AgentId"
 	ConversationFieldInboxItems             ConversationField = "InboxItems"
+	ConversationFieldInvolvedApps           ConversationField = "InvolvedApps"
 )
 
 func NewConversationFieldFromString(s string) (ConversationField, error) {
@@ -1436,6 +1438,8 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 		return ConversationFieldTags, nil
 	case "UserMessageCount":
 		return ConversationFieldUserMessageCount, nil
+	case "BotMessageCount":
+		return ConversationFieldBotMessageCount, nil
 	case "Languages":
 		return ConversationFieldLanguages, nil
 	case "Actions":
@@ -1449,11 +1453,13 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 	case "PredictedNPS":
 		return ConversationFieldPredictedNps, nil
 	case "OrganizationId":
-		return ConversationFieldOrganizationId, nil
+		return ConversationFieldOrganizationID, nil
 	case "AgentId":
-		return ConversationFieldAgentId, nil
+		return ConversationFieldAgentID, nil
 	case "InboxItems":
 		return ConversationFieldInboxItems, nil
+	case "InvolvedApps":
+		return ConversationFieldInvolvedApps, nil
 	}
 	var t ConversationField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -1480,13 +1486,13 @@ var (
 	conversationFilterFieldResponseLength         = big.NewInt(1 << 13)
 	conversationFilterFieldSentiment              = big.NewInt(1 << 14)
 	conversationFilterFieldTags                   = big.NewInt(1 << 15)
-	conversationFilterFieldAgentUserIds           = big.NewInt(1 << 16)
+	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 16)
 	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 17)
 	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 18)
 	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 19)
 	conversationFilterFieldHasAttachment          = big.NewInt(1 << 20)
-	conversationFilterFieldMatchedSegmentIds      = big.NewInt(1 << 21)
-	conversationFilterFieldInboxItemIds           = big.NewInt(1 << 22)
+	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 21)
+	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 22)
 	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 23)
 )
 
@@ -1520,9 +1526,9 @@ type ConversationFilter struct {
 	// Filter by conversation categories
 	Categories []string `json:"categories,omitempty" url:"categories,omitempty"`
 	// Filter by actions that were executed in the conversation
-	Actions []*EntityIdFilter `json:"actions,omitempty" url:"actions,omitempty"`
+	Actions []*EntityIDFilter `json:"actions,omitempty" url:"actions,omitempty"`
 	// Filter by actions that were suggested but not completed by the AI agent
-	IncompleteActions []*EntityIdFilter `json:"incompleteActions,omitempty" url:"incompleteActions,omitempty"`
+	IncompleteActions []*EntityIDFilter `json:"incompleteActions,omitempty" url:"incompleteActions,omitempty"`
 	// Filter by feedback types received in the conversation.
 	// This is a legacy field that maps to Events saved in the system for `ThumbsUp`, `ThumbsDown`, and `Insert`.
 	// The `Handoff` filter will pass if any bot responses on the conversation returned the system fallback message; there are no corresponding handoff events.
@@ -1544,7 +1550,7 @@ type ConversationFilter struct {
 	// Filter by tags applied to the conversation
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Filter by agent user IDs associated with the conversation
-	AgentUserIds []string `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
+	AgentUserIDs []string `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
 	// Filter by conversation resolution status which is determined by AI based on the conversation content.
 	ResolutionStatus []ResolutionStatus `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
 	// Filter conversations based on whether they were resolved by Maven AI
@@ -1554,9 +1560,9 @@ type ConversationFilter struct {
 	// Filter by whether any message in the conversation has an attachment
 	HasAttachment *bool `json:"hasAttachment,omitempty" url:"hasAttachment,omitempty"`
 	// Filter by the segments that any message on a conversation matched.
-	MatchedSegmentIds []*EntityIdFilter `json:"matchedSegmentIds,omitempty" url:"matchedSegmentIds,omitempty"`
+	MatchedSegmentIDs []*EntityIDFilter `json:"matchedSegmentIds,omitempty" url:"matchedSegmentIds,omitempty"`
 	// Filter by inbox item IDs associated with the conversation
-	InboxItemIds []*EntityIdFilter `json:"inboxItemIds,omitempty" url:"inboxItemIds,omitempty"`
+	InboxItemIDs []*EntityIDFilter `json:"inboxItemIds,omitempty" url:"inboxItemIds,omitempty"`
 	// Whether to include simulation conversations in search results. Defaults to only non-simulation conversations.
 	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"simulationFilter,omitempty"`
 
@@ -1602,14 +1608,14 @@ func (c *ConversationFilter) GetCategories() []string {
 	return c.Categories
 }
 
-func (c *ConversationFilter) GetActions() []*EntityIdFilter {
+func (c *ConversationFilter) GetActions() []*EntityIDFilter {
 	if c == nil {
 		return nil
 	}
 	return c.Actions
 }
 
-func (c *ConversationFilter) GetIncompleteActions() []*EntityIdFilter {
+func (c *ConversationFilter) GetIncompleteActions() []*EntityIDFilter {
 	if c == nil {
 		return nil
 	}
@@ -1679,11 +1685,11 @@ func (c *ConversationFilter) GetTags() []string {
 	return c.Tags
 }
 
-func (c *ConversationFilter) GetAgentUserIds() []string {
+func (c *ConversationFilter) GetAgentUserIDs() []string {
 	if c == nil {
 		return nil
 	}
-	return c.AgentUserIds
+	return c.AgentUserIDs
 }
 
 func (c *ConversationFilter) GetResolutionStatus() []ResolutionStatus {
@@ -1714,18 +1720,18 @@ func (c *ConversationFilter) GetHasAttachment() *bool {
 	return c.HasAttachment
 }
 
-func (c *ConversationFilter) GetMatchedSegmentIds() []*EntityIdFilter {
+func (c *ConversationFilter) GetMatchedSegmentIDs() []*EntityIDFilter {
 	if c == nil {
 		return nil
 	}
-	return c.MatchedSegmentIds
+	return c.MatchedSegmentIDs
 }
 
-func (c *ConversationFilter) GetInboxItemIds() []*EntityIdFilter {
+func (c *ConversationFilter) GetInboxItemIDs() []*EntityIDFilter {
 	if c == nil {
 		return nil
 	}
-	return c.InboxItemIds
+	return c.InboxItemIDs
 }
 
 func (c *ConversationFilter) GetSimulationFilter() *SimulationFilter {
@@ -1783,14 +1789,14 @@ func (c *ConversationFilter) SetCategories(categories []string) {
 
 // SetActions sets the Actions field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationFilter) SetActions(actions []*EntityIdFilter) {
+func (c *ConversationFilter) SetActions(actions []*EntityIDFilter) {
 	c.Actions = actions
 	c.require(conversationFilterFieldActions)
 }
 
 // SetIncompleteActions sets the IncompleteActions field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationFilter) SetIncompleteActions(incompleteActions []*EntityIdFilter) {
+func (c *ConversationFilter) SetIncompleteActions(incompleteActions []*EntityIDFilter) {
 	c.IncompleteActions = incompleteActions
 	c.require(conversationFilterFieldIncompleteActions)
 }
@@ -1858,11 +1864,11 @@ func (c *ConversationFilter) SetTags(tags []string) {
 	c.require(conversationFilterFieldTags)
 }
 
-// SetAgentUserIds sets the AgentUserIds field and marks it as non-optional;
+// SetAgentUserIDs sets the AgentUserIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationFilter) SetAgentUserIds(agentUserIds []string) {
-	c.AgentUserIds = agentUserIds
-	c.require(conversationFilterFieldAgentUserIds)
+func (c *ConversationFilter) SetAgentUserIDs(agentUserIDs []string) {
+	c.AgentUserIDs = agentUserIDs
+	c.require(conversationFilterFieldAgentUserIDs)
 }
 
 // SetResolutionStatus sets the ResolutionStatus field and marks it as non-optional;
@@ -1893,18 +1899,18 @@ func (c *ConversationFilter) SetHasAttachment(hasAttachment *bool) {
 	c.require(conversationFilterFieldHasAttachment)
 }
 
-// SetMatchedSegmentIds sets the MatchedSegmentIds field and marks it as non-optional;
+// SetMatchedSegmentIDs sets the MatchedSegmentIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationFilter) SetMatchedSegmentIds(matchedSegmentIds []*EntityIdFilter) {
-	c.MatchedSegmentIds = matchedSegmentIds
-	c.require(conversationFilterFieldMatchedSegmentIds)
+func (c *ConversationFilter) SetMatchedSegmentIDs(matchedSegmentIDs []*EntityIDFilter) {
+	c.MatchedSegmentIDs = matchedSegmentIDs
+	c.require(conversationFilterFieldMatchedSegmentIDs)
 }
 
-// SetInboxItemIds sets the InboxItemIds field and marks it as non-optional;
+// SetInboxItemIDs sets the InboxItemIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationFilter) SetInboxItemIds(inboxItemIds []*EntityIdFilter) {
-	c.InboxItemIds = inboxItemIds
-	c.require(conversationFilterFieldInboxItemIds)
+func (c *ConversationFilter) SetInboxItemIDs(inboxItemIDs []*EntityIDFilter) {
+	c.InboxItemIDs = inboxItemIDs
+	c.require(conversationFilterFieldInboxItemIDs)
 }
 
 // SetSimulationFilter sets the SimulationFilter field and marks it as non-optional;
@@ -1968,10 +1974,10 @@ func (c *ConversationFilter) String() string {
 var (
 	conversationMessageRequestFieldCreatedAt             = big.NewInt(1 << 0)
 	conversationMessageRequestFieldUpdatedAt             = big.NewInt(1 << 1)
-	conversationMessageRequestFieldUserId                = big.NewInt(1 << 2)
+	conversationMessageRequestFieldUserID                = big.NewInt(1 << 2)
 	conversationMessageRequestFieldText                  = big.NewInt(1 << 3)
 	conversationMessageRequestFieldUserMessageType       = big.NewInt(1 << 4)
-	conversationMessageRequestFieldConversationMessageId = big.NewInt(1 << 5)
+	conversationMessageRequestFieldConversationMessageID = big.NewInt(1 << 5)
 	conversationMessageRequestFieldAttachments           = big.NewInt(1 << 6)
 )
 
@@ -1981,12 +1987,12 @@ type ConversationMessageRequest struct {
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// ID that uniquely identifies the user that created this message
-	UserId *EntityIdBase `json:"userId" url:"userId"`
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message. Cannot be empty
 	Text            string                      `json:"text" url:"text"`
 	UserMessageType UserConversationMessageType `json:"userMessageType" url:"userMessageType"`
 	// The ID that uniquely identifies this message within the conversation
-	ConversationMessageId *EntityIdBase `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
 	// The attachments to the message.
 	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
 
@@ -2011,11 +2017,11 @@ func (c *ConversationMessageRequest) GetUpdatedAt() *time.Time {
 	return c.UpdatedAt
 }
 
-func (c *ConversationMessageRequest) GetUserId() *EntityIdBase {
+func (c *ConversationMessageRequest) GetUserID() *EntityIDBase {
 	if c == nil {
 		return nil
 	}
-	return c.UserId
+	return c.UserID
 }
 
 func (c *ConversationMessageRequest) GetText() string {
@@ -2032,11 +2038,11 @@ func (c *ConversationMessageRequest) GetUserMessageType() UserConversationMessag
 	return c.UserMessageType
 }
 
-func (c *ConversationMessageRequest) GetConversationMessageId() *EntityIdBase {
+func (c *ConversationMessageRequest) GetConversationMessageID() *EntityIDBase {
 	if c == nil {
 		return nil
 	}
-	return c.ConversationMessageId
+	return c.ConversationMessageID
 }
 
 func (c *ConversationMessageRequest) GetAttachments() []*AttachmentRequest {
@@ -2071,11 +2077,11 @@ func (c *ConversationMessageRequest) SetUpdatedAt(updatedAt *time.Time) {
 	c.require(conversationMessageRequestFieldUpdatedAt)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationMessageRequest) SetUserId(userId *EntityIdBase) {
-	c.UserId = userId
-	c.require(conversationMessageRequestFieldUserId)
+func (c *ConversationMessageRequest) SetUserID(userID *EntityIDBase) {
+	c.UserID = userID
+	c.require(conversationMessageRequestFieldUserID)
 }
 
 // SetText sets the Text field and marks it as non-optional;
@@ -2092,11 +2098,11 @@ func (c *ConversationMessageRequest) SetUserMessageType(userMessageType UserConv
 	c.require(conversationMessageRequestFieldUserMessageType)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationMessageRequest) SetConversationMessageId(conversationMessageId *EntityIdBase) {
-	c.ConversationMessageId = conversationMessageId
-	c.require(conversationMessageRequestFieldConversationMessageId)
+func (c *ConversationMessageRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	c.ConversationMessageID = conversationMessageID
+	c.require(conversationMessageRequestFieldConversationMessageID)
 }
 
 // SetAttachments sets the Attachments field and marks it as non-optional;
@@ -2237,7 +2243,7 @@ func (c *ConversationMetadata) String() string {
 }
 
 var (
-	conversationPatchRequestFieldAppId       = big.NewInt(1 << 0)
+	conversationPatchRequestFieldAppID       = big.NewInt(1 << 0)
 	conversationPatchRequestFieldOpen        = big.NewInt(1 << 1)
 	conversationPatchRequestFieldLlmEnabled  = big.NewInt(1 << 2)
 	conversationPatchRequestFieldAttachments = big.NewInt(1 << 3)
@@ -2245,7 +2251,7 @@ var (
 
 type ConversationPatchRequest struct {
 	// The App ID of the conversation to patch. If not provided the ID of the calling app will be used.
-	AppId *string `json:"appId,omitempty" url:"appId,omitempty"`
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 	// Whether the conversation is able to receive asynchronous messages. Only valid for conversations with the `ASYNC` capability.
 	Open *bool `json:"open,omitempty" url:"open,omitempty"`
 	// Whether the LLM is enabled for this conversation.
@@ -2260,11 +2266,11 @@ type ConversationPatchRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *ConversationPatchRequest) GetAppId() *string {
+func (c *ConversationPatchRequest) GetAppID() *string {
 	if c == nil {
 		return nil
 	}
-	return c.AppId
+	return c.AppID
 }
 
 func (c *ConversationPatchRequest) GetOpen() *bool {
@@ -2299,11 +2305,11 @@ func (c *ConversationPatchRequest) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationPatchRequest) SetAppId(appId *string) {
-	c.AppId = appId
-	c.require(conversationPatchRequestFieldAppId)
+func (c *ConversationPatchRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(conversationPatchRequestFieldAppID)
 }
 
 // SetOpen sets the Open field and marks it as non-optional;
@@ -2367,11 +2373,11 @@ func (c *ConversationPatchRequest) String() string {
 }
 
 var (
-	conversationRequestFieldConversationId    = big.NewInt(1 << 0)
+	conversationRequestFieldConversationID    = big.NewInt(1 << 0)
 	conversationRequestFieldSimulationContext = big.NewInt(1 << 1)
 	conversationRequestFieldResponseConfig    = big.NewInt(1 << 2)
 	conversationRequestFieldSubject           = big.NewInt(1 << 3)
-	conversationRequestFieldUrl               = big.NewInt(1 << 4)
+	conversationRequestFieldURL               = big.NewInt(1 << 4)
 	conversationRequestFieldCreatedAt         = big.NewInt(1 << 5)
 	conversationRequestFieldUpdatedAt         = big.NewInt(1 << 6)
 	conversationRequestFieldTags              = big.NewInt(1 << 7)
@@ -2381,7 +2387,7 @@ var (
 
 type ConversationRequest struct {
 	// An externally supplied ID to uniquely identify this conversation
-	ConversationId *EntityIdBase `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityIDBase `json:"conversationId" url:"conversationId"`
 	// Additional context used for simulation runs. When provided, this conversation will be treated as a simulation and
 	// may only be created by apps with the appropriate permission. Simulation conversations are excluded from normal
 	// search results unless explicitly included via the `simulationFilter` field.
@@ -2391,7 +2397,7 @@ type ConversationRequest struct {
 	// The subject of the conversation
 	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
 	// The url of the conversation
-	Url *string `json:"url,omitempty" url:"url,omitempty"`
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The date and time the conversation was created
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
@@ -2410,11 +2416,11 @@ type ConversationRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *ConversationRequest) GetConversationId() *EntityIdBase {
+func (c *ConversationRequest) GetConversationID() *EntityIDBase {
 	if c == nil {
 		return nil
 	}
-	return c.ConversationId
+	return c.ConversationID
 }
 
 func (c *ConversationRequest) GetSimulationContext() *SimulationContext {
@@ -2438,11 +2444,11 @@ func (c *ConversationRequest) GetSubject() *string {
 	return c.Subject
 }
 
-func (c *ConversationRequest) GetUrl() *string {
+func (c *ConversationRequest) GetURL() *string {
 	if c == nil {
 		return nil
 	}
-	return c.Url
+	return c.URL
 }
 
 func (c *ConversationRequest) GetCreatedAt() *time.Time {
@@ -2491,11 +2497,11 @@ func (c *ConversationRequest) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationRequest) SetConversationId(conversationId *EntityIdBase) {
-	c.ConversationId = conversationId
-	c.require(conversationRequestFieldConversationId)
+func (c *ConversationRequest) SetConversationID(conversationID *EntityIDBase) {
+	c.ConversationID = conversationID
+	c.require(conversationRequestFieldConversationID)
 }
 
 // SetSimulationContext sets the SimulationContext field and marks it as non-optional;
@@ -2519,11 +2525,11 @@ func (c *ConversationRequest) SetSubject(subject *string) {
 	c.require(conversationRequestFieldSubject)
 }
 
-// SetUrl sets the Url field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationRequest) SetUrl(url *string) {
-	c.Url = url
-	c.require(conversationRequestFieldUrl)
+func (c *ConversationRequest) SetURL(url *string) {
+	c.URL = url
+	c.require(conversationRequestFieldURL)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -2905,13 +2911,13 @@ func (c *ConversationsSearchRequest) String() string {
 }
 
 var (
-	deliverConversationMessageRequestFieldConversationId = big.NewInt(1 << 0)
+	deliverConversationMessageRequestFieldConversationID = big.NewInt(1 << 0)
 	deliverConversationMessageRequestFieldMessage        = big.NewInt(1 << 1)
 )
 
 type DeliverConversationMessageRequest struct {
 	// The ID of the conversation to deliver the message to. Message delivery will fail if the conversation does not have the `ASYNC` capability or if it is not `open`.
-	ConversationId *EntityIdWithoutAgent `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityIDWithoutAgent `json:"conversationId" url:"conversationId"`
 	// The message to deliver.
 	Message *ConversationMessageRequest `json:"message" url:"message"`
 
@@ -2922,11 +2928,11 @@ type DeliverConversationMessageRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (d *DeliverConversationMessageRequest) GetConversationId() *EntityIdWithoutAgent {
+func (d *DeliverConversationMessageRequest) GetConversationID() *EntityIDWithoutAgent {
 	if d == nil {
 		return nil
 	}
-	return d.ConversationId
+	return d.ConversationID
 }
 
 func (d *DeliverConversationMessageRequest) GetMessage() *ConversationMessageRequest {
@@ -2947,11 +2953,11 @@ func (d *DeliverConversationMessageRequest) require(field *big.Int) {
 	d.explicitFields.Or(d.explicitFields, field)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeliverConversationMessageRequest) SetConversationId(conversationId *EntityIdWithoutAgent) {
-	d.ConversationId = conversationId
-	d.require(deliverConversationMessageRequestFieldConversationId)
+func (d *DeliverConversationMessageRequest) SetConversationID(conversationID *EntityIDWithoutAgent) {
+	d.ConversationID = conversationID
+	d.require(deliverConversationMessageRequestFieldConversationID)
 }
 
 // SetMessage sets the Message field and marks it as non-optional;
@@ -3196,13 +3202,13 @@ func (d *DeliverMessageResponse) String() string {
 }
 
 var (
-	deliverUserMessageRequestFieldUserId  = big.NewInt(1 << 0)
+	deliverUserMessageRequestFieldUserID  = big.NewInt(1 << 0)
 	deliverUserMessageRequestFieldMessage = big.NewInt(1 << 1)
 )
 
 type DeliverUserMessageRequest struct {
 	// The ID of the user to deliver the message to.
-	UserId *EntityIdWithoutAgent `json:"userId" url:"userId"`
+	UserID *EntityIDWithoutAgent `json:"userId" url:"userId"`
 	// The message to deliver.
 	Message *ConversationMessageRequest `json:"message" url:"message"`
 
@@ -3213,11 +3219,11 @@ type DeliverUserMessageRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (d *DeliverUserMessageRequest) GetUserId() *EntityIdWithoutAgent {
+func (d *DeliverUserMessageRequest) GetUserID() *EntityIDWithoutAgent {
 	if d == nil {
 		return nil
 	}
-	return d.UserId
+	return d.UserID
 }
 
 func (d *DeliverUserMessageRequest) GetMessage() *ConversationMessageRequest {
@@ -3238,11 +3244,11 @@ func (d *DeliverUserMessageRequest) require(field *big.Int) {
 	d.explicitFields.Or(d.explicitFields, field)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeliverUserMessageRequest) SetUserId(userId *EntityIdWithoutAgent) {
-	d.UserId = userId
-	d.require(deliverUserMessageRequestFieldUserId)
+func (d *DeliverUserMessageRequest) SetUserID(userID *EntityIDWithoutAgent) {
+	d.UserID = userID
+	d.require(deliverUserMessageRequestFieldUserID)
 }
 
 // SetMessage sets the Message field and marks it as non-optional;
@@ -3517,10 +3523,10 @@ func (f *FeedbackFilter) String() string {
 var (
 	feedbackRequestFieldType                  = big.NewInt(1 << 0)
 	feedbackRequestFieldText                  = big.NewInt(1 << 1)
-	feedbackRequestFieldFeedbackId            = big.NewInt(1 << 2)
-	feedbackRequestFieldConversationId        = big.NewInt(1 << 3)
-	feedbackRequestFieldConversationMessageId = big.NewInt(1 << 4)
-	feedbackRequestFieldUserId                = big.NewInt(1 << 5)
+	feedbackRequestFieldFeedbackID            = big.NewInt(1 << 2)
+	feedbackRequestFieldConversationID        = big.NewInt(1 << 3)
+	feedbackRequestFieldConversationMessageID = big.NewInt(1 << 4)
+	feedbackRequestFieldUserID                = big.NewInt(1 << 5)
 )
 
 type FeedbackRequest struct {
@@ -3529,13 +3535,13 @@ type FeedbackRequest struct {
 	// The feedback text
 	Text *string `json:"text,omitempty" url:"text,omitempty"`
 	// The ID that uniquely identifies this feedback
-	FeedbackId *EntityIdBase `json:"feedbackId" url:"feedbackId"`
+	FeedbackID *EntityIDBase `json:"feedbackId" url:"feedbackId"`
 	// The ID that uniquely identifies the the conversation the feedback is about
-	ConversationId *EntityIdBase `json:"conversationId" url:"conversationId"`
+	ConversationID *EntityIDBase `json:"conversationId" url:"conversationId"`
 	// The ID that uniquely identifies the message within the conversation the feedback is about
-	ConversationMessageId *EntityIdBase `json:"conversationMessageId" url:"conversationMessageId"`
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
 	// The ID of the user who is creating the feedback
-	UserId *EntityIdBase `json:"userId,omitempty" url:"userId,omitempty"`
+	UserID *EntityIDBase `json:"userId,omitempty" url:"userId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3558,32 +3564,32 @@ func (f *FeedbackRequest) GetText() *string {
 	return f.Text
 }
 
-func (f *FeedbackRequest) GetFeedbackId() *EntityIdBase {
+func (f *FeedbackRequest) GetFeedbackID() *EntityIDBase {
 	if f == nil {
 		return nil
 	}
-	return f.FeedbackId
+	return f.FeedbackID
 }
 
-func (f *FeedbackRequest) GetConversationId() *EntityIdBase {
+func (f *FeedbackRequest) GetConversationID() *EntityIDBase {
 	if f == nil {
 		return nil
 	}
-	return f.ConversationId
+	return f.ConversationID
 }
 
-func (f *FeedbackRequest) GetConversationMessageId() *EntityIdBase {
+func (f *FeedbackRequest) GetConversationMessageID() *EntityIDBase {
 	if f == nil {
 		return nil
 	}
-	return f.ConversationMessageId
+	return f.ConversationMessageID
 }
 
-func (f *FeedbackRequest) GetUserId() *EntityIdBase {
+func (f *FeedbackRequest) GetUserID() *EntityIDBase {
 	if f == nil {
 		return nil
 	}
-	return f.UserId
+	return f.UserID
 }
 
 func (f *FeedbackRequest) GetExtraProperties() map[string]interface{} {
@@ -3611,32 +3617,32 @@ func (f *FeedbackRequest) SetText(text *string) {
 	f.require(feedbackRequestFieldText)
 }
 
-// SetFeedbackId sets the FeedbackId field and marks it as non-optional;
+// SetFeedbackID sets the FeedbackID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRequest) SetFeedbackId(feedbackId *EntityIdBase) {
-	f.FeedbackId = feedbackId
-	f.require(feedbackRequestFieldFeedbackId)
+func (f *FeedbackRequest) SetFeedbackID(feedbackID *EntityIDBase) {
+	f.FeedbackID = feedbackID
+	f.require(feedbackRequestFieldFeedbackID)
 }
 
-// SetConversationId sets the ConversationId field and marks it as non-optional;
+// SetConversationID sets the ConversationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRequest) SetConversationId(conversationId *EntityIdBase) {
-	f.ConversationId = conversationId
-	f.require(feedbackRequestFieldConversationId)
+func (f *FeedbackRequest) SetConversationID(conversationID *EntityIDBase) {
+	f.ConversationID = conversationID
+	f.require(feedbackRequestFieldConversationID)
 }
 
-// SetConversationMessageId sets the ConversationMessageId field and marks it as non-optional;
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRequest) SetConversationMessageId(conversationMessageId *EntityIdBase) {
-	f.ConversationMessageId = conversationMessageId
-	f.require(feedbackRequestFieldConversationMessageId)
+func (f *FeedbackRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	f.ConversationMessageID = conversationMessageID
+	f.require(feedbackRequestFieldConversationMessageID)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRequest) SetUserId(userId *EntityIdBase) {
-	f.UserId = userId
-	f.require(feedbackRequestFieldUserId)
+func (f *FeedbackRequest) SetUserID(userID *EntityIDBase) {
+	f.UserID = userID
+	f.require(feedbackRequestFieldUserID)
 }
 
 func (f *FeedbackRequest) UnmarshalJSON(data []byte) error {
@@ -3685,6 +3691,7 @@ const (
 	NumericConversationFieldThumbsDownCount   NumericConversationField = "ThumbsDownCount"
 	NumericConversationFieldInsertCount       NumericConversationField = "InsertCount"
 	NumericConversationFieldUserMessageCount  NumericConversationField = "UserMessageCount"
+	NumericConversationFieldBotMessageCount   NumericConversationField = "BotMessageCount"
 	NumericConversationFieldHandleTime        NumericConversationField = "HandleTime"
 	NumericConversationFieldFirstResponseTime NumericConversationField = "FirstResponseTime"
 	NumericConversationFieldPredictedNps      NumericConversationField = "PredictedNPS"
@@ -3700,6 +3707,8 @@ func NewNumericConversationFieldFromString(s string) (NumericConversationField, 
 		return NumericConversationFieldInsertCount, nil
 	case "UserMessageCount":
 		return NumericConversationFieldUserMessageCount, nil
+	case "BotMessageCount":
+		return NumericConversationFieldBotMessageCount, nil
 	case "HandleTime":
 		return NumericConversationFieldHandleTime, nil
 	case "FirstResponseTime":
@@ -4144,13 +4153,13 @@ func (s *StreamResponse) validate() error {
 }
 
 var (
-	submitActionFormRequestFieldActionFormId  = big.NewInt(1 << 0)
+	submitActionFormRequestFieldActionFormID  = big.NewInt(1 << 0)
 	submitActionFormRequestFieldParameters    = big.NewInt(1 << 1)
 	submitActionFormRequestFieldTransientData = big.NewInt(1 << 2)
 )
 
 type SubmitActionFormRequest struct {
-	ActionFormId string `json:"actionFormId" url:"actionFormId"`
+	ActionFormID string `json:"actionFormId" url:"actionFormId"`
 	// Map of parameter IDs to values provided by the user. All required action fields must be provided.
 	Parameters map[string]*ActionFormRequestParamValue `json:"parameters" url:"parameters"`
 	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken. For example, one may put in user tokens as transient data.
@@ -4163,11 +4172,11 @@ type SubmitActionFormRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (s *SubmitActionFormRequest) GetActionFormId() string {
+func (s *SubmitActionFormRequest) GetActionFormID() string {
 	if s == nil {
 		return ""
 	}
-	return s.ActionFormId
+	return s.ActionFormID
 }
 
 func (s *SubmitActionFormRequest) GetParameters() map[string]*ActionFormRequestParamValue {
@@ -4195,11 +4204,11 @@ func (s *SubmitActionFormRequest) require(field *big.Int) {
 	s.explicitFields.Or(s.explicitFields, field)
 }
 
-// SetActionFormId sets the ActionFormId field and marks it as non-optional;
+// SetActionFormID sets the ActionFormID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitActionFormRequest) SetActionFormId(actionFormId string) {
-	s.ActionFormId = actionFormId
-	s.require(submitActionFormRequestFieldActionFormId)
+func (s *SubmitActionFormRequest) SetActionFormID(actionFormID string) {
+	s.ActionFormID = actionFormID
+	s.require(submitActionFormRequestFieldActionFormID)
 }
 
 // SetParameters sets the Parameters field and marks it as non-optional;
@@ -4256,13 +4265,13 @@ func (s *SubmitActionFormRequest) String() string {
 }
 
 var (
-	updateMetadataRequestFieldAppId  = big.NewInt(1 << 0)
+	updateMetadataRequestFieldAppID  = big.NewInt(1 << 0)
 	updateMetadataRequestFieldValues = big.NewInt(1 << 1)
 )
 
 type UpdateMetadataRequest struct {
 	// The App ID of the conversation to modify metadata for. If not provided the ID of the calling app will be used.
-	AppId *string `json:"appId,omitempty" url:"appId,omitempty"`
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 	// The metadata values to add to the conversation.
 	Values map[string]string `json:"values" url:"values"`
 
@@ -4273,11 +4282,11 @@ type UpdateMetadataRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UpdateMetadataRequest) GetAppId() *string {
+func (u *UpdateMetadataRequest) GetAppID() *string {
 	if u == nil {
 		return nil
 	}
-	return u.AppId
+	return u.AppID
 }
 
 func (u *UpdateMetadataRequest) GetValues() map[string]string {
@@ -4298,11 +4307,11 @@ func (u *UpdateMetadataRequest) require(field *big.Int) {
 	u.explicitFields.Or(u.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UpdateMetadataRequest) SetAppId(appId *string) {
-	u.AppId = appId
-	u.require(updateMetadataRequestFieldAppId)
+func (u *UpdateMetadataRequest) SetAppID(appID *string) {
+	u.AppID = appID
+	u.require(updateMetadataRequestFieldAppID)
 }
 
 // SetValues sets the Values field and marks it as non-optional;

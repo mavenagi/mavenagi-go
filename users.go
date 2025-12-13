@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	userDeleteRequestFieldAppId = big.NewInt(1 << 0)
+	userDeleteRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type UserDeleteRequest struct {
 	// The App ID of the app user to delete. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -29,20 +29,20 @@ func (u *UserDeleteRequest) require(field *big.Int) {
 	u.explicitFields.Or(u.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserDeleteRequest) SetAppId(appId *string) {
-	u.AppId = appId
-	u.require(userDeleteRequestFieldAppId)
+func (u *UserDeleteRequest) SetAppID(appID *string) {
+	u.AppID = appID
+	u.require(userDeleteRequestFieldAppID)
 }
 
 var (
-	userGetRequestFieldAppId = big.NewInt(1 << 0)
+	userGetRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type UserGetRequest struct {
 	// The App ID of the app user to get. If not provided the ID of the calling app will be used.
-	AppId *string `json:"-" url:"appId,omitempty"`
+	AppID *string `json:"-" url:"appId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -55,15 +55,15 @@ func (u *UserGetRequest) require(field *big.Int) {
 	u.explicitFields.Or(u.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserGetRequest) SetAppId(appId *string) {
-	u.AppId = appId
-	u.require(userGetRequestFieldAppId)
+func (u *UserGetRequest) SetAppID(appID *string) {
+	u.AppID = appID
+	u.require(userGetRequestFieldAppID)
 }
 
 var (
-	agentUserFieldId          = big.NewInt(1 << 0)
+	agentUserFieldID          = big.NewInt(1 << 0)
 	agentUserFieldCreatedAt   = big.NewInt(1 << 1)
 	agentUserFieldUpdatedAt   = big.NewInt(1 << 2)
 	agentUserFieldIdentifiers = big.NewInt(1 << 3)
@@ -73,7 +73,7 @@ var (
 
 type AgentUser struct {
 	// The ID of the agent user.
-	Id string `json:"id" url:"id"`
+	ID string `json:"id" url:"id"`
 	// The date and time the agent user was created
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The date and time the agent user was last updated
@@ -94,11 +94,11 @@ type AgentUser struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AgentUser) GetId() string {
+func (a *AgentUser) GetID() string {
 	if a == nil {
 		return ""
 	}
-	return a.Id
+	return a.ID
 }
 
 func (a *AgentUser) GetCreatedAt() time.Time {
@@ -147,11 +147,11 @@ func (a *AgentUser) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetId sets the Id field and marks it as non-optional;
+// SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AgentUser) SetId(id string) {
-	a.Id = id
-	a.require(agentUserFieldId)
+func (a *AgentUser) SetID(id string) {
+	a.ID = id
+	a.require(agentUserFieldID)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
@@ -688,14 +688,14 @@ func (a *AgentUserSearchResponse) String() string {
 }
 
 var (
-	appUserSummaryFieldUserId      = big.NewInt(1 << 0)
+	appUserSummaryFieldUserID      = big.NewInt(1 << 0)
 	appUserSummaryFieldIdentifiers = big.NewInt(1 << 1)
 	appUserSummaryFieldVisibleData = big.NewInt(1 << 2)
 )
 
 type AppUserSummary struct {
 	// App provided user ID.
-	UserId *EntityId `json:"userId" url:"userId"`
+	UserID *EntityID `json:"userId" url:"userId"`
 	// App provided identifiers for the user.
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
 	// App provided data masked according to the data's visibility type. `HIDDEN` or `PARTIALLY_VISIBLE` data values will be not be fully returned.
@@ -708,11 +708,11 @@ type AppUserSummary struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AppUserSummary) GetUserId() *EntityId {
+func (a *AppUserSummary) GetUserID() *EntityID {
 	if a == nil {
 		return nil
 	}
-	return a.UserId
+	return a.UserID
 }
 
 func (a *AppUserSummary) GetIdentifiers() []*AppUserIdentifier {
@@ -740,11 +740,11 @@ func (a *AppUserSummary) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetUserId sets the UserId field and marks it as non-optional;
+// SetUserID sets the UserID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AppUserSummary) SetUserId(userId *EntityId) {
-	a.UserId = userId
-	a.require(appUserSummaryFieldUserId)
+func (a *AppUserSummary) SetUserID(userID *EntityID) {
+	a.UserID = userID
+	a.require(appUserSummaryFieldUserID)
 }
 
 // SetIdentifiers sets the Identifiers field and marks it as non-optional;

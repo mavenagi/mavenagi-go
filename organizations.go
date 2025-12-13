@@ -204,7 +204,7 @@ func (c *CreateOrganizationRequest) String() string {
 var (
 	organizationFieldName            = big.NewInt(1 << 0)
 	organizationFieldDefaultLanguage = big.NewInt(1 << 1)
-	organizationFieldOrganizationId  = big.NewInt(1 << 2)
+	organizationFieldOrganizationID  = big.NewInt(1 << 2)
 )
 
 type Organization struct {
@@ -213,7 +213,7 @@ type Organization struct {
 	// The default language for the organization in ISO 639-1 code format.
 	DefaultLanguage string `json:"defaultLanguage" url:"defaultLanguage"`
 	// ID that uniquely identifies this organization
-	OrganizationId *EntityIdBase `json:"organizationId" url:"organizationId"`
+	OrganizationID *EntityIDBase `json:"organizationId" url:"organizationId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -236,11 +236,11 @@ func (o *Organization) GetDefaultLanguage() string {
 	return o.DefaultLanguage
 }
 
-func (o *Organization) GetOrganizationId() *EntityIdBase {
+func (o *Organization) GetOrganizationID() *EntityIDBase {
 	if o == nil {
 		return nil
 	}
-	return o.OrganizationId
+	return o.OrganizationID
 }
 
 func (o *Organization) GetExtraProperties() map[string]interface{} {
@@ -268,11 +268,11 @@ func (o *Organization) SetDefaultLanguage(defaultLanguage string) {
 	o.require(organizationFieldDefaultLanguage)
 }
 
-// SetOrganizationId sets the OrganizationId field and marks it as non-optional;
+// SetOrganizationID sets the OrganizationID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (o *Organization) SetOrganizationId(organizationId *EntityIdBase) {
-	o.OrganizationId = organizationId
-	o.require(organizationFieldOrganizationId)
+func (o *Organization) SetOrganizationID(organizationID *EntityIDBase) {
+	o.OrganizationID = organizationID
+	o.require(organizationFieldOrganizationID)
 }
 
 func (o *Organization) UnmarshalJSON(data []byte) error {

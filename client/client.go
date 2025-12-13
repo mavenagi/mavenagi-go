@@ -10,6 +10,7 @@ import (
 	assets "github.com/mavenagi/mavenagi-go/assets"
 	conversation "github.com/mavenagi/mavenagi-go/conversation"
 	core "github.com/mavenagi/mavenagi-go/core"
+	customers "github.com/mavenagi/mavenagi-go/customers"
 	events "github.com/mavenagi/mavenagi-go/events"
 	inbox "github.com/mavenagi/mavenagi-go/inbox"
 	internal "github.com/mavenagi/mavenagi-go/internal"
@@ -30,6 +31,7 @@ type MavenAGI struct {
 	AppSettings   *appsettings.Client
 	Assets        *assets.Client
 	Conversation  *conversation.Client
+	Customers     *customers.Client
 	Events        *events.Client
 	Inbox         *inbox.Client
 	Knowledge     *knowledge.Client
@@ -46,8 +48,8 @@ type MavenAGI struct {
 
 func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 	options := core.NewRequestOptions(opts...)
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -59,6 +61,7 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		AppSettings:   appsettings.NewClient(options),
 		Assets:        assets.NewClient(options),
 		Conversation:  conversation.NewClient(options),
+		Customers:     customers.NewClient(options),
 		Events:        events.NewClient(options),
 		Inbox:         inbox.NewClient(options),
 		Knowledge:     knowledge.NewClient(options),

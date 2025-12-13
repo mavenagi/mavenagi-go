@@ -270,3 +270,76 @@ func TestAnalyticsGetAgentUserTableWithWireMock(
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "POST", "/v1/tables/agent-users", nil, 1)
 }
+
+func TestAnalyticsGetEventTableWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.EventTableRequest{
+		EventFilter: &mavenagigo.EventFilter{
+			EventTypes: []mavenagigo.EventType{
+				mavenagigo.EventTypeUser,
+			},
+		},
+		FieldGroupings: []*mavenagigo.EventGroupBy{
+			&mavenagigo.EventGroupBy{
+				Field: mavenagigo.EventFieldEventName,
+			},
+		},
+		ColumnDefinitions: []*mavenagigo.EventColumnDefinition{
+			&mavenagigo.EventColumnDefinition{
+				Header: "event_count",
+				Metric: &mavenagigo.EventMetric{
+					Count: &mavenagigo.EventCount{},
+				},
+			},
+		},
+	}
+	_, invocationErr := client.Analytics.GetEventTable(
+		context.TODO(),
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/tables/events", nil, 1)
+}
+
+func TestAnalyticsGetEventChartWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.EventChartRequest{
+		PieChart: &mavenagigo.EventPieChartRequest{
+			EventFilter: &mavenagigo.EventFilter{
+				EventTypes: []mavenagigo.EventType{
+					mavenagigo.EventTypeUser,
+				},
+			},
+			GroupBy: &mavenagigo.EventGroupBy{
+				Field: mavenagigo.EventFieldEventName,
+			},
+			Metric: &mavenagigo.EventMetric{
+				Count: &mavenagigo.EventCount{},
+			},
+		},
+	}
+	_, invocationErr := client.Analytics.GetEventChart(
+		context.TODO(),
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/charts/events", nil, 1)
+}

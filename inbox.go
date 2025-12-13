@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	inboxItemRequestFieldAppId = big.NewInt(1 << 0)
+	inboxItemRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type InboxItemRequest struct {
 	// The App ID of the inbox item to retrieve
-	AppId string `json:"-" url:"appId"`
+	AppID string `json:"-" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -29,20 +29,20 @@ func (i *InboxItemRequest) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemRequest) SetAppId(appId string) {
-	i.AppId = appId
-	i.require(inboxItemRequestFieldAppId)
+func (i *InboxItemRequest) SetAppID(appID string) {
+	i.AppID = appID
+	i.require(inboxItemRequestFieldAppID)
 }
 
 var (
-	inboxItemFixRequestFieldAppId = big.NewInt(1 << 0)
+	inboxItemFixRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type InboxItemFixRequest struct {
 	// The App ID of the inbox item fix to retrieve
-	AppId string `json:"-" url:"appId"`
+	AppID string `json:"-" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -55,20 +55,20 @@ func (i *InboxItemFixRequest) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemFixRequest) SetAppId(appId string) {
-	i.AppId = appId
-	i.require(inboxItemFixRequestFieldAppId)
+func (i *InboxItemFixRequest) SetAppID(appID string) {
+	i.AppID = appID
+	i.require(inboxItemFixRequestFieldAppID)
 }
 
 var (
-	inboxItemIgnoreRequestFieldAppId = big.NewInt(1 << 0)
+	inboxItemIgnoreRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type InboxItemIgnoreRequest struct {
 	// The App ID of the inbox item fix to ignore
-	AppId string `json:"-" url:"appId"`
+	AppID string `json:"-" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -81,16 +81,16 @@ func (i *InboxItemIgnoreRequest) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemIgnoreRequest) SetAppId(appId string) {
-	i.AppId = appId
-	i.require(inboxItemIgnoreRequestFieldAppId)
+func (i *InboxItemIgnoreRequest) SetAppID(appID string) {
+	i.AppID = appID
+	i.require(inboxItemIgnoreRequestFieldAppID)
 }
 
 var (
 	addDocumentFixRequestFieldKnowledgeDocumentRequest = big.NewInt(1 << 0)
-	addDocumentFixRequestFieldKnowledgeBaseReferenceId = big.NewInt(1 << 1)
+	addDocumentFixRequestFieldKnowledgeBaseReferenceID = big.NewInt(1 << 1)
 )
 
 type AddDocumentFixRequest struct {
@@ -98,7 +98,7 @@ type AddDocumentFixRequest struct {
 	KnowledgeDocumentRequest *KnowledgeDocumentRequest `json:"knowledgeDocumentRequest" url:"knowledgeDocumentRequest"`
 	// Reference id of the Knowledge Base the document will be added to.
 	// The appId is inferred from the request. Apps can only add documents to their own knowledge bases.
-	KnowledgeBaseReferenceId string `json:"knowledgeBaseReferenceId" url:"knowledgeBaseReferenceId"`
+	KnowledgeBaseReferenceID string `json:"knowledgeBaseReferenceId" url:"knowledgeBaseReferenceId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -114,11 +114,11 @@ func (a *AddDocumentFixRequest) GetKnowledgeDocumentRequest() *KnowledgeDocument
 	return a.KnowledgeDocumentRequest
 }
 
-func (a *AddDocumentFixRequest) GetKnowledgeBaseReferenceId() string {
+func (a *AddDocumentFixRequest) GetKnowledgeBaseReferenceID() string {
 	if a == nil {
 		return ""
 	}
-	return a.KnowledgeBaseReferenceId
+	return a.KnowledgeBaseReferenceID
 }
 
 func (a *AddDocumentFixRequest) GetExtraProperties() map[string]interface{} {
@@ -139,11 +139,11 @@ func (a *AddDocumentFixRequest) SetKnowledgeDocumentRequest(knowledgeDocumentReq
 	a.require(addDocumentFixRequestFieldKnowledgeDocumentRequest)
 }
 
-// SetKnowledgeBaseReferenceId sets the KnowledgeBaseReferenceId field and marks it as non-optional;
+// SetKnowledgeBaseReferenceID sets the KnowledgeBaseReferenceID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AddDocumentFixRequest) SetKnowledgeBaseReferenceId(knowledgeBaseReferenceId string) {
-	a.KnowledgeBaseReferenceId = knowledgeBaseReferenceId
-	a.require(addDocumentFixRequestFieldKnowledgeBaseReferenceId)
+func (a *AddDocumentFixRequest) SetKnowledgeBaseReferenceID(knowledgeBaseReferenceID string) {
+	a.KnowledgeBaseReferenceID = knowledgeBaseReferenceID
+	a.require(addDocumentFixRequestFieldKnowledgeBaseReferenceID)
 }
 
 func (a *AddDocumentFixRequest) UnmarshalJSON(data []byte) error {
@@ -186,16 +186,16 @@ func (a *AddDocumentFixRequest) String() string {
 }
 
 var (
-	applyFixesRequestFieldAppId              = big.NewInt(1 << 0)
-	applyFixesRequestFieldFixReferenceIds    = big.NewInt(1 << 1)
+	applyFixesRequestFieldAppID              = big.NewInt(1 << 0)
+	applyFixesRequestFieldFixReferenceIDs    = big.NewInt(1 << 1)
 	applyFixesRequestFieldAddDocumentRequest = big.NewInt(1 << 2)
 )
 
 type ApplyFixesRequest struct {
 	// The appId of the inbox item and fixes.
-	AppId string `json:"appId" url:"appId"`
+	AppID string `json:"appId" url:"appId"`
 	// A list of one or more reference IDs of fixes to apply. All must belong to the same inbox item.
-	FixReferenceIds []string `json:"fixReferenceIds" url:"fixReferenceIds"`
+	FixReferenceIDs []string `json:"fixReferenceIds" url:"fixReferenceIds"`
 	// Only applies to add document fixes, includes the document content to save.
 	AddDocumentRequest *AddDocumentFixRequest `json:"addDocumentRequest,omitempty" url:"addDocumentRequest,omitempty"`
 
@@ -206,18 +206,18 @@ type ApplyFixesRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *ApplyFixesRequest) GetAppId() string {
+func (a *ApplyFixesRequest) GetAppID() string {
 	if a == nil {
 		return ""
 	}
-	return a.AppId
+	return a.AppID
 }
 
-func (a *ApplyFixesRequest) GetFixReferenceIds() []string {
+func (a *ApplyFixesRequest) GetFixReferenceIDs() []string {
 	if a == nil {
 		return nil
 	}
-	return a.FixReferenceIds
+	return a.FixReferenceIDs
 }
 
 func (a *ApplyFixesRequest) GetAddDocumentRequest() *AddDocumentFixRequest {
@@ -238,18 +238,18 @@ func (a *ApplyFixesRequest) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ApplyFixesRequest) SetAppId(appId string) {
-	a.AppId = appId
-	a.require(applyFixesRequestFieldAppId)
+func (a *ApplyFixesRequest) SetAppID(appID string) {
+	a.AppID = appID
+	a.require(applyFixesRequestFieldAppID)
 }
 
-// SetFixReferenceIds sets the FixReferenceIds field and marks it as non-optional;
+// SetFixReferenceIDs sets the FixReferenceIDs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ApplyFixesRequest) SetFixReferenceIds(fixReferenceIds []string) {
-	a.FixReferenceIds = fixReferenceIds
-	a.require(applyFixesRequestFieldFixReferenceIds)
+func (a *ApplyFixesRequest) SetFixReferenceIDs(fixReferenceIDs []string) {
+	a.FixReferenceIDs = fixReferenceIDs
+	a.require(applyFixesRequestFieldFixReferenceIDs)
 }
 
 // SetAddDocumentRequest sets the AddDocumentRequest field and marks it as non-optional;
@@ -444,7 +444,7 @@ var (
 	inboxSearchRequestFieldPage     = big.NewInt(1 << 0)
 	inboxSearchRequestFieldSize     = big.NewInt(1 << 1)
 	inboxSearchRequestFieldSortDesc = big.NewInt(1 << 2)
-	inboxSearchRequestFieldSortId   = big.NewInt(1 << 3)
+	inboxSearchRequestFieldSortID   = big.NewInt(1 << 3)
 	inboxSearchRequestFieldFilter   = big.NewInt(1 << 4)
 )
 
@@ -456,7 +456,7 @@ type InboxSearchRequest struct {
 	// Whether to sort descending, defaults to true
 	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
 	// The field to sort by, defaults to created timestamp
-	SortId *string      `json:"sortId,omitempty" url:"sortId,omitempty"`
+	SortID *string      `json:"sortId,omitempty" url:"sortId,omitempty"`
 	Filter *InboxFilter `json:"filter,omitempty" url:"filter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -487,11 +487,11 @@ func (i *InboxSearchRequest) GetSortDesc() *bool {
 	return i.SortDesc
 }
 
-func (i *InboxSearchRequest) GetSortId() *string {
+func (i *InboxSearchRequest) GetSortID() *string {
 	if i == nil {
 		return nil
 	}
-	return i.SortId
+	return i.SortID
 }
 
 func (i *InboxSearchRequest) GetFilter() *InboxFilter {
@@ -533,11 +533,11 @@ func (i *InboxSearchRequest) SetSortDesc(sortDesc *bool) {
 	i.require(inboxSearchRequestFieldSortDesc)
 }
 
-// SetSortId sets the SortId field and marks it as non-optional;
+// SetSortID sets the SortID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxSearchRequest) SetSortId(sortId *string) {
-	i.SortId = sortId
-	i.require(inboxSearchRequestFieldSortId)
+func (i *InboxSearchRequest) SetSortID(sortID *string) {
+	i.SortID = sortID
+	i.require(inboxSearchRequestFieldSortID)
 }
 
 // SetFilter sets the Filter field and marks it as non-optional;

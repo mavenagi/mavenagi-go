@@ -119,7 +119,7 @@ func (r *RawClient) Search(
 func (r *RawClient) Get(
 	ctx context.Context,
 	// The ID of the Event to get.
-	eventId string,
+	eventID string,
 	request *mavenagigo.EventGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.EventResponse], error) {
@@ -131,7 +131,7 @@ func (r *RawClient) Get(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/events/%v",
-		eventId,
+		eventID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {

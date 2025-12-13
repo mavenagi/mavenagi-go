@@ -92,8 +92,8 @@ func TestActionsCreateOrUpdateWithWireMock(
 		),
 	)
 	request := &mavenagigo.ActionRequest{
-		ActionId: &mavenagigo.EntityIdBase{
-			ReferenceId: "get-balance",
+		ActionID: &mavenagigo.EntityIDBase{
+			ReferenceID: "get-balance",
 		},
 		Name:                    "Get the user's balance",
 		Description:             "This action calls an API to get the user's current balance.",
@@ -165,11 +165,11 @@ func TestActionsPatchWithWireMock(
 			"Use this action when the user asks about their account balance or remaining credits.",
 		),
 		LlmInclusionStatus: mavenagigo.LlmInclusionStatusWhenRelevant.Ptr(),
-		SegmentId: &mavenagigo.EntityId{
-			ReferenceId:    "premium-users",
-			AppId:          "my-billing-system",
-			OrganizationId: "acme",
-			AgentId:        "support",
+		SegmentID: &mavenagigo.EntityID{
+			ReferenceID:    "premium-users",
+			AppID:          "my-billing-system",
+			OrganizationID: "acme",
+			AgentID:        "support",
 			Type:           mavenagigo.EntityTypeSegment,
 		},
 	}

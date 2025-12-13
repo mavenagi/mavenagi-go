@@ -92,8 +92,8 @@ func TestKnowledgeCreateOrUpdateKnowledgeBaseWithWireMock(
 		),
 	)
 	request := &mavenagigo.KnowledgeBaseRequest{
-		KnowledgeBaseId: &mavenagigo.EntityIdBase{
-			ReferenceId: "help-center",
+		KnowledgeBaseID: &mavenagigo.EntityIDBase{
+			ReferenceID: "help-center",
 		},
 		Name: "Help center",
 	}
@@ -138,7 +138,7 @@ func TestKnowledgeRefreshKnowledgeBaseWithWireMock(
 		),
 	)
 	request := &mavenagigo.KnowledgeBaseRefreshRequest{
-		AppId: mavenagigo.String(
+		AppID: mavenagigo.String(
 			"readme",
 		),
 	}
@@ -171,11 +171,11 @@ func TestKnowledgePatchKnowledgeBaseWithWireMock(
 			"tag2",
 			"tag3",
 		},
-		SegmentId: &mavenagigo.EntityId{
-			ReferenceId:    "premium-users",
-			AppId:          "readme",
-			OrganizationId: "acme",
-			AgentId:        "support",
+		SegmentID: &mavenagigo.EntityID{
+			ReferenceID:    "premium-users",
+			AppID:          "readme",
+			OrganizationID: "acme",
+			AgentID:        "support",
 			Type:           mavenagigo.EntityTypeSegment,
 		},
 	}
@@ -223,10 +223,10 @@ func TestKnowledgeFinalizeKnowledgeBaseVersionWithWireMock(
 		),
 	)
 	request := &mavenagigo.FinalizeKnowledgeBaseVersionRequest{
-		VersionId: &mavenagigo.EntityIdWithoutAgent{
+		VersionID: &mavenagigo.EntityIDWithoutAgent{
 			Type:        mavenagigo.EntityTypeKnowledgeBaseVersion,
-			ReferenceId: "versionId",
-			AppId:       "maven",
+			ReferenceID: "versionId",
+			AppID:       "maven",
 		},
 		Status: mavenagigo.KnowledgeBaseVersionFinalizeStatusSucceeded.Ptr(),
 	}
@@ -292,13 +292,13 @@ func TestKnowledgeCreateKnowledgeDocumentWithWireMock(
 		),
 	)
 	request := &mavenagigo.KnowledgeDocumentRequest{
-		KnowledgeDocumentId: &mavenagigo.EntityIdBase{
-			ReferenceId: "getting-started",
+		KnowledgeDocumentID: &mavenagigo.EntityIDBase{
+			ReferenceID: "getting-started",
 		},
-		VersionId: &mavenagigo.EntityIdWithoutAgent{
+		VersionID: &mavenagigo.EntityIDWithoutAgent{
 			Type:        mavenagigo.EntityTypeKnowledgeBaseVersion,
-			ReferenceId: "versionId",
-			AppId:       "maven",
+			ReferenceID: "versionId",
+			AppID:       "maven",
 		},
 		ContentType: mavenagigo.KnowledgeDocumentContentTypeMarkdown,
 		Content: mavenagigo.String(
@@ -330,10 +330,10 @@ func TestKnowledgeDeleteKnowledgeDocumentWithWireMock(
 		),
 	)
 	request := &mavenagigo.KnowledgeDeleteRequest{
-		VersionId: &mavenagigo.EntityIdWithoutAgent{
+		VersionID: &mavenagigo.EntityIDWithoutAgent{
 			Type:        mavenagigo.EntityTypeKnowledgeBaseVersion,
-			AppId:       "maven",
-			ReferenceId: "versionId",
+			AppID:       "maven",
+			ReferenceID: "versionId",
 		},
 	}
 	invocationErr := client.Knowledge.DeleteKnowledgeDocument(
@@ -358,7 +358,7 @@ func TestKnowledgeGetKnowledgeDocumentWithWireMock(
 		),
 	)
 	request := &mavenagigo.KnowledgeDocumentGetRequest{
-		KnowledgeBaseVersionAppId: "knowledgeBaseVersionAppId",
+		KnowledgeBaseVersionAppID: "knowledgeBaseVersionAppId",
 	}
 	_, invocationErr := client.Knowledge.GetKnowledgeDocument(
 		context.TODO(),

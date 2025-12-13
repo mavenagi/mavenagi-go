@@ -73,8 +73,8 @@ Update an action or create it if it doesn't exist
 
 ```go
 request := &mavenagigo.ActionRequest{
-        ActionId: &mavenagigo.EntityIdBase{
-            ReferenceId: "get-balance",
+        ActionID: &mavenagigo.EntityIDBase{
+            ReferenceID: "get-balance",
         },
         Name: "Get the user's balance",
         Description: "This action calls an API to get the user's current balance.",
@@ -132,7 +132,7 @@ client.Actions.CreateOrUpdate(
 </dl>
 </details>
 
-<details><summary><code>client.Actions.Get(ActionReferenceId) -> *mavenagigo.ActionResponse</code></summary>
+<details><summary><code>client.Actions.Get(ActionReferenceID) -> *mavenagigo.ActionResponse</code></summary>
 <dl>
 <dd>
 
@@ -180,7 +180,7 @@ client.Actions.Get(
 <dl>
 <dd>
 
-**actionReferenceId:** `string` — The reference ID of the action to get. All other entity ID fields are inferred from the request.
+**actionReferenceID:** `string` — The reference ID of the action to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -188,7 +188,7 @@ client.Actions.Get(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the action to get. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the action to get. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -200,7 +200,7 @@ client.Actions.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Actions.Patch(ActionReferenceId, request) -> *mavenagigo.ActionResponse</code></summary>
+<details><summary><code>client.Actions.Patch(ActionReferenceID, request) -> *mavenagigo.ActionResponse</code></summary>
 <dl>
 <dd>
 
@@ -235,11 +235,11 @@ request := &mavenagigo.ActionPatchRequest{
             "Use this action when the user asks about their account balance or remaining credits.",
         ),
         LlmInclusionStatus: mavenagigo.LlmInclusionStatusWhenRelevant.Ptr(),
-        SegmentId: &mavenagigo.EntityId{
-            ReferenceId: "premium-users",
-            AppId: "my-billing-system",
-            OrganizationId: "acme",
-            AgentId: "support",
+        SegmentID: &mavenagigo.EntityID{
+            ReferenceID: "premium-users",
+            AppID: "my-billing-system",
+            OrganizationID: "acme",
+            AgentID: "support",
             Type: mavenagigo.EntityTypeSegment,
         },
     }
@@ -263,7 +263,7 @@ client.Actions.Patch(
 <dl>
 <dd>
 
-**actionReferenceId:** `string` — The reference ID of the action to patch.
+**actionReferenceID:** `string` — The reference ID of the action to patch.
     
 </dd>
 </dl>
@@ -271,7 +271,7 @@ client.Actions.Patch(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the action to patch. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the action to patch. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -295,7 +295,7 @@ client.Actions.Patch(
 <dl>
 <dd>
 
-**segmentId:** `*mavenagigo.EntityId` 
+**segmentID:** `*mavenagigo.EntityID` 
 
 The ID of the segment that must be matched for the action to be relevant to a conversation. 
 A null value will remove the segment from the action, it will be available on all conversations.
@@ -313,7 +313,7 @@ Inline precondition support will be removed in a future release.
 </dl>
 </details>
 
-<details><summary><code>client.Actions.Delete(ActionReferenceId) -> error</code></summary>
+<details><summary><code>client.Actions.Delete(ActionReferenceID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -359,7 +359,7 @@ client.Actions.Delete(
 <dl>
 <dd>
 
-**actionReferenceId:** `string` — The reference ID of the action to unregister. All other entity ID fields are inferred from the request.
+**actionReferenceID:** `string` — The reference ID of the action to unregister. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -435,7 +435,7 @@ client.Agents.Search(
 </dl>
 </details>
 
-<details><summary><code>client.Agents.List(OrganizationReferenceId) -> []*mavenagigo.Agent</code></summary>
+<details><summary><code>client.Agents.List(OrganizationReferenceID) -> []*mavenagigo.Agent</code></summary>
 <dl>
 <dd>
 
@@ -481,7 +481,7 @@ client.Agents.List(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The ID of the organization.
+**organizationReferenceID:** `string` — The ID of the organization.
     
 </dd>
 </dl>
@@ -493,7 +493,7 @@ client.Agents.List(
 </dl>
 </details>
 
-<details><summary><code>client.Agents.Create(OrganizationReferenceId, AgentReferenceId, request) -> *mavenagigo.Agent</code></summary>
+<details><summary><code>client.Agents.Create(OrganizationReferenceID, AgentReferenceID, request) -> *mavenagigo.Agent</code></summary>
 <dl>
 <dd>
 
@@ -549,7 +549,7 @@ client.Agents.Create(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The ID of the organization.
+**organizationReferenceID:** `string` — The ID of the organization.
     
 </dd>
 </dl>
@@ -557,7 +557,7 @@ client.Agents.Create(
 <dl>
 <dd>
 
-**agentReferenceId:** `string` — The ID of the agent.
+**agentReferenceID:** `string` — The ID of the agent.
     
 </dd>
 </dl>
@@ -577,7 +577,7 @@ client.Agents.Create(
 </dl>
 </details>
 
-<details><summary><code>client.Agents.Get(OrganizationReferenceId, AgentReferenceId) -> *mavenagigo.Agent</code></summary>
+<details><summary><code>client.Agents.Get(OrganizationReferenceID, AgentReferenceID) -> *mavenagigo.Agent</code></summary>
 <dl>
 <dd>
 
@@ -624,7 +624,7 @@ client.Agents.Get(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The ID of the organization.
+**organizationReferenceID:** `string` — The ID of the organization.
     
 </dd>
 </dl>
@@ -632,7 +632,7 @@ client.Agents.Get(
 <dl>
 <dd>
 
-**agentReferenceId:** `string` — The ID of the agent.
+**agentReferenceID:** `string` — The ID of the agent.
     
 </dd>
 </dl>
@@ -644,7 +644,7 @@ client.Agents.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Agents.Patch(OrganizationReferenceId, AgentReferenceId, request) -> *mavenagigo.Agent</code></summary>
+<details><summary><code>client.Agents.Patch(OrganizationReferenceID, AgentReferenceID, request) -> *mavenagigo.Agent</code></summary>
 <dl>
 <dd>
 
@@ -698,7 +698,7 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The ID of the organization.
+**organizationReferenceID:** `string` — The ID of the organization.
     
 </dd>
 </dl>
@@ -706,7 +706,7 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**agentReferenceId:** `string` — The ID of the agent.
+**agentReferenceID:** `string` — The ID of the agent.
     
 </dd>
 </dl>
@@ -798,7 +798,7 @@ client.Agents.Patch(
 </dl>
 </details>
 
-<details><summary><code>client.Agents.Delete(OrganizationReferenceId, AgentReferenceId) -> error</code></summary>
+<details><summary><code>client.Agents.Delete(OrganizationReferenceID, AgentReferenceID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -849,7 +849,7 @@ client.Agents.Delete(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The ID of the organization.
+**organizationReferenceID:** `string` — The ID of the organization.
     
 </dd>
 </dl>
@@ -857,7 +857,7 @@ client.Agents.Delete(
 <dl>
 <dd>
 
-**agentReferenceId:** `string` — The ID of the agent.
+**agentReferenceID:** `string` — The ID of the agent.
     
 </dd>
 </dl>
@@ -1277,6 +1277,157 @@ client.Analytics.GetAgentUserTable(
 </dl>
 </details>
 
+<details><summary><code>client.Analytics.GetEventTable(request) -> *mavenagigo.EventTableResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Retrieves structured event data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.EventTableRequest{
+        EventFilter: &mavenagigo.EventFilter{
+            EventTypes: []mavenagigo.EventType{
+                mavenagigo.EventTypeUser,
+            },
+        },
+        FieldGroupings: []*mavenagigo.EventGroupBy{
+            &mavenagigo.EventGroupBy{
+                Field: mavenagigo.EventFieldEventName,
+            },
+        },
+        ColumnDefinitions: []*mavenagigo.EventColumnDefinition{
+            &mavenagigo.EventColumnDefinition{
+                Header: "event_count",
+                Metric: &mavenagigo.EventMetric{
+                    Count: &mavenagigo.EventCount{},
+                },
+            },
+        },
+    }
+client.Analytics.GetEventTable(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.EventTableRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Analytics.GetEventChart(request) -> *mavenagigo.ChartResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Fetches event data visualized in a chart format. Supported chart types include pie chart, date histogram, and stacked bar charts.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.EventChartRequest{
+        PieChart: &mavenagigo.EventPieChartRequest{
+            EventFilter: &mavenagigo.EventFilter{
+                EventTypes: []mavenagigo.EventType{
+                    mavenagigo.EventTypeUser,
+                },
+            },
+            GroupBy: &mavenagigo.EventGroupBy{
+                Field: mavenagigo.EventFieldEventName,
+            },
+            Metric: &mavenagigo.EventMetric{
+                Count: &mavenagigo.EventCount{},
+            },
+        },
+    }
+client.Analytics.GetEventChart(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.EventChartRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## AppSettings
 <details><summary><code>client.AppSettings.Search() -> *mavenagigo.SearchAppSettingsResponse</code></summary>
 <dl>
@@ -1517,7 +1668,7 @@ client.Assets.InitiateUpload(
 </dl>
 </details>
 
-<details><summary><code>client.Assets.CommitUpload(AssetReferenceId, request) -> error</code></summary>
+<details><summary><code>client.Assets.CommitUpload(AssetReferenceID, request) -> error</code></summary>
 <dl>
 <dd>
 
@@ -1566,7 +1717,7 @@ client.Assets.CommitUpload(
 <dl>
 <dd>
 
-**assetReferenceId:** `string` — The reference ID of the asset to commit (provided by the initiate call). All other entity ID fields are inferred from the API request.
+**assetReferenceID:** `string` — The reference ID of the asset to commit (provided by the initiate call). All other entity ID fields are inferred from the API request.
     
 </dd>
 </dl>
@@ -1622,26 +1773,26 @@ After initialization,
 
 ```go
 request := &mavenagigo.ConversationRequest{
-        ConversationId: &mavenagigo.EntityIdBase{
-            ReferenceId: "x",
+        ConversationID: &mavenagigo.EntityIDBase{
+            ReferenceID: "x",
         },
         Messages: []*mavenagigo.ConversationMessageRequest{
             &mavenagigo.ConversationMessageRequest{
-                ConversationMessageId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                ConversationMessageID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
-                UserId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                UserID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
                 Text: "text",
                 UserMessageType: mavenagigo.UserConversationMessageTypeUser,
             },
             &mavenagigo.ConversationMessageRequest{
-                ConversationMessageId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                ConversationMessageID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
-                UserId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                UserID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
                 Text: "text",
                 UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -1679,7 +1830,7 @@ client.Conversation.Initialize(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.Patch(ConversationId, request) -> *mavenagigo.ConversationResponse</code></summary>
+<details><summary><code>client.Conversation.Patch(ConversationID, request) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
 <dd>
 
@@ -1734,7 +1885,7 @@ client.Conversation.Patch(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of the conversation to patch
+**conversationID:** `string` — The ID of the conversation to patch
     
 </dd>
 </dl>
@@ -1754,7 +1905,7 @@ client.Conversation.Patch(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.Get(ConversationId) -> *mavenagigo.ConversationResponse</code></summary>
+<details><summary><code>client.Conversation.Get(ConversationID) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
 <dd>
 
@@ -1802,7 +1953,7 @@ client.Conversation.Get(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of the conversation to get
+**conversationID:** `string` — The ID of the conversation to get
     
 </dd>
 </dl>
@@ -1810,7 +1961,7 @@ client.Conversation.Get(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the conversation to get. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the conversation to get. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -1830,7 +1981,7 @@ client.Conversation.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.Delete(ConversationId) -> error</code></summary>
+<details><summary><code>client.Conversation.Delete(ConversationID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -1889,7 +2040,7 @@ client.Conversation.Delete(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of the conversation to delete
+**conversationID:** `string` — The ID of the conversation to delete
     
 </dd>
 </dl>
@@ -1897,7 +2048,7 @@ client.Conversation.Delete(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the conversation to delete. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the conversation to delete. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -1917,7 +2068,7 @@ client.Conversation.Delete(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.AppendNewMessages(ConversationId, request) -> *mavenagigo.ConversationResponse</code></summary>
+<details><summary><code>client.Conversation.AppendNewMessages(ConversationID, request) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
 <dd>
 
@@ -1946,21 +2097,21 @@ Append messages to an existing conversation. The conversation must be initialize
 ```go
 request := []*mavenagigo.ConversationMessageRequest{
         &mavenagigo.ConversationMessageRequest{
-            ConversationMessageId: &mavenagigo.EntityIdBase{
-                ReferenceId: "x",
+            ConversationMessageID: &mavenagigo.EntityIDBase{
+                ReferenceID: "x",
             },
-            UserId: &mavenagigo.EntityIdBase{
-                ReferenceId: "x",
+            UserID: &mavenagigo.EntityIDBase{
+                ReferenceID: "x",
             },
             Text: "text",
             UserMessageType: mavenagigo.UserConversationMessageTypeUser,
         },
         &mavenagigo.ConversationMessageRequest{
-            ConversationMessageId: &mavenagigo.EntityIdBase{
-                ReferenceId: "x",
+            ConversationMessageID: &mavenagigo.EntityIDBase{
+                ReferenceID: "x",
             },
-            UserId: &mavenagigo.EntityIdBase{
-                ReferenceId: "x",
+            UserID: &mavenagigo.EntityIDBase{
+                ReferenceID: "x",
             },
             Text: "text",
             UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -1986,7 +2137,7 @@ client.Conversation.AppendNewMessages(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of the conversation to append messages to
+**conversationID:** `string` — The ID of the conversation to append messages to
     
 </dd>
 </dl>
@@ -2006,7 +2157,7 @@ client.Conversation.AppendNewMessages(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.Ask(ConversationId, request) -> *mavenagigo.ConversationResponse</code></summary>
+<details><summary><code>client.Conversation.Ask(ConversationID, request) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
 <dd>
 
@@ -2042,11 +2193,11 @@ Known Limitation:
 
 ```go
 request := &mavenagigo.AskRequest{
-        ConversationMessageId: &mavenagigo.EntityIdBase{
-            ReferenceId: "message-0",
+        ConversationMessageID: &mavenagigo.EntityIDBase{
+            ReferenceID: "message-0",
         },
-        UserId: &mavenagigo.EntityIdBase{
-            ReferenceId: "user-0",
+        UserID: &mavenagigo.EntityIDBase{
+            ReferenceID: "user-0",
         },
         Text: "How do I reset my password?",
         Attachments: []*mavenagigo.AttachmentRequest{
@@ -2083,7 +2234,7 @@ client.Conversation.Ask(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of a new or existing conversation to use as context for the question
+**conversationID:** `string` — The ID of a new or existing conversation to use as context for the question
     
 </dd>
 </dl>
@@ -2103,7 +2254,7 @@ client.Conversation.Ask(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.AskStream(ConversationId, request) -> mavenagigo.StreamResponse</code></summary>
+<details><summary><code>client.Conversation.AskStream(ConversationID, request) -> mavenagigo.StreamResponse</code></summary>
 <dl>
 <dd>
 
@@ -2143,11 +2294,11 @@ Known Limitation:
 
 ```go
 request := &mavenagigo.AskRequest{
-        ConversationMessageId: &mavenagigo.EntityIdBase{
-            ReferenceId: "message-0",
+        ConversationMessageID: &mavenagigo.EntityIDBase{
+            ReferenceID: "message-0",
         },
-        UserId: &mavenagigo.EntityIdBase{
-            ReferenceId: "user-0",
+        UserID: &mavenagigo.EntityIDBase{
+            ReferenceID: "user-0",
         },
         Text: "How do I reset my password?",
         Attachments: []*mavenagigo.AttachmentRequest{
@@ -2184,7 +2335,7 @@ client.Conversation.AskStream(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of a new or existing conversation to use as context for the question
+**conversationID:** `string` — The ID of a new or existing conversation to use as context for the question
     
 </dd>
 </dl>
@@ -2204,7 +2355,7 @@ client.Conversation.AskStream(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.AskObjectStream(ConversationId, request) -> mavenagigo.ObjectStreamResponse</code></summary>
+<details><summary><code>client.Conversation.AskObjectStream(ConversationID, request) -> mavenagigo.ObjectStreamResponse</code></summary>
 <dl>
 <dd>
 
@@ -2245,11 +2396,11 @@ Known Limitations:
 ```go
 request := &mavenagigo.AskObjectRequest{
         Schema: "schema",
-        ConversationMessageId: &mavenagigo.EntityIdBase{
-            ReferenceId: "x",
+        ConversationMessageID: &mavenagigo.EntityIDBase{
+            ReferenceID: "x",
         },
-        UserId: &mavenagigo.EntityIdBase{
-            ReferenceId: "x",
+        UserID: &mavenagigo.EntityIDBase{
+            ReferenceID: "x",
         },
         Text: "text",
     }
@@ -2273,7 +2424,7 @@ client.Conversation.AskObjectStream(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of a new or existing conversation to use as context for the object generation request
+**conversationID:** `string` — The ID of a new or existing conversation to use as context for the object generation request
     
 </dd>
 </dl>
@@ -2293,7 +2444,7 @@ client.Conversation.AskObjectStream(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.Categorize(ConversationId) -> *mavenagigo.CategorizationResponse</code></summary>
+<details><summary><code>client.Conversation.Categorize(ConversationID) -> *mavenagigo.CategorizationResponse</code></summary>
 <dl>
 <dd>
 
@@ -2339,7 +2490,7 @@ client.Conversation.Categorize(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of the conversation to categorize
+**conversationID:** `string` — The ID of the conversation to categorize
     
 </dd>
 </dl>
@@ -2379,17 +2530,17 @@ Update feedback or create it if it doesn't exist
 
 ```go
 request := &mavenagigo.FeedbackRequest{
-        FeedbackId: &mavenagigo.EntityIdBase{
-            ReferenceId: "feedback-0",
+        FeedbackID: &mavenagigo.EntityIDBase{
+            ReferenceID: "feedback-0",
         },
-        UserId: &mavenagigo.EntityIdBase{
-            ReferenceId: "user-0",
+        UserID: &mavenagigo.EntityIDBase{
+            ReferenceID: "user-0",
         },
-        ConversationId: &mavenagigo.EntityIdBase{
-            ReferenceId: "conversation-0",
+        ConversationID: &mavenagigo.EntityIDBase{
+            ReferenceID: "conversation-0",
         },
-        ConversationMessageId: &mavenagigo.EntityIdBase{
-            ReferenceId: "message-1",
+        ConversationMessageID: &mavenagigo.EntityIDBase{
+            ReferenceID: "message-1",
         },
         Type: mavenagigo.FeedbackTypeThumbsUp,
         Text: mavenagigo.String(
@@ -2427,7 +2578,7 @@ client.Conversation.CreateFeedback(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.SubmitActionForm(ConversationId, request) -> *mavenagigo.ConversationResponse</code></summary>
+<details><summary><code>client.Conversation.SubmitActionForm(ConversationID, request) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
 <dd>
 
@@ -2459,7 +2610,7 @@ Forms should be disabled in surface UI if a conversation continues and they rema
 
 ```go
 request := &mavenagigo.SubmitActionFormRequest{
-        ActionFormId: "actionFormId",
+        ActionFormID: "actionFormId",
         Parameters: map[string]*mavenagigo.ActionFormRequestParamValue{
             "parameters": &mavenagigo.ActionFormRequestParamValue{
                 Unknown: map[string]any{
@@ -2488,7 +2639,7 @@ client.Conversation.SubmitActionForm(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of a conversation the form being submitted belongs to
+**conversationID:** `string` — The ID of a conversation the form being submitted belongs to
     
 </dd>
 </dl>
@@ -2508,7 +2659,7 @@ client.Conversation.SubmitActionForm(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.AddConversationMetadata(ConversationId, request) -> map[string]string</code></summary>
+<details><summary><code>client.Conversation.AddConversationMetadata(ConversationID, request) -> map[string]string</code></summary>
 <dl>
 <dd>
 
@@ -2560,7 +2711,7 @@ client.Conversation.AddConversationMetadata(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of a conversation the metadata being added belongs to
+**conversationID:** `string` — The ID of a conversation the metadata being added belongs to
     
 </dd>
 </dl>
@@ -2580,7 +2731,7 @@ client.Conversation.AddConversationMetadata(
 </dl>
 </details>
 
-<details><summary><code>client.Conversation.UpdateConversationMetadata(ConversationId, request) -> *mavenagigo.ConversationMetadata</code></summary>
+<details><summary><code>client.Conversation.UpdateConversationMetadata(ConversationID, request) -> *mavenagigo.ConversationMetadata</code></summary>
 <dl>
 <dd>
 
@@ -2614,7 +2765,7 @@ Returns all metadata saved by any app on the conversation.
 
 ```go
 request := &mavenagigo.UpdateMetadataRequest{
-        AppId: mavenagigo.String(
+        AppID: mavenagigo.String(
             "conversation-owning-app",
         ),
         Values: map[string]string{
@@ -2641,7 +2792,7 @@ client.Conversation.UpdateConversationMetadata(
 <dl>
 <dd>
 
-**conversationId:** `string` — The ID of the conversation to modify metadata for
+**conversationID:** `string` — The ID of the conversation to modify metadata for
     
 </dd>
 </dl>
@@ -2818,17 +2969,17 @@ User message delivery is not yet supported.
 ```go
 request := &mavenagigo.DeliverMessageRequest{
         User: &mavenagigo.DeliverUserMessageRequest{
-            UserId: &mavenagigo.EntityIdWithoutAgent{
+            UserID: &mavenagigo.EntityIDWithoutAgent{
                 Type: mavenagigo.EntityTypeAgent,
-                AppId: "appId",
-                ReferenceId: "x",
+                AppID: "appId",
+                ReferenceID: "x",
             },
             Message: &mavenagigo.ConversationMessageRequest{
-                ConversationMessageId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                ConversationMessageID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
-                UserId: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                UserID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
                 Text: "text",
                 UserMessageType: mavenagigo.UserConversationMessageTypeUser,
@@ -2855,6 +3006,255 @@ client.Conversation.DeliverMessage(
 <dd>
 
 **request:** `*mavenagigo.DeliverMessageRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Customers
+<details><summary><code>client.Customers.Search(request) -> *mavenagigo.CustomersSearchResponse</code></summary>
+<dl>
+<dd>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CustomersSearchRequest{}
+client.Customers.Search(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CustomersSearchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Customers.CreateOrUpdate(request) -> *mavenagigo.CustomerResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update a customer of an agent or create it if it doesn't exist. In case of an update, fields not provided (e.g., description, status) will be preserved.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CustomerRequest{
+        CustomerID: &mavenagigo.EntityIDBase{
+            ReferenceID: "acme",
+        },
+        Name: "Acme Corporation",
+    }
+client.Customers.CreateOrUpdate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CustomerRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Customers.Get(CustomerReferenceID) -> *mavenagigo.CustomerResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Get a customer by its supplied ID
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CustomerGetRequest{}
+client.Customers.Get(
+        context.TODO(),
+        "acme",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**customerReferenceID:** `string` — The reference ID of the customer to get. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the customer to get. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Customers.Patch(CustomerReferenceID, request) -> *mavenagigo.CustomerResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update mutable customer fields
+
+The `appId` field can be provided to update a customer owned by a different app.
+All other fields will overwrite the existing value on the customer only if provided.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CustomerPatchRequest{}
+client.Customers.Patch(
+        context.TODO(),
+        "customerReferenceId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**customerReferenceID:** `string` — The reference ID of the customer to update. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CustomerPatchRequest` 
     
 </dd>
 </dl>
@@ -2896,13 +3296,13 @@ Create a new event
 ```go
 request := &mavenagigo.EventRequest{
         UserEvent: &mavenagigo.NovelUserEvent{
-            Id: &mavenagigo.EntityIdBase{
-                ReferenceId: "x",
+            ID: &mavenagigo.EntityIDBase{
+                ReferenceID: "x",
             },
             EventName: mavenagigo.UserEventNameButtonClicked,
             UserInfo: &mavenagigo.EventUserInfoBase{
-                Id: &mavenagigo.EntityIdBase{
-                    ReferenceId: "x",
+                ID: &mavenagigo.EntityIDBase{
+                    ReferenceID: "x",
                 },
             },
         },
@@ -2997,7 +3397,7 @@ client.Events.Search(
 </dl>
 </details>
 
-<details><summary><code>client.Events.Get(EventId) -> *mavenagigo.EventResponse</code></summary>
+<details><summary><code>client.Events.Get(EventID) -> *mavenagigo.EventResponse</code></summary>
 <dl>
 <dd>
 
@@ -3025,7 +3425,7 @@ Retrieve details of a specific Event item by its ID.
 
 ```go
 request := &mavenagigo.EventGetRequest{
-        AppId: "appId",
+        AppID: "appId",
     }
 client.Events.Get(
         context.TODO(),
@@ -3047,7 +3447,7 @@ client.Events.Get(
 <dl>
 <dd>
 
-**eventId:** `string` — The ID of the Event to get.
+**eventID:** `string` — The ID of the Event to get.
     
 </dd>
 </dl>
@@ -3055,7 +3455,7 @@ client.Events.Get(
 <dl>
 <dd>
 
-**appId:** `string` — The App ID of the Event to retrieve
+**appID:** `string` — The App ID of the Event to retrieve
     
 </dd>
 </dl>
@@ -3188,7 +3588,7 @@ client.Inbox.Search(
 </dl>
 </details>
 
-<details><summary><code>client.Inbox.Get(InboxItemId) -> *mavenagigo.InboxItem</code></summary>
+<details><summary><code>client.Inbox.Get(InboxItemID) -> *mavenagigo.InboxItem</code></summary>
 <dl>
 <dd>
 
@@ -3216,7 +3616,7 @@ Retrieve details of a specific inbox item by its ID.
 
 ```go
 request := &mavenagigo.InboxItemRequest{
-        AppId: "appId",
+        AppID: "appId",
     }
 client.Inbox.Get(
         context.TODO(),
@@ -3238,7 +3638,7 @@ client.Inbox.Get(
 <dl>
 <dd>
 
-**inboxItemId:** `string` — The ID of the inbox item to get. All other entity ID fields are inferred from the request.
+**inboxItemID:** `string` — The ID of the inbox item to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -3246,7 +3646,7 @@ client.Inbox.Get(
 <dl>
 <dd>
 
-**appId:** `string` — The App ID of the inbox item to retrieve
+**appID:** `string` — The App ID of the inbox item to retrieve
     
 </dd>
 </dl>
@@ -3258,7 +3658,7 @@ client.Inbox.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Inbox.GetFix(InboxItemFixId) -> *mavenagigo.InboxItemFix</code></summary>
+<details><summary><code>client.Inbox.GetFix(InboxItemFixID) -> *mavenagigo.InboxItemFix</code></summary>
 <dl>
 <dd>
 
@@ -3286,7 +3686,7 @@ Retrieve a suggested fix. Includes document information if the fix is a Missing 
 
 ```go
 request := &mavenagigo.InboxItemFixRequest{
-        AppId: "appId",
+        AppID: "appId",
     }
 client.Inbox.GetFix(
         context.TODO(),
@@ -3308,7 +3708,7 @@ client.Inbox.GetFix(
 <dl>
 <dd>
 
-**inboxItemFixId:** `string` — Unique identifier for the inbox fix.
+**inboxItemFixID:** `string` — Unique identifier for the inbox fix.
     
 </dd>
 </dl>
@@ -3316,7 +3716,7 @@ client.Inbox.GetFix(
 <dl>
 <dd>
 
-**appId:** `string` — The App ID of the inbox item fix to retrieve
+**appID:** `string` — The App ID of the inbox item fix to retrieve
     
 </dd>
 </dl>
@@ -3328,7 +3728,7 @@ client.Inbox.GetFix(
 </dl>
 </details>
 
-<details><summary><code>client.Inbox.ApplyFixes(InboxItemId, request) -> error</code></summary>
+<details><summary><code>client.Inbox.ApplyFixes(InboxItemID, request) -> error</code></summary>
 <dl>
 <dd>
 
@@ -3356,8 +3756,8 @@ Apply a list of fixes belonging to an inbox item.
 
 ```go
 request := &mavenagigo.ApplyFixesRequest{
-        AppId: "appId",
-        FixReferenceIds: []string{
+        AppID: "appId",
+        FixReferenceIDs: []string{
             "fixReferenceIds",
             "fixReferenceIds",
         },
@@ -3382,7 +3782,7 @@ client.Inbox.ApplyFixes(
 <dl>
 <dd>
 
-**inboxItemId:** `string` — Unique identifier for the inbox item.
+**inboxItemID:** `string` — Unique identifier for the inbox item.
     
 </dd>
 </dl>
@@ -3402,7 +3802,7 @@ client.Inbox.ApplyFixes(
 </dl>
 </details>
 
-<details><summary><code>client.Inbox.Ignore(InboxItemId) -> error</code></summary>
+<details><summary><code>client.Inbox.Ignore(InboxItemID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -3430,7 +3830,7 @@ Ignore a specific inbox item by its ID.
 
 ```go
 request := &mavenagigo.InboxItemIgnoreRequest{
-        AppId: "appId",
+        AppID: "appId",
     }
 client.Inbox.Ignore(
         context.TODO(),
@@ -3452,7 +3852,7 @@ client.Inbox.Ignore(
 <dl>
 <dd>
 
-**inboxItemId:** `string` — Unique identifier for the inbox item.
+**inboxItemID:** `string` — Unique identifier for the inbox item.
     
 </dd>
 </dl>
@@ -3460,7 +3860,7 @@ client.Inbox.Ignore(
 <dl>
 <dd>
 
-**appId:** `string` — The App ID of the inbox item fix to ignore
+**appID:** `string` — The App ID of the inbox item fix to ignore
     
 </dd>
 </dl>
@@ -3560,8 +3960,8 @@ Update a knowledge base or create it if it doesn't exist.
 
 ```go
 request := &mavenagigo.KnowledgeBaseRequest{
-        KnowledgeBaseId: &mavenagigo.EntityIdBase{
-            ReferenceId: "help-center",
+        KnowledgeBaseID: &mavenagigo.EntityIDBase{
+            ReferenceID: "help-center",
         },
         Name: "Help center",
     }
@@ -3596,7 +3996,7 @@ client.Knowledge.CreateOrUpdateKnowledgeBase(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.GetKnowledgeBase(KnowledgeBaseReferenceId) -> *mavenagigo.KnowledgeBaseResponse</code></summary>
+<details><summary><code>client.Knowledge.GetKnowledgeBase(KnowledgeBaseReferenceID) -> *mavenagigo.KnowledgeBaseResponse</code></summary>
 <dl>
 <dd>
 
@@ -3644,7 +4044,7 @@ client.Knowledge.GetKnowledgeBase(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to get. All other entity ID fields are inferred from the request.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -3652,7 +4052,7 @@ client.Knowledge.GetKnowledgeBase(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the knowledge base to get. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the knowledge base to get. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -3664,7 +4064,7 @@ client.Knowledge.GetKnowledgeBase(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.RefreshKnowledgeBase(KnowledgeBaseReferenceId, request) -> error</code></summary>
+<details><summary><code>client.Knowledge.RefreshKnowledgeBase(KnowledgeBaseReferenceID, request) -> error</code></summary>
 <dl>
 <dd>
 
@@ -3695,7 +4095,7 @@ They can also be refreshed on demand by calling this endpoint.
 
 ```go
 request := &mavenagigo.KnowledgeBaseRefreshRequest{
-        AppId: mavenagigo.String(
+        AppID: mavenagigo.String(
             "readme",
         ),
     }
@@ -3719,7 +4119,7 @@ client.Knowledge.RefreshKnowledgeBase(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to refresh. All other entity ID fields are inferred from the request.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to refresh. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -3739,7 +4139,7 @@ client.Knowledge.RefreshKnowledgeBase(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.PatchKnowledgeBase(KnowledgeBaseReferenceId, request) -> *mavenagigo.KnowledgeBaseResponse</code></summary>
+<details><summary><code>client.Knowledge.PatchKnowledgeBase(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeBaseResponse</code></summary>
 <dl>
 <dd>
 
@@ -3778,11 +4178,11 @@ request := &mavenagigo.KnowledgeBasePatchRequest{
             "tag2",
             "tag3",
         },
-        SegmentId: &mavenagigo.EntityId{
-            ReferenceId: "premium-users",
-            AppId: "readme",
-            OrganizationId: "acme",
-            AgentId: "support",
+        SegmentID: &mavenagigo.EntityID{
+            ReferenceID: "premium-users",
+            AppID: "readme",
+            OrganizationID: "acme",
+            AgentID: "support",
             Type: mavenagigo.EntityTypeSegment,
         },
     }
@@ -3806,7 +4206,7 @@ client.Knowledge.PatchKnowledgeBase(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to patch.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to patch.
     
 </dd>
 </dl>
@@ -3814,7 +4214,7 @@ client.Knowledge.PatchKnowledgeBase(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the knowledge base to patch. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the knowledge base to patch. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -3854,7 +4254,7 @@ client.Knowledge.PatchKnowledgeBase(
 <dl>
 <dd>
 
-**segmentId:** `*mavenagigo.EntityId` 
+**segmentID:** `*mavenagigo.EntityID` 
 
 The ID of the segment that must be matched for the knowledge base to be relevant to a conversation.
 A null value will remove the segment from the knowledge base, it will be available on all conversations.
@@ -3880,7 +4280,7 @@ Inline precondition support will be removed in a future release.
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.CreateKnowledgeBaseVersion(KnowledgeBaseReferenceId, request) -> *mavenagigo.KnowledgeBaseVersion</code></summary>
+<details><summary><code>client.Knowledge.CreateKnowledgeBaseVersion(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeBaseVersion</code></summary>
 <dl>
 <dd>
 
@@ -3932,7 +4332,7 @@ client.Knowledge.CreateKnowledgeBaseVersion(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to create a version for. All other entity ID fields are inferred from the request.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to create a version for. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -3952,7 +4352,7 @@ client.Knowledge.CreateKnowledgeBaseVersion(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.FinalizeKnowledgeBaseVersion(KnowledgeBaseReferenceId, request) -> *mavenagigo.KnowledgeBaseVersion</code></summary>
+<details><summary><code>client.Knowledge.FinalizeKnowledgeBaseVersion(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeBaseVersion</code></summary>
 <dl>
 <dd>
 
@@ -3980,10 +4380,10 @@ Finalize the latest knowledge base version. Required to indicate the version is 
 
 ```go
 request := &mavenagigo.FinalizeKnowledgeBaseVersionRequest{
-        VersionId: &mavenagigo.EntityIdWithoutAgent{
+        VersionID: &mavenagigo.EntityIDWithoutAgent{
             Type: mavenagigo.EntityTypeKnowledgeBaseVersion,
-            ReferenceId: "versionId",
-            AppId: "maven",
+            ReferenceID: "versionId",
+            AppID: "maven",
         },
         Status: mavenagigo.KnowledgeBaseVersionFinalizeStatusSucceeded.Ptr(),
     }
@@ -4007,7 +4407,7 @@ client.Knowledge.FinalizeKnowledgeBaseVersion(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to finalize a version for. All other entity ID fields are inferred from the request.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to finalize a version for. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -4027,7 +4427,7 @@ client.Knowledge.FinalizeKnowledgeBaseVersion(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.ListKnowledgeBaseVersions(KnowledgeBaseReferenceId) -> *mavenagigo.KnowledgeBaseVersionsListResponse</code></summary>
+<details><summary><code>client.Knowledge.ListKnowledgeBaseVersions(KnowledgeBaseReferenceID) -> *mavenagigo.KnowledgeBaseVersionsListResponse</code></summary>
 <dl>
 <dd>
 
@@ -4075,7 +4475,7 @@ client.Knowledge.ListKnowledgeBaseVersions(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to list versions for. All other entity ID fields are inferred from the request.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to list versions for. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -4083,7 +4483,7 @@ client.Knowledge.ListKnowledgeBaseVersions(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the knowledge base. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the knowledge base. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -4154,7 +4554,7 @@ client.Knowledge.SearchKnowledgeDocuments(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.CreateKnowledgeDocument(KnowledgeBaseReferenceId, request) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
+<details><summary><code>client.Knowledge.CreateKnowledgeDocument(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
 <dl>
 <dd>
 
@@ -4188,13 +4588,13 @@ have changed, a new document version will not be created. The existing version w
 
 ```go
 request := &mavenagigo.KnowledgeDocumentRequest{
-        KnowledgeDocumentId: &mavenagigo.EntityIdBase{
-            ReferenceId: "getting-started",
+        KnowledgeDocumentID: &mavenagigo.EntityIDBase{
+            ReferenceID: "getting-started",
         },
-        VersionId: &mavenagigo.EntityIdWithoutAgent{
+        VersionID: &mavenagigo.EntityIDWithoutAgent{
             Type: mavenagigo.EntityTypeKnowledgeBaseVersion,
-            ReferenceId: "versionId",
-            AppId: "maven",
+            ReferenceID: "versionId",
+            AppID: "maven",
         },
         ContentType: mavenagigo.KnowledgeDocumentContentTypeMarkdown,
         Content: mavenagigo.String(
@@ -4225,7 +4625,7 @@ client.Knowledge.CreateKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to create a document for. All other entity ID fields are inferred from the request.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to create a document for. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -4245,7 +4645,7 @@ client.Knowledge.CreateKnowledgeDocument(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.DeleteKnowledgeDocument(KnowledgeBaseReferenceId, KnowledgeDocumentReferenceId, request) -> error</code></summary>
+<details><summary><code>client.Knowledge.DeleteKnowledgeDocument(KnowledgeBaseReferenceID, KnowledgeDocumentReferenceID, request) -> error</code></summary>
 <dl>
 <dd>
 
@@ -4274,10 +4674,10 @@ Requires an existing knowledge base with an in progress version of type PARTIAL.
 
 ```go
 request := &mavenagigo.KnowledgeDeleteRequest{
-        VersionId: &mavenagigo.EntityIdWithoutAgent{
+        VersionID: &mavenagigo.EntityIDWithoutAgent{
             Type: mavenagigo.EntityTypeKnowledgeBaseVersion,
-            AppId: "maven",
-            ReferenceId: "versionId",
+            AppID: "maven",
+            ReferenceID: "versionId",
         },
     }
 client.Knowledge.DeleteKnowledgeDocument(
@@ -4301,7 +4701,7 @@ client.Knowledge.DeleteKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base that contains the document to delete. All other entity ID fields are inferred from the request
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base that contains the document to delete. All other entity ID fields are inferred from the request
     
 </dd>
 </dl>
@@ -4309,7 +4709,7 @@ client.Knowledge.DeleteKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeDocumentReferenceId:** `string` — The reference ID of the knowledge document to delete. All other entity ID fields are inferred from the request.
+**knowledgeDocumentReferenceID:** `string` — The reference ID of the knowledge document to delete. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -4329,7 +4729,7 @@ client.Knowledge.DeleteKnowledgeDocument(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.GetKnowledgeDocument(KnowledgeBaseVersionReferenceId, KnowledgeDocumentReferenceId) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
+<details><summary><code>client.Knowledge.GetKnowledgeDocument(KnowledgeBaseVersionReferenceID, KnowledgeDocumentReferenceID) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
 <dl>
 <dd>
 
@@ -4357,7 +4757,7 @@ Get a knowledge document by its supplied version and document IDs. Response incl
 
 ```go
 request := &mavenagigo.KnowledgeDocumentGetRequest{
-        KnowledgeBaseVersionAppId: "knowledgeBaseVersionAppId",
+        KnowledgeBaseVersionAppID: "knowledgeBaseVersionAppId",
     }
 client.Knowledge.GetKnowledgeDocument(
         context.TODO(),
@@ -4380,7 +4780,7 @@ client.Knowledge.GetKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeBaseVersionReferenceId:** `string` — The reference ID of the knowledge base version that contains the document. All other entity ID fields are inferred from the request.
+**knowledgeBaseVersionReferenceID:** `string` — The reference ID of the knowledge base version that contains the document. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -4388,7 +4788,7 @@ client.Knowledge.GetKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeDocumentReferenceId:** `string` — The reference ID of the knowledge document to get. All other entity ID fields are inferred from the request.
+**knowledgeDocumentReferenceID:** `string` — The reference ID of the knowledge document to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -4396,7 +4796,7 @@ client.Knowledge.GetKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeBaseVersionAppId:** `string` — The App ID of the knowledge base version.
+**knowledgeBaseVersionAppID:** `string` — The App ID of the knowledge base version.
     
 </dd>
 </dl>
@@ -4408,7 +4808,7 @@ client.Knowledge.GetKnowledgeDocument(
 </dl>
 </details>
 
-<details><summary><code>client.Knowledge.PatchKnowledgeDocument(KnowledgeBaseReferenceId, KnowledgeDocumentReferenceId, request) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
+<details><summary><code>client.Knowledge.PatchKnowledgeDocument(KnowledgeBaseReferenceID, KnowledgeDocumentReferenceID, request) -> *mavenagigo.KnowledgeDocumentResponse</code></summary>
 <dl>
 <dd>
 
@@ -4464,7 +4864,7 @@ client.Knowledge.PatchKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeBaseReferenceId:** `string` — The reference ID of the knowledge base to patch.
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to patch.
     
 </dd>
 </dl>
@@ -4472,7 +4872,7 @@ client.Knowledge.PatchKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeDocumentReferenceId:** `string` — The reference ID of the knowledge document to patch.
+**knowledgeDocumentReferenceID:** `string` — The reference ID of the knowledge document to patch.
     
 </dd>
 </dl>
@@ -4480,7 +4880,7 @@ client.Knowledge.PatchKnowledgeDocument(
 <dl>
 <dd>
 
-**knowledgeBaseAppId:** `*string` — The App ID of the knowledge base that contains the knowledge document to patch. If not provided the ID of the calling app will be used.
+**knowledgeBaseAppID:** `*string` — The App ID of the knowledge base that contains the knowledge document to patch. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -4501,7 +4901,7 @@ client.Knowledge.PatchKnowledgeDocument(
 </details>
 
 ## Organizations
-<details><summary><code>client.Organizations.Create(OrganizationReferenceId, request) -> *mavenagigo.Organization</code></summary>
+<details><summary><code>client.Organizations.Create(OrganizationReferenceID, request) -> *mavenagigo.Organization</code></summary>
 <dl>
 <dd>
 
@@ -4556,7 +4956,7 @@ client.Organizations.Create(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The reference ID of the organization.
+**organizationReferenceID:** `string` — The reference ID of the organization.
     
 </dd>
 </dl>
@@ -4576,7 +4976,7 @@ client.Organizations.Create(
 </dl>
 </details>
 
-<details><summary><code>client.Organizations.Get(OrganizationReferenceId) -> *mavenagigo.Organization</code></summary>
+<details><summary><code>client.Organizations.Get(OrganizationReferenceID) -> *mavenagigo.Organization</code></summary>
 <dl>
 <dd>
 
@@ -4622,7 +5022,7 @@ client.Organizations.Get(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The reference ID of the organization.
+**organizationReferenceID:** `string` — The reference ID of the organization.
     
 </dd>
 </dl>
@@ -4634,7 +5034,7 @@ client.Organizations.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Organizations.Patch(OrganizationReferenceId, request) -> *mavenagigo.Organization</code></summary>
+<details><summary><code>client.Organizations.Patch(OrganizationReferenceID, request) -> *mavenagigo.Organization</code></summary>
 <dl>
 <dd>
 
@@ -4687,7 +5087,7 @@ client.Organizations.Patch(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The reference ID of the organization.
+**organizationReferenceID:** `string` — The reference ID of the organization.
     
 </dd>
 </dl>
@@ -4707,7 +5107,7 @@ client.Organizations.Patch(
 </dl>
 </details>
 
-<details><summary><code>client.Organizations.Delete(OrganizationReferenceId) -> error</code></summary>
+<details><summary><code>client.Organizations.Delete(OrganizationReferenceID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -4757,7 +5157,7 @@ client.Organizations.Delete(
 <dl>
 <dd>
 
-**organizationReferenceId:** `string` — The reference ID of the organization.
+**organizationReferenceID:** `string` — The reference ID of the organization.
     
 </dd>
 </dl>
@@ -5024,8 +5424,8 @@ Update a segment or create it if it doesn't exist.
 
 ```go
 request := &mavenagigo.SegmentRequest{
-        SegmentId: &mavenagigo.EntityIdBase{
-            ReferenceId: "admin-users",
+        SegmentID: &mavenagigo.EntityIDBase{
+            ReferenceID: "admin-users",
         },
         Name: "Admin users",
         Precondition: &mavenagigo.Precondition{
@@ -5077,7 +5477,7 @@ client.Segments.CreateOrUpdate(
 </dl>
 </details>
 
-<details><summary><code>client.Segments.Get(SegmentReferenceId) -> *mavenagigo.SegmentResponse</code></summary>
+<details><summary><code>client.Segments.Get(SegmentReferenceID) -> *mavenagigo.SegmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -5125,7 +5525,7 @@ client.Segments.Get(
 <dl>
 <dd>
 
-**segmentReferenceId:** `string` — The reference ID of the segment to get. All other entity ID fields are inferred from the request.
+**segmentReferenceID:** `string` — The reference ID of the segment to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5133,7 +5533,7 @@ client.Segments.Get(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the segment to get. If not provided, the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the segment to get. If not provided, the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -5145,7 +5545,7 @@ client.Segments.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Segments.Patch(SegmentReferenceId, request) -> *mavenagigo.SegmentResponse</code></summary>
+<details><summary><code>client.Segments.Patch(SegmentReferenceID, request) -> *mavenagigo.SegmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -5196,7 +5596,7 @@ client.Segments.Patch(
 <dl>
 <dd>
 
-**segmentReferenceId:** `string` — The reference ID of the segment to update. All other entity ID fields are inferred from the request.
+**segmentReferenceID:** `string` — The reference ID of the segment to update. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5353,8 +5753,8 @@ Update an event trigger or create it if it doesn't exist.
 
 ```go
 request := &mavenagigo.EventTriggerRequest{
-        TriggerId: &mavenagigo.EntityIdBase{
-            ReferenceId: "store-in-snowflake",
+        TriggerID: &mavenagigo.EntityIDBase{
+            ReferenceID: "store-in-snowflake",
         },
         Description: "Stores conversation data in Snowflake",
         Type: mavenagigo.EventTriggerTypeConversationCreated,
@@ -5390,7 +5790,7 @@ client.Triggers.CreateOrUpdate(
 </dl>
 </details>
 
-<details><summary><code>client.Triggers.Get(TriggerReferenceId) -> *mavenagigo.EventTriggerResponse</code></summary>
+<details><summary><code>client.Triggers.Get(TriggerReferenceID) -> *mavenagigo.EventTriggerResponse</code></summary>
 <dl>
 <dd>
 
@@ -5436,7 +5836,7 @@ client.Triggers.Get(
 <dl>
 <dd>
 
-**triggerReferenceId:** `string` — The reference ID of the event trigger to get. All other entity ID fields are inferred from the request.
+**triggerReferenceID:** `string` — The reference ID of the event trigger to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5448,7 +5848,7 @@ client.Triggers.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Triggers.Delete(TriggerReferenceId) -> error</code></summary>
+<details><summary><code>client.Triggers.Delete(TriggerReferenceID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -5494,7 +5894,7 @@ client.Triggers.Delete(
 <dl>
 <dd>
 
-**triggerReferenceId:** `string` — The reference ID of the event trigger to delete. All other entity ID fields are inferred from the request.
+**triggerReferenceID:** `string` — The reference ID of the event trigger to delete. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5506,7 +5906,7 @@ client.Triggers.Delete(
 </dl>
 </details>
 
-<details><summary><code>client.Triggers.PartialUpdate(TriggerReferenceId, request) -> *mavenagigo.EventTriggerResponse</code></summary>
+<details><summary><code>client.Triggers.PartialUpdate(TriggerReferenceID, request) -> *mavenagigo.EventTriggerResponse</code></summary>
 <dl>
 <dd>
 
@@ -5556,7 +5956,7 @@ client.Triggers.PartialUpdate(
 <dl>
 <dd>
 
-**triggerReferenceId:** `string` — The reference ID of the event trigger to update. All other entity ID fields are inferred from the request.
+**triggerReferenceID:** `string` — The reference ID of the event trigger to update. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5564,7 +5964,7 @@ client.Triggers.PartialUpdate(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the trigger to update. If not provided, the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the trigger to update. If not provided, the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -5646,7 +6046,7 @@ client.Users.Search(
 </dl>
 </details>
 
-<details><summary><code>client.Users.GetAgentUser(AgentUserId) -> *mavenagigo.AgentUser</code></summary>
+<details><summary><code>client.Users.GetAgentUser(AgentUserID) -> *mavenagigo.AgentUser</code></summary>
 <dl>
 <dd>
 
@@ -5694,7 +6094,7 @@ client.Users.GetAgentUser(
 <dl>
 <dd>
 
-**agentUserId:** `string` — The ID of the agent user to get.
+**agentUserID:** `string` — The ID of the agent user to get.
     
 </dd>
 </dl>
@@ -5734,8 +6134,8 @@ Update an app user or create it if it doesn't exist.
 
 ```go
 request := &mavenagigo.AppUserRequest{
-        UserId: &mavenagigo.EntityIdBase{
-            ReferenceId: "user-0",
+        UserID: &mavenagigo.EntityIDBase{
+            ReferenceID: "user-0",
         },
         Identifiers: []*mavenagigo.AppUserIdentifier{
             &mavenagigo.AppUserIdentifier{
@@ -5781,7 +6181,7 @@ client.Users.CreateOrUpdate(
 </dl>
 </details>
 
-<details><summary><code>client.Users.Get(UserId) -> *mavenagigo.AppUserResponse</code></summary>
+<details><summary><code>client.Users.Get(UserID) -> *mavenagigo.AppUserResponse</code></summary>
 <dl>
 <dd>
 
@@ -5829,7 +6229,7 @@ client.Users.Get(
 <dl>
 <dd>
 
-**userId:** `string` — The reference ID of the app user to get. All other entity ID fields are inferred from the request.
+**userID:** `string` — The reference ID of the app user to get. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5837,7 +6237,7 @@ client.Users.Get(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the app user to get. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the app user to get. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>
@@ -5849,7 +6249,7 @@ client.Users.Get(
 </dl>
 </details>
 
-<details><summary><code>client.Users.Delete(UserId) -> error</code></summary>
+<details><summary><code>client.Users.Delete(UserID) -> error</code></summary>
 <dl>
 <dd>
 
@@ -5902,7 +6302,7 @@ client.Users.Delete(
 <dl>
 <dd>
 
-**userId:** `string` — The reference ID of the app user to delete. All other entity ID fields are inferred from the request.
+**userID:** `string` — The reference ID of the app user to delete. All other entity ID fields are inferred from the request.
     
 </dd>
 </dl>
@@ -5910,7 +6310,7 @@ client.Users.Delete(
 <dl>
 <dd>
 
-**appId:** `*string` — The App ID of the app user to delete. If not provided the ID of the calling app will be used.
+**appID:** `*string` — The App ID of the app user to delete. If not provided the ID of the calling app will be used.
     
 </dd>
 </dl>

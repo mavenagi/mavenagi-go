@@ -117,7 +117,7 @@ func (r *RawClient) CreateOrUpdateKnowledgeBase(
 func (r *RawClient) GetKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to get. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeBaseResponse], error) {
@@ -129,7 +129,7 @@ func (r *RawClient) GetKnowledgeBase(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -170,7 +170,7 @@ func (r *RawClient) GetKnowledgeBase(
 func (r *RawClient) RefreshKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to refresh. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseRefreshRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
@@ -182,7 +182,7 @@ func (r *RawClient) RefreshKnowledgeBase(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/refresh",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -215,7 +215,7 @@ func (r *RawClient) RefreshKnowledgeBase(
 func (r *RawClient) PatchKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBasePatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeBaseResponse], error) {
@@ -227,7 +227,7 @@ func (r *RawClient) PatchKnowledgeBase(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -263,7 +263,7 @@ func (r *RawClient) PatchKnowledgeBase(
 func (r *RawClient) CreateKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to create a version for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseVersionRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeBaseVersion], error) {
@@ -275,7 +275,7 @@ func (r *RawClient) CreateKnowledgeBaseVersion(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/version",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -310,7 +310,7 @@ func (r *RawClient) CreateKnowledgeBaseVersion(
 func (r *RawClient) FinalizeKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to finalize a version for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.FinalizeKnowledgeBaseVersionRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeBaseVersion], error) {
@@ -322,7 +322,7 @@ func (r *RawClient) FinalizeKnowledgeBaseVersion(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/version/finalize",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -357,7 +357,7 @@ func (r *RawClient) FinalizeKnowledgeBaseVersion(
 func (r *RawClient) ListKnowledgeBaseVersions(
 	ctx context.Context,
 	// The reference ID of the knowledge base to list versions for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeBaseVersionsListRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeBaseVersionsListResponse], error) {
@@ -369,7 +369,7 @@ func (r *RawClient) ListKnowledgeBaseVersions(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/versions",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -452,7 +452,7 @@ func (r *RawClient) SearchKnowledgeDocuments(
 func (r *RawClient) CreateKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base to create a document for. All other entity ID fields are inferred from the request.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	request *mavenagigo.KnowledgeDocumentRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeDocumentResponse], error) {
@@ -464,7 +464,7 @@ func (r *RawClient) CreateKnowledgeDocument(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/document",
-		knowledgeBaseReferenceId,
+		knowledgeBaseReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -499,9 +499,9 @@ func (r *RawClient) CreateKnowledgeDocument(
 func (r *RawClient) DeleteKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base that contains the document to delete. All other entity ID fields are inferred from the request
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	// The reference ID of the knowledge document to delete. All other entity ID fields are inferred from the request.
-	knowledgeDocumentReferenceId string,
+	knowledgeDocumentReferenceID string,
 	request *mavenagigo.KnowledgeDeleteRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
@@ -513,8 +513,8 @@ func (r *RawClient) DeleteKnowledgeDocument(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/%v/document",
-		knowledgeBaseReferenceId,
-		knowledgeDocumentReferenceId,
+		knowledgeBaseReferenceID,
+		knowledgeDocumentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
@@ -547,9 +547,9 @@ func (r *RawClient) DeleteKnowledgeDocument(
 func (r *RawClient) GetKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base version that contains the document. All other entity ID fields are inferred from the request.
-	knowledgeBaseVersionReferenceId string,
+	knowledgeBaseVersionReferenceID string,
 	// The reference ID of the knowledge document to get. All other entity ID fields are inferred from the request.
-	knowledgeDocumentReferenceId string,
+	knowledgeDocumentReferenceID string,
 	request *mavenagigo.KnowledgeDocumentGetRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeDocumentResponse], error) {
@@ -561,8 +561,8 @@ func (r *RawClient) GetKnowledgeDocument(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/versions/%v/documents/%v",
-		knowledgeBaseVersionReferenceId,
-		knowledgeDocumentReferenceId,
+		knowledgeBaseVersionReferenceID,
+		knowledgeDocumentReferenceID,
 	)
 	queryParams, err := internal.QueryValues(request)
 	if err != nil {
@@ -603,9 +603,9 @@ func (r *RawClient) GetKnowledgeDocument(
 func (r *RawClient) PatchKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.
-	knowledgeBaseReferenceId string,
+	knowledgeBaseReferenceID string,
 	// The reference ID of the knowledge document to patch.
-	knowledgeDocumentReferenceId string,
+	knowledgeDocumentReferenceID string,
 	request *mavenagigo.KnowledgeDocumentPatchRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*mavenagigo.KnowledgeDocumentResponse], error) {
@@ -617,8 +617,8 @@ func (r *RawClient) PatchKnowledgeDocument(
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/v1/knowledge/%v/%v/document",
-		knowledgeBaseReferenceId,
-		knowledgeDocumentReferenceId,
+		knowledgeBaseReferenceID,
+		knowledgeDocumentReferenceID,
 	)
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),

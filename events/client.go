@@ -21,8 +21,8 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-	if options.AppId == "" {
-		options.AppId = os.Getenv("MAVENAGI_APP_ID")
+	if options.AppID == "" {
+		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
 	if options.AppSecret == "" {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
@@ -78,13 +78,13 @@ func (c *Client) Search(
 func (c *Client) Get(
 	ctx context.Context,
 	// The ID of the Event to get.
-	eventId string,
+	eventID string,
 	request *mavenagigo.EventGetRequest,
 	opts ...option.RequestOption,
 ) (*mavenagigo.EventResponse, error) {
 	response, err := c.WithRawResponse.Get(
 		ctx,
-		eventId,
+		eventID,
 		request,
 		opts...,
 	)

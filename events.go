@@ -7,12 +7,12 @@ import (
 )
 
 var (
-	eventGetRequestFieldAppId = big.NewInt(1 << 0)
+	eventGetRequestFieldAppID = big.NewInt(1 << 0)
 )
 
 type EventGetRequest struct {
 	// The App ID of the Event to retrieve
-	AppId string `json:"-" url:"appId"`
+	AppID string `json:"-" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -25,9 +25,9 @@ func (e *EventGetRequest) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetAppId sets the AppId field and marks it as non-optional;
+// SetAppID sets the AppID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventGetRequest) SetAppId(appId string) {
-	e.AppId = appId
-	e.require(eventGetRequestFieldAppId)
+func (e *EventGetRequest) SetAppID(appID string) {
+	e.AppID = appID
+	e.require(eventGetRequestFieldAppID)
 }
