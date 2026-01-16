@@ -403,34 +403,6 @@ func (e *EventTriggerResponse) String() string {
 	return fmt.Sprintf("%#v", e)
 }
 
-type EventTriggerType string
-
-const (
-	EventTriggerTypeConversationCreated EventTriggerType = "CONVERSATION_CREATED"
-	EventTriggerTypeFeedbackCreated     EventTriggerType = "FEEDBACK_CREATED"
-	EventTriggerTypeInboxItemCreated    EventTriggerType = "INBOX_ITEM_CREATED"
-	EventTriggerTypeEventCreated        EventTriggerType = "EVENT_CREATED"
-)
-
-func NewEventTriggerTypeFromString(s string) (EventTriggerType, error) {
-	switch s {
-	case "CONVERSATION_CREATED":
-		return EventTriggerTypeConversationCreated, nil
-	case "FEEDBACK_CREATED":
-		return EventTriggerTypeFeedbackCreated, nil
-	case "INBOX_ITEM_CREATED":
-		return EventTriggerTypeInboxItemCreated, nil
-	case "EVENT_CREATED":
-		return EventTriggerTypeEventCreated, nil
-	}
-	var t EventTriggerType
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (e EventTriggerType) Ptr() *EventTriggerType {
-	return &e
-}
-
 var (
 	eventTriggersSearchRequestFieldPage     = big.NewInt(1 << 0)
 	eventTriggersSearchRequestFieldSize     = big.NewInt(1 << 1)

@@ -2416,7 +2416,7 @@ type KnowledgeDocumentRequest struct {
 	// The title of the document. Will be shown as part of answers.
 	Title string `json:"title" url:"title"`
 	// ID of the asset associated with this document. This asset will be transformed into text and set as the content of the document. The following types are supported: `application/pdf`, `text/plain`.  Either this or content is required, but not both
-	AssetID *EntityIDBase `json:"assetId,omitempty" url:"assetId,omitempty"`
+	AssetID *EntityIDWithoutAgent `json:"assetId,omitempty" url:"assetId,omitempty"`
 	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
 	// Metadata for the knowledge document.
@@ -2484,7 +2484,7 @@ func (k *KnowledgeDocumentRequest) GetTitle() string {
 	return k.Title
 }
 
-func (k *KnowledgeDocumentRequest) GetAssetID() *EntityIDBase {
+func (k *KnowledgeDocumentRequest) GetAssetID() *EntityIDWithoutAgent {
 	if k == nil {
 		return nil
 	}
@@ -2588,7 +2588,7 @@ func (k *KnowledgeDocumentRequest) SetTitle(title string) {
 
 // SetAssetID sets the AssetID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetAssetID(assetID *EntityIDBase) {
+func (k *KnowledgeDocumentRequest) SetAssetID(assetID *EntityIDWithoutAgent) {
 	k.AssetID = assetID
 	k.require(knowledgeDocumentRequestFieldAssetID)
 }

@@ -11,20 +11,16 @@ import (
 )
 
 var (
-	actionBaseFieldName                    = big.NewInt(1 << 0)
-	actionBaseFieldDescription             = big.NewInt(1 << 1)
-	actionBaseFieldUserInteractionRequired = big.NewInt(1 << 2)
-	actionBaseFieldButtonName              = big.NewInt(1 << 3)
-	actionBaseFieldPrecondition            = big.NewInt(1 << 4)
-	actionBaseFieldUserFormParameters      = big.NewInt(1 << 5)
-	actionBaseFieldLanguage                = big.NewInt(1 << 6)
+	actionBaseFieldUserInteractionRequired = big.NewInt(1 << 0)
+	actionBaseFieldButtonName              = big.NewInt(1 << 1)
+	actionBaseFieldPrecondition            = big.NewInt(1 << 2)
+	actionBaseFieldUserFormParameters      = big.NewInt(1 << 3)
+	actionBaseFieldLanguage                = big.NewInt(1 << 4)
+	actionBaseFieldName                    = big.NewInt(1 << 5)
+	actionBaseFieldDescription             = big.NewInt(1 << 6)
 )
 
 type ActionBase struct {
-	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
-	Name string `json:"name" url:"name"`
-	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
-	Description string `json:"description" url:"description"`
 	// Whether the action requires user interaction to execute. If false, and all of the required action parameters are known, the LLM may call the action automatically. If true, an conversations ask call will return a BotActionFormResponse which must be submitted by an API caller. API callers must display a button with the buttonName label to confirm the user's intent.
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
@@ -35,26 +31,16 @@ type ActionBase struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
+	Name string `json:"name" url:"name"`
+	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
+	Description string `json:"description" url:"description"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (a *ActionBase) GetName() string {
-	if a == nil {
-		return ""
-	}
-	return a.Name
-}
-
-func (a *ActionBase) GetDescription() string {
-	if a == nil {
-		return ""
-	}
-	return a.Description
 }
 
 func (a *ActionBase) GetUserInteractionRequired() bool {
@@ -92,6 +78,20 @@ func (a *ActionBase) GetLanguage() *string {
 	return a.Language
 }
 
+func (a *ActionBase) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
+func (a *ActionBase) GetDescription() string {
+	if a == nil {
+		return ""
+	}
+	return a.Description
+}
+
 func (a *ActionBase) GetExtraProperties() map[string]interface{} {
 	return a.extraProperties
 }
@@ -101,20 +101,6 @@ func (a *ActionBase) require(field *big.Int) {
 		a.explicitFields = big.NewInt(0)
 	}
 	a.explicitFields.Or(a.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionBase) SetName(name string) {
-	a.Name = name
-	a.require(actionBaseFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionBase) SetDescription(description string) {
-	a.Description = description
-	a.require(actionBaseFieldDescription)
 }
 
 // SetUserInteractionRequired sets the UserInteractionRequired field and marks it as non-optional;
@@ -150,6 +136,20 @@ func (a *ActionBase) SetUserFormParameters(userFormParameters []*ActionParameter
 func (a *ActionBase) SetLanguage(language *string) {
 	a.Language = language
 	a.require(actionBaseFieldLanguage)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionBase) SetName(name string) {
+	a.Name = name
+	a.require(actionBaseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionBase) SetDescription(description string) {
+	a.Description = description
+	a.require(actionBaseFieldDescription)
 }
 
 func (a *ActionBase) UnmarshalJSON(data []byte) error {
@@ -1057,26 +1057,14 @@ func (a ActionParameterType) Ptr() *ActionParameterType {
 }
 
 var (
-	actionResponseFieldName                    = big.NewInt(1 << 0)
-	actionResponseFieldDescription             = big.NewInt(1 << 1)
-	actionResponseFieldUserInteractionRequired = big.NewInt(1 << 2)
-	actionResponseFieldButtonName              = big.NewInt(1 << 3)
-	actionResponseFieldPrecondition            = big.NewInt(1 << 4)
-	actionResponseFieldUserFormParameters      = big.NewInt(1 << 5)
-	actionResponseFieldLanguage                = big.NewInt(1 << 6)
-	actionResponseFieldActionID                = big.NewInt(1 << 7)
-	actionResponseFieldInstructions            = big.NewInt(1 << 8)
-	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 9)
-	actionResponseFieldSegmentID               = big.NewInt(1 << 10)
-	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 11)
-	actionResponseFieldDeleted                 = big.NewInt(1 << 12)
+	actionPropertiesFieldUserInteractionRequired = big.NewInt(1 << 0)
+	actionPropertiesFieldButtonName              = big.NewInt(1 << 1)
+	actionPropertiesFieldPrecondition            = big.NewInt(1 << 2)
+	actionPropertiesFieldUserFormParameters      = big.NewInt(1 << 3)
+	actionPropertiesFieldLanguage                = big.NewInt(1 << 4)
 )
 
-type ActionResponse struct {
-	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
-	Name string `json:"name" url:"name"`
-	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
-	Description string `json:"description" url:"description"`
+type ActionProperties struct {
 	// Whether the action requires user interaction to execute. If false, and all of the required action parameters are known, the LLM may call the action automatically. If true, an conversations ask call will return a BotActionFormResponse which must be submitted by an API caller. API callers must display a button with the buttonName label to confirm the user's intent.
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
@@ -1087,6 +1075,165 @@ type ActionResponse struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *ActionProperties) GetUserInteractionRequired() bool {
+	if a == nil {
+		return false
+	}
+	return a.UserInteractionRequired
+}
+
+func (a *ActionProperties) GetButtonName() *string {
+	if a == nil {
+		return nil
+	}
+	return a.ButtonName
+}
+
+func (a *ActionProperties) GetPrecondition() *Precondition {
+	if a == nil {
+		return nil
+	}
+	return a.Precondition
+}
+
+func (a *ActionProperties) GetUserFormParameters() []*ActionParameter {
+	if a == nil {
+		return nil
+	}
+	return a.UserFormParameters
+}
+
+func (a *ActionProperties) GetLanguage() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Language
+}
+
+func (a *ActionProperties) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *ActionProperties) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetUserInteractionRequired sets the UserInteractionRequired field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionProperties) SetUserInteractionRequired(userInteractionRequired bool) {
+	a.UserInteractionRequired = userInteractionRequired
+	a.require(actionPropertiesFieldUserInteractionRequired)
+}
+
+// SetButtonName sets the ButtonName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionProperties) SetButtonName(buttonName *string) {
+	a.ButtonName = buttonName
+	a.require(actionPropertiesFieldButtonName)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionProperties) SetPrecondition(precondition *Precondition) {
+	a.Precondition = precondition
+	a.require(actionPropertiesFieldPrecondition)
+}
+
+// SetUserFormParameters sets the UserFormParameters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionProperties) SetUserFormParameters(userFormParameters []*ActionParameter) {
+	a.UserFormParameters = userFormParameters
+	a.require(actionPropertiesFieldUserFormParameters)
+}
+
+// SetLanguage sets the Language field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionProperties) SetLanguage(language *string) {
+	a.Language = language
+	a.require(actionPropertiesFieldLanguage)
+}
+
+func (a *ActionProperties) UnmarshalJSON(data []byte) error {
+	type unmarshaler ActionProperties
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = ActionProperties(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *ActionProperties) MarshalJSON() ([]byte, error) {
+	type embed ActionProperties
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *ActionProperties) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
+	actionResponseFieldUserInteractionRequired = big.NewInt(1 << 0)
+	actionResponseFieldButtonName              = big.NewInt(1 << 1)
+	actionResponseFieldPrecondition            = big.NewInt(1 << 2)
+	actionResponseFieldUserFormParameters      = big.NewInt(1 << 3)
+	actionResponseFieldLanguage                = big.NewInt(1 << 4)
+	actionResponseFieldName                    = big.NewInt(1 << 5)
+	actionResponseFieldDescription             = big.NewInt(1 << 6)
+	actionResponseFieldActionID                = big.NewInt(1 << 7)
+	actionResponseFieldInstructions            = big.NewInt(1 << 8)
+	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 9)
+	actionResponseFieldSegmentID               = big.NewInt(1 << 10)
+	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 11)
+	actionResponseFieldDeleted                 = big.NewInt(1 << 12)
+)
+
+type ActionResponse struct {
+	// Whether the action requires user interaction to execute. If false, and all of the required action parameters are known, the LLM may call the action automatically. If true, an conversations ask call will return a BotActionFormResponse which must be submitted by an API caller. API callers must display a button with the buttonName label to confirm the user's intent.
+	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
+	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
+	ButtonName *string `json:"buttonName,omitempty" url:"buttonName,omitempty"`
+	// The preconditions that must be met for an action to be relevant to a conversation. Can be used to restrict actions to certain types of users.
+	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
+	// The parameters that the action uses as input. An action will only be executed when all of the required parameters are provided. During execution, actions all have access to the full Conversation and User objects. Parameter values may be inferred from the user's conversation by the LLM.
+	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
+	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
+	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
+	Name string `json:"name" url:"name"`
+	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
+	Description string `json:"description" url:"description"`
 	// ID that uniquely identifies this action
 	ActionID *EntityID `json:"actionId" url:"actionId"`
 	// The instructions given to the LLM when determining whether to execute the action.
@@ -1112,20 +1259,6 @@ type ActionResponse struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (a *ActionResponse) GetName() string {
-	if a == nil {
-		return ""
-	}
-	return a.Name
-}
-
-func (a *ActionResponse) GetDescription() string {
-	if a == nil {
-		return ""
-	}
-	return a.Description
 }
 
 func (a *ActionResponse) GetUserInteractionRequired() bool {
@@ -1161,6 +1294,20 @@ func (a *ActionResponse) GetLanguage() *string {
 		return nil
 	}
 	return a.Language
+}
+
+func (a *ActionResponse) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
+func (a *ActionResponse) GetDescription() string {
+	if a == nil {
+		return ""
+	}
+	return a.Description
 }
 
 func (a *ActionResponse) GetActionID() *EntityID {
@@ -1216,20 +1363,6 @@ func (a *ActionResponse) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionResponse) SetName(name string) {
-	a.Name = name
-	a.require(actionResponseFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionResponse) SetDescription(description string) {
-	a.Description = description
-	a.require(actionResponseFieldDescription)
-}
-
 // SetUserInteractionRequired sets the UserInteractionRequired field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (a *ActionResponse) SetUserInteractionRequired(userInteractionRequired bool) {
@@ -1263,6 +1396,20 @@ func (a *ActionResponse) SetUserFormParameters(userFormParameters []*ActionParam
 func (a *ActionResponse) SetLanguage(language *string) {
 	a.Language = language
 	a.require(actionResponseFieldLanguage)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionResponse) SetName(name string) {
+	a.Name = name
+	a.require(actionResponseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionResponse) SetDescription(description string) {
+	a.Description = description
+	a.require(actionResponseFieldDescription)
 }
 
 // SetActionID sets the ActionID field and marks it as non-optional;
@@ -1335,6 +1482,170 @@ func (a *ActionResponse) MarshalJSON() ([]byte, error) {
 }
 
 func (a *ActionResponse) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
+	actionUserFieldUserID          = big.NewInt(1 << 0)
+	actionUserFieldAgentUserID     = big.NewInt(1 << 1)
+	actionUserFieldUserIdentifiers = big.NewInt(1 << 2)
+	actionUserFieldAllUserData     = big.NewInt(1 << 3)
+	actionUserFieldDefaultUserData = big.NewInt(1 << 4)
+	actionUserFieldAgentUserData   = big.NewInt(1 << 5)
+)
+
+type ActionUser struct {
+	// A user ID that can be used to store user information. Will only be undefined on legacy surfaces.
+	UserID *EntityIDBase `json:"userId,omitempty" url:"userId,omitempty"`
+	// The ID of the agent user that the userId is associated with
+	AgentUserID *string `json:"agentUserId,omitempty" url:"agentUserId,omitempty"`
+	// All known identifiers for the user who is executing the action.
+	UserIdentifiers []*AppUserIdentifier `json:"userIdentifiers" url:"userIdentifiers"`
+	// Data from all apps
+	AllUserData map[string]map[string]string `json:"allUserData" url:"allUserData"`
+	// Default data for this user
+	DefaultUserData map[string]string `json:"defaultUserData" url:"defaultUserData"`
+	// All user data for this user, including reverse indexable user data
+	AgentUserData map[string][]*UserDataWithReference `json:"agentUserData" url:"agentUserData"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *ActionUser) GetUserID() *EntityIDBase {
+	if a == nil {
+		return nil
+	}
+	return a.UserID
+}
+
+func (a *ActionUser) GetAgentUserID() *string {
+	if a == nil {
+		return nil
+	}
+	return a.AgentUserID
+}
+
+func (a *ActionUser) GetUserIdentifiers() []*AppUserIdentifier {
+	if a == nil {
+		return nil
+	}
+	return a.UserIdentifiers
+}
+
+func (a *ActionUser) GetAllUserData() map[string]map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.AllUserData
+}
+
+func (a *ActionUser) GetDefaultUserData() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.DefaultUserData
+}
+
+func (a *ActionUser) GetAgentUserData() map[string][]*UserDataWithReference {
+	if a == nil {
+		return nil
+	}
+	return a.AgentUserData
+}
+
+func (a *ActionUser) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *ActionUser) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetUserID sets the UserID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionUser) SetUserID(userID *EntityIDBase) {
+	a.UserID = userID
+	a.require(actionUserFieldUserID)
+}
+
+// SetAgentUserID sets the AgentUserID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionUser) SetAgentUserID(agentUserID *string) {
+	a.AgentUserID = agentUserID
+	a.require(actionUserFieldAgentUserID)
+}
+
+// SetUserIdentifiers sets the UserIdentifiers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionUser) SetUserIdentifiers(userIdentifiers []*AppUserIdentifier) {
+	a.UserIdentifiers = userIdentifiers
+	a.require(actionUserFieldUserIdentifiers)
+}
+
+// SetAllUserData sets the AllUserData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionUser) SetAllUserData(allUserData map[string]map[string]string) {
+	a.AllUserData = allUserData
+	a.require(actionUserFieldAllUserData)
+}
+
+// SetDefaultUserData sets the DefaultUserData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionUser) SetDefaultUserData(defaultUserData map[string]string) {
+	a.DefaultUserData = defaultUserData
+	a.require(actionUserFieldDefaultUserData)
+}
+
+// SetAgentUserData sets the AgentUserData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionUser) SetAgentUserData(agentUserData map[string][]*UserDataWithReference) {
+	a.AgentUserData = agentUserData
+	a.require(actionUserFieldAgentUserData)
+}
+
+func (a *ActionUser) UnmarshalJSON(data []byte) error {
+	type unmarshaler ActionUser
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = ActionUser(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *ActionUser) MarshalJSON() ([]byte, error) {
+	type embed ActionUser
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *ActionUser) String() string {
 	if len(a.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
 			return value
@@ -8362,6 +8673,7 @@ const (
 	EntityTypeInboxItemFix         EntityType = "INBOX_ITEM_FIX"
 	EntityTypeSegment              EntityType = "SEGMENT"
 	EntityTypeCustomer             EntityType = "CUSTOMER"
+	EntityTypeIntelligentField     EntityType = "INTELLIGENT_FIELD"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -8398,6 +8710,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeSegment, nil
 	case "CUSTOMER":
 		return EntityTypeCustomer, nil
+	case "INTELLIGENT_FIELD":
+		return EntityTypeIntelligentField, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -8654,6 +8968,7 @@ const (
 	EventFieldSourceGeoCountry   EventField = "SOURCE_GEO_COUNTRY"
 	EventFieldUserReferenceID    EventField = "USER_REFERENCE_ID"
 	EventFieldAgentUserID        EventField = "AGENT_USER_ID"
+	EventFieldTimestamp          EventField = "TIMESTAMP"
 )
 
 func NewEventFieldFromString(s string) (EventField, error) {
@@ -8690,6 +9005,8 @@ func NewEventFieldFromString(s string) (EventField, error) {
 		return EventFieldUserReferenceID, nil
 	case "AGENT_USER_ID":
 		return EventFieldAgentUserID, nil
+	case "TIMESTAMP":
+		return EventFieldTimestamp, nil
 	}
 	var t EventField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -9165,6 +9482,34 @@ func (e *EventResponse) validate() error {
 		}
 	}
 	return nil
+}
+
+type EventTriggerType string
+
+const (
+	EventTriggerTypeConversationCreated EventTriggerType = "CONVERSATION_CREATED"
+	EventTriggerTypeFeedbackCreated     EventTriggerType = "FEEDBACK_CREATED"
+	EventTriggerTypeInboxItemCreated    EventTriggerType = "INBOX_ITEM_CREATED"
+	EventTriggerTypeEventCreated        EventTriggerType = "EVENT_CREATED"
+)
+
+func NewEventTriggerTypeFromString(s string) (EventTriggerType, error) {
+	switch s {
+	case "CONVERSATION_CREATED":
+		return EventTriggerTypeConversationCreated, nil
+	case "FEEDBACK_CREATED":
+		return EventTriggerTypeFeedbackCreated, nil
+	case "INBOX_ITEM_CREATED":
+		return EventTriggerTypeInboxItemCreated, nil
+	case "EVENT_CREATED":
+		return EventTriggerTypeEventCreated, nil
+	}
+	var t EventTriggerType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (e EventTriggerType) Ptr() *EventTriggerType {
+	return &e
 }
 
 type EventType string
@@ -15858,10 +16203,11 @@ var (
 	userEventFieldSessionInfo  = big.NewInt(1 << 3)
 	userEventFieldContextInfo  = big.NewInt(1 << 4)
 	userEventFieldID           = big.NewInt(1 << 5)
-	userEventFieldEventName    = big.NewInt(1 << 6)
-	userEventFieldUserInfo     = big.NewInt(1 << 7)
-	userEventFieldFeedbackInfo = big.NewInt(1 << 8)
-	userEventFieldPageInfo     = big.NewInt(1 << 9)
+	userEventFieldCreatedAt    = big.NewInt(1 << 6)
+	userEventFieldEventName    = big.NewInt(1 << 7)
+	userEventFieldUserInfo     = big.NewInt(1 << 8)
+	userEventFieldFeedbackInfo = big.NewInt(1 << 9)
+	userEventFieldPageInfo     = big.NewInt(1 << 10)
 )
 
 type UserEvent struct {
@@ -15872,6 +16218,8 @@ type UserEvent struct {
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
 	// The unique ID of the event
 	ID *EntityID `json:"id" url:"id"`
+	// The date and time the event was created
+	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The name of the event
 	EventName UserEventName `json:"eventName" url:"eventName"`
 	// Information about the user who triggered the event
@@ -15928,6 +16276,13 @@ func (u *UserEvent) GetID() *EntityID {
 		return nil
 	}
 	return u.ID
+}
+
+func (u *UserEvent) GetCreatedAt() *time.Time {
+	if u == nil {
+		return nil
+	}
+	return u.CreatedAt
 }
 
 func (u *UserEvent) GetEventName() UserEventName {
@@ -16011,6 +16366,13 @@ func (u *UserEvent) SetID(id *EntityID) {
 	u.require(userEventFieldID)
 }
 
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserEvent) SetCreatedAt(createdAt *time.Time) {
+	u.CreatedAt = createdAt
+	u.require(userEventFieldCreatedAt)
+}
+
 // SetEventName sets the EventName field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (u *UserEvent) SetEventName(eventName UserEventName) {
@@ -16044,6 +16406,7 @@ func (u *UserEvent) UnmarshalJSON(data []byte) error {
 	var unmarshaler = struct {
 		embed
 		Timestamp *internal.DateTime `json:"timestamp,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
 	}{
 		embed: embed(*u),
 	}
@@ -16052,6 +16415,7 @@ func (u *UserEvent) UnmarshalJSON(data []byte) error {
 	}
 	*u = UserEvent(unmarshaler.embed)
 	u.Timestamp = unmarshaler.Timestamp.TimePtr()
+	u.CreatedAt = unmarshaler.CreatedAt.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *u)
 	if err != nil {
 		return err
@@ -16066,9 +16430,11 @@ func (u *UserEvent) MarshalJSON() ([]byte, error) {
 	var marshaler = struct {
 		embed
 		Timestamp *internal.DateTime `json:"timestamp,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
 	}{
 		embed:     embed(*u),
 		Timestamp: internal.NewOptionalDateTime(u.Timestamp),
+		CreatedAt: internal.NewOptionalDateTime(u.CreatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
 	return json.Marshal(explicitMarshaler)

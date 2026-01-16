@@ -274,21 +274,17 @@ func (a *ActionFilter) String() string {
 }
 
 var (
-	actionRequestFieldName                    = big.NewInt(1 << 0)
-	actionRequestFieldDescription             = big.NewInt(1 << 1)
-	actionRequestFieldUserInteractionRequired = big.NewInt(1 << 2)
-	actionRequestFieldButtonName              = big.NewInt(1 << 3)
-	actionRequestFieldPrecondition            = big.NewInt(1 << 4)
-	actionRequestFieldUserFormParameters      = big.NewInt(1 << 5)
-	actionRequestFieldLanguage                = big.NewInt(1 << 6)
+	actionRequestFieldUserInteractionRequired = big.NewInt(1 << 0)
+	actionRequestFieldButtonName              = big.NewInt(1 << 1)
+	actionRequestFieldPrecondition            = big.NewInt(1 << 2)
+	actionRequestFieldUserFormParameters      = big.NewInt(1 << 3)
+	actionRequestFieldLanguage                = big.NewInt(1 << 4)
+	actionRequestFieldName                    = big.NewInt(1 << 5)
+	actionRequestFieldDescription             = big.NewInt(1 << 6)
 	actionRequestFieldActionID                = big.NewInt(1 << 7)
 )
 
 type ActionRequest struct {
-	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
-	Name string `json:"name" url:"name"`
-	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
-	Description string `json:"description" url:"description"`
 	// Whether the action requires user interaction to execute. If false, and all of the required action parameters are known, the LLM may call the action automatically. If true, an conversations ask call will return a BotActionFormResponse which must be submitted by an API caller. API callers must display a button with the buttonName label to confirm the user's intent.
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
@@ -299,6 +295,10 @@ type ActionRequest struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
+	Name string `json:"name" url:"name"`
+	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
+	Description string `json:"description" url:"description"`
 	// ID that uniquely identifies this action
 	ActionID *EntityIDBase `json:"actionId" url:"actionId"`
 
@@ -307,20 +307,6 @@ type ActionRequest struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (a *ActionRequest) GetName() string {
-	if a == nil {
-		return ""
-	}
-	return a.Name
-}
-
-func (a *ActionRequest) GetDescription() string {
-	if a == nil {
-		return ""
-	}
-	return a.Description
 }
 
 func (a *ActionRequest) GetUserInteractionRequired() bool {
@@ -358,6 +344,20 @@ func (a *ActionRequest) GetLanguage() *string {
 	return a.Language
 }
 
+func (a *ActionRequest) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
+func (a *ActionRequest) GetDescription() string {
+	if a == nil {
+		return ""
+	}
+	return a.Description
+}
+
 func (a *ActionRequest) GetActionID() *EntityIDBase {
 	if a == nil {
 		return nil
@@ -374,20 +374,6 @@ func (a *ActionRequest) require(field *big.Int) {
 		a.explicitFields = big.NewInt(0)
 	}
 	a.explicitFields.Or(a.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionRequest) SetName(name string) {
-	a.Name = name
-	a.require(actionRequestFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionRequest) SetDescription(description string) {
-	a.Description = description
-	a.require(actionRequestFieldDescription)
 }
 
 // SetUserInteractionRequired sets the UserInteractionRequired field and marks it as non-optional;
@@ -423,6 +409,20 @@ func (a *ActionRequest) SetUserFormParameters(userFormParameters []*ActionParame
 func (a *ActionRequest) SetLanguage(language *string) {
 	a.Language = language
 	a.require(actionRequestFieldLanguage)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionRequest) SetName(name string) {
+	a.Name = name
+	a.require(actionRequestFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionRequest) SetDescription(description string) {
+	a.Description = description
+	a.require(actionRequestFieldDescription)
 }
 
 // SetActionID sets the ActionID field and marks it as non-optional;
