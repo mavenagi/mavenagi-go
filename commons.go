@@ -1015,6 +1015,8 @@ const (
 	ActionParameterTypeTime ActionParameterType = "TIME"
 	// Email parameter type; must be a valid email address
 	ActionParameterTypeEmail ActionParameterType = "EMAIL"
+	// Phone number parameter type; must be a valid phone number (E.164 or regional format)
+	ActionParameterTypePhone ActionParameterType = "PHONE"
 	// Schema parameter type for complex structured data that adheres to a JSON schema definition. When this type is used this should be the only action parameter (all other parameters should be omitted), the `schema` field must be set and `enumOptions` should not be used.
 	ActionParameterTypeSchema ActionParameterType = "SCHEMA"
 	// File parameter type for file uploads.
@@ -1041,6 +1043,8 @@ func NewActionParameterTypeFromString(s string) (ActionParameterType, error) {
 		return ActionParameterTypeTime, nil
 	case "EMAIL":
 		return ActionParameterTypeEmail, nil
+	case "PHONE":
+		return ActionParameterTypePhone, nil
 	case "SCHEMA":
 		return ActionParameterTypeSchema, nil
 	case "FILE":

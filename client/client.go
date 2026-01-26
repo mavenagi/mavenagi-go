@@ -8,6 +8,7 @@ import (
 	analytics "github.com/mavenagi/mavenagi-go/analytics"
 	appsettings "github.com/mavenagi/mavenagi-go/appsettings"
 	assets "github.com/mavenagi/mavenagi-go/assets"
+	auth "github.com/mavenagi/mavenagi-go/auth"
 	conversation "github.com/mavenagi/mavenagi-go/conversation"
 	core "github.com/mavenagi/mavenagi-go/core"
 	customers "github.com/mavenagi/mavenagi-go/customers"
@@ -30,6 +31,7 @@ type MavenAGI struct {
 	Analytics     *analytics.Client
 	AppSettings   *appsettings.Client
 	Assets        *assets.Client
+	Auth          *auth.Client
 	Conversation  *conversation.Client
 	Customers     *customers.Client
 	Events        *events.Client
@@ -60,6 +62,7 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		Analytics:     analytics.NewClient(options),
 		AppSettings:   appsettings.NewClient(options),
 		Assets:        assets.NewClient(options),
+		Auth:          auth.NewClient(options),
 		Conversation:  conversation.NewClient(options),
 		Customers:     customers.NewClient(options),
 		Events:        events.NewClient(options),

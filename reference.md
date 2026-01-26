@@ -1737,6 +1737,70 @@ client.Assets.CommitUpload(
 </dl>
 </details>
 
+## Auth
+<details><summary><code>client.Auth.SessionToken(request) -> *mavenagigo.SessionTokenResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Creates a short-lived session token that can be used to authenticate 
+WebSocket connections. Session tokens are useful for client-side applications where 
+you don’t want to expose your API key.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.SessionTokenRequest{
+        TTLSeconds: 3600,
+    }
+client.Auth.SessionToken(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.SessionTokenRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Conversation
 <details><summary><code>client.Conversation.Initialize(request) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
