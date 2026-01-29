@@ -63,8 +63,8 @@ func (r *RequestOptions) cloneHeader() http.Header {
 	headers := r.HTTPHeader.Clone()
 	headers.Set("X-Fern-Language", "Go")
 	headers.Set("X-Fern-SDK-Name", "github.com/mavenagi/mavenagi-go")
-	headers.Set("X-Fern-SDK-Version", "v1.2.11")
-	headers.Set("User-Agent", "github.com/mavenagi/mavenagi-go/1.2.11")
+	headers.Set("X-Fern-SDK-Version", "v1.2.12")
+	headers.Set("User-Agent", "github.com/mavenagi/mavenagi-go/1.2.12")
 	return headers
 }
 

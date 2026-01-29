@@ -12644,6 +12644,7 @@ var (
 	metadataPreconditionFieldOperator = big.NewInt(1 << 0)
 	metadataPreconditionFieldKey      = big.NewInt(1 << 1)
 	metadataPreconditionFieldValue    = big.NewInt(1 << 2)
+	metadataPreconditionFieldValues   = big.NewInt(1 << 3)
 )
 
 type MetadataPrecondition struct {
@@ -12651,8 +12652,10 @@ type MetadataPrecondition struct {
 	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
 	// The key that must be present in the metadata for a precondition to be met
 	Key string `json:"key" url:"key"`
-	// If set, the value must match the metadata value for the given key
+	// Single value for CONTAINS operator or exact match
 	Value *string `json:"value,omitempty" url:"value,omitempty"`
+	// Multiple values for CONTAINS_ANY and CONTAINS_ALL operators
+	Values []string `json:"values,omitempty" url:"values,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12680,6 +12683,13 @@ func (m *MetadataPrecondition) GetValue() *string {
 		return nil
 	}
 	return m.Value
+}
+
+func (m *MetadataPrecondition) GetValues() []string {
+	if m == nil {
+		return nil
+	}
+	return m.Values
 }
 
 func (m *MetadataPrecondition) GetExtraProperties() map[string]interface{} {
@@ -12712,6 +12722,13 @@ func (m *MetadataPrecondition) SetKey(key string) {
 func (m *MetadataPrecondition) SetValue(value *string) {
 	m.Value = value
 	m.require(metadataPreconditionFieldValue)
+}
+
+// SetValues sets the Values field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataPrecondition) SetValues(values []string) {
+	m.Values = values
+	m.require(metadataPreconditionFieldValues)
 }
 
 func (m *MetadataPrecondition) UnmarshalJSON(data []byte) error {
@@ -14387,13 +14404,38 @@ func (p PreconditionGroupOperator) Ptr() *PreconditionGroupOperator {
 type PreconditionOperator string
 
 const (
+	// Negation operator (can compose with any comparison operator)
 	PreconditionOperatorNot PreconditionOperator = "NOT"
+	// Single value - check if value is in JSON array (x ∈ array)
+	PreconditionOperatorContains PreconditionOperator = "CONTAINS"
+	// Single value - check if value is NOT in JSON array (x ∉ array)
+	PreconditionOperatorNotContains PreconditionOperator = "NOT_CONTAINS"
+	// Multiple values - check if ANY value is in JSON array ({x,y} ∩ array ≠ ∅)
+	PreconditionOperatorContainsAny PreconditionOperator = "CONTAINS_ANY"
+	// Multiple values - check if NO values are in JSON array ({x,y} ∩ array = ∅)
+	PreconditionOperatorNotContainsAny PreconditionOperator = "NOT_CONTAINS_ANY"
+	// Multiple values - check if ALL values are in JSON array ({x,y} ⊆ array)
+	PreconditionOperatorContainsAll PreconditionOperator = "CONTAINS_ALL"
+	// Multiple values - check if NOT ALL values are in JSON array ({x,y} ⊄ array)
+	PreconditionOperatorNotContainsAll PreconditionOperator = "NOT_CONTAINS_ALL"
 )
 
 func NewPreconditionOperatorFromString(s string) (PreconditionOperator, error) {
 	switch s {
 	case "NOT":
 		return PreconditionOperatorNot, nil
+	case "CONTAINS":
+		return PreconditionOperatorContains, nil
+	case "NOT_CONTAINS":
+		return PreconditionOperatorNotContains, nil
+	case "CONTAINS_ANY":
+		return PreconditionOperatorContainsAny, nil
+	case "NOT_CONTAINS_ANY":
+		return PreconditionOperatorNotContainsAny, nil
+	case "CONTAINS_ALL":
+		return PreconditionOperatorContainsAll, nil
+	case "NOT_CONTAINS_ALL":
+		return PreconditionOperatorNotContainsAll, nil
 	}
 	var t PreconditionOperator
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

@@ -1016,6 +1016,7 @@ var (
 	knowledgeBaseResponseFieldLlmInclusionStatus      = big.NewInt(1 << 10)
 	knowledgeBaseResponseFieldRefreshFrequency        = big.NewInt(1 << 11)
 	knowledgeBaseResponseFieldSegmentID               = big.NewInt(1 << 12)
+	knowledgeBaseResponseFieldURL                     = big.NewInt(1 << 13)
 )
 
 type KnowledgeBaseResponse struct {
@@ -1049,6 +1050,8 @@ type KnowledgeBaseResponse struct {
 	// Segments are replacing inline preconditions - a Knowledge Base may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	// The source URL of URL and RSS knowledge bases that was used for crawl.
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1146,6 +1149,13 @@ func (k *KnowledgeBaseResponse) GetSegmentID() *EntityID {
 		return nil
 	}
 	return k.SegmentID
+}
+
+func (k *KnowledgeBaseResponse) GetURL() *string {
+	if k == nil {
+		return nil
+	}
+	return k.URL
 }
 
 func (k *KnowledgeBaseResponse) GetExtraProperties() map[string]interface{} {
@@ -1248,6 +1258,13 @@ func (k *KnowledgeBaseResponse) SetRefreshFrequency(refreshFrequency KnowledgeBa
 func (k *KnowledgeBaseResponse) SetSegmentID(segmentID *EntityID) {
 	k.SegmentID = segmentID
 	k.require(knowledgeBaseResponseFieldSegmentID)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseResponse) SetURL(url *string) {
+	k.URL = url
+	k.require(knowledgeBaseResponseFieldURL)
 }
 
 func (k *KnowledgeBaseResponse) UnmarshalJSON(data []byte) error {

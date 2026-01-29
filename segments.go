@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	big "math/big"
+	time "time"
 )
 
 var (
@@ -400,7 +401,9 @@ var (
 	segmentResponseFieldName         = big.NewInt(1 << 0)
 	segmentResponseFieldPrecondition = big.NewInt(1 << 1)
 	segmentResponseFieldSegmentID    = big.NewInt(1 << 2)
-	segmentResponseFieldStatus       = big.NewInt(1 << 3)
+	segmentResponseFieldCreatedAt    = big.NewInt(1 << 3)
+	segmentResponseFieldUpdatedAt    = big.NewInt(1 << 4)
+	segmentResponseFieldStatus       = big.NewInt(1 << 5)
 )
 
 type SegmentResponse struct {
@@ -410,6 +413,10 @@ type SegmentResponse struct {
 	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// ID that uniquely identifies this segment
 	SegmentID *EntityID `json:"segmentId" url:"segmentId"`
+	// The date and time when the segment was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// The date and time when the segment was last updated.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 	// Whether or not the segment is in active use. To preserve historical data, segments can not be deleted.
 	//
 	// Only active segments will be evaluated for matching user questions.
@@ -441,6 +448,20 @@ func (s *SegmentResponse) GetSegmentID() *EntityID {
 		return nil
 	}
 	return s.SegmentID
+}
+
+func (s *SegmentResponse) GetCreatedAt() time.Time {
+	if s == nil {
+		return time.Time{}
+	}
+	return s.CreatedAt
+}
+
+func (s *SegmentResponse) GetUpdatedAt() time.Time {
+	if s == nil {
+		return time.Time{}
+	}
+	return s.UpdatedAt
 }
 
 func (s *SegmentResponse) GetStatus() SegmentStatus {
@@ -482,6 +503,20 @@ func (s *SegmentResponse) SetSegmentID(segmentID *EntityID) {
 	s.require(segmentResponseFieldSegmentID)
 }
 
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetCreatedAt(createdAt time.Time) {
+	s.CreatedAt = createdAt
+	s.require(segmentResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetUpdatedAt(updatedAt time.Time) {
+	s.UpdatedAt = updatedAt
+	s.require(segmentResponseFieldUpdatedAt)
+}
+
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (s *SegmentResponse) SetStatus(status SegmentStatus) {
@@ -490,12 +525,20 @@ func (s *SegmentResponse) SetStatus(status SegmentStatus) {
 }
 
 func (s *SegmentResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler SegmentResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed SegmentResponse
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*s),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*s = SegmentResponse(value)
+	*s = SegmentResponse(unmarshaler.embed)
+	s.CreatedAt = unmarshaler.CreatedAt.Time()
+	s.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *s)
 	if err != nil {
 		return err
@@ -509,8 +552,12 @@ func (s *SegmentResponse) MarshalJSON() ([]byte, error) {
 	type embed SegmentResponse
 	var marshaler = struct {
 		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
-		embed: embed(*s),
+		embed:     embed(*s),
+		CreatedAt: internal.NewDateTime(s.CreatedAt),
+		UpdatedAt: internal.NewDateTime(s.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
 	return json.Marshal(explicitMarshaler)
