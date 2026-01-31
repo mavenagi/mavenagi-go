@@ -7801,6 +7801,85 @@ func (c *ConversationSummary) String() string {
 }
 
 var (
+	csatInfoFieldRating = big.NewInt(1 << 0)
+)
+
+type CsatInfo struct {
+	// The rating of the CSAT rating [0.0, 5.0]
+	Rating *float64 `json:"rating,omitempty" url:"rating,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CsatInfo) GetRating() *float64 {
+	if c == nil {
+		return nil
+	}
+	return c.Rating
+}
+
+func (c *CsatInfo) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CsatInfo) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetRating sets the Rating field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CsatInfo) SetRating(rating *float64) {
+	c.Rating = rating
+	c.require(csatInfoFieldRating)
+}
+
+func (c *CsatInfo) UnmarshalJSON(data []byte) error {
+	type unmarshaler CsatInfo
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CsatInfo(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CsatInfo) MarshalJSON() ([]byte, error) {
+	type embed CsatInfo
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CsatInfo) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
 	deviceInfoFieldType    = big.NewInt(1 << 0)
 	deviceInfoFieldName    = big.NewInt(1 << 1)
 	deviceInfoFieldVersion = big.NewInt(1 << 2)
@@ -13130,8 +13209,9 @@ var (
 	novelUserEventFieldID           = big.NewInt(1 << 5)
 	novelUserEventFieldEventName    = big.NewInt(1 << 6)
 	novelUserEventFieldUserInfo     = big.NewInt(1 << 7)
-	novelUserEventFieldFeedbackInfo = big.NewInt(1 << 8)
-	novelUserEventFieldPageInfo     = big.NewInt(1 << 9)
+	novelUserEventFieldCsatInfo     = big.NewInt(1 << 8)
+	novelUserEventFieldFeedbackInfo = big.NewInt(1 << 9)
+	novelUserEventFieldPageInfo     = big.NewInt(1 << 10)
 )
 
 type NovelUserEvent struct {
@@ -13146,6 +13226,8 @@ type NovelUserEvent struct {
 	EventName UserEventName `json:"eventName" url:"eventName"`
 	// Information about the user who triggered the event
 	UserInfo *EventUserInfoBase `json:"userInfo" url:"userInfo"`
+	// Information about any CSAT associated with the event
+	CsatInfo *CsatInfo `json:"csatInfo,omitempty" url:"csatInfo,omitempty"`
 	// Information about any feedback associated with the event
 	FeedbackInfo []*FeedbackInfo `json:"feedbackInfo,omitempty" url:"feedbackInfo,omitempty"`
 	// Information about the page on which the event occurred
@@ -13212,6 +13294,13 @@ func (n *NovelUserEvent) GetUserInfo() *EventUserInfoBase {
 		return nil
 	}
 	return n.UserInfo
+}
+
+func (n *NovelUserEvent) GetCsatInfo() *CsatInfo {
+	if n == nil {
+		return nil
+	}
+	return n.CsatInfo
 }
 
 func (n *NovelUserEvent) GetFeedbackInfo() []*FeedbackInfo {
@@ -13293,6 +13382,13 @@ func (n *NovelUserEvent) SetEventName(eventName UserEventName) {
 func (n *NovelUserEvent) SetUserInfo(userInfo *EventUserInfoBase) {
 	n.UserInfo = userInfo
 	n.require(novelUserEventFieldUserInfo)
+}
+
+// SetCsatInfo sets the CsatInfo field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NovelUserEvent) SetCsatInfo(csatInfo *CsatInfo) {
+	n.CsatInfo = csatInfo
+	n.require(novelUserEventFieldCsatInfo)
 }
 
 // SetFeedbackInfo sets the FeedbackInfo field and marks it as non-optional;

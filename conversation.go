@@ -1394,6 +1394,7 @@ const (
 	ConversationFieldSources                ConversationField = "Sources"
 	ConversationFieldCreatedAt              ConversationField = "CreatedAt"
 	ConversationFieldPredictedNps           ConversationField = "PredictedNPS"
+	ConversationFieldCsat                   ConversationField = "Csat"
 	ConversationFieldOrganizationID         ConversationField = "OrganizationId"
 	ConversationFieldAgentID                ConversationField = "AgentId"
 	ConversationFieldInboxItems             ConversationField = "InboxItems"
@@ -1452,6 +1453,8 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 		return ConversationFieldCreatedAt, nil
 	case "PredictedNPS":
 		return ConversationFieldPredictedNps, nil
+	case "Csat":
+		return ConversationFieldCsat, nil
 	case "OrganizationId":
 		return ConversationFieldOrganizationID, nil
 	case "AgentId":
@@ -3695,6 +3698,7 @@ const (
 	NumericConversationFieldHandleTime        NumericConversationField = "HandleTime"
 	NumericConversationFieldFirstResponseTime NumericConversationField = "FirstResponseTime"
 	NumericConversationFieldPredictedNps      NumericConversationField = "PredictedNPS"
+	NumericConversationFieldCsat              NumericConversationField = "Csat"
 )
 
 func NewNumericConversationFieldFromString(s string) (NumericConversationField, error) {
@@ -3715,6 +3719,8 @@ func NewNumericConversationFieldFromString(s string) (NumericConversationField, 
 		return NumericConversationFieldFirstResponseTime, nil
 	case "PredictedNPS":
 		return NumericConversationFieldPredictedNps, nil
+	case "Csat":
+		return NumericConversationFieldCsat, nil
 	}
 	var t NumericConversationField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
