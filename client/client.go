@@ -14,6 +14,7 @@ import (
 	customers "github.com/mavenagi/mavenagi-go/customers"
 	events "github.com/mavenagi/mavenagi-go/events"
 	inbox "github.com/mavenagi/mavenagi-go/inbox"
+	integrations "github.com/mavenagi/mavenagi-go/integrations"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	knowledge "github.com/mavenagi/mavenagi-go/knowledge"
 	option "github.com/mavenagi/mavenagi-go/option"
@@ -36,6 +37,7 @@ type MavenAGI struct {
 	Customers     *customers.Client
 	Events        *events.Client
 	Inbox         *inbox.Client
+	Integrations  *integrations.Client
 	Knowledge     *knowledge.Client
 	Organizations *organizations.Client
 	Segments      *segments.Client
@@ -67,6 +69,7 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		Customers:     customers.NewClient(options),
 		Events:        events.NewClient(options),
 		Inbox:         inbox.NewClient(options),
+		Integrations:  integrations.NewClient(options),
 		Knowledge:     knowledge.NewClient(options),
 		Organizations: organizations.NewClient(options),
 		Segments:      segments.NewClient(options),

@@ -2261,6 +2261,181 @@ func (a *AppUserResponse) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+var (
+	arraySettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	arraySettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	arraySettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	arraySettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	arraySettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	arraySettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+	arraySettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+)
+
+type ArraySettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue []string                  `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *ArraySettingsSchemaEntry) GetKey() string {
+	if a == nil {
+		return ""
+	}
+	return a.Key
+}
+
+func (a *ArraySettingsSchemaEntry) GetDisplayName() string {
+	if a == nil {
+		return ""
+	}
+	return a.DisplayName
+}
+
+func (a *ArraySettingsSchemaEntry) GetDescription() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Description
+}
+
+func (a *ArraySettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if a == nil {
+		return nil
+	}
+	return a.Visibility
+}
+
+func (a *ArraySettingsSchemaEntry) GetRequired() *bool {
+	if a == nil {
+		return nil
+	}
+	return a.Required
+}
+
+func (a *ArraySettingsSchemaEntry) GetDefaultValue() []string {
+	if a == nil {
+		return nil
+	}
+	return a.DefaultValue
+}
+
+func (a *ArraySettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
+	if a == nil {
+		return nil
+	}
+	return a.Validation
+}
+
+func (a *ArraySettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *ArraySettingsSchemaEntry) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetKey(key string) {
+	a.Key = key
+	a.require(arraySettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetDisplayName(displayName string) {
+	a.DisplayName = displayName
+	a.require(arraySettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetDescription(description *string) {
+	a.Description = description
+	a.require(arraySettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	a.Visibility = visibility
+	a.require(arraySettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetRequired(required *bool) {
+	a.Required = required
+	a.require(arraySettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetDefaultValue(defaultValue []string) {
+	a.DefaultValue = defaultValue
+	a.require(arraySettingsSchemaEntryFieldDefaultValue)
+}
+
+// SetValidation sets the Validation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
+	a.Validation = validation
+	a.require(arraySettingsSchemaEntryFieldValidation)
+}
+
+func (a *ArraySettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler ArraySettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = ArraySettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *ArraySettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed ArraySettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *ArraySettingsSchemaEntry) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
 // Attachments can be created either with inline data (up to 5MB) using the `content` field or by
 // referencing an asynchronously uploaded asset using the `assetId` field.
 //
@@ -5823,6 +5998,499 @@ func (c ChartSpecSchema) Ptr() *ChartSpecSchema {
 }
 
 var (
+	checkboxSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	checkboxSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	checkboxSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	checkboxSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	checkboxSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	checkboxSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+)
+
+type CheckboxSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *bool `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetKey() string {
+	if c == nil {
+		return ""
+	}
+	return c.Key
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetDisplayName() string {
+	if c == nil {
+		return ""
+	}
+	return c.DisplayName
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if c == nil {
+		return nil
+	}
+	return c.Visibility
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetRequired() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.Required
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetDefaultValue() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.DefaultValue
+}
+
+func (c *CheckboxSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CheckboxSettingsSchemaEntry) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CheckboxSettingsSchemaEntry) SetKey(key string) {
+	c.Key = key
+	c.require(checkboxSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CheckboxSettingsSchemaEntry) SetDisplayName(displayName string) {
+	c.DisplayName = displayName
+	c.require(checkboxSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CheckboxSettingsSchemaEntry) SetDescription(description *string) {
+	c.Description = description
+	c.require(checkboxSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CheckboxSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	c.Visibility = visibility
+	c.require(checkboxSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CheckboxSettingsSchemaEntry) SetRequired(required *bool) {
+	c.Required = required
+	c.require(checkboxSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CheckboxSettingsSchemaEntry) SetDefaultValue(defaultValue *bool) {
+	c.DefaultValue = defaultValue
+	c.require(checkboxSettingsSchemaEntryFieldDefaultValue)
+}
+
+func (c *CheckboxSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler CheckboxSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CheckboxSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CheckboxSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed CheckboxSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CheckboxSettingsSchemaEntry) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	colorSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	colorSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	colorSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	colorSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	colorSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	colorSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+	colorSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+)
+
+type ColorSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *string                   `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ColorSettingsSchemaEntry) GetKey() string {
+	if c == nil {
+		return ""
+	}
+	return c.Key
+}
+
+func (c *ColorSettingsSchemaEntry) GetDisplayName() string {
+	if c == nil {
+		return ""
+	}
+	return c.DisplayName
+}
+
+func (c *ColorSettingsSchemaEntry) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *ColorSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if c == nil {
+		return nil
+	}
+	return c.Visibility
+}
+
+func (c *ColorSettingsSchemaEntry) GetRequired() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.Required
+}
+
+func (c *ColorSettingsSchemaEntry) GetDefaultValue() *string {
+	if c == nil {
+		return nil
+	}
+	return c.DefaultValue
+}
+
+func (c *ColorSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
+	if c == nil {
+		return nil
+	}
+	return c.Validation
+}
+
+func (c *ColorSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ColorSettingsSchemaEntry) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetKey(key string) {
+	c.Key = key
+	c.require(colorSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetDisplayName(displayName string) {
+	c.DisplayName = displayName
+	c.require(colorSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetDescription(description *string) {
+	c.Description = description
+	c.require(colorSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	c.Visibility = visibility
+	c.require(colorSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetRequired(required *bool) {
+	c.Required = required
+	c.require(colorSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	c.DefaultValue = defaultValue
+	c.require(colorSettingsSchemaEntryFieldDefaultValue)
+}
+
+// SetValidation sets the Validation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
+	c.Validation = validation
+	c.require(colorSettingsSchemaEntryFieldValidation)
+}
+
+func (c *ColorSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler ColorSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ColorSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ColorSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed ColorSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ColorSettingsSchemaEntry) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	complexArraySettingsSchemaEntryFieldKey         = big.NewInt(1 << 0)
+	complexArraySettingsSchemaEntryFieldDisplayName = big.NewInt(1 << 1)
+	complexArraySettingsSchemaEntryFieldDescription = big.NewInt(1 << 2)
+	complexArraySettingsSchemaEntryFieldVisibility  = big.NewInt(1 << 3)
+	complexArraySettingsSchemaEntryFieldRequired    = big.NewInt(1 << 4)
+	complexArraySettingsSchemaEntryFieldFields      = big.NewInt(1 << 5)
+)
+
+type ComplexArraySettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required *bool           `json:"required,omitempty" url:"required,omitempty"`
+	Fields   *SettingsSchema `json:"fields,omitempty" url:"fields,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetKey() string {
+	if c == nil {
+		return ""
+	}
+	return c.Key
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetDisplayName() string {
+	if c == nil {
+		return ""
+	}
+	return c.DisplayName
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if c == nil {
+		return nil
+	}
+	return c.Visibility
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetRequired() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.Required
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetFields() *SettingsSchema {
+	if c == nil {
+		return nil
+	}
+	return c.Fields
+}
+
+func (c *ComplexArraySettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ComplexArraySettingsSchemaEntry) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ComplexArraySettingsSchemaEntry) SetKey(key string) {
+	c.Key = key
+	c.require(complexArraySettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ComplexArraySettingsSchemaEntry) SetDisplayName(displayName string) {
+	c.DisplayName = displayName
+	c.require(complexArraySettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ComplexArraySettingsSchemaEntry) SetDescription(description *string) {
+	c.Description = description
+	c.require(complexArraySettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ComplexArraySettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	c.Visibility = visibility
+	c.require(complexArraySettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ComplexArraySettingsSchemaEntry) SetRequired(required *bool) {
+	c.Required = required
+	c.require(complexArraySettingsSchemaEntryFieldRequired)
+}
+
+// SetFields sets the Fields field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ComplexArraySettingsSchemaEntry) SetFields(fields *SettingsSchema) {
+	c.Fields = fields
+	c.require(complexArraySettingsSchemaEntryFieldFields)
+}
+
+func (c *ComplexArraySettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler ComplexArraySettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ComplexArraySettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ComplexArraySettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed ComplexArraySettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ComplexArraySettingsSchemaEntry) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
 	contextInfoFieldAdditionalData = big.NewInt(1 << 0)
 )
 
@@ -5911,6 +6579,7 @@ var (
 	conversationAnalysisFieldResolvedByMaven  = big.NewInt(1 << 7)
 	conversationAnalysisFieldPrimaryLanguage  = big.NewInt(1 << 8)
 	conversationAnalysisFieldPredictedNps     = big.NewInt(1 << 9)
+	conversationAnalysisFieldCsat             = big.NewInt(1 << 10)
 )
 
 type ConversationAnalysis struct {
@@ -5934,6 +6603,8 @@ type ConversationAnalysis struct {
 	PrimaryLanguage *string `json:"primaryLanguage,omitempty" url:"primaryLanguage,omitempty"`
 	// The predicted NPS of the conversation.
 	PredictedNps *float64 `json:"predictedNps,omitempty" url:"predictedNps,omitempty"`
+	// The CSAT of the conversation.
+	Csat *float64 `json:"csat,omitempty" url:"csat,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -6010,6 +6681,13 @@ func (c *ConversationAnalysis) GetPredictedNps() *float64 {
 		return nil
 	}
 	return c.PredictedNps
+}
+
+func (c *ConversationAnalysis) GetCsat() *float64 {
+	if c == nil {
+		return nil
+	}
+	return c.Csat
 }
 
 func (c *ConversationAnalysis) GetExtraProperties() map[string]interface{} {
@@ -6091,6 +6769,13 @@ func (c *ConversationAnalysis) SetPrimaryLanguage(primaryLanguage *string) {
 func (c *ConversationAnalysis) SetPredictedNps(predictedNps *float64) {
 	c.PredictedNps = predictedNps
 	c.require(conversationAnalysisFieldPredictedNps)
+}
+
+// SetCsat sets the Csat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationAnalysis) SetCsat(csat *float64) {
+	c.Csat = csat
+	c.require(conversationAnalysisFieldCsat)
 }
 
 func (c *ConversationAnalysis) UnmarshalJSON(data []byte) error {
@@ -7449,15 +8134,16 @@ var (
 	conversationSummaryFieldHandoffCount            = big.NewInt(1 << 5)
 	conversationSummaryFieldUserMessageCount        = big.NewInt(1 << 6)
 	conversationSummaryFieldBotMessageCount         = big.NewInt(1 << 7)
-	conversationSummaryFieldHandleTime              = big.NewInt(1 << 8)
-	conversationSummaryFieldHumanAgentResponseDelay = big.NewInt(1 << 9)
-	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 10)
-	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 11)
-	conversationSummaryFieldUsers                   = big.NewInt(1 << 12)
-	conversationSummaryFieldUserIdentifiers         = big.NewInt(1 << 13)
-	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 14)
-	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 15)
-	conversationSummaryFieldInvolvedAppIDs          = big.NewInt(1 << 16)
+	conversationSummaryFieldCsat                    = big.NewInt(1 << 8)
+	conversationSummaryFieldHandleTime              = big.NewInt(1 << 9)
+	conversationSummaryFieldHumanAgentResponseDelay = big.NewInt(1 << 10)
+	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 11)
+	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 12)
+	conversationSummaryFieldUsers                   = big.NewInt(1 << 13)
+	conversationSummaryFieldUserIdentifiers         = big.NewInt(1 << 14)
+	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 15)
+	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 16)
+	conversationSummaryFieldInvolvedAppIDs          = big.NewInt(1 << 17)
 )
 
 type ConversationSummary struct {
@@ -7477,6 +8163,8 @@ type ConversationSummary struct {
 	UserMessageCount int `json:"userMessageCount" url:"userMessageCount"`
 	// The number of bot answer messages in the conversation.
 	BotMessageCount int `json:"botMessageCount" url:"botMessageCount"`
+	// The CSAT score for the conversation
+	Csat *float64 `json:"csat,omitempty" url:"csat,omitempty"`
 	// The total time in milliseconds that the user spent interacting with the conversation.
 	// Calculated by taking the timestamp of the last message in the conversation minus the timestamp of the first message.
 	HandleTime *int64 `json:"handleTime,omitempty" url:"handleTime,omitempty"`
@@ -7566,6 +8254,13 @@ func (c *ConversationSummary) GetBotMessageCount() int {
 		return 0
 	}
 	return c.BotMessageCount
+}
+
+func (c *ConversationSummary) GetCsat() *float64 {
+	if c == nil {
+		return nil
+	}
+	return c.Csat
 }
 
 func (c *ConversationSummary) GetHandleTime() *int64 {
@@ -7698,6 +8393,13 @@ func (c *ConversationSummary) SetBotMessageCount(botMessageCount int) {
 	c.require(conversationSummaryFieldBotMessageCount)
 }
 
+// SetCsat sets the Csat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetCsat(csat *float64) {
+	c.Csat = csat
+	c.require(conversationSummaryFieldCsat)
+}
+
 // SetHandleTime sets the HandleTime field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ConversationSummary) SetHandleTime(handleTime *int64) {
@@ -7801,12 +8503,15 @@ func (c *ConversationSummary) String() string {
 }
 
 var (
-	csatInfoFieldRating = big.NewInt(1 << 0)
+	csatInfoFieldRating    = big.NewInt(1 << 0)
+	csatInfoFieldMaxRating = big.NewInt(1 << 1)
 )
 
 type CsatInfo struct {
-	// The rating of the CSAT rating [0.0, 5.0]
+	// The rating of the CSAT rating (0.0, 5.0]
 	Rating *float64 `json:"rating,omitempty" url:"rating,omitempty"`
+	// The max rating of the CSAT value (default 5)
+	MaxRating *float64 `json:"maxRating,omitempty" url:"maxRating,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7820,6 +8525,13 @@ func (c *CsatInfo) GetRating() *float64 {
 		return nil
 	}
 	return c.Rating
+}
+
+func (c *CsatInfo) GetMaxRating() *float64 {
+	if c == nil {
+		return nil
+	}
+	return c.MaxRating
 }
 
 func (c *CsatInfo) GetExtraProperties() map[string]interface{} {
@@ -7838,6 +8550,13 @@ func (c *CsatInfo) require(field *big.Int) {
 func (c *CsatInfo) SetRating(rating *float64) {
 	c.Rating = rating
 	c.require(csatInfoFieldRating)
+}
+
+// SetMaxRating sets the MaxRating field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CsatInfo) SetMaxRating(maxRating *float64) {
+	c.MaxRating = maxRating
+	c.require(csatInfoFieldMaxRating)
 }
 
 func (c *CsatInfo) UnmarshalJSON(data []byte) error {
@@ -8152,6 +8871,181 @@ func (d *DocumentInformation) MarshalJSON() ([]byte, error) {
 }
 
 func (d *DocumentInformation) String() string {
+	if len(d.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(d); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", d)
+}
+
+var (
+	dropdownSettingsSchemaEntryFieldKey             = big.NewInt(1 << 0)
+	dropdownSettingsSchemaEntryFieldDisplayName     = big.NewInt(1 << 1)
+	dropdownSettingsSchemaEntryFieldDescription     = big.NewInt(1 << 2)
+	dropdownSettingsSchemaEntryFieldVisibility      = big.NewInt(1 << 3)
+	dropdownSettingsSchemaEntryFieldRequired        = big.NewInt(1 << 4)
+	dropdownSettingsSchemaEntryFieldDropdownOptions = big.NewInt(1 << 5)
+	dropdownSettingsSchemaEntryFieldDefaultValue    = big.NewInt(1 << 6)
+)
+
+type DropdownSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required        *bool    `json:"required,omitempty" url:"required,omitempty"`
+	DropdownOptions []string `json:"dropdownOptions" url:"dropdownOptions"`
+	DefaultValue    *string  `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (d *DropdownSettingsSchemaEntry) GetKey() string {
+	if d == nil {
+		return ""
+	}
+	return d.Key
+}
+
+func (d *DropdownSettingsSchemaEntry) GetDisplayName() string {
+	if d == nil {
+		return ""
+	}
+	return d.DisplayName
+}
+
+func (d *DropdownSettingsSchemaEntry) GetDescription() *string {
+	if d == nil {
+		return nil
+	}
+	return d.Description
+}
+
+func (d *DropdownSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if d == nil {
+		return nil
+	}
+	return d.Visibility
+}
+
+func (d *DropdownSettingsSchemaEntry) GetRequired() *bool {
+	if d == nil {
+		return nil
+	}
+	return d.Required
+}
+
+func (d *DropdownSettingsSchemaEntry) GetDropdownOptions() []string {
+	if d == nil {
+		return nil
+	}
+	return d.DropdownOptions
+}
+
+func (d *DropdownSettingsSchemaEntry) GetDefaultValue() *string {
+	if d == nil {
+		return nil
+	}
+	return d.DefaultValue
+}
+
+func (d *DropdownSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return d.extraProperties
+}
+
+func (d *DropdownSettingsSchemaEntry) require(field *big.Int) {
+	if d.explicitFields == nil {
+		d.explicitFields = big.NewInt(0)
+	}
+	d.explicitFields.Or(d.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetKey(key string) {
+	d.Key = key
+	d.require(dropdownSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetDisplayName(displayName string) {
+	d.DisplayName = displayName
+	d.require(dropdownSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetDescription(description *string) {
+	d.Description = description
+	d.require(dropdownSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	d.Visibility = visibility
+	d.require(dropdownSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetRequired(required *bool) {
+	d.Required = required
+	d.require(dropdownSettingsSchemaEntryFieldRequired)
+}
+
+// SetDropdownOptions sets the DropdownOptions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetDropdownOptions(dropdownOptions []string) {
+	d.DropdownOptions = dropdownOptions
+	d.require(dropdownSettingsSchemaEntryFieldDropdownOptions)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DropdownSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	d.DefaultValue = defaultValue
+	d.require(dropdownSettingsSchemaEntryFieldDefaultValue)
+}
+
+func (d *DropdownSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler DropdownSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*d = DropdownSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
+	if err != nil {
+		return err
+	}
+	d.extraProperties = extraProperties
+	d.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (d *DropdownSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed DropdownSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*d),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (d *DropdownSettingsSchemaEntry) String() string {
 	if len(d.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
 			return value
@@ -10796,6 +11690,165 @@ func (h *HarmfulContentAnalysis) String() string {
 	return fmt.Sprintf("%#v", h)
 }
 
+var (
+	imageSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	imageSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	imageSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	imageSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	imageSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	imageSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+)
+
+type ImageSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool   `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *string `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *ImageSettingsSchemaEntry) GetKey() string {
+	if i == nil {
+		return ""
+	}
+	return i.Key
+}
+
+func (i *ImageSettingsSchemaEntry) GetDisplayName() string {
+	if i == nil {
+		return ""
+	}
+	return i.DisplayName
+}
+
+func (i *ImageSettingsSchemaEntry) GetDescription() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Description
+}
+
+func (i *ImageSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if i == nil {
+		return nil
+	}
+	return i.Visibility
+}
+
+func (i *ImageSettingsSchemaEntry) GetRequired() *bool {
+	if i == nil {
+		return nil
+	}
+	return i.Required
+}
+
+func (i *ImageSettingsSchemaEntry) GetDefaultValue() *string {
+	if i == nil {
+		return nil
+	}
+	return i.DefaultValue
+}
+
+func (i *ImageSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *ImageSettingsSchemaEntry) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *ImageSettingsSchemaEntry) SetKey(key string) {
+	i.Key = key
+	i.require(imageSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *ImageSettingsSchemaEntry) SetDisplayName(displayName string) {
+	i.DisplayName = displayName
+	i.require(imageSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *ImageSettingsSchemaEntry) SetDescription(description *string) {
+	i.Description = description
+	i.require(imageSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *ImageSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	i.Visibility = visibility
+	i.require(imageSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *ImageSettingsSchemaEntry) SetRequired(required *bool) {
+	i.Required = required
+	i.require(imageSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *ImageSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	i.DefaultValue = defaultValue
+	i.require(imageSettingsSchemaEntryFieldDefaultValue)
+}
+
+func (i *ImageSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler ImageSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = ImageSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *ImageSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed ImageSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *ImageSettingsSchemaEntry) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
 type InboxItem struct {
 	Type               string
 	DuplicateDocuments *InboxItemDuplicateDocuments
@@ -12850,6 +13903,181 @@ func (m *MetadataPrecondition) String() string {
 }
 
 var (
+	multilineSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	multilineSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	multilineSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	multilineSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	multilineSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	multilineSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+	multilineSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+)
+
+type MultilineSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *string                   `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *MultilineSettingsSchemaEntry) GetKey() string {
+	if m == nil {
+		return ""
+	}
+	return m.Key
+}
+
+func (m *MultilineSettingsSchemaEntry) GetDisplayName() string {
+	if m == nil {
+		return ""
+	}
+	return m.DisplayName
+}
+
+func (m *MultilineSettingsSchemaEntry) GetDescription() *string {
+	if m == nil {
+		return nil
+	}
+	return m.Description
+}
+
+func (m *MultilineSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if m == nil {
+		return nil
+	}
+	return m.Visibility
+}
+
+func (m *MultilineSettingsSchemaEntry) GetRequired() *bool {
+	if m == nil {
+		return nil
+	}
+	return m.Required
+}
+
+func (m *MultilineSettingsSchemaEntry) GetDefaultValue() *string {
+	if m == nil {
+		return nil
+	}
+	return m.DefaultValue
+}
+
+func (m *MultilineSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
+	if m == nil {
+		return nil
+	}
+	return m.Validation
+}
+
+func (m *MultilineSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *MultilineSettingsSchemaEntry) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetKey(key string) {
+	m.Key = key
+	m.require(multilineSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetDisplayName(displayName string) {
+	m.DisplayName = displayName
+	m.require(multilineSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetDescription(description *string) {
+	m.Description = description
+	m.require(multilineSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	m.Visibility = visibility
+	m.require(multilineSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetRequired(required *bool) {
+	m.Required = required
+	m.require(multilineSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	m.DefaultValue = defaultValue
+	m.require(multilineSettingsSchemaEntryFieldDefaultValue)
+}
+
+// SetValidation sets the Validation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
+	m.Validation = validation
+	m.require(multilineSettingsSchemaEntryFieldValidation)
+}
+
+func (m *MultilineSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler MultilineSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*m = MultilineSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *MultilineSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed MultilineSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*m),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *MultilineSettingsSchemaEntry) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
+}
+
+var (
 	novelSystemEventFieldTimestamp   = big.NewInt(1 << 0)
 	novelSystemEventFieldReferences  = big.NewInt(1 << 1)
 	novelSystemEventFieldSourceInfo  = big.NewInt(1 << 2)
@@ -13547,6 +14775,655 @@ func (n *NumberRange) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", n)
+}
+
+var (
+	numberSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	numberSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	numberSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	numberSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	numberSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	numberSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+	numberSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+)
+
+type NumberSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *float64                  `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (n *NumberSettingsSchemaEntry) GetKey() string {
+	if n == nil {
+		return ""
+	}
+	return n.Key
+}
+
+func (n *NumberSettingsSchemaEntry) GetDisplayName() string {
+	if n == nil {
+		return ""
+	}
+	return n.DisplayName
+}
+
+func (n *NumberSettingsSchemaEntry) GetDescription() *string {
+	if n == nil {
+		return nil
+	}
+	return n.Description
+}
+
+func (n *NumberSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if n == nil {
+		return nil
+	}
+	return n.Visibility
+}
+
+func (n *NumberSettingsSchemaEntry) GetRequired() *bool {
+	if n == nil {
+		return nil
+	}
+	return n.Required
+}
+
+func (n *NumberSettingsSchemaEntry) GetDefaultValue() *float64 {
+	if n == nil {
+		return nil
+	}
+	return n.DefaultValue
+}
+
+func (n *NumberSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
+	if n == nil {
+		return nil
+	}
+	return n.Validation
+}
+
+func (n *NumberSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return n.extraProperties
+}
+
+func (n *NumberSettingsSchemaEntry) require(field *big.Int) {
+	if n.explicitFields == nil {
+		n.explicitFields = big.NewInt(0)
+	}
+	n.explicitFields.Or(n.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetKey(key string) {
+	n.Key = key
+	n.require(numberSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetDisplayName(displayName string) {
+	n.DisplayName = displayName
+	n.require(numberSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetDescription(description *string) {
+	n.Description = description
+	n.require(numberSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	n.Visibility = visibility
+	n.require(numberSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetRequired(required *bool) {
+	n.Required = required
+	n.require(numberSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetDefaultValue(defaultValue *float64) {
+	n.DefaultValue = defaultValue
+	n.require(numberSettingsSchemaEntryFieldDefaultValue)
+}
+
+// SetValidation sets the Validation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
+	n.Validation = validation
+	n.require(numberSettingsSchemaEntryFieldValidation)
+}
+
+func (n *NumberSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler NumberSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*n = NumberSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *n)
+	if err != nil {
+		return err
+	}
+	n.extraProperties = extraProperties
+	n.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (n *NumberSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed NumberSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*n),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, n.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (n *NumberSettingsSchemaEntry) String() string {
+	if len(n.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(n.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(n); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", n)
+}
+
+// The authentication method to use for OAuth token requests
+type OAuthAuthenticationMethod string
+
+const (
+	// Basic Auth with credentials in Authorization header
+	OAuthAuthenticationMethodBasic OAuthAuthenticationMethod = "basic"
+	// Credentials in request body (default)
+	OAuthAuthenticationMethodPost OAuthAuthenticationMethod = "post"
+)
+
+func NewOAuthAuthenticationMethodFromString(s string) (OAuthAuthenticationMethod, error) {
+	switch s {
+	case "basic":
+		return OAuthAuthenticationMethodBasic, nil
+	case "post":
+		return OAuthAuthenticationMethodPost, nil
+	}
+	var t OAuthAuthenticationMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OAuthAuthenticationMethod) Ptr() *OAuthAuthenticationMethod {
+	return &o
+}
+
+var (
+	oAuthSettingsSchemaEntryFieldKey                       = big.NewInt(1 << 0)
+	oAuthSettingsSchemaEntryFieldDisplayName               = big.NewInt(1 << 1)
+	oAuthSettingsSchemaEntryFieldDescription               = big.NewInt(1 << 2)
+	oAuthSettingsSchemaEntryFieldVisibility                = big.NewInt(1 << 3)
+	oAuthSettingsSchemaEntryFieldRequired                  = big.NewInt(1 << 4)
+	oAuthSettingsSchemaEntryFieldOauthScopes               = big.NewInt(1 << 5)
+	oAuthSettingsSchemaEntryFieldScopeLabels               = big.NewInt(1 << 6)
+	oAuthSettingsSchemaEntryFieldOauthRedirectURI          = big.NewInt(1 << 7)
+	oAuthSettingsSchemaEntryFieldOauthClientID             = big.NewInt(1 << 8)
+	oAuthSettingsSchemaEntryFieldOauthAuthorizationURL     = big.NewInt(1 << 9)
+	oAuthSettingsSchemaEntryFieldOauthClientSecret         = big.NewInt(1 << 10)
+	oAuthSettingsSchemaEntryFieldOauthTokenURL             = big.NewInt(1 << 11)
+	oAuthSettingsSchemaEntryFieldOauthAuthenticationMethod = big.NewInt(1 << 12)
+)
+
+type OAuthSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// The scopes to request from the OAuth provider.
+	OauthScopes []string `json:"oauthScopes" url:"oauthScopes"`
+	// Optional labels for customizing scope display names.
+	ScopeLabels           []interface{} `json:"scopeLabels,omitempty" url:"scopeLabels,omitempty"`
+	OauthRedirectURI      *string       `json:"oauthRedirectUri,omitempty" url:"oauthRedirectUri,omitempty"`
+	OauthClientID         *string       `json:"oauthClientId,omitempty" url:"oauthClientId,omitempty"`
+	OauthAuthorizationURL *string       `json:"oauthAuthorizationUrl,omitempty" url:"oauthAuthorizationUrl,omitempty"`
+	OauthClientSecret     *string       `json:"oauthClientSecret,omitempty" url:"oauthClientSecret,omitempty"`
+	OauthTokenURL         *string       `json:"oauthTokenUrl,omitempty" url:"oauthTokenUrl,omitempty"`
+	// The authentication method for OAuth token requests.
+	OauthAuthenticationMethod *OAuthAuthenticationMethod `json:"oauthAuthenticationMethod,omitempty" url:"oauthAuthenticationMethod,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OAuthSettingsSchemaEntry) GetKey() string {
+	if o == nil {
+		return ""
+	}
+	return o.Key
+}
+
+func (o *OAuthSettingsSchemaEntry) GetDisplayName() string {
+	if o == nil {
+		return ""
+	}
+	return o.DisplayName
+}
+
+func (o *OAuthSettingsSchemaEntry) GetDescription() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Description
+}
+
+func (o *OAuthSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if o == nil {
+		return nil
+	}
+	return o.Visibility
+}
+
+func (o *OAuthSettingsSchemaEntry) GetRequired() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.Required
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthScopes() []string {
+	if o == nil {
+		return nil
+	}
+	return o.OauthScopes
+}
+
+func (o *OAuthSettingsSchemaEntry) GetScopeLabels() []interface{} {
+	if o == nil {
+		return nil
+	}
+	return o.ScopeLabels
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthRedirectURI() *string {
+	if o == nil {
+		return nil
+	}
+	return o.OauthRedirectURI
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthClientID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.OauthClientID
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthAuthorizationURL() *string {
+	if o == nil {
+		return nil
+	}
+	return o.OauthAuthorizationURL
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthClientSecret() *string {
+	if o == nil {
+		return nil
+	}
+	return o.OauthClientSecret
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthTokenURL() *string {
+	if o == nil {
+		return nil
+	}
+	return o.OauthTokenURL
+}
+
+func (o *OAuthSettingsSchemaEntry) GetOauthAuthenticationMethod() *OAuthAuthenticationMethod {
+	if o == nil {
+		return nil
+	}
+	return o.OauthAuthenticationMethod
+}
+
+func (o *OAuthSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return o.extraProperties
+}
+
+func (o *OAuthSettingsSchemaEntry) require(field *big.Int) {
+	if o.explicitFields == nil {
+		o.explicitFields = big.NewInt(0)
+	}
+	o.explicitFields.Or(o.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetKey(key string) {
+	o.Key = key
+	o.require(oAuthSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetDisplayName(displayName string) {
+	o.DisplayName = displayName
+	o.require(oAuthSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetDescription(description *string) {
+	o.Description = description
+	o.require(oAuthSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	o.Visibility = visibility
+	o.require(oAuthSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetRequired(required *bool) {
+	o.Required = required
+	o.require(oAuthSettingsSchemaEntryFieldRequired)
+}
+
+// SetOauthScopes sets the OauthScopes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthScopes(oauthScopes []string) {
+	o.OauthScopes = oauthScopes
+	o.require(oAuthSettingsSchemaEntryFieldOauthScopes)
+}
+
+// SetScopeLabels sets the ScopeLabels field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetScopeLabels(scopeLabels []interface{}) {
+	o.ScopeLabels = scopeLabels
+	o.require(oAuthSettingsSchemaEntryFieldScopeLabels)
+}
+
+// SetOauthRedirectURI sets the OauthRedirectURI field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthRedirectURI(oauthRedirectURI *string) {
+	o.OauthRedirectURI = oauthRedirectURI
+	o.require(oAuthSettingsSchemaEntryFieldOauthRedirectURI)
+}
+
+// SetOauthClientID sets the OauthClientID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthClientID(oauthClientID *string) {
+	o.OauthClientID = oauthClientID
+	o.require(oAuthSettingsSchemaEntryFieldOauthClientID)
+}
+
+// SetOauthAuthorizationURL sets the OauthAuthorizationURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthAuthorizationURL(oauthAuthorizationURL *string) {
+	o.OauthAuthorizationURL = oauthAuthorizationURL
+	o.require(oAuthSettingsSchemaEntryFieldOauthAuthorizationURL)
+}
+
+// SetOauthClientSecret sets the OauthClientSecret field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthClientSecret(oauthClientSecret *string) {
+	o.OauthClientSecret = oauthClientSecret
+	o.require(oAuthSettingsSchemaEntryFieldOauthClientSecret)
+}
+
+// SetOauthTokenURL sets the OauthTokenURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthTokenURL(oauthTokenURL *string) {
+	o.OauthTokenURL = oauthTokenURL
+	o.require(oAuthSettingsSchemaEntryFieldOauthTokenURL)
+}
+
+// SetOauthAuthenticationMethod sets the OauthAuthenticationMethod field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OAuthSettingsSchemaEntry) SetOauthAuthenticationMethod(oauthAuthenticationMethod *OAuthAuthenticationMethod) {
+	o.OauthAuthenticationMethod = oauthAuthenticationMethod
+	o.require(oAuthSettingsSchemaEntryFieldOauthAuthenticationMethod)
+}
+
+func (o *OAuthSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler OAuthSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OAuthSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OAuthSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed OAuthSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OAuthSettingsSchemaEntry) String() string {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
+}
+
+var (
+	oneOfSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	oneOfSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	oneOfSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	oneOfSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	oneOfSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	oneOfSettingsSchemaEntryFieldUnionOptions = big.NewInt(1 << 5)
+	oneOfSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 6)
+)
+
+type OneOfSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool                                   `json:"required,omitempty" url:"required,omitempty"`
+	UnionOptions SettingsSchemaDiscriminatedUnionOptions `json:"unionOptions" url:"unionOptions"`
+	DefaultValue interface{}                             `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OneOfSettingsSchemaEntry) GetKey() string {
+	if o == nil {
+		return ""
+	}
+	return o.Key
+}
+
+func (o *OneOfSettingsSchemaEntry) GetDisplayName() string {
+	if o == nil {
+		return ""
+	}
+	return o.DisplayName
+}
+
+func (o *OneOfSettingsSchemaEntry) GetDescription() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Description
+}
+
+func (o *OneOfSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if o == nil {
+		return nil
+	}
+	return o.Visibility
+}
+
+func (o *OneOfSettingsSchemaEntry) GetRequired() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.Required
+}
+
+func (o *OneOfSettingsSchemaEntry) GetUnionOptions() SettingsSchemaDiscriminatedUnionOptions {
+	if o == nil {
+		return nil
+	}
+	return o.UnionOptions
+}
+
+func (o *OneOfSettingsSchemaEntry) GetDefaultValue() interface{} {
+	if o == nil {
+		return nil
+	}
+	return o.DefaultValue
+}
+
+func (o *OneOfSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return o.extraProperties
+}
+
+func (o *OneOfSettingsSchemaEntry) require(field *big.Int) {
+	if o.explicitFields == nil {
+		o.explicitFields = big.NewInt(0)
+	}
+	o.explicitFields.Or(o.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetKey(key string) {
+	o.Key = key
+	o.require(oneOfSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetDisplayName(displayName string) {
+	o.DisplayName = displayName
+	o.require(oneOfSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetDescription(description *string) {
+	o.Description = description
+	o.require(oneOfSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	o.Visibility = visibility
+	o.require(oneOfSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetRequired(required *bool) {
+	o.Required = required
+	o.require(oneOfSettingsSchemaEntryFieldRequired)
+}
+
+// SetUnionOptions sets the UnionOptions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetUnionOptions(unionOptions SettingsSchemaDiscriminatedUnionOptions) {
+	o.UnionOptions = unionOptions
+	o.require(oneOfSettingsSchemaEntryFieldUnionOptions)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OneOfSettingsSchemaEntry) SetDefaultValue(defaultValue interface{}) {
+	o.DefaultValue = defaultValue
+	o.require(oneOfSettingsSchemaEntryFieldDefaultValue)
+}
+
+func (o *OneOfSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler OneOfSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OneOfSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OneOfSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed OneOfSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OneOfSettingsSchemaEntry) String() string {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
 }
 
 var (
@@ -15139,6 +17016,165 @@ func (s *ScopedEntity) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
+var (
+	sectionSettingsSchemaEntryFieldKey         = big.NewInt(1 << 0)
+	sectionSettingsSchemaEntryFieldDisplayName = big.NewInt(1 << 1)
+	sectionSettingsSchemaEntryFieldDescription = big.NewInt(1 << 2)
+	sectionSettingsSchemaEntryFieldVisibility  = big.NewInt(1 << 3)
+	sectionSettingsSchemaEntryFieldRequired    = big.NewInt(1 << 4)
+	sectionSettingsSchemaEntryFieldFields      = big.NewInt(1 << 5)
+)
+
+type SectionSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required *bool           `json:"required,omitempty" url:"required,omitempty"`
+	Fields   *SettingsSchema `json:"fields,omitempty" url:"fields,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SectionSettingsSchemaEntry) GetKey() string {
+	if s == nil {
+		return ""
+	}
+	return s.Key
+}
+
+func (s *SectionSettingsSchemaEntry) GetDisplayName() string {
+	if s == nil {
+		return ""
+	}
+	return s.DisplayName
+}
+
+func (s *SectionSettingsSchemaEntry) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
+}
+
+func (s *SectionSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if s == nil {
+		return nil
+	}
+	return s.Visibility
+}
+
+func (s *SectionSettingsSchemaEntry) GetRequired() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.Required
+}
+
+func (s *SectionSettingsSchemaEntry) GetFields() *SettingsSchema {
+	if s == nil {
+		return nil
+	}
+	return s.Fields
+}
+
+func (s *SectionSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SectionSettingsSchemaEntry) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SectionSettingsSchemaEntry) SetKey(key string) {
+	s.Key = key
+	s.require(sectionSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SectionSettingsSchemaEntry) SetDisplayName(displayName string) {
+	s.DisplayName = displayName
+	s.require(sectionSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SectionSettingsSchemaEntry) SetDescription(description *string) {
+	s.Description = description
+	s.require(sectionSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SectionSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	s.Visibility = visibility
+	s.require(sectionSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SectionSettingsSchemaEntry) SetRequired(required *bool) {
+	s.Required = required
+	s.require(sectionSettingsSchemaEntryFieldRequired)
+}
+
+// SetFields sets the Fields field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SectionSettingsSchemaEntry) SetFields(fields *SettingsSchema) {
+	s.Fields = fields
+	s.require(sectionSettingsSchemaEntryFieldFields)
+}
+
+func (s *SectionSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler SectionSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SectionSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SectionSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed SectionSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SectionSettingsSchemaEntry) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
 // The sentiment of the conversation
 type Sentiment string
 
@@ -15298,6 +17334,737 @@ func (s *SessionInfo) MarshalJSON() ([]byte, error) {
 }
 
 func (s *SessionInfo) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+type SettingsSchema = []*SettingsSchemaEntry
+
+var (
+	settingsSchemaDiscriminatedUnionOptionFieldValue       = big.NewInt(1 << 0)
+	settingsSchemaDiscriminatedUnionOptionFieldDisplayName = big.NewInt(1 << 1)
+	settingsSchemaDiscriminatedUnionOptionFieldDescription = big.NewInt(1 << 2)
+	settingsSchemaDiscriminatedUnionOptionFieldFields      = big.NewInt(1 << 3)
+)
+
+type SettingsSchemaDiscriminatedUnionOption struct {
+	// The value for this option (used as discriminator value)
+	Value string `json:"value" url:"value"`
+	// The display name shown in the dropdown
+	DisplayName string `json:"displayName" url:"displayName"`
+	// Optional description for this option
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// The schema fields to display when this option is selected. Required fields within these fields are only validated when this option is active.
+	Fields SettingsSchema `json:"fields" url:"fields"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) GetValue() string {
+	if s == nil {
+		return ""
+	}
+	return s.Value
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) GetDisplayName() string {
+	if s == nil {
+		return ""
+	}
+	return s.DisplayName
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) GetFields() SettingsSchema {
+	if s == nil {
+		return nil
+	}
+	return s.Fields
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaDiscriminatedUnionOption) SetValue(value string) {
+	s.Value = value
+	s.require(settingsSchemaDiscriminatedUnionOptionFieldValue)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaDiscriminatedUnionOption) SetDisplayName(displayName string) {
+	s.DisplayName = displayName
+	s.require(settingsSchemaDiscriminatedUnionOptionFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaDiscriminatedUnionOption) SetDescription(description *string) {
+	s.Description = description
+	s.require(settingsSchemaDiscriminatedUnionOptionFieldDescription)
+}
+
+// SetFields sets the Fields field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaDiscriminatedUnionOption) SetFields(fields SettingsSchema) {
+	s.Fields = fields
+	s.require(settingsSchemaDiscriminatedUnionOptionFieldFields)
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) UnmarshalJSON(data []byte) error {
+	type unmarshaler SettingsSchemaDiscriminatedUnionOption
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SettingsSchemaDiscriminatedUnionOption(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) MarshalJSON() ([]byte, error) {
+	type embed SettingsSchemaDiscriminatedUnionOption
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SettingsSchemaDiscriminatedUnionOption) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+// Array of options for a discriminated union field
+type SettingsSchemaDiscriminatedUnionOptions = []*SettingsSchemaDiscriminatedUnionOption
+
+type SettingsSchemaEntry struct {
+	Type         string
+	Text         *TextSettingsSchemaEntry
+	Multiline    *MultilineSettingsSchemaEntry
+	Array        *ArraySettingsSchemaEntry
+	Complexarray *ComplexArraySettingsSchemaEntry
+	Color        *ColorSettingsSchemaEntry
+	Image        *ImageSettingsSchemaEntry
+	Checkbox     *CheckboxSettingsSchemaEntry
+	Dropdown     *DropdownSettingsSchemaEntry
+	Section      *SectionSettingsSchemaEntry
+	Oauth        *OAuthSettingsSchemaEntry
+	Number       *NumberSettingsSchemaEntry
+	OneOf        *OneOfSettingsSchemaEntry
+}
+
+func (s *SettingsSchemaEntry) GetType() string {
+	if s == nil {
+		return ""
+	}
+	return s.Type
+}
+
+func (s *SettingsSchemaEntry) GetText() *TextSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Text
+}
+
+func (s *SettingsSchemaEntry) GetMultiline() *MultilineSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Multiline
+}
+
+func (s *SettingsSchemaEntry) GetArray() *ArraySettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Array
+}
+
+func (s *SettingsSchemaEntry) GetComplexarray() *ComplexArraySettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Complexarray
+}
+
+func (s *SettingsSchemaEntry) GetColor() *ColorSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Color
+}
+
+func (s *SettingsSchemaEntry) GetImage() *ImageSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Image
+}
+
+func (s *SettingsSchemaEntry) GetCheckbox() *CheckboxSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Checkbox
+}
+
+func (s *SettingsSchemaEntry) GetDropdown() *DropdownSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Dropdown
+}
+
+func (s *SettingsSchemaEntry) GetSection() *SectionSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Section
+}
+
+func (s *SettingsSchemaEntry) GetOauth() *OAuthSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Oauth
+}
+
+func (s *SettingsSchemaEntry) GetNumber() *NumberSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Number
+}
+
+func (s *SettingsSchemaEntry) GetOneOf() *OneOfSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.OneOf
+}
+
+func (s *SettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	s.Type = unmarshaler.Type
+	if unmarshaler.Type == "" {
+		return fmt.Errorf("%T did not include discriminant type", s)
+	}
+	switch unmarshaler.Type {
+	case "text":
+		value := new(TextSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Text = value
+	case "multiline":
+		value := new(MultilineSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Multiline = value
+	case "array":
+		value := new(ArraySettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Array = value
+	case "complexarray":
+		value := new(ComplexArraySettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Complexarray = value
+	case "color":
+		value := new(ColorSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Color = value
+	case "image":
+		value := new(ImageSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Image = value
+	case "checkbox":
+		value := new(CheckboxSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Checkbox = value
+	case "dropdown":
+		value := new(DropdownSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Dropdown = value
+	case "section":
+		value := new(SectionSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Section = value
+	case "oauth":
+		value := new(OAuthSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Oauth = value
+	case "number":
+		value := new(NumberSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Number = value
+	case "oneOf":
+		value := new(OneOfSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.OneOf = value
+	}
+	return nil
+}
+
+func (s SettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	if err := s.validate(); err != nil {
+		return nil, err
+	}
+	if s.Text != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Text, "type", "text")
+	}
+	if s.Multiline != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Multiline, "type", "multiline")
+	}
+	if s.Array != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Array, "type", "array")
+	}
+	if s.Complexarray != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Complexarray, "type", "complexarray")
+	}
+	if s.Color != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Color, "type", "color")
+	}
+	if s.Image != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Image, "type", "image")
+	}
+	if s.Checkbox != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Checkbox, "type", "checkbox")
+	}
+	if s.Dropdown != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Dropdown, "type", "dropdown")
+	}
+	if s.Section != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Section, "type", "section")
+	}
+	if s.Oauth != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Oauth, "type", "oauth")
+	}
+	if s.Number != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Number, "type", "number")
+	}
+	if s.OneOf != nil {
+		return internal.MarshalJSONWithExtraProperty(s.OneOf, "type", "oneOf")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", s)
+}
+
+type SettingsSchemaEntryVisitor interface {
+	VisitText(*TextSettingsSchemaEntry) error
+	VisitMultiline(*MultilineSettingsSchemaEntry) error
+	VisitArray(*ArraySettingsSchemaEntry) error
+	VisitComplexarray(*ComplexArraySettingsSchemaEntry) error
+	VisitColor(*ColorSettingsSchemaEntry) error
+	VisitImage(*ImageSettingsSchemaEntry) error
+	VisitCheckbox(*CheckboxSettingsSchemaEntry) error
+	VisitDropdown(*DropdownSettingsSchemaEntry) error
+	VisitSection(*SectionSettingsSchemaEntry) error
+	VisitOauth(*OAuthSettingsSchemaEntry) error
+	VisitNumber(*NumberSettingsSchemaEntry) error
+	VisitOneOf(*OneOfSettingsSchemaEntry) error
+}
+
+func (s *SettingsSchemaEntry) Accept(visitor SettingsSchemaEntryVisitor) error {
+	if s.Text != nil {
+		return visitor.VisitText(s.Text)
+	}
+	if s.Multiline != nil {
+		return visitor.VisitMultiline(s.Multiline)
+	}
+	if s.Array != nil {
+		return visitor.VisitArray(s.Array)
+	}
+	if s.Complexarray != nil {
+		return visitor.VisitComplexarray(s.Complexarray)
+	}
+	if s.Color != nil {
+		return visitor.VisitColor(s.Color)
+	}
+	if s.Image != nil {
+		return visitor.VisitImage(s.Image)
+	}
+	if s.Checkbox != nil {
+		return visitor.VisitCheckbox(s.Checkbox)
+	}
+	if s.Dropdown != nil {
+		return visitor.VisitDropdown(s.Dropdown)
+	}
+	if s.Section != nil {
+		return visitor.VisitSection(s.Section)
+	}
+	if s.Oauth != nil {
+		return visitor.VisitOauth(s.Oauth)
+	}
+	if s.Number != nil {
+		return visitor.VisitNumber(s.Number)
+	}
+	if s.OneOf != nil {
+		return visitor.VisitOneOf(s.OneOf)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", s)
+}
+
+func (s *SettingsSchemaEntry) validate() error {
+	if s == nil {
+		return fmt.Errorf("type %T is nil", s)
+	}
+	var fields []string
+	if s.Text != nil {
+		fields = append(fields, "text")
+	}
+	if s.Multiline != nil {
+		fields = append(fields, "multiline")
+	}
+	if s.Array != nil {
+		fields = append(fields, "array")
+	}
+	if s.Complexarray != nil {
+		fields = append(fields, "complexarray")
+	}
+	if s.Color != nil {
+		fields = append(fields, "color")
+	}
+	if s.Image != nil {
+		fields = append(fields, "image")
+	}
+	if s.Checkbox != nil {
+		fields = append(fields, "checkbox")
+	}
+	if s.Dropdown != nil {
+		fields = append(fields, "dropdown")
+	}
+	if s.Section != nil {
+		fields = append(fields, "section")
+	}
+	if s.Oauth != nil {
+		fields = append(fields, "oauth")
+	}
+	if s.Number != nil {
+		fields = append(fields, "number")
+	}
+	if s.OneOf != nil {
+		fields = append(fields, "oneOf")
+	}
+	if len(fields) == 0 {
+		if s.Type != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", s, s.Type)
+		}
+		return fmt.Errorf("type %T is empty", s)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", s, fields)
+	}
+	if s.Type != "" {
+		field := fields[0]
+		if s.Type != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				s,
+				s.Type,
+				s,
+			)
+		}
+	}
+	return nil
+}
+
+var (
+	settingsSchemaEntryBaseFieldKey         = big.NewInt(1 << 0)
+	settingsSchemaEntryBaseFieldDisplayName = big.NewInt(1 << 1)
+	settingsSchemaEntryBaseFieldDescription = big.NewInt(1 << 2)
+	settingsSchemaEntryBaseFieldVisibility  = big.NewInt(1 << 3)
+	settingsSchemaEntryBaseFieldRequired    = big.NewInt(1 << 4)
+)
+
+type SettingsSchemaEntryBase struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SettingsSchemaEntryBase) GetKey() string {
+	if s == nil {
+		return ""
+	}
+	return s.Key
+}
+
+func (s *SettingsSchemaEntryBase) GetDisplayName() string {
+	if s == nil {
+		return ""
+	}
+	return s.DisplayName
+}
+
+func (s *SettingsSchemaEntryBase) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
+}
+
+func (s *SettingsSchemaEntryBase) GetVisibility() *VisibilityType {
+	if s == nil {
+		return nil
+	}
+	return s.Visibility
+}
+
+func (s *SettingsSchemaEntryBase) GetRequired() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.Required
+}
+
+func (s *SettingsSchemaEntryBase) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SettingsSchemaEntryBase) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaEntryBase) SetKey(key string) {
+	s.Key = key
+	s.require(settingsSchemaEntryBaseFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaEntryBase) SetDisplayName(displayName string) {
+	s.DisplayName = displayName
+	s.require(settingsSchemaEntryBaseFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaEntryBase) SetDescription(description *string) {
+	s.Description = description
+	s.require(settingsSchemaEntryBaseFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaEntryBase) SetVisibility(visibility *VisibilityType) {
+	s.Visibility = visibility
+	s.require(settingsSchemaEntryBaseFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaEntryBase) SetRequired(required *bool) {
+	s.Required = required
+	s.require(settingsSchemaEntryBaseFieldRequired)
+}
+
+func (s *SettingsSchemaEntryBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler SettingsSchemaEntryBase
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SettingsSchemaEntryBase(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SettingsSchemaEntryBase) MarshalJSON() ([]byte, error) {
+	type embed SettingsSchemaEntryBase
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SettingsSchemaEntryBase) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+var (
+	settingsSchemaValidationFieldPattern      = big.NewInt(1 << 0)
+	settingsSchemaValidationFieldErrorMessage = big.NewInt(1 << 1)
+)
+
+type SettingsSchemaValidation struct {
+	// Regular expression pattern for validation
+	Pattern string `json:"pattern" url:"pattern"`
+	// Custom error message shown when validation fails
+	ErrorMessage string `json:"errorMessage" url:"errorMessage"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SettingsSchemaValidation) GetPattern() string {
+	if s == nil {
+		return ""
+	}
+	return s.Pattern
+}
+
+func (s *SettingsSchemaValidation) GetErrorMessage() string {
+	if s == nil {
+		return ""
+	}
+	return s.ErrorMessage
+}
+
+func (s *SettingsSchemaValidation) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SettingsSchemaValidation) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetPattern sets the Pattern field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaValidation) SetPattern(pattern string) {
+	s.Pattern = pattern
+	s.require(settingsSchemaValidationFieldPattern)
+}
+
+// SetErrorMessage sets the ErrorMessage field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettingsSchemaValidation) SetErrorMessage(errorMessage string) {
+	s.ErrorMessage = errorMessage
+	s.require(settingsSchemaValidationFieldErrorMessage)
+}
+
+func (s *SettingsSchemaValidation) UnmarshalJSON(data []byte) error {
+	type unmarshaler SettingsSchemaValidation
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SettingsSchemaValidation(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SettingsSchemaValidation) MarshalJSON() ([]byte, error) {
+	type embed SettingsSchemaValidation
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SettingsSchemaValidation) String() string {
 	if len(s.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
 			return value
@@ -16103,6 +18870,181 @@ func (t *TagsPrecondition) String() string {
 	return fmt.Sprintf("%#v", t)
 }
 
+var (
+	textSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	textSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	textSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	textSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	textSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	textSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+	textSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+)
+
+type TextSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *string                   `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TextSettingsSchemaEntry) GetKey() string {
+	if t == nil {
+		return ""
+	}
+	return t.Key
+}
+
+func (t *TextSettingsSchemaEntry) GetDisplayName() string {
+	if t == nil {
+		return ""
+	}
+	return t.DisplayName
+}
+
+func (t *TextSettingsSchemaEntry) GetDescription() *string {
+	if t == nil {
+		return nil
+	}
+	return t.Description
+}
+
+func (t *TextSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if t == nil {
+		return nil
+	}
+	return t.Visibility
+}
+
+func (t *TextSettingsSchemaEntry) GetRequired() *bool {
+	if t == nil {
+		return nil
+	}
+	return t.Required
+}
+
+func (t *TextSettingsSchemaEntry) GetDefaultValue() *string {
+	if t == nil {
+		return nil
+	}
+	return t.DefaultValue
+}
+
+func (t *TextSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
+	if t == nil {
+		return nil
+	}
+	return t.Validation
+}
+
+func (t *TextSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TextSettingsSchemaEntry) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetKey(key string) {
+	t.Key = key
+	t.require(textSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetDisplayName(displayName string) {
+	t.DisplayName = displayName
+	t.require(textSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetDescription(description *string) {
+	t.Description = description
+	t.require(textSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	t.Visibility = visibility
+	t.require(textSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetRequired(required *bool) {
+	t.Required = required
+	t.require(textSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	t.DefaultValue = defaultValue
+	t.require(textSettingsSchemaEntryFieldDefaultValue)
+}
+
+// SetValidation sets the Validation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
+	t.Validation = validation
+	t.require(textSettingsSchemaEntryFieldValidation)
+}
+
+func (t *TextSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler TextSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TextSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TextSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed TextSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TextSettingsSchemaEntry) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
 // The type of user message
 type UserConversationMessageType string
 
@@ -16349,7 +19291,8 @@ var (
 	userEventFieldEventName    = big.NewInt(1 << 7)
 	userEventFieldUserInfo     = big.NewInt(1 << 8)
 	userEventFieldFeedbackInfo = big.NewInt(1 << 9)
-	userEventFieldPageInfo     = big.NewInt(1 << 10)
+	userEventFieldCsatInfo     = big.NewInt(1 << 10)
+	userEventFieldPageInfo     = big.NewInt(1 << 11)
 )
 
 type UserEvent struct {
@@ -16368,6 +19311,8 @@ type UserEvent struct {
 	UserInfo *EventUserInfo `json:"userInfo" url:"userInfo"`
 	// Information about any feedback associated with the event
 	FeedbackInfo []*FeedbackInfo `json:"feedbackInfo,omitempty" url:"feedbackInfo,omitempty"`
+	// Information about any CSAT survey associated with the event
+	CsatInfo *CsatInfo `json:"csatInfo,omitempty" url:"csatInfo,omitempty"`
 	// Information about the page on which the event occurred
 	PageInfo *PageInfo `json:"pageInfo,omitempty" url:"pageInfo,omitempty"`
 
@@ -16446,6 +19391,13 @@ func (u *UserEvent) GetFeedbackInfo() []*FeedbackInfo {
 		return nil
 	}
 	return u.FeedbackInfo
+}
+
+func (u *UserEvent) GetCsatInfo() *CsatInfo {
+	if u == nil {
+		return nil
+	}
+	return u.CsatInfo
 }
 
 func (u *UserEvent) GetPageInfo() *PageInfo {
@@ -16534,6 +19486,13 @@ func (u *UserEvent) SetUserInfo(userInfo *EventUserInfo) {
 func (u *UserEvent) SetFeedbackInfo(feedbackInfo []*FeedbackInfo) {
 	u.FeedbackInfo = feedbackInfo
 	u.require(userEventFieldFeedbackInfo)
+}
+
+// SetCsatInfo sets the CsatInfo field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserEvent) SetCsatInfo(csatInfo *CsatInfo) {
+	u.CsatInfo = csatInfo
+	u.require(userEventFieldCsatInfo)
 }
 
 // SetPageInfo sets the PageInfo field and marks it as non-optional;

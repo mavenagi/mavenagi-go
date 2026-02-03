@@ -3936,6 +3936,84 @@ client.Inbox.Ignore(
 </dl>
 </details>
 
+## Integrations
+<details><summary><code>client.Integrations.Update(OrganizationID, IntegrationID, request) -> error</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update an integration.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.UpdateIntegrationRequest{}
+client.Integrations.Update(
+        context.TODO(),
+        "organizationId",
+        "integrationId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**organizationID:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**integrationID:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.UpdateIntegrationRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Knowledge
 <details><summary><code>client.Knowledge.SearchKnowledgeBases(request) -> *mavenagigo.KnowledgeBasesResponse</code></summary>
 <dl>
