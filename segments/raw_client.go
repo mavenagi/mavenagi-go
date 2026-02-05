@@ -213,3 +213,56 @@ func (r *RawClient) Patch(
 		Body:       response,
 	}, nil
 }
+
+func (r *RawClient) Delete(
+	ctx context.Context,
+	// The reference ID of the segment to delete. All other entity ID fields are inferred from the request.
+	segmentReferenceID string,
+	request *mavenagigo.SegmentDeleteRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*mavenagigo.SegmentResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := internal.EncodeURL(
+		baseURL+"/v1/segments/%v",
+		segmentReferenceID,
+	)
+	queryParams, err := internal.QueryValues(request)
+	if err != nil {
+		return nil, err
+	}
+	if len(queryParams) > 0 {
+		endpointURL += "?" + queryParams.Encode()
+	}
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response *mavenagigo.SegmentResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodDelete,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*mavenagigo.SegmentResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}

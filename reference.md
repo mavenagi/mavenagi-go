@@ -5701,7 +5701,7 @@ client.Segments.Get(
 
 Update mutable segment fields
 
-The `appId` field can be provided to update a segment owned by a different app. 
+The `appId` field can be provided to update a segment owned by a different app.
 All other fields will overwrite the existing value on the segment only if provided.
 </dd>
 </dl>
@@ -5747,6 +5747,78 @@ client.Segments.Patch(
 <dd>
 
 **request:** `*mavenagigo.SegmentPatchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Segments.Delete(SegmentReferenceID) -> *mavenagigo.SegmentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Soft delete a segment. Only INACTIVE segments can be deleted.
+
+Deleted segments are excluded from search results but can still be retrieved by ID for archival purposes. Creating a new segment with the same referenceId as a deleted segment will overwrite the deleted segment and restore it to ACTIVE status.
+
+Deleted segments cannot be modified.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.SegmentDeleteRequest{}
+client.Segments.Delete(
+        context.TODO(),
+        "segmentReferenceId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**segmentReferenceID:** `string` — The reference ID of the segment to delete. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the segment to delete. If not provided, the ID of the calling app will be used.
     
 </dd>
 </dl>

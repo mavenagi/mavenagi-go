@@ -8508,7 +8508,7 @@ var (
 )
 
 type CsatInfo struct {
-	// The rating of the CSAT rating (0.0, 5.0]
+	// The rating of the CSAT rating
 	Rating *float64 `json:"rating,omitempty" url:"rating,omitempty"`
 	// The max rating of the CSAT value (default 5)
 	MaxRating *float64 `json:"maxRating,omitempty" url:"maxRating,omitempty"`

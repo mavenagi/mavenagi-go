@@ -164,3 +164,24 @@ func TestSegmentsPatchWithWireMock(
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "PATCH", "/v1/segments/segmentReferenceId", nil, 1)
 }
+
+func TestSegmentsDeleteWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.SegmentDeleteRequest{}
+	_, invocationErr := client.Segments.Delete(
+		context.TODO(),
+		"segmentReferenceId",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "DELETE", "/v1/segments/segmentReferenceId", nil, 1)
+}

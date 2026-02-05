@@ -11,6 +11,32 @@ import (
 )
 
 var (
+	segmentDeleteRequestFieldAppID = big.NewInt(1 << 0)
+)
+
+type SegmentDeleteRequest struct {
+	// The App ID of the segment to delete. If not provided, the ID of the calling app will be used.
+	AppID *string `json:"-" url:"appId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (s *SegmentDeleteRequest) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentDeleteRequest) SetAppID(appID *string) {
+	s.AppID = appID
+	s.require(segmentDeleteRequestFieldAppID)
+}
+
+var (
 	segmentGetRequestFieldAppID = big.NewInt(1 << 0)
 )
 
@@ -417,9 +443,11 @@ type SegmentResponse struct {
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The date and time when the segment was last updated.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
-	// Whether or not the segment is in active use. To preserve historical data, segments can not be deleted.
+	// The status of the segment.
 	//
-	// Only active segments will be evaluated for matching user questions.
+	// - ACTIVE: Segment is in use and will be evaluated for matching user questions.
+	// - INACTIVE: Segment is not in use but can be reactivated.
+	// - DELETED: Segment has been soft deleted. Excluded from searches and cannot be modified.
 	Status SegmentStatus `json:"status" url:"status"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -580,6 +608,7 @@ type SegmentStatus string
 const (
 	SegmentStatusActive   SegmentStatus = "ACTIVE"
 	SegmentStatusInactive SegmentStatus = "INACTIVE"
+	SegmentStatusDeleted  SegmentStatus = "DELETED"
 )
 
 func NewSegmentStatusFromString(s string) (SegmentStatus, error) {
@@ -588,6 +617,8 @@ func NewSegmentStatusFromString(s string) (SegmentStatus, error) {
 		return SegmentStatusActive, nil
 	case "INACTIVE":
 		return SegmentStatusInactive, nil
+	case "DELETED":
+		return SegmentStatusDeleted, nil
 	}
 	var t SegmentStatus
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

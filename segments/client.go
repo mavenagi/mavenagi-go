@@ -114,3 +114,27 @@ func (c *Client) Patch(
 	}
 	return response.Body, nil
 }
+
+// Soft delete a segment. Only INACTIVE segments can be deleted.
+//
+// Deleted segments are excluded from search results but can still be retrieved by ID for archival purposes. Creating a new segment with the same referenceId as a deleted segment will overwrite the deleted segment and restore it to ACTIVE status.
+//
+// Deleted segments cannot be modified.
+func (c *Client) Delete(
+	ctx context.Context,
+	// The reference ID of the segment to delete. All other entity ID fields are inferred from the request.
+	segmentReferenceID string,
+	request *mavenagigo.SegmentDeleteRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.SegmentResponse, error) {
+	response, err := c.WithRawResponse.Delete(
+		ctx,
+		segmentReferenceID,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
