@@ -3488,6 +3488,86 @@ func (b *BaseSearchRequest) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Condition for boolean values
+var (
+	booleanConditionFieldValue = big.NewInt(1 << 0)
+)
+
+type BooleanCondition struct {
+	// The expected boolean value (true or false)
+	Value bool `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BooleanCondition) GetValue() bool {
+	if b == nil {
+		return false
+	}
+	return b.Value
+}
+
+func (b *BooleanCondition) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BooleanCondition) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BooleanCondition) SetValue(value bool) {
+	b.Value = value
+	b.require(booleanConditionFieldValue)
+}
+
+func (b *BooleanCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler BooleanCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BooleanCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BooleanCondition) MarshalJSON() ([]byte, error) {
+	type embed BooleanCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BooleanCondition) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
 // This response should be rendered as a form which users can submit. Upon submission call the `submitActionForm` API.
 var (
 	botActionFormResponseFieldID          = big.NewInt(1 << 0)
@@ -7241,6 +7321,7 @@ type ConversationPrecondition struct {
 	ActionExecuted               *ConversationExecutedActionPrecondition
 	ResponseConfig               *ResponseConfigPrecondition
 	App                          *AppPrecondition
+	IntelligentField             *IntelligentFieldPrecondition
 }
 
 func (c *ConversationPrecondition) GetConversationPreconditionType() string {
@@ -7285,6 +7366,13 @@ func (c *ConversationPrecondition) GetApp() *AppPrecondition {
 	return c.App
 }
 
+func (c *ConversationPrecondition) GetIntelligentField() *IntelligentFieldPrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentField
+}
+
 func (c *ConversationPrecondition) UnmarshalJSON(data []byte) error {
 	var unmarshaler struct {
 		ConversationPreconditionType string `json:"conversationPreconditionType"`
@@ -7327,6 +7415,12 @@ func (c *ConversationPrecondition) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.App = value
+	case "intelligentField":
+		value := new(IntelligentFieldPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.IntelligentField = value
 	}
 	return nil
 }
@@ -7350,6 +7444,9 @@ func (c ConversationPrecondition) MarshalJSON() ([]byte, error) {
 	if c.App != nil {
 		return internal.MarshalJSONWithExtraProperty(c.App, "conversationPreconditionType", "app")
 	}
+	if c.IntelligentField != nil {
+		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
 }
 
@@ -7359,6 +7456,7 @@ type ConversationPreconditionVisitor interface {
 	VisitActionExecuted(*ConversationExecutedActionPrecondition) error
 	VisitResponseConfig(*ResponseConfigPrecondition) error
 	VisitApp(*AppPrecondition) error
+	VisitIntelligentField(*IntelligentFieldPrecondition) error
 }
 
 func (c *ConversationPrecondition) Accept(visitor ConversationPreconditionVisitor) error {
@@ -7376,6 +7474,9 @@ func (c *ConversationPrecondition) Accept(visitor ConversationPreconditionVisito
 	}
 	if c.App != nil {
 		return visitor.VisitApp(c.App)
+	}
+	if c.IntelligentField != nil {
+		return visitor.VisitIntelligentField(c.IntelligentField)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", c)
 }
@@ -7399,6 +7500,9 @@ func (c *ConversationPrecondition) validate() error {
 	}
 	if c.App != nil {
 		fields = append(fields, "app")
+	}
+	if c.IntelligentField != nil {
+		fields = append(fields, "intelligentField")
 	}
 	if len(fields) == 0 {
 		if c.ConversationPreconditionType != "" {
@@ -13239,6 +13343,328 @@ func (i InboxItemType) Ptr() *InboxItemType {
 	return &i
 }
 
+// The condition to evaluate against an intelligent field's value.
+// Use the appropriate type based on the field's validationType:
+// - `string`: For STRING and MULTILINE fields
+// - `numeric`: For NUMBER fields
+// - `boolean`: For BOOLEAN fields
+// - `set`: For MULTI_SELECT fields (unordered set of values)
+//
+// Note: single select fields are represented as STRING/NUMBER with a list of
+// enumOptions.
+//
+// The caller is responsible for querying the validationType and enumOptions
+// from the intelligent field API to ensure the values are valid enumOptions.
+type IntelligentFieldCondition struct {
+	FieldValidationType string
+	String              *StringCondition
+	Numeric             *NumericCondition
+	Boolean             *BooleanCondition
+	Set                 *SetCondition
+}
+
+func (i *IntelligentFieldCondition) GetFieldValidationType() string {
+	if i == nil {
+		return ""
+	}
+	return i.FieldValidationType
+}
+
+func (i *IntelligentFieldCondition) GetString() *StringCondition {
+	if i == nil {
+		return nil
+	}
+	return i.String
+}
+
+func (i *IntelligentFieldCondition) GetNumeric() *NumericCondition {
+	if i == nil {
+		return nil
+	}
+	return i.Numeric
+}
+
+func (i *IntelligentFieldCondition) GetBoolean() *BooleanCondition {
+	if i == nil {
+		return nil
+	}
+	return i.Boolean
+}
+
+func (i *IntelligentFieldCondition) GetSet() *SetCondition {
+	if i == nil {
+		return nil
+	}
+	return i.Set
+}
+
+func (i *IntelligentFieldCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		FieldValidationType string `json:"fieldValidationType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	i.FieldValidationType = unmarshaler.FieldValidationType
+	if unmarshaler.FieldValidationType == "" {
+		return fmt.Errorf("%T did not include discriminant fieldValidationType", i)
+	}
+	switch unmarshaler.FieldValidationType {
+	case "string":
+		var valueUnmarshaler struct {
+			String *StringCondition `json:"value"`
+		}
+		if err := json.Unmarshal(data, &valueUnmarshaler); err != nil {
+			return err
+		}
+		i.String = valueUnmarshaler.String
+	case "numeric":
+		var valueUnmarshaler struct {
+			Numeric *NumericCondition `json:"value"`
+		}
+		if err := json.Unmarshal(data, &valueUnmarshaler); err != nil {
+			return err
+		}
+		i.Numeric = valueUnmarshaler.Numeric
+	case "boolean":
+		value := new(BooleanCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		i.Boolean = value
+	case "set":
+		var valueUnmarshaler struct {
+			Set *SetCondition `json:"value"`
+		}
+		if err := json.Unmarshal(data, &valueUnmarshaler); err != nil {
+			return err
+		}
+		i.Set = valueUnmarshaler.Set
+	}
+	return nil
+}
+
+func (i IntelligentFieldCondition) MarshalJSON() ([]byte, error) {
+	if err := i.validate(); err != nil {
+		return nil, err
+	}
+	if i.String != nil {
+		var marshaler = struct {
+			FieldValidationType string           `json:"fieldValidationType"`
+			String              *StringCondition `json:"value"`
+		}{
+			FieldValidationType: "string",
+			String:              i.String,
+		}
+		return json.Marshal(marshaler)
+	}
+	if i.Numeric != nil {
+		var marshaler = struct {
+			FieldValidationType string            `json:"fieldValidationType"`
+			Numeric             *NumericCondition `json:"value"`
+		}{
+			FieldValidationType: "numeric",
+			Numeric:             i.Numeric,
+		}
+		return json.Marshal(marshaler)
+	}
+	if i.Boolean != nil {
+		return internal.MarshalJSONWithExtraProperty(i.Boolean, "fieldValidationType", "boolean")
+	}
+	if i.Set != nil {
+		var marshaler = struct {
+			FieldValidationType string        `json:"fieldValidationType"`
+			Set                 *SetCondition `json:"value"`
+		}{
+			FieldValidationType: "set",
+			Set:                 i.Set,
+		}
+		return json.Marshal(marshaler)
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", i)
+}
+
+type IntelligentFieldConditionVisitor interface {
+	VisitString(*StringCondition) error
+	VisitNumeric(*NumericCondition) error
+	VisitBoolean(*BooleanCondition) error
+	VisitSet(*SetCondition) error
+}
+
+func (i *IntelligentFieldCondition) Accept(visitor IntelligentFieldConditionVisitor) error {
+	if i.String != nil {
+		return visitor.VisitString(i.String)
+	}
+	if i.Numeric != nil {
+		return visitor.VisitNumeric(i.Numeric)
+	}
+	if i.Boolean != nil {
+		return visitor.VisitBoolean(i.Boolean)
+	}
+	if i.Set != nil {
+		return visitor.VisitSet(i.Set)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", i)
+}
+
+func (i *IntelligentFieldCondition) validate() error {
+	if i == nil {
+		return fmt.Errorf("type %T is nil", i)
+	}
+	var fields []string
+	if i.String != nil {
+		fields = append(fields, "string")
+	}
+	if i.Numeric != nil {
+		fields = append(fields, "numeric")
+	}
+	if i.Boolean != nil {
+		fields = append(fields, "boolean")
+	}
+	if i.Set != nil {
+		fields = append(fields, "set")
+	}
+	if len(fields) == 0 {
+		if i.FieldValidationType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", i, i.FieldValidationType)
+		}
+		return fmt.Errorf("type %T is empty", i)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", i, fields)
+	}
+	if i.FieldValidationType != "" {
+		field := fields[0]
+		if i.FieldValidationType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				i,
+				i.FieldValidationType,
+				i,
+			)
+		}
+	}
+	return nil
+}
+
+// A precondition based on the computed value of an intelligent field on the conversation.
+//
+// Note: in early beta, only opt-in apps and organizations/agents can
+// specify intelligent field preconditions.  Otherwise, the request will be
+// rejected.
+var (
+	intelligentFieldPreconditionFieldFieldReferenceID = big.NewInt(1 << 0)
+	intelligentFieldPreconditionFieldFieldAppID       = big.NewInt(1 << 1)
+	intelligentFieldPreconditionFieldFieldCondition   = big.NewInt(1 << 2)
+)
+
+type IntelligentFieldPrecondition struct {
+	// The referenceId of the intelligent field.
+	FieldReferenceID string `json:"fieldReferenceId" url:"fieldReferenceId"`
+	// The appId of the intelligent field. If not provided, the calling appId will be used.
+	FieldAppID *string `json:"fieldAppId,omitempty" url:"fieldAppId,omitempty"`
+	// The condition to evaluate against the field's value.
+	FieldCondition *IntelligentFieldCondition `json:"fieldCondition" url:"fieldCondition"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldPrecondition) GetFieldReferenceID() string {
+	if i == nil {
+		return ""
+	}
+	return i.FieldReferenceID
+}
+
+func (i *IntelligentFieldPrecondition) GetFieldAppID() *string {
+	if i == nil {
+		return nil
+	}
+	return i.FieldAppID
+}
+
+func (i *IntelligentFieldPrecondition) GetFieldCondition() *IntelligentFieldCondition {
+	if i == nil {
+		return nil
+	}
+	return i.FieldCondition
+}
+
+func (i *IntelligentFieldPrecondition) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldPrecondition) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetFieldReferenceID sets the FieldReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPrecondition) SetFieldReferenceID(fieldReferenceID string) {
+	i.FieldReferenceID = fieldReferenceID
+	i.require(intelligentFieldPreconditionFieldFieldReferenceID)
+}
+
+// SetFieldAppID sets the FieldAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPrecondition) SetFieldAppID(fieldAppID *string) {
+	i.FieldAppID = fieldAppID
+	i.require(intelligentFieldPreconditionFieldFieldAppID)
+}
+
+// SetFieldCondition sets the FieldCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPrecondition) SetFieldCondition(fieldCondition *IntelligentFieldCondition) {
+	i.FieldCondition = fieldCondition
+	i.require(intelligentFieldPreconditionFieldFieldCondition)
+}
+
+func (i *IntelligentFieldPrecondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler IntelligentFieldPrecondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = IntelligentFieldPrecondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldPrecondition) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldPrecondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldPrecondition) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
 var (
 	iPInfoFieldIP = big.NewInt(1 << 0)
 )
@@ -14950,6 +15376,384 @@ func (n *NumberSettingsSchemaEntry) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", n)
+}
+
+// Condition comparing against a single numeric value
+var (
+	numericComparisonConditionFieldOperator = big.NewInt(1 << 0)
+	numericComparisonConditionFieldValue    = big.NewInt(1 << 1)
+)
+
+type NumericComparisonCondition struct {
+	// The comparison operator to apply
+	Operator NumericComparisonOperator `json:"operator" url:"operator"`
+	// The numeric value to compare against
+	Value float64 `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (n *NumericComparisonCondition) GetOperator() NumericComparisonOperator {
+	if n == nil {
+		return ""
+	}
+	return n.Operator
+}
+
+func (n *NumericComparisonCondition) GetValue() float64 {
+	if n == nil {
+		return 0
+	}
+	return n.Value
+}
+
+func (n *NumericComparisonCondition) GetExtraProperties() map[string]interface{} {
+	return n.extraProperties
+}
+
+func (n *NumericComparisonCondition) require(field *big.Int) {
+	if n.explicitFields == nil {
+		n.explicitFields = big.NewInt(0)
+	}
+	n.explicitFields.Or(n.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumericComparisonCondition) SetOperator(operator NumericComparisonOperator) {
+	n.Operator = operator
+	n.require(numericComparisonConditionFieldOperator)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumericComparisonCondition) SetValue(value float64) {
+	n.Value = value
+	n.require(numericComparisonConditionFieldValue)
+}
+
+func (n *NumericComparisonCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler NumericComparisonCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*n = NumericComparisonCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *n)
+	if err != nil {
+		return err
+	}
+	n.extraProperties = extraProperties
+	n.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (n *NumericComparisonCondition) MarshalJSON() ([]byte, error) {
+	type embed NumericComparisonCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*n),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, n.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (n *NumericComparisonCondition) String() string {
+	if len(n.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(n.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(n); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", n)
+}
+
+// Operators for single numeric value comparisons
+type NumericComparisonOperator string
+
+const (
+	// Equals (=)
+	NumericComparisonOperatorEq NumericComparisonOperator = "EQ"
+	// Not equals (!=)
+	NumericComparisonOperatorNeq NumericComparisonOperator = "NEQ"
+	// Less than (<)
+	NumericComparisonOperatorLt NumericComparisonOperator = "LT"
+	// Less than or equals (<=)
+	NumericComparisonOperatorLe NumericComparisonOperator = "LE"
+	// Greater than (>)
+	NumericComparisonOperatorGt NumericComparisonOperator = "GT"
+	// Greater than or equals (>=)
+	NumericComparisonOperatorGe NumericComparisonOperator = "GE"
+)
+
+func NewNumericComparisonOperatorFromString(s string) (NumericComparisonOperator, error) {
+	switch s {
+	case "EQ":
+		return NumericComparisonOperatorEq, nil
+	case "NEQ":
+		return NumericComparisonOperatorNeq, nil
+	case "LT":
+		return NumericComparisonOperatorLt, nil
+	case "LE":
+		return NumericComparisonOperatorLe, nil
+	case "GT":
+		return NumericComparisonOperatorGt, nil
+	case "GE":
+		return NumericComparisonOperatorGe, nil
+	}
+	var t NumericComparisonOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (n NumericComparisonOperator) Ptr() *NumericComparisonOperator {
+	return &n
+}
+
+// Condition for numeric values
+type NumericCondition struct {
+	OpType     string
+	Comparison *NumericComparisonCondition
+	Membership *NumericMembershipCondition
+}
+
+func (n *NumericCondition) GetOpType() string {
+	if n == nil {
+		return ""
+	}
+	return n.OpType
+}
+
+func (n *NumericCondition) GetComparison() *NumericComparisonCondition {
+	if n == nil {
+		return nil
+	}
+	return n.Comparison
+}
+
+func (n *NumericCondition) GetMembership() *NumericMembershipCondition {
+	if n == nil {
+		return nil
+	}
+	return n.Membership
+}
+
+func (n *NumericCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		OpType string `json:"opType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	n.OpType = unmarshaler.OpType
+	if unmarshaler.OpType == "" {
+		return fmt.Errorf("%T did not include discriminant opType", n)
+	}
+	switch unmarshaler.OpType {
+	case "comparison":
+		value := new(NumericComparisonCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		n.Comparison = value
+	case "membership":
+		value := new(NumericMembershipCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		n.Membership = value
+	}
+	return nil
+}
+
+func (n NumericCondition) MarshalJSON() ([]byte, error) {
+	if err := n.validate(); err != nil {
+		return nil, err
+	}
+	if n.Comparison != nil {
+		return internal.MarshalJSONWithExtraProperty(n.Comparison, "opType", "comparison")
+	}
+	if n.Membership != nil {
+		return internal.MarshalJSONWithExtraProperty(n.Membership, "opType", "membership")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", n)
+}
+
+type NumericConditionVisitor interface {
+	VisitComparison(*NumericComparisonCondition) error
+	VisitMembership(*NumericMembershipCondition) error
+}
+
+func (n *NumericCondition) Accept(visitor NumericConditionVisitor) error {
+	if n.Comparison != nil {
+		return visitor.VisitComparison(n.Comparison)
+	}
+	if n.Membership != nil {
+		return visitor.VisitMembership(n.Membership)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", n)
+}
+
+func (n *NumericCondition) validate() error {
+	if n == nil {
+		return fmt.Errorf("type %T is nil", n)
+	}
+	var fields []string
+	if n.Comparison != nil {
+		fields = append(fields, "comparison")
+	}
+	if n.Membership != nil {
+		fields = append(fields, "membership")
+	}
+	if len(fields) == 0 {
+		if n.OpType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", n, n.OpType)
+		}
+		return fmt.Errorf("type %T is empty", n)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", n, fields)
+	}
+	if n.OpType != "" {
+		field := fields[0]
+		if n.OpType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				n,
+				n.OpType,
+				n,
+			)
+		}
+	}
+	return nil
+}
+
+// Condition checking membership in a set of numbers
+var (
+	numericMembershipConditionFieldOperator = big.NewInt(1 << 0)
+	numericMembershipConditionFieldValues   = big.NewInt(1 << 1)
+)
+
+type NumericMembershipCondition struct {
+	// The comparison operator to apply
+	Operator NumericMembershipOperator `json:"operator" url:"operator"`
+	// The set of numeric values to compare against
+	Values []float64 `json:"values" url:"values"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (n *NumericMembershipCondition) GetOperator() NumericMembershipOperator {
+	if n == nil {
+		return ""
+	}
+	return n.Operator
+}
+
+func (n *NumericMembershipCondition) GetValues() []float64 {
+	if n == nil {
+		return nil
+	}
+	return n.Values
+}
+
+func (n *NumericMembershipCondition) GetExtraProperties() map[string]interface{} {
+	return n.extraProperties
+}
+
+func (n *NumericMembershipCondition) require(field *big.Int) {
+	if n.explicitFields == nil {
+		n.explicitFields = big.NewInt(0)
+	}
+	n.explicitFields.Or(n.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumericMembershipCondition) SetOperator(operator NumericMembershipOperator) {
+	n.Operator = operator
+	n.require(numericMembershipConditionFieldOperator)
+}
+
+// SetValues sets the Values field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumericMembershipCondition) SetValues(values []float64) {
+	n.Values = values
+	n.require(numericMembershipConditionFieldValues)
+}
+
+func (n *NumericMembershipCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler NumericMembershipCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*n = NumericMembershipCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *n)
+	if err != nil {
+		return err
+	}
+	n.extraProperties = extraProperties
+	n.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (n *NumericMembershipCondition) MarshalJSON() ([]byte, error) {
+	type embed NumericMembershipCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*n),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, n.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (n *NumericMembershipCondition) String() string {
+	if len(n.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(n.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(n); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", n)
+}
+
+// Operators for numeric set membership
+type NumericMembershipOperator string
+
+const (
+	// Value is in the set (∈)
+	NumericMembershipOperatorIn NumericMembershipOperator = "IN"
+	// Value is not in the set (∉)
+	NumericMembershipOperatorNotIn NumericMembershipOperator = "NOT_IN"
+)
+
+func NewNumericMembershipOperatorFromString(s string) (NumericMembershipOperator, error) {
+	switch s {
+	case "IN":
+		return NumericMembershipOperatorIn, nil
+	case "NOT_IN":
+		return NumericMembershipOperatorNotIn, nil
+	}
+	var t NumericMembershipOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (n NumericMembershipOperator) Ptr() *NumericMembershipOperator {
+	return &n
 }
 
 // The authentication method to use for OAuth token requests
@@ -17345,6 +18149,392 @@ func (s *SessionInfo) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
+// Condition for set values (e.g., MULTI_SELECT fields)
+type SetCondition struct {
+	OpType   string
+	Element  *SetElementCondition
+	Relation *SetRelationCondition
+}
+
+func (s *SetCondition) GetOpType() string {
+	if s == nil {
+		return ""
+	}
+	return s.OpType
+}
+
+func (s *SetCondition) GetElement() *SetElementCondition {
+	if s == nil {
+		return nil
+	}
+	return s.Element
+}
+
+func (s *SetCondition) GetRelation() *SetRelationCondition {
+	if s == nil {
+		return nil
+	}
+	return s.Relation
+}
+
+func (s *SetCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		OpType string `json:"opType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	s.OpType = unmarshaler.OpType
+	if unmarshaler.OpType == "" {
+		return fmt.Errorf("%T did not include discriminant opType", s)
+	}
+	switch unmarshaler.OpType {
+	case "element":
+		value := new(SetElementCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Element = value
+	case "relation":
+		value := new(SetRelationCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Relation = value
+	}
+	return nil
+}
+
+func (s SetCondition) MarshalJSON() ([]byte, error) {
+	if err := s.validate(); err != nil {
+		return nil, err
+	}
+	if s.Element != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Element, "opType", "element")
+	}
+	if s.Relation != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Relation, "opType", "relation")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", s)
+}
+
+type SetConditionVisitor interface {
+	VisitElement(*SetElementCondition) error
+	VisitRelation(*SetRelationCondition) error
+}
+
+func (s *SetCondition) Accept(visitor SetConditionVisitor) error {
+	if s.Element != nil {
+		return visitor.VisitElement(s.Element)
+	}
+	if s.Relation != nil {
+		return visitor.VisitRelation(s.Relation)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", s)
+}
+
+func (s *SetCondition) validate() error {
+	if s == nil {
+		return fmt.Errorf("type %T is nil", s)
+	}
+	var fields []string
+	if s.Element != nil {
+		fields = append(fields, "element")
+	}
+	if s.Relation != nil {
+		fields = append(fields, "relation")
+	}
+	if len(fields) == 0 {
+		if s.OpType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", s, s.OpType)
+		}
+		return fmt.Errorf("type %T is empty", s)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", s, fields)
+	}
+	if s.OpType != "" {
+		field := fields[0]
+		if s.OpType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				s,
+				s.OpType,
+				s,
+			)
+		}
+	}
+	return nil
+}
+
+// Condition checking if set contains a single element
+var (
+	setElementConditionFieldOperator = big.NewInt(1 << 0)
+	setElementConditionFieldValue    = big.NewInt(1 << 1)
+)
+
+type SetElementCondition struct {
+	// The comparison operator to apply
+	Operator SetElementOperator `json:"operator" url:"operator"`
+	// The value to check for
+	Value string `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SetElementCondition) GetOperator() SetElementOperator {
+	if s == nil {
+		return ""
+	}
+	return s.Operator
+}
+
+func (s *SetElementCondition) GetValue() string {
+	if s == nil {
+		return ""
+	}
+	return s.Value
+}
+
+func (s *SetElementCondition) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SetElementCondition) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SetElementCondition) SetOperator(operator SetElementOperator) {
+	s.Operator = operator
+	s.require(setElementConditionFieldOperator)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SetElementCondition) SetValue(value string) {
+	s.Value = value
+	s.require(setElementConditionFieldValue)
+}
+
+func (s *SetElementCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler SetElementCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SetElementCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SetElementCondition) MarshalJSON() ([]byte, error) {
+	type embed SetElementCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SetElementCondition) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+// Operators for checking single element in a set
+type SetElementOperator string
+
+const (
+	// Set contains the value (∋)
+	SetElementOperatorContains SetElementOperator = "CONTAINS"
+	// Set does not contain the value (∌)
+	SetElementOperatorNotContains SetElementOperator = "NOT_CONTAINS"
+)
+
+func NewSetElementOperatorFromString(s string) (SetElementOperator, error) {
+	switch s {
+	case "CONTAINS":
+		return SetElementOperatorContains, nil
+	case "NOT_CONTAINS":
+		return SetElementOperatorNotContains, nil
+	}
+	var t SetElementOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SetElementOperator) Ptr() *SetElementOperator {
+	return &s
+}
+
+// Condition comparing set against another set of values
+var (
+	setRelationConditionFieldOperator = big.NewInt(1 << 0)
+	setRelationConditionFieldValues   = big.NewInt(1 << 1)
+)
+
+type SetRelationCondition struct {
+	// The comparison operator to apply
+	Operator SetRelationOperator `json:"operator" url:"operator"`
+	// The (unordered) set of values to compare against
+	Values []string `json:"values" url:"values"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SetRelationCondition) GetOperator() SetRelationOperator {
+	if s == nil {
+		return ""
+	}
+	return s.Operator
+}
+
+func (s *SetRelationCondition) GetValues() []string {
+	if s == nil {
+		return nil
+	}
+	return s.Values
+}
+
+func (s *SetRelationCondition) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SetRelationCondition) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SetRelationCondition) SetOperator(operator SetRelationOperator) {
+	s.Operator = operator
+	s.require(setRelationConditionFieldOperator)
+}
+
+// SetValues sets the Values field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SetRelationCondition) SetValues(values []string) {
+	s.Values = values
+	s.require(setRelationConditionFieldValues)
+}
+
+func (s *SetRelationCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler SetRelationCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SetRelationCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SetRelationCondition) MarshalJSON() ([]byte, error) {
+	type embed SetRelationCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SetRelationCondition) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+// Operators for set relation operations
+type SetRelationOperator string
+
+const (
+	// Set equals the specified set (=)
+	SetRelationOperatorEq SetRelationOperator = "EQ"
+	// Set does not equal the specified set (≠)
+	SetRelationOperatorNeq SetRelationOperator = "NEQ"
+	// Set contains any of the values (A ∩ B ≠ ∅)
+	SetRelationOperatorContainsAny SetRelationOperator = "CONTAINS_ANY"
+	// Set contains none of the values (A ∩ B = ∅)
+	SetRelationOperatorNotContainsAny SetRelationOperator = "NOT_CONTAINS_ANY"
+	// Set contains all of the values (A ⊇ B)
+	SetRelationOperatorContainsAll SetRelationOperator = "CONTAINS_ALL"
+	// Set does not contain all of the values (A ⊉ B)
+	SetRelationOperatorNotContainsAll SetRelationOperator = "NOT_CONTAINS_ALL"
+	// Set is a subset of the values (A ⊆ B)
+	SetRelationOperatorSubsetOf SetRelationOperator = "SUBSET_OF"
+	// Set is not a subset of the values (A ⊈ B)
+	SetRelationOperatorNotSubsetOf SetRelationOperator = "NOT_SUBSET_OF"
+)
+
+func NewSetRelationOperatorFromString(s string) (SetRelationOperator, error) {
+	switch s {
+	case "EQ":
+		return SetRelationOperatorEq, nil
+	case "NEQ":
+		return SetRelationOperatorNeq, nil
+	case "CONTAINS_ANY":
+		return SetRelationOperatorContainsAny, nil
+	case "NOT_CONTAINS_ANY":
+		return SetRelationOperatorNotContainsAny, nil
+	case "CONTAINS_ALL":
+		return SetRelationOperatorContainsAll, nil
+	case "NOT_CONTAINS_ALL":
+		return SetRelationOperatorNotContainsAll, nil
+	case "SUBSET_OF":
+		return SetRelationOperatorSubsetOf, nil
+	case "NOT_SUBSET_OF":
+		return SetRelationOperatorNotSubsetOf, nil
+	}
+	var t SetRelationOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SetRelationOperator) Ptr() *SetRelationOperator {
+	return &s
+}
+
 type SettingsSchema = []*SettingsSchemaEntry
 
 var (
@@ -18465,6 +19655,368 @@ func NewSourceTypeFromString(s string) (SourceType, error) {
 }
 
 func (s SourceType) Ptr() *SourceType {
+	return &s
+}
+
+// Condition comparing against a single string value
+var (
+	stringComparisonConditionFieldOperator = big.NewInt(1 << 0)
+	stringComparisonConditionFieldValue    = big.NewInt(1 << 1)
+)
+
+type StringComparisonCondition struct {
+	// The comparison operator to apply
+	Operator StringComparisonOperator `json:"operator" url:"operator"`
+	// The string value to compare against
+	Value string `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *StringComparisonCondition) GetOperator() StringComparisonOperator {
+	if s == nil {
+		return ""
+	}
+	return s.Operator
+}
+
+func (s *StringComparisonCondition) GetValue() string {
+	if s == nil {
+		return ""
+	}
+	return s.Value
+}
+
+func (s *StringComparisonCondition) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *StringComparisonCondition) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *StringComparisonCondition) SetOperator(operator StringComparisonOperator) {
+	s.Operator = operator
+	s.require(stringComparisonConditionFieldOperator)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *StringComparisonCondition) SetValue(value string) {
+	s.Value = value
+	s.require(stringComparisonConditionFieldValue)
+}
+
+func (s *StringComparisonCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler StringComparisonCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = StringComparisonCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *StringComparisonCondition) MarshalJSON() ([]byte, error) {
+	type embed StringComparisonCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *StringComparisonCondition) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+// Operators for single string value comparisons
+type StringComparisonOperator string
+
+const (
+	// Equals (=)
+	StringComparisonOperatorEq StringComparisonOperator = "EQ"
+	// Not equals (!=)
+	StringComparisonOperatorNeq StringComparisonOperator = "NEQ"
+)
+
+func NewStringComparisonOperatorFromString(s string) (StringComparisonOperator, error) {
+	switch s {
+	case "EQ":
+		return StringComparisonOperatorEq, nil
+	case "NEQ":
+		return StringComparisonOperatorNeq, nil
+	}
+	var t StringComparisonOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s StringComparisonOperator) Ptr() *StringComparisonOperator {
+	return &s
+}
+
+// Condition for string values
+type StringCondition struct {
+	OpType     string
+	Comparison *StringComparisonCondition
+	Membership *StringMembershipCondition
+}
+
+func (s *StringCondition) GetOpType() string {
+	if s == nil {
+		return ""
+	}
+	return s.OpType
+}
+
+func (s *StringCondition) GetComparison() *StringComparisonCondition {
+	if s == nil {
+		return nil
+	}
+	return s.Comparison
+}
+
+func (s *StringCondition) GetMembership() *StringMembershipCondition {
+	if s == nil {
+		return nil
+	}
+	return s.Membership
+}
+
+func (s *StringCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		OpType string `json:"opType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	s.OpType = unmarshaler.OpType
+	if unmarshaler.OpType == "" {
+		return fmt.Errorf("%T did not include discriminant opType", s)
+	}
+	switch unmarshaler.OpType {
+	case "comparison":
+		value := new(StringComparisonCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Comparison = value
+	case "membership":
+		value := new(StringMembershipCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Membership = value
+	}
+	return nil
+}
+
+func (s StringCondition) MarshalJSON() ([]byte, error) {
+	if err := s.validate(); err != nil {
+		return nil, err
+	}
+	if s.Comparison != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Comparison, "opType", "comparison")
+	}
+	if s.Membership != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Membership, "opType", "membership")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", s)
+}
+
+type StringConditionVisitor interface {
+	VisitComparison(*StringComparisonCondition) error
+	VisitMembership(*StringMembershipCondition) error
+}
+
+func (s *StringCondition) Accept(visitor StringConditionVisitor) error {
+	if s.Comparison != nil {
+		return visitor.VisitComparison(s.Comparison)
+	}
+	if s.Membership != nil {
+		return visitor.VisitMembership(s.Membership)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", s)
+}
+
+func (s *StringCondition) validate() error {
+	if s == nil {
+		return fmt.Errorf("type %T is nil", s)
+	}
+	var fields []string
+	if s.Comparison != nil {
+		fields = append(fields, "comparison")
+	}
+	if s.Membership != nil {
+		fields = append(fields, "membership")
+	}
+	if len(fields) == 0 {
+		if s.OpType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", s, s.OpType)
+		}
+		return fmt.Errorf("type %T is empty", s)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", s, fields)
+	}
+	if s.OpType != "" {
+		field := fields[0]
+		if s.OpType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				s,
+				s.OpType,
+				s,
+			)
+		}
+	}
+	return nil
+}
+
+// Condition checking membership in a set of strings
+var (
+	stringMembershipConditionFieldOperator = big.NewInt(1 << 0)
+	stringMembershipConditionFieldValues   = big.NewInt(1 << 1)
+)
+
+type StringMembershipCondition struct {
+	// The comparison operator to apply
+	Operator StringMembershipOperator `json:"operator" url:"operator"`
+	// The set of string values to compare against
+	Values []string `json:"values" url:"values"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *StringMembershipCondition) GetOperator() StringMembershipOperator {
+	if s == nil {
+		return ""
+	}
+	return s.Operator
+}
+
+func (s *StringMembershipCondition) GetValues() []string {
+	if s == nil {
+		return nil
+	}
+	return s.Values
+}
+
+func (s *StringMembershipCondition) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *StringMembershipCondition) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *StringMembershipCondition) SetOperator(operator StringMembershipOperator) {
+	s.Operator = operator
+	s.require(stringMembershipConditionFieldOperator)
+}
+
+// SetValues sets the Values field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *StringMembershipCondition) SetValues(values []string) {
+	s.Values = values
+	s.require(stringMembershipConditionFieldValues)
+}
+
+func (s *StringMembershipCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler StringMembershipCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = StringMembershipCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *StringMembershipCondition) MarshalJSON() ([]byte, error) {
+	type embed StringMembershipCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *StringMembershipCondition) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+// Operators for string set membership
+type StringMembershipOperator string
+
+const (
+	// Value is in the set (∈)
+	StringMembershipOperatorIn StringMembershipOperator = "IN"
+	// Value is not in the set (∉)
+	StringMembershipOperatorNotIn StringMembershipOperator = "NOT_IN"
+)
+
+func NewStringMembershipOperatorFromString(s string) (StringMembershipOperator, error) {
+	switch s {
+	case "IN":
+		return StringMembershipOperatorIn, nil
+	case "NOT_IN":
+		return StringMembershipOperatorNotIn, nil
+	}
+	var t StringMembershipOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s StringMembershipOperator) Ptr() *StringMembershipOperator {
 	return &s
 }
 
