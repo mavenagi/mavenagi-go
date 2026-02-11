@@ -64,12 +64,15 @@ func (s *SegmentGetRequest) SetAppID(appID *string) {
 
 var (
 	segmentBaseFieldName         = big.NewInt(1 << 0)
-	segmentBaseFieldPrecondition = big.NewInt(1 << 1)
+	segmentBaseFieldDescription  = big.NewInt(1 << 1)
+	segmentBaseFieldPrecondition = big.NewInt(1 << 2)
 )
 
 type SegmentBase struct {
 	// The name of the segment.
 	Name string `json:"name" url:"name"`
+	// A plain text description of the segment.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The precondition that must be met for a conversation message to be included in the segment.
 	Precondition *Precondition `json:"precondition" url:"precondition"`
 
@@ -85,6 +88,13 @@ func (s *SegmentBase) GetName() string {
 		return ""
 	}
 	return s.Name
+}
+
+func (s *SegmentBase) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
 }
 
 func (s *SegmentBase) GetPrecondition() *Precondition {
@@ -110,6 +120,13 @@ func (s *SegmentBase) require(field *big.Int) {
 func (s *SegmentBase) SetName(name string) {
 	s.Name = name
 	s.require(segmentBaseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentBase) SetDescription(description *string) {
+	s.Description = description
+	s.require(segmentBaseFieldDescription)
 }
 
 // SetPrecondition sets the Precondition field and marks it as non-optional;
@@ -183,8 +200,9 @@ func (s SegmentField) Ptr() *SegmentField {
 var (
 	segmentPatchRequestFieldAppID        = big.NewInt(1 << 0)
 	segmentPatchRequestFieldName         = big.NewInt(1 << 1)
-	segmentPatchRequestFieldPrecondition = big.NewInt(1 << 2)
-	segmentPatchRequestFieldStatus       = big.NewInt(1 << 3)
+	segmentPatchRequestFieldDescription  = big.NewInt(1 << 2)
+	segmentPatchRequestFieldPrecondition = big.NewInt(1 << 3)
+	segmentPatchRequestFieldStatus       = big.NewInt(1 << 4)
 )
 
 type SegmentPatchRequest struct {
@@ -192,6 +210,8 @@ type SegmentPatchRequest struct {
 	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 	// The name of the segment.
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// A plain text description of the segment.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The precondition that must be met for a conversation message to be included in the segment.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The status of the segment. Segments can only be deactivated if they are not set on any actions or active knowledge bases.
@@ -216,6 +236,13 @@ func (s *SegmentPatchRequest) GetName() *string {
 		return nil
 	}
 	return s.Name
+}
+
+func (s *SegmentPatchRequest) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
 }
 
 func (s *SegmentPatchRequest) GetPrecondition() *Precondition {
@@ -255,6 +282,13 @@ func (s *SegmentPatchRequest) SetAppID(appID *string) {
 func (s *SegmentPatchRequest) SetName(name *string) {
 	s.Name = name
 	s.require(segmentPatchRequestFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentPatchRequest) SetDescription(description *string) {
+	s.Description = description
+	s.require(segmentPatchRequestFieldDescription)
 }
 
 // SetPrecondition sets the Precondition field and marks it as non-optional;
@@ -312,13 +346,16 @@ func (s *SegmentPatchRequest) String() string {
 
 var (
 	segmentRequestFieldName         = big.NewInt(1 << 0)
-	segmentRequestFieldPrecondition = big.NewInt(1 << 1)
-	segmentRequestFieldSegmentID    = big.NewInt(1 << 2)
+	segmentRequestFieldDescription  = big.NewInt(1 << 1)
+	segmentRequestFieldPrecondition = big.NewInt(1 << 2)
+	segmentRequestFieldSegmentID    = big.NewInt(1 << 3)
 )
 
 type SegmentRequest struct {
 	// The name of the segment.
 	Name string `json:"name" url:"name"`
+	// A plain text description of the segment.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The precondition that must be met for a conversation message to be included in the segment.
 	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// ID that uniquely identifies this segment
@@ -336,6 +373,13 @@ func (s *SegmentRequest) GetName() string {
 		return ""
 	}
 	return s.Name
+}
+
+func (s *SegmentRequest) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
 }
 
 func (s *SegmentRequest) GetPrecondition() *Precondition {
@@ -368,6 +412,13 @@ func (s *SegmentRequest) require(field *big.Int) {
 func (s *SegmentRequest) SetName(name string) {
 	s.Name = name
 	s.require(segmentRequestFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentRequest) SetDescription(description *string) {
+	s.Description = description
+	s.require(segmentRequestFieldDescription)
 }
 
 // SetPrecondition sets the Precondition field and marks it as non-optional;
@@ -424,17 +475,22 @@ func (s *SegmentRequest) String() string {
 }
 
 var (
-	segmentResponseFieldName         = big.NewInt(1 << 0)
-	segmentResponseFieldPrecondition = big.NewInt(1 << 1)
-	segmentResponseFieldSegmentID    = big.NewInt(1 << 2)
-	segmentResponseFieldCreatedAt    = big.NewInt(1 << 3)
-	segmentResponseFieldUpdatedAt    = big.NewInt(1 << 4)
-	segmentResponseFieldStatus       = big.NewInt(1 << 5)
+	segmentResponseFieldName                         = big.NewInt(1 << 0)
+	segmentResponseFieldDescription                  = big.NewInt(1 << 1)
+	segmentResponseFieldPrecondition                 = big.NewInt(1 << 2)
+	segmentResponseFieldSegmentID                    = big.NewInt(1 << 3)
+	segmentResponseFieldCreatedAt                    = big.NewInt(1 << 4)
+	segmentResponseFieldUpdatedAt                    = big.NewInt(1 << 5)
+	segmentResponseFieldReferencedKnowledgeBaseCount = big.NewInt(1 << 6)
+	segmentResponseFieldReferencedDocumentCount      = big.NewInt(1 << 7)
+	segmentResponseFieldStatus                       = big.NewInt(1 << 8)
 )
 
 type SegmentResponse struct {
 	// The name of the segment.
 	Name string `json:"name" url:"name"`
+	// A plain text description of the segment.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The precondition that must be met for a conversation message to be included in the segment.
 	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// ID that uniquely identifies this segment
@@ -443,6 +499,10 @@ type SegmentResponse struct {
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The date and time when the segment was last updated.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// The number of active knowledge bases that reference this segment.
+	ReferencedKnowledgeBaseCount *int64 `json:"referencedKnowledgeBaseCount,omitempty" url:"referencedKnowledgeBaseCount,omitempty"`
+	// The number of active documents that reference this segment.
+	ReferencedDocumentCount *int64 `json:"referencedDocumentCount,omitempty" url:"referencedDocumentCount,omitempty"`
 	// The status of the segment.
 	//
 	// - ACTIVE: Segment is in use and will be evaluated for matching user questions.
@@ -462,6 +522,13 @@ func (s *SegmentResponse) GetName() string {
 		return ""
 	}
 	return s.Name
+}
+
+func (s *SegmentResponse) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
 }
 
 func (s *SegmentResponse) GetPrecondition() *Precondition {
@@ -492,6 +559,20 @@ func (s *SegmentResponse) GetUpdatedAt() time.Time {
 	return s.UpdatedAt
 }
 
+func (s *SegmentResponse) GetReferencedKnowledgeBaseCount() *int64 {
+	if s == nil {
+		return nil
+	}
+	return s.ReferencedKnowledgeBaseCount
+}
+
+func (s *SegmentResponse) GetReferencedDocumentCount() *int64 {
+	if s == nil {
+		return nil
+	}
+	return s.ReferencedDocumentCount
+}
+
 func (s *SegmentResponse) GetStatus() SegmentStatus {
 	if s == nil {
 		return ""
@@ -515,6 +596,13 @@ func (s *SegmentResponse) require(field *big.Int) {
 func (s *SegmentResponse) SetName(name string) {
 	s.Name = name
 	s.require(segmentResponseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetDescription(description *string) {
+	s.Description = description
+	s.require(segmentResponseFieldDescription)
 }
 
 // SetPrecondition sets the Precondition field and marks it as non-optional;
@@ -543,6 +631,20 @@ func (s *SegmentResponse) SetCreatedAt(createdAt time.Time) {
 func (s *SegmentResponse) SetUpdatedAt(updatedAt time.Time) {
 	s.UpdatedAt = updatedAt
 	s.require(segmentResponseFieldUpdatedAt)
+}
+
+// SetReferencedKnowledgeBaseCount sets the ReferencedKnowledgeBaseCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetReferencedKnowledgeBaseCount(referencedKnowledgeBaseCount *int64) {
+	s.ReferencedKnowledgeBaseCount = referencedKnowledgeBaseCount
+	s.require(segmentResponseFieldReferencedKnowledgeBaseCount)
+}
+
+// SetReferencedDocumentCount sets the ReferencedDocumentCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetReferencedDocumentCount(referencedDocumentCount *int64) {
+	s.ReferencedDocumentCount = referencedDocumentCount
+	s.require(segmentResponseFieldReferencedDocumentCount)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;

@@ -6649,17 +6649,18 @@ func (c *ContextInfo) String() string {
 }
 
 var (
-	conversationAnalysisFieldUserRequest      = big.NewInt(1 << 0)
-	conversationAnalysisFieldAgentResponse    = big.NewInt(1 << 1)
-	conversationAnalysisFieldResolutionStatus = big.NewInt(1 << 2)
-	conversationAnalysisFieldCategory         = big.NewInt(1 << 3)
-	conversationAnalysisFieldSentiment        = big.NewInt(1 << 4)
-	conversationAnalysisFieldQuality          = big.NewInt(1 << 5)
-	conversationAnalysisFieldQualityReason    = big.NewInt(1 << 6)
-	conversationAnalysisFieldResolvedByMaven  = big.NewInt(1 << 7)
-	conversationAnalysisFieldPrimaryLanguage  = big.NewInt(1 << 8)
-	conversationAnalysisFieldPredictedNps     = big.NewInt(1 << 9)
-	conversationAnalysisFieldCsat             = big.NewInt(1 << 10)
+	conversationAnalysisFieldUserRequest            = big.NewInt(1 << 0)
+	conversationAnalysisFieldAgentResponse          = big.NewInt(1 << 1)
+	conversationAnalysisFieldResolutionStatus       = big.NewInt(1 << 2)
+	conversationAnalysisFieldCategory               = big.NewInt(1 << 3)
+	conversationAnalysisFieldSentiment              = big.NewInt(1 << 4)
+	conversationAnalysisFieldQuality                = big.NewInt(1 << 5)
+	conversationAnalysisFieldQualityReason          = big.NewInt(1 << 6)
+	conversationAnalysisFieldResolvedByMaven        = big.NewInt(1 << 7)
+	conversationAnalysisFieldPrimaryLanguage        = big.NewInt(1 << 8)
+	conversationAnalysisFieldPredictedNps           = big.NewInt(1 << 9)
+	conversationAnalysisFieldCsat                   = big.NewInt(1 << 10)
+	conversationAnalysisFieldIntelligentFieldValues = big.NewInt(1 << 11)
 )
 
 type ConversationAnalysis struct {
@@ -6685,6 +6686,8 @@ type ConversationAnalysis struct {
 	PredictedNps *float64 `json:"predictedNps,omitempty" url:"predictedNps,omitempty"`
 	// The CSAT of the conversation.
 	Csat *float64 `json:"csat,omitempty" url:"csat,omitempty"`
+	// Latest successful intelligent field values
+	IntelligentFieldValues []*IntelligentFieldValueResponse `json:"intelligentFieldValues,omitempty" url:"intelligentFieldValues,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -6768,6 +6771,13 @@ func (c *ConversationAnalysis) GetCsat() *float64 {
 		return nil
 	}
 	return c.Csat
+}
+
+func (c *ConversationAnalysis) GetIntelligentFieldValues() []*IntelligentFieldValueResponse {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldValues
 }
 
 func (c *ConversationAnalysis) GetExtraProperties() map[string]interface{} {
@@ -6856,6 +6866,13 @@ func (c *ConversationAnalysis) SetPredictedNps(predictedNps *float64) {
 func (c *ConversationAnalysis) SetCsat(csat *float64) {
 	c.Csat = csat
 	c.require(conversationAnalysisFieldCsat)
+}
+
+// SetIntelligentFieldValues sets the IntelligentFieldValues field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationAnalysis) SetIntelligentFieldValues(intelligentFieldValues []*IntelligentFieldValueResponse) {
+	c.IntelligentFieldValues = intelligentFieldValues
+	c.require(conversationAnalysisFieldIntelligentFieldValues)
 }
 
 func (c *ConversationAnalysis) UnmarshalJSON(data []byte) error {
@@ -13549,20 +13566,22 @@ func (i *IntelligentFieldCondition) validate() error {
 
 // A precondition based on the computed value of an intelligent field on the conversation.
 //
+// The structure of this precondition follows `LHS OP RHS`, where the LHS is
+// the ID of the intelligent field (<referenceId, appId>).  Available
+// operators and the corresponding types of the RHS depends on the
+// validationType of the intelligent field.
+//
 // Note: in early beta, only opt-in apps and organizations/agents can
 // specify intelligent field preconditions.  Otherwise, the request will be
 // rejected.
 var (
-	intelligentFieldPreconditionFieldFieldReferenceID = big.NewInt(1 << 0)
-	intelligentFieldPreconditionFieldFieldAppID       = big.NewInt(1 << 1)
-	intelligentFieldPreconditionFieldFieldCondition   = big.NewInt(1 << 2)
+	intelligentFieldPreconditionFieldFieldIDWithoutAgent = big.NewInt(1 << 0)
+	intelligentFieldPreconditionFieldFieldCondition      = big.NewInt(1 << 1)
 )
 
 type IntelligentFieldPrecondition struct {
-	// The referenceId of the intelligent field.
-	FieldReferenceID string `json:"fieldReferenceId" url:"fieldReferenceId"`
-	// The appId of the intelligent field. If not provided, the calling appId will be used.
-	FieldAppID *string `json:"fieldAppId,omitempty" url:"fieldAppId,omitempty"`
+	// The ID of the intelligent field.
+	FieldIDWithoutAgent *EntityIDWithoutAgent `json:"fieldIdWithoutAgent" url:"fieldIdWithoutAgent"`
 	// The condition to evaluate against the field's value.
 	FieldCondition *IntelligentFieldCondition `json:"fieldCondition" url:"fieldCondition"`
 
@@ -13573,18 +13592,11 @@ type IntelligentFieldPrecondition struct {
 	rawJSON         json.RawMessage
 }
 
-func (i *IntelligentFieldPrecondition) GetFieldReferenceID() string {
-	if i == nil {
-		return ""
-	}
-	return i.FieldReferenceID
-}
-
-func (i *IntelligentFieldPrecondition) GetFieldAppID() *string {
+func (i *IntelligentFieldPrecondition) GetFieldIDWithoutAgent() *EntityIDWithoutAgent {
 	if i == nil {
 		return nil
 	}
-	return i.FieldAppID
+	return i.FieldIDWithoutAgent
 }
 
 func (i *IntelligentFieldPrecondition) GetFieldCondition() *IntelligentFieldCondition {
@@ -13605,18 +13617,11 @@ func (i *IntelligentFieldPrecondition) require(field *big.Int) {
 	i.explicitFields.Or(i.explicitFields, field)
 }
 
-// SetFieldReferenceID sets the FieldReferenceID field and marks it as non-optional;
+// SetFieldIDWithoutAgent sets the FieldIDWithoutAgent field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldPrecondition) SetFieldReferenceID(fieldReferenceID string) {
-	i.FieldReferenceID = fieldReferenceID
-	i.require(intelligentFieldPreconditionFieldFieldReferenceID)
-}
-
-// SetFieldAppID sets the FieldAppID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldPrecondition) SetFieldAppID(fieldAppID *string) {
-	i.FieldAppID = fieldAppID
-	i.require(intelligentFieldPreconditionFieldFieldAppID)
+func (i *IntelligentFieldPrecondition) SetFieldIDWithoutAgent(fieldIDWithoutAgent *EntityIDWithoutAgent) {
+	i.FieldIDWithoutAgent = fieldIDWithoutAgent
+	i.require(intelligentFieldPreconditionFieldFieldIDWithoutAgent)
 }
 
 // SetFieldCondition sets the FieldCondition field and marks it as non-optional;
@@ -13654,6 +13659,179 @@ func (i *IntelligentFieldPrecondition) MarshalJSON() ([]byte, error) {
 }
 
 func (i *IntelligentFieldPrecondition) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
+// A single computed value for an intelligent field on a specific entity
+var (
+	intelligentFieldValueResponseFieldFieldID    = big.NewInt(1 << 0)
+	intelligentFieldValueResponseFieldEntityID   = big.NewInt(1 << 1)
+	intelligentFieldValueResponseFieldValue      = big.NewInt(1 << 2)
+	intelligentFieldValueResponseFieldConfidence = big.NewInt(1 << 3)
+	intelligentFieldValueResponseFieldRationale  = big.NewInt(1 << 4)
+	intelligentFieldValueResponseFieldCreatedAt  = big.NewInt(1 << 5)
+)
+
+type IntelligentFieldValueResponse struct {
+	// The intelligent field that this value belongs to
+	FieldID *EntityID `json:"fieldId" url:"fieldId"`
+	// The entity this value is for
+	EntityID *EntityID `json:"entityId" url:"entityId"`
+	// The computed value (typed according to validationType)
+	Value interface{} `json:"value,omitempty" url:"value,omitempty"`
+	// Optional model-provided confidence for the value
+	Confidence *float64 `json:"confidence,omitempty" url:"confidence,omitempty"`
+	// Optional short rationale/explanation from the model
+	Rationale *string `json:"rationale,omitempty" url:"rationale,omitempty"`
+	// The date and time this value was computed
+	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldValueResponse) GetFieldID() *EntityID {
+	if i == nil {
+		return nil
+	}
+	return i.FieldID
+}
+
+func (i *IntelligentFieldValueResponse) GetEntityID() *EntityID {
+	if i == nil {
+		return nil
+	}
+	return i.EntityID
+}
+
+func (i *IntelligentFieldValueResponse) GetValue() interface{} {
+	if i == nil {
+		return nil
+	}
+	return i.Value
+}
+
+func (i *IntelligentFieldValueResponse) GetConfidence() *float64 {
+	if i == nil {
+		return nil
+	}
+	return i.Confidence
+}
+
+func (i *IntelligentFieldValueResponse) GetRationale() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Rationale
+}
+
+func (i *IntelligentFieldValueResponse) GetCreatedAt() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.CreatedAt
+}
+
+func (i *IntelligentFieldValueResponse) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldValueResponse) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetFieldID sets the FieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetFieldID(fieldID *EntityID) {
+	i.FieldID = fieldID
+	i.require(intelligentFieldValueResponseFieldFieldID)
+}
+
+// SetEntityID sets the EntityID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetEntityID(entityID *EntityID) {
+	i.EntityID = entityID
+	i.require(intelligentFieldValueResponseFieldEntityID)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetValue(value interface{}) {
+	i.Value = value
+	i.require(intelligentFieldValueResponseFieldValue)
+}
+
+// SetConfidence sets the Confidence field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetConfidence(confidence *float64) {
+	i.Confidence = confidence
+	i.require(intelligentFieldValueResponseFieldConfidence)
+}
+
+// SetRationale sets the Rationale field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetRationale(rationale *string) {
+	i.Rationale = rationale
+	i.require(intelligentFieldValueResponseFieldRationale)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetCreatedAt(createdAt *time.Time) {
+	i.CreatedAt = createdAt
+	i.require(intelligentFieldValueResponseFieldCreatedAt)
+}
+
+func (i *IntelligentFieldValueResponse) UnmarshalJSON(data []byte) error {
+	type embed IntelligentFieldValueResponse
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
+	}{
+		embed: embed(*i),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*i = IntelligentFieldValueResponse(unmarshaler.embed)
+	i.CreatedAt = unmarshaler.CreatedAt.TimePtr()
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldValueResponse) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldValueResponse
+	var marshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
+	}{
+		embed:     embed(*i),
+		CreatedAt: internal.NewOptionalDateTime(i.CreatedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldValueResponse) String() string {
 	if len(i.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
 			return value
@@ -18496,8 +18674,8 @@ const (
 	SetRelationOperatorNeq SetRelationOperator = "NEQ"
 	// Set contains any of the values (A ∩ B ≠ ∅)
 	SetRelationOperatorContainsAny SetRelationOperator = "CONTAINS_ANY"
-	// Set contains none of the values (A ∩ B = ∅)
-	SetRelationOperatorNotContainsAny SetRelationOperator = "NOT_CONTAINS_ANY"
+	// Set contains none of the values (A ∩ B = ∅), i.e., negation of CONTAINS_ANY
+	SetRelationOperatorContainsNone SetRelationOperator = "CONTAINS_NONE"
 	// Set contains all of the values (A ⊇ B)
 	SetRelationOperatorContainsAll SetRelationOperator = "CONTAINS_ALL"
 	// Set does not contain all of the values (A ⊉ B)
@@ -18516,8 +18694,8 @@ func NewSetRelationOperatorFromString(s string) (SetRelationOperator, error) {
 		return SetRelationOperatorNeq, nil
 	case "CONTAINS_ANY":
 		return SetRelationOperatorContainsAny, nil
-	case "NOT_CONTAINS_ANY":
-		return SetRelationOperatorNotContainsAny, nil
+	case "CONTAINS_NONE":
+		return SetRelationOperatorContainsNone, nil
 	case "CONTAINS_ALL":
 		return SetRelationOperatorContainsAll, nil
 	case "NOT_CONTAINS_ALL":
@@ -19763,6 +19941,18 @@ const (
 	StringComparisonOperatorEq StringComparisonOperator = "EQ"
 	// Not equals (!=)
 	StringComparisonOperatorNeq StringComparisonOperator = "NEQ"
+	// String contains as substring
+	StringComparisonOperatorContainsSubstring StringComparisonOperator = "CONTAINS_SUBSTRING"
+	// String does not contain as substring, i.e., negation of CONTAINS_SUBSTRING
+	StringComparisonOperatorNotContainsSubstring StringComparisonOperator = "NOT_CONTAINS_SUBSTRING"
+	// String starts with the specified prefix
+	StringComparisonOperatorStartsWith StringComparisonOperator = "STARTS_WITH"
+	// String does not start with the specified prefix
+	StringComparisonOperatorNotStartsWith StringComparisonOperator = "NOT_STARTS_WITH"
+	// String ends with the specified suffix
+	StringComparisonOperatorEndsWith StringComparisonOperator = "ENDS_WITH"
+	// String does not end with the specified suffix
+	StringComparisonOperatorNotEndsWith StringComparisonOperator = "NOT_ENDS_WITH"
 )
 
 func NewStringComparisonOperatorFromString(s string) (StringComparisonOperator, error) {
@@ -19771,6 +19961,18 @@ func NewStringComparisonOperatorFromString(s string) (StringComparisonOperator, 
 		return StringComparisonOperatorEq, nil
 	case "NEQ":
 		return StringComparisonOperatorNeq, nil
+	case "CONTAINS_SUBSTRING":
+		return StringComparisonOperatorContainsSubstring, nil
+	case "NOT_CONTAINS_SUBSTRING":
+		return StringComparisonOperatorNotContainsSubstring, nil
+	case "STARTS_WITH":
+		return StringComparisonOperatorStartsWith, nil
+	case "NOT_STARTS_WITH":
+		return StringComparisonOperatorNotStartsWith, nil
+	case "ENDS_WITH":
+		return StringComparisonOperatorEndsWith, nil
+	case "NOT_ENDS_WITH":
+		return StringComparisonOperatorNotEndsWith, nil
 	}
 	var t StringComparisonOperator
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

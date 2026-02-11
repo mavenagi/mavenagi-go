@@ -95,7 +95,8 @@ var (
 	knowledgeBasePatchRequestFieldLlmInclusionStatus = big.NewInt(1 << 3)
 	knowledgeBasePatchRequestFieldPrecondition       = big.NewInt(1 << 4)
 	knowledgeBasePatchRequestFieldSegmentID          = big.NewInt(1 << 5)
-	knowledgeBasePatchRequestFieldRefreshFrequency   = big.NewInt(1 << 6)
+	knowledgeBasePatchRequestFieldSegmentIDs         = big.NewInt(1 << 6)
+	knowledgeBasePatchRequestFieldRefreshFrequency   = big.NewInt(1 << 7)
 )
 
 type KnowledgeBasePatchRequest struct {
@@ -109,12 +110,18 @@ type KnowledgeBasePatchRequest struct {
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"-"`
 	// The preconditions that must be met for a knowledge base to be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users. A null value will remove the precondition from the knowledge base, it will be available on all conversations.
 	Precondition *Precondition `json:"precondition,omitempty" url:"-"`
-	// The ID of the segment that must be matched for the knowledge base to be relevant to a conversation.
+	// The ID of a segment that must be matched for the knowledge base to be relevant to a conversation.
 	// A null value will remove the segment from the knowledge base, it will be available on all conversations.
 	//
 	// Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"-"`
+	// The IDs of segment that should be matched (under an OR clause) for the knowledge base to be relevant to a
+	// conversation. An empty list will remove segments from the knowledge base, it will be available on all
+	// conversations.
+	// Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
+	// Inline precondition support will be removed in a future release.
+	SegmentIDs []*EntityID `json:"segmentIds,omitempty" url:"-"`
 	// How often the knowledge base should be refreshed.
 	RefreshFrequency *KnowledgeBaseRefreshFrequency `json:"refreshFrequency,omitempty" url:"-"`
 
@@ -169,6 +176,13 @@ func (k *KnowledgeBasePatchRequest) SetPrecondition(precondition *Precondition) 
 func (k *KnowledgeBasePatchRequest) SetSegmentID(segmentID *EntityID) {
 	k.SegmentID = segmentID
 	k.require(knowledgeBasePatchRequestFieldSegmentID)
+}
+
+// SetSegmentIDs sets the SegmentIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBasePatchRequest) SetSegmentIDs(segmentIDs []*EntityID) {
+	k.SegmentIDs = segmentIDs
+	k.require(knowledgeBasePatchRequestFieldSegmentIDs)
 }
 
 // SetRefreshFrequency sets the RefreshFrequency field and marks it as non-optional;
@@ -473,6 +487,7 @@ var (
 	knowledgeBaseFilterFieldAppIDs                  = big.NewInt(1 << 4)
 	knowledgeBaseFilterFieldMostRecentVersionStatus = big.NewInt(1 << 5)
 	knowledgeBaseFilterFieldLlmInclusionStatus      = big.NewInt(1 << 6)
+	knowledgeBaseFilterFieldSegmentID               = big.NewInt(1 << 7)
 )
 
 type KnowledgeBaseFilter struct {
@@ -501,6 +516,8 @@ type KnowledgeBaseFilter struct {
 	MostRecentVersionStatus []KnowledgeBaseVersionStatus `json:"mostRecentVersionStatus,omitempty" url:"mostRecentVersionStatus,omitempty"`
 	// Filter knowledge bases by the LLM inclusion status
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
+	// Filter knowledge bases by the segment they are assigned to.
+	SegmentID *string `json:"segmentId,omitempty" url:"segmentId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -556,6 +573,13 @@ func (k *KnowledgeBaseFilter) GetLlmInclusionStatus() *LlmInclusionStatus {
 		return nil
 	}
 	return k.LlmInclusionStatus
+}
+
+func (k *KnowledgeBaseFilter) GetSegmentID() *string {
+	if k == nil {
+		return nil
+	}
+	return k.SegmentID
 }
 
 func (k *KnowledgeBaseFilter) GetExtraProperties() map[string]interface{} {
@@ -616,6 +640,13 @@ func (k *KnowledgeBaseFilter) SetMostRecentVersionStatus(mostRecentVersionStatus
 func (k *KnowledgeBaseFilter) SetLlmInclusionStatus(llmInclusionStatus *LlmInclusionStatus) {
 	k.LlmInclusionStatus = llmInclusionStatus
 	k.require(knowledgeBaseFilterFieldLlmInclusionStatus)
+}
+
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseFilter) SetSegmentID(segmentID *string) {
+	k.SegmentID = segmentID
+	k.require(knowledgeBaseFilterFieldSegmentID)
 }
 
 func (k *KnowledgeBaseFilter) UnmarshalJSON(data []byte) error {
@@ -1016,7 +1047,8 @@ var (
 	knowledgeBaseResponseFieldLlmInclusionStatus      = big.NewInt(1 << 10)
 	knowledgeBaseResponseFieldRefreshFrequency        = big.NewInt(1 << 11)
 	knowledgeBaseResponseFieldSegmentID               = big.NewInt(1 << 12)
-	knowledgeBaseResponseFieldURL                     = big.NewInt(1 << 13)
+	knowledgeBaseResponseFieldSegmentIDs              = big.NewInt(1 << 13)
+	knowledgeBaseResponseFieldURL                     = big.NewInt(1 << 14)
 )
 
 type KnowledgeBaseResponse struct {
@@ -1050,6 +1082,10 @@ type KnowledgeBaseResponse struct {
 	// Segments are replacing inline preconditions - a Knowledge Base may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	// The IDs of the segments that should be matched for the knowledge base to be relevant to a conversation.
+	// Segments are replacing inline preconditions - a Knowledge Base may not have both an inline precondition and a segment.
+	// Inline precondition support will be removed in a future release.
+	SegmentIDs []*EntityID `json:"segmentIds" url:"segmentIds"`
 	// The source URL of URL and RSS knowledge bases that was used for crawl.
 	URL *string `json:"url,omitempty" url:"url,omitempty"`
 
@@ -1149,6 +1185,13 @@ func (k *KnowledgeBaseResponse) GetSegmentID() *EntityID {
 		return nil
 	}
 	return k.SegmentID
+}
+
+func (k *KnowledgeBaseResponse) GetSegmentIDs() []*EntityID {
+	if k == nil {
+		return nil
+	}
+	return k.SegmentIDs
 }
 
 func (k *KnowledgeBaseResponse) GetURL() *string {
@@ -1258,6 +1301,13 @@ func (k *KnowledgeBaseResponse) SetRefreshFrequency(refreshFrequency KnowledgeBa
 func (k *KnowledgeBaseResponse) SetSegmentID(segmentID *EntityID) {
 	k.SegmentID = segmentID
 	k.require(knowledgeBaseResponseFieldSegmentID)
+}
+
+// SetSegmentIDs sets the SegmentIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseResponse) SetSegmentIDs(segmentIDs []*EntityID) {
+	k.SegmentIDs = segmentIDs
+	k.require(knowledgeBaseResponseFieldSegmentIDs)
 }
 
 // SetURL sets the URL field and marks it as non-optional;
