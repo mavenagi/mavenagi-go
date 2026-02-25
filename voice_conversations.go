@@ -9,7 +9,7 @@ import (
 	big "math/big"
 )
 
-// Audio chunk to send into the conversation.
+// Audio chunk from the agent.
 var (
 	agentAudioChunkFieldEventID = big.NewInt(1 << 0)
 	agentAudioChunkFieldData    = big.NewInt(1 << 1)
@@ -270,9 +270,9 @@ var (
 )
 
 type Config struct {
-	// The user text to send into the conversation.
+	// The input audio format from the client.
 	InputFormat AudioFormat `json:"inputFormat" url:"inputFormat"`
-	// The user text to send into the conversation.
+	// The output audio format to send to the client.
 	OutputFormat AudioFormat `json:"outputFormat" url:"outputFormat"`
 	// The conversation ID which was created prior to starting this conversation.
 	ConversationID string `json:"conversationId" url:"conversationId"`
@@ -791,7 +791,7 @@ var (
 )
 
 type UserAudioChunk struct {
-	// Base64-encoded AI audio data
+	// Base64-encoded audio data
 	Data string `json:"data" url:"data"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

@@ -240,61 +240,6 @@ func (c *Client) AskStream(
 	)
 }
 
-// Generate a structured object response based on a provided schema and user prompt with a streaming response.
-// The response will be sent as a stream of events containing text, start, and end events.
-// The text portions of stream responses should be concatenated to form the full response text.
-//
-// If the user question and object response already exist, they will be reused and not updated.
-//
-// Concurrency Behavior:
-// - If another API call is made for the same user question while a response is mid-stream, partial answers may be returned.
-// - The second caller will receive a truncated or partial response depending on where the first stream is in its processing. The first caller's stream will remain unaffected and continue delivering the full response.
-//
-// Known Limitations:
-// - Schema enforcement is best-effort and may not guarantee exact conformity.
-// - The API does not currently expose metadata indicating whether a response or message is incomplete. This will be addressed in a future update.
-func (c *Client) AskObjectStream(
-	ctx context.Context,
-	// The ID of a new or existing conversation to use as context for the object generation request
-	conversationID string,
-	request *mavenagigo.AskObjectRequest,
-	opts ...option.RequestOption,
-) (*core.Stream[mavenagigo.ObjectStreamResponse], error) {
-	options := core.NewRequestOptions(opts...)
-	baseURL := internal.ResolveBaseURL(
-		options.BaseURL,
-		c.baseURL,
-		"https://www.mavenagi-apis.com",
-	)
-	endpointURL := internal.EncodeURL(
-		baseURL+"/v1/conversations/%v/ask_object_stream",
-		conversationID,
-	)
-	headers := internal.MergeHeaders(
-		c.options.ToHeader(),
-		options.ToHeader(),
-	)
-	headers.Add("Accept", "text/event-stream")
-	streamer := internal.NewStreamer[mavenagigo.ObjectStreamResponse](c.caller)
-	return streamer.Stream(
-		ctx,
-		&internal.StreamParams{
-			URL:             endpointURL,
-			Method:          http.MethodPost,
-			Headers:         headers,
-			MaxAttempts:     options.MaxAttempts,
-			BodyProperties:  options.BodyProperties,
-			QueryParameters: options.QueryParameters,
-			Client:          options.HTTPClient,
-			Prefix:          internal.DefaultSSEDataPrefix,
-			Terminator:      internal.DefaultSSETerminator,
-			Format:          core.StreamFormatSSE,
-			Request:         request,
-			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
-		},
-	)
-}
-
 // Uses an LLM flow to categorize the conversation. Experimental.
 func (c *Client) Categorize(
 	ctx context.Context,

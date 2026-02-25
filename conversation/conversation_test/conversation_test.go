@@ -302,36 +302,6 @@ func TestConversationAskStreamWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/conversations/conversation-0/ask_stream", nil, 1)
 }
 
-func TestConversationAskObjectStreamWithWireMock(
-	t *testing.T,
-) {
-	ResetWireMockRequests(t)
-	WireMockBaseURL := "http://localhost:8080"
-	client := client.NewMavenAGI(
-		option.WithBaseURL(
-			WireMockBaseURL,
-		),
-	)
-	request := &mavenagigo.AskObjectRequest{
-		Schema: "schema",
-		ConversationMessageID: &mavenagigo.EntityIDBase{
-			ReferenceID: "x",
-		},
-		UserID: &mavenagigo.EntityIDBase{
-			ReferenceID: "x",
-		},
-		Text: "text",
-	}
-	_, invocationErr := client.Conversation.AskObjectStream(
-		context.TODO(),
-		"conversationId",
-		request,
-	)
-
-	require.NoError(t, invocationErr, "Client method call should succeed")
-	VerifyRequestCount(t, "POST", "/v1/conversations/conversationId/ask_object_stream", nil, 1)
-}
-
 func TestConversationCategorizeWithWireMock(
 	t *testing.T,
 ) {

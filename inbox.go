@@ -11,6 +11,42 @@ import (
 )
 
 var (
+	inboxItemApplyTagsRequestFieldAppID = big.NewInt(1 << 0)
+	inboxItemApplyTagsRequestFieldTags  = big.NewInt(1 << 1)
+)
+
+type InboxItemApplyTagsRequest struct {
+	// The App ID of a custom inbox item to patch tags for. For server-managed inbox items such as Missing Knowledge and Duplicate Documents, the appId field is not required and will be ignored.
+	AppID *string `json:"appId,omitempty" url:"-"`
+	// A set of tags associated with the inbox item that are used for filtering.
+	Tags []string `json:"tags,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (i *InboxItemApplyTagsRequest) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemApplyTagsRequest) SetAppID(appID *string) {
+	i.AppID = appID
+	i.require(inboxItemApplyTagsRequestFieldAppID)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemApplyTagsRequest) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(inboxItemApplyTagsRequestFieldTags)
+}
+
+var (
 	inboxItemRequestFieldAppID = big.NewInt(1 << 0)
 )
 
@@ -301,8 +337,9 @@ func (a *ApplyFixesRequest) String() string {
 var (
 	inboxFilterFieldStatuses      = big.NewInt(1 << 0)
 	inboxFilterFieldType          = big.NewInt(1 << 1)
-	inboxFilterFieldCreatedAfter  = big.NewInt(1 << 2)
-	inboxFilterFieldCreatedBefore = big.NewInt(1 << 3)
+	inboxFilterFieldTags          = big.NewInt(1 << 2)
+	inboxFilterFieldCreatedAfter  = big.NewInt(1 << 3)
+	inboxFilterFieldCreatedBefore = big.NewInt(1 << 4)
 )
 
 type InboxFilter struct {
@@ -310,6 +347,8 @@ type InboxFilter struct {
 	Statuses []InboxItemStatus `json:"statuses,omitempty" url:"statuses,omitempty"`
 	// List of inbox item types to filter by.
 	Type []InboxItemType `json:"type,omitempty" url:"type,omitempty"`
+	// Filter for items that have at least one of these tags.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Filter for items created after this timestamp.
 	CreatedAfter *time.Time `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
 	// Filter for items created before this timestamp.
@@ -334,6 +373,13 @@ func (i *InboxFilter) GetType() []InboxItemType {
 		return nil
 	}
 	return i.Type
+}
+
+func (i *InboxFilter) GetTags() []string {
+	if i == nil {
+		return nil
+	}
+	return i.Tags
 }
 
 func (i *InboxFilter) GetCreatedAfter() *time.Time {
@@ -373,6 +419,13 @@ func (i *InboxFilter) SetStatuses(statuses []InboxItemStatus) {
 func (i *InboxFilter) SetType(type_ []InboxItemType) {
 	i.Type = type_
 	i.require(inboxFilterFieldType)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxFilter) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(inboxFilterFieldTags)
 }
 
 // SetCreatedAfter sets the CreatedAfter field and marks it as non-optional;

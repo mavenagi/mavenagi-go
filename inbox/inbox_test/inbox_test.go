@@ -81,6 +81,32 @@ func TestInboxSearchWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/inbox/search", nil, 1)
 }
 
+func TestInboxApplyTagsWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.InboxItemApplyTagsRequest{
+		Tags: []string{
+			"tag1",
+			"tag2",
+		},
+	}
+	_, invocationErr := client.Inbox.ApplyTags(
+		context.TODO(),
+		"custom-item-1",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "PATCH", "/v1/inbox/custom-item-1/tags", nil, 1)
+}
+
 func TestInboxGetWithWireMock(
 	t *testing.T,
 ) {

@@ -56,6 +56,26 @@ func (c *Client) Search(
 	return response.Body, nil
 }
 
+// Update inbox item tag fields. All tags provided will overwrite the existing tags on the inbox item.
+func (c *Client) ApplyTags(
+	ctx context.Context,
+	// The ID of the inbox item to add tags to.
+	inboxItemID string,
+	request *mavenagigo.InboxItemApplyTagsRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.InboxItem, error) {
+	response, err := c.WithRawResponse.ApplyTags(
+		ctx,
+		inboxItemID,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
 // Retrieve details of a specific inbox item by its ID.
 func (c *Client) Get(
 	ctx context.Context,

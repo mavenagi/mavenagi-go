@@ -8,7 +8,6 @@ import (
 	analytics "github.com/mavenagi/mavenagi-go/analytics"
 	appsettings "github.com/mavenagi/mavenagi-go/appsettings"
 	assets "github.com/mavenagi/mavenagi-go/assets"
-	auth "github.com/mavenagi/mavenagi-go/auth"
 	conversation "github.com/mavenagi/mavenagi-go/conversation"
 	core "github.com/mavenagi/mavenagi-go/core"
 	customers "github.com/mavenagi/mavenagi-go/customers"
@@ -23,6 +22,7 @@ import (
 	translations "github.com/mavenagi/mavenagi-go/translations"
 	triggers "github.com/mavenagi/mavenagi-go/triggers"
 	users "github.com/mavenagi/mavenagi-go/users"
+	voice "github.com/mavenagi/mavenagi-go/voice"
 	os "os"
 )
 
@@ -32,7 +32,6 @@ type MavenAGI struct {
 	Analytics     *analytics.Client
 	AppSettings   *appsettings.Client
 	Assets        *assets.Client
-	Auth          *auth.Client
 	Conversation  *conversation.Client
 	Customers     *customers.Client
 	Events        *events.Client
@@ -44,6 +43,7 @@ type MavenAGI struct {
 	Translations  *translations.Client
 	Triggers      *triggers.Client
 	Users         *users.Client
+	Voice         *voice.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -64,7 +64,6 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		Analytics:     analytics.NewClient(options),
 		AppSettings:   appsettings.NewClient(options),
 		Assets:        assets.NewClient(options),
-		Auth:          auth.NewClient(options),
 		Conversation:  conversation.NewClient(options),
 		Customers:     customers.NewClient(options),
 		Events:        events.NewClient(options),
@@ -76,6 +75,7 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		Translations:  translations.NewClient(options),
 		Triggers:      triggers.NewClient(options),
 		Users:         users.NewClient(options),
+		Voice:         voice.NewClient(options),
 		options:       options,
 		baseURL:       options.BaseURL,
 		caller: internal.NewCaller(

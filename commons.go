@@ -2471,6 +2471,7 @@ type AttachmentRequest struct {
 	// - application/msword
 	// - application/vnd.ms-excel
 	// - application/vnd.ms-powerpoint
+	// - application/x-subrip
 	// - audio/aac
 	// - audio/mpeg
 	// - audio/mp4
@@ -2623,6 +2624,7 @@ type AttachmentResponse struct {
 	// - application/msword
 	// - application/vnd.ms-excel
 	// - application/vnd.ms-powerpoint
+	// - application/x-subrip
 	// - audio/aac
 	// - audio/mpeg
 	// - audio/mp4
@@ -2816,6 +2818,7 @@ type BaseAttachment struct {
 	// - application/msword
 	// - application/vnd.ms-excel
 	// - application/vnd.ms-powerpoint
+	// - application/x-subrip
 	// - audio/aac
 	// - audio/mpeg
 	// - audio/mp4
@@ -12117,6 +12120,7 @@ var (
 	inboxItemBaseFieldUpdatedAt = big.NewInt(1 << 2)
 	inboxItemBaseFieldStatus    = big.NewInt(1 << 3)
 	inboxItemBaseFieldSeverity  = big.NewInt(1 << 4)
+	inboxItemBaseFieldTags      = big.NewInt(1 << 5)
 )
 
 type InboxItemBase struct {
@@ -12130,6 +12134,8 @@ type InboxItemBase struct {
 	Status InboxItemStatus `json:"status" url:"status"`
 	// Severity of the inbox item.
 	Severity InboxItemSeverity `json:"severity" url:"severity"`
+	// A set of tags associated with the inbox item that are used for filtering.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12171,6 +12177,13 @@ func (i *InboxItemBase) GetSeverity() InboxItemSeverity {
 		return ""
 	}
 	return i.Severity
+}
+
+func (i *InboxItemBase) GetTags() []string {
+	if i == nil {
+		return nil
+	}
+	return i.Tags
 }
 
 func (i *InboxItemBase) GetExtraProperties() map[string]interface{} {
@@ -12217,6 +12230,13 @@ func (i *InboxItemBase) SetStatus(status InboxItemStatus) {
 func (i *InboxItemBase) SetSeverity(severity InboxItemSeverity) {
 	i.Severity = severity
 	i.require(inboxItemBaseFieldSeverity)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemBase) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(inboxItemBaseFieldTags)
 }
 
 func (i *InboxItemBase) UnmarshalJSON(data []byte) error {
@@ -12276,7 +12296,8 @@ var (
 	inboxItemCustomFieldUpdatedAt = big.NewInt(1 << 2)
 	inboxItemCustomFieldStatus    = big.NewInt(1 << 3)
 	inboxItemCustomFieldSeverity  = big.NewInt(1 << 4)
-	inboxItemCustomFieldMetadata  = big.NewInt(1 << 5)
+	inboxItemCustomFieldTags      = big.NewInt(1 << 5)
+	inboxItemCustomFieldMetadata  = big.NewInt(1 << 6)
 )
 
 type InboxItemCustom struct {
@@ -12290,6 +12311,8 @@ type InboxItemCustom struct {
 	Status InboxItemStatus `json:"status" url:"status"`
 	// Severity of the inbox item.
 	Severity InboxItemSeverity `json:"severity" url:"severity"`
+	// A set of tags associated with the inbox item that are used for filtering.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Additional metadata associated with the inbox item.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
 
@@ -12333,6 +12356,13 @@ func (i *InboxItemCustom) GetSeverity() InboxItemSeverity {
 		return ""
 	}
 	return i.Severity
+}
+
+func (i *InboxItemCustom) GetTags() []string {
+	if i == nil {
+		return nil
+	}
+	return i.Tags
 }
 
 func (i *InboxItemCustom) GetMetadata() map[string]string {
@@ -12386,6 +12416,13 @@ func (i *InboxItemCustom) SetStatus(status InboxItemStatus) {
 func (i *InboxItemCustom) SetSeverity(severity InboxItemSeverity) {
 	i.Severity = severity
 	i.require(inboxItemCustomFieldSeverity)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(inboxItemCustomFieldTags)
 }
 
 // SetMetadata sets the Metadata field and marks it as non-optional;
@@ -12452,10 +12489,11 @@ var (
 	inboxItemDuplicateDocumentsFieldUpdatedAt        = big.NewInt(1 << 2)
 	inboxItemDuplicateDocumentsFieldStatus           = big.NewInt(1 << 3)
 	inboxItemDuplicateDocumentsFieldSeverity         = big.NewInt(1 << 4)
-	inboxItemDuplicateDocumentsFieldRecommendedFixes = big.NewInt(1 << 5)
-	inboxItemDuplicateDocumentsFieldOtherFixes       = big.NewInt(1 << 6)
-	inboxItemDuplicateDocumentsFieldSourceDocument   = big.NewInt(1 << 7)
-	inboxItemDuplicateDocumentsFieldDocuments        = big.NewInt(1 << 8)
+	inboxItemDuplicateDocumentsFieldTags             = big.NewInt(1 << 5)
+	inboxItemDuplicateDocumentsFieldRecommendedFixes = big.NewInt(1 << 6)
+	inboxItemDuplicateDocumentsFieldOtherFixes       = big.NewInt(1 << 7)
+	inboxItemDuplicateDocumentsFieldSourceDocument   = big.NewInt(1 << 8)
+	inboxItemDuplicateDocumentsFieldDocuments        = big.NewInt(1 << 9)
 )
 
 type InboxItemDuplicateDocuments struct {
@@ -12469,6 +12507,8 @@ type InboxItemDuplicateDocuments struct {
 	Status InboxItemStatus `json:"status" url:"status"`
 	// Severity of the inbox item.
 	Severity InboxItemSeverity `json:"severity" url:"severity"`
+	// A set of tags associated with the inbox item that are used for filtering.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// The fix recommended for being applied
 	RecommendedFixes []*InboxItemFixDeactivateDocument `json:"recommendedFixes" url:"recommendedFixes"`
 	// List of fixes associated with the inbox item.
@@ -12518,6 +12558,13 @@ func (i *InboxItemDuplicateDocuments) GetSeverity() InboxItemSeverity {
 		return ""
 	}
 	return i.Severity
+}
+
+func (i *InboxItemDuplicateDocuments) GetTags() []string {
+	if i == nil {
+		return nil
+	}
+	return i.Tags
 }
 
 func (i *InboxItemDuplicateDocuments) GetRecommendedFixes() []*InboxItemFixDeactivateDocument {
@@ -12592,6 +12639,13 @@ func (i *InboxItemDuplicateDocuments) SetStatus(status InboxItemStatus) {
 func (i *InboxItemDuplicateDocuments) SetSeverity(severity InboxItemSeverity) {
 	i.Severity = severity
 	i.require(inboxItemDuplicateDocumentsFieldSeverity)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemDuplicateDocuments) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(inboxItemDuplicateDocumentsFieldTags)
 }
 
 // SetRecommendedFixes sets the RecommendedFixes field and marks it as non-optional;
@@ -13084,8 +13138,9 @@ var (
 	inboxItemMissingKnowledgeFieldUpdatedAt     = big.NewInt(1 << 2)
 	inboxItemMissingKnowledgeFieldStatus        = big.NewInt(1 << 3)
 	inboxItemMissingKnowledgeFieldSeverity      = big.NewInt(1 << 4)
-	inboxItemMissingKnowledgeFieldFix           = big.NewInt(1 << 5)
-	inboxItemMissingKnowledgeFieldConversations = big.NewInt(1 << 6)
+	inboxItemMissingKnowledgeFieldTags          = big.NewInt(1 << 5)
+	inboxItemMissingKnowledgeFieldFix           = big.NewInt(1 << 6)
+	inboxItemMissingKnowledgeFieldConversations = big.NewInt(1 << 7)
 )
 
 type InboxItemMissingKnowledge struct {
@@ -13099,6 +13154,8 @@ type InboxItemMissingKnowledge struct {
 	Status InboxItemStatus `json:"status" url:"status"`
 	// Severity of the inbox item.
 	Severity InboxItemSeverity `json:"severity" url:"severity"`
+	// A set of tags associated with the inbox item that are used for filtering.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Fix associated with the inbox item.
 	Fix *InboxItemFixAddDocument `json:"fix" url:"fix"`
 	// List of Conversation information objects related to the inbox item.
@@ -13144,6 +13201,13 @@ func (i *InboxItemMissingKnowledge) GetSeverity() InboxItemSeverity {
 		return ""
 	}
 	return i.Severity
+}
+
+func (i *InboxItemMissingKnowledge) GetTags() []string {
+	if i == nil {
+		return nil
+	}
+	return i.Tags
 }
 
 func (i *InboxItemMissingKnowledge) GetFix() *InboxItemFixAddDocument {
@@ -13204,6 +13268,13 @@ func (i *InboxItemMissingKnowledge) SetStatus(status InboxItemStatus) {
 func (i *InboxItemMissingKnowledge) SetSeverity(severity InboxItemSeverity) {
 	i.Severity = severity
 	i.require(inboxItemMissingKnowledgeFieldSeverity)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemMissingKnowledge) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(inboxItemMissingKnowledgeFieldTags)
 }
 
 // SetFix sets the Fix field and marks it as non-optional;

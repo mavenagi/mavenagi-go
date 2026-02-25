@@ -1737,70 +1737,6 @@ client.Assets.CommitUpload(
 </dl>
 </details>
 
-## Auth
-<details><summary><code>client.Auth.SessionToken(request) -> *mavenagigo.SessionTokenResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Creates a short-lived session token that can be used to authenticate 
-WebSocket connections. Session tokens are useful for client-side applications where 
-you don’t want to expose your API key.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &mavenagigo.SessionTokenRequest{
-        TTLSeconds: 3600,
-    }
-client.Auth.SessionToken(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `*mavenagigo.SessionTokenRequest` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
 ## Conversation
 <details><summary><code>client.Conversation.Initialize(request) -> *mavenagigo.ConversationResponse</code></summary>
 <dl>
@@ -2408,95 +2344,6 @@ client.Conversation.AskStream(
 <dd>
 
 **request:** `*mavenagigo.AskRequest` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.Conversation.AskObjectStream(ConversationID, request) -> mavenagigo.ObjectStreamResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Generate a structured object response based on a provided schema and user prompt with a streaming response. 
-The response will be sent as a stream of events containing text, start, and end events.
-The text portions of stream responses should be concatenated to form the full response text.
-
-If the user question and object response already exist, they will be reused and not updated.
-
-Concurrency Behavior:
-- If another API call is made for the same user question while a response is mid-stream, partial answers may be returned.
-- The second caller will receive a truncated or partial response depending on where the first stream is in its processing. The first caller's stream will remain unaffected and continue delivering the full response.
-
-Known Limitations:
-- Schema enforcement is best-effort and may not guarantee exact conformity.
-- The API does not currently expose metadata indicating whether a response or message is incomplete. This will be addressed in a future update.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &mavenagigo.AskObjectRequest{
-        Schema: "schema",
-        ConversationMessageID: &mavenagigo.EntityIDBase{
-            ReferenceID: "x",
-        },
-        UserID: &mavenagigo.EntityIDBase{
-            ReferenceID: "x",
-        },
-        Text: "text",
-    }
-client.Conversation.AskObjectStream(
-        context.TODO(),
-        "conversationId",
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**conversationID:** `string` — The ID of a new or existing conversation to use as context for the object generation request
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `*mavenagigo.AskObjectRequest` 
     
 </dd>
 </dl>
@@ -3641,6 +3488,87 @@ client.Inbox.Search(
 <dd>
 
 **request:** `*mavenagigo.InboxSearchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Inbox.ApplyTags(InboxItemID, request) -> *mavenagigo.InboxItem</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update inbox item tag fields. All tags provided will overwrite the existing tags on the inbox item.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.InboxItemApplyTagsRequest{
+        Tags: []string{
+            "tag1",
+            "tag2",
+        },
+    }
+client.Inbox.ApplyTags(
+        context.TODO(),
+        "custom-item-1",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**inboxItemID:** `string` — The ID of the inbox item to add tags to.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of a custom inbox item to patch tags for. For server-managed inbox items such as Missing Knowledge and Duplicate Documents, the appId field is not required and will be ignored.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**tags:** `[]string` — A set of tags associated with the inbox item that are used for filtering.
     
 </dd>
 </dl>
@@ -6539,6 +6467,75 @@ client.Users.Delete(
 <dd>
 
 **appID:** `*string` — The App ID of the app user to delete. If not provided the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Voice
+<details><summary><code>client.Voice.SessionToken(request) -> *mavenagigo.VoiceSessionTokenResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Creates a short-lived session token for authenticating voice connections.
+
+Supports two token types:
+- **webrtc**: A Twilio-compatible access token for browser-based WebRTC calls
+- **websocket**: An RS256 JWT for direct WebSocket connections to /v1/voice/conversations
+
+Session tokens are required before establishing any voice connection.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.VoiceSessionTokenRequest{
+        AppUserID: "appUserId",
+        Type: mavenagigo.VoiceTokenTypeWebrtc,
+    }
+client.Voice.SessionToken(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.VoiceSessionTokenRequest` 
     
 </dd>
 </dl>

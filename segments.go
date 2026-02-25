@@ -197,6 +197,123 @@ func (s SegmentField) Ptr() *SegmentField {
 	return &s
 }
 
+// Filter criteria for searching segments.
+var (
+	segmentFilterFieldName        = big.NewInt(1 << 0)
+	segmentFilterFieldDescription = big.NewInt(1 << 1)
+	segmentFilterFieldStatuses    = big.NewInt(1 << 2)
+)
+
+type SegmentFilter struct {
+	// Filter segments by name. Case-insensitive substring match.
+	// Empty string returns all results.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// Filter segments by description. Case-insensitive substring match.
+	// Empty string returns all results.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// Filter segments by status. Returns segments matching any of the provided statuses.
+	// Empty list returns all non-deleted results.
+	Statuses []SegmentStatus `json:"statuses,omitempty" url:"statuses,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SegmentFilter) GetName() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Name
+}
+
+func (s *SegmentFilter) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
+}
+
+func (s *SegmentFilter) GetStatuses() []SegmentStatus {
+	if s == nil {
+		return nil
+	}
+	return s.Statuses
+}
+
+func (s *SegmentFilter) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SegmentFilter) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentFilter) SetName(name *string) {
+	s.Name = name
+	s.require(segmentFilterFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentFilter) SetDescription(description *string) {
+	s.Description = description
+	s.require(segmentFilterFieldDescription)
+}
+
+// SetStatuses sets the Statuses field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentFilter) SetStatuses(statuses []SegmentStatus) {
+	s.Statuses = statuses
+	s.require(segmentFilterFieldStatuses)
+}
+
+func (s *SegmentFilter) UnmarshalJSON(data []byte) error {
+	type unmarshaler SegmentFilter
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SegmentFilter(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SegmentFilter) MarshalJSON() ([]byte, error) {
+	type embed SegmentFilter
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SegmentFilter) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
 var (
 	segmentPatchRequestFieldAppID        = big.NewInt(1 << 0)
 	segmentPatchRequestFieldName         = big.NewInt(1 << 1)
@@ -349,6 +466,7 @@ var (
 	segmentRequestFieldDescription  = big.NewInt(1 << 1)
 	segmentRequestFieldPrecondition = big.NewInt(1 << 2)
 	segmentRequestFieldSegmentID    = big.NewInt(1 << 3)
+	segmentRequestFieldStatus       = big.NewInt(1 << 4)
 )
 
 type SegmentRequest struct {
@@ -360,6 +478,8 @@ type SegmentRequest struct {
 	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// ID that uniquely identifies this segment
 	SegmentID *EntityIDBase `json:"segmentId" url:"segmentId"`
+	// Desired status for the segment. If omitted, defaults to ACTIVE. In the future this will become required, so specify ACTIVE or INACTIVE if possible.
+	Status *SegmentStatus `json:"status,omitempty" url:"status,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -394,6 +514,13 @@ func (s *SegmentRequest) GetSegmentID() *EntityIDBase {
 		return nil
 	}
 	return s.SegmentID
+}
+
+func (s *SegmentRequest) GetStatus() *SegmentStatus {
+	if s == nil {
+		return nil
+	}
+	return s.Status
 }
 
 func (s *SegmentRequest) GetExtraProperties() map[string]interface{} {
@@ -433,6 +560,13 @@ func (s *SegmentRequest) SetPrecondition(precondition *Precondition) {
 func (s *SegmentRequest) SetSegmentID(segmentID *EntityIDBase) {
 	s.SegmentID = segmentID
 	s.require(segmentRequestFieldSegmentID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentRequest) SetStatus(status *SegmentStatus) {
+	s.Status = status
+	s.require(segmentRequestFieldStatus)
 }
 
 func (s *SegmentRequest) UnmarshalJSON(data []byte) error {
@@ -483,7 +617,8 @@ var (
 	segmentResponseFieldUpdatedAt                    = big.NewInt(1 << 5)
 	segmentResponseFieldReferencedKnowledgeBaseCount = big.NewInt(1 << 6)
 	segmentResponseFieldReferencedDocumentCount      = big.NewInt(1 << 7)
-	segmentResponseFieldStatus                       = big.NewInt(1 << 8)
+	segmentResponseFieldReferencedActionCount        = big.NewInt(1 << 8)
+	segmentResponseFieldStatus                       = big.NewInt(1 << 9)
 )
 
 type SegmentResponse struct {
@@ -503,6 +638,8 @@ type SegmentResponse struct {
 	ReferencedKnowledgeBaseCount *int64 `json:"referencedKnowledgeBaseCount,omitempty" url:"referencedKnowledgeBaseCount,omitempty"`
 	// The number of active documents that reference this segment.
 	ReferencedDocumentCount *int64 `json:"referencedDocumentCount,omitempty" url:"referencedDocumentCount,omitempty"`
+	// The number of active actions that reference this segment.
+	ReferencedActionCount *int64 `json:"referencedActionCount,omitempty" url:"referencedActionCount,omitempty"`
 	// The status of the segment.
 	//
 	// - ACTIVE: Segment is in use and will be evaluated for matching user questions.
@@ -571,6 +708,13 @@ func (s *SegmentResponse) GetReferencedDocumentCount() *int64 {
 		return nil
 	}
 	return s.ReferencedDocumentCount
+}
+
+func (s *SegmentResponse) GetReferencedActionCount() *int64 {
+	if s == nil {
+		return nil
+	}
+	return s.ReferencedActionCount
 }
 
 func (s *SegmentResponse) GetStatus() SegmentStatus {
@@ -645,6 +789,13 @@ func (s *SegmentResponse) SetReferencedKnowledgeBaseCount(referencedKnowledgeBas
 func (s *SegmentResponse) SetReferencedDocumentCount(referencedDocumentCount *int64) {
 	s.ReferencedDocumentCount = referencedDocumentCount
 	s.require(segmentResponseFieldReferencedDocumentCount)
+}
+
+// SetReferencedActionCount sets the ReferencedActionCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetReferencedActionCount(referencedActionCount *int64) {
+	s.ReferencedActionCount = referencedActionCount
+	s.require(segmentResponseFieldReferencedActionCount)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -735,6 +886,7 @@ var (
 	segmentsSearchRequestFieldSize     = big.NewInt(1 << 1)
 	segmentsSearchRequestFieldSortDesc = big.NewInt(1 << 2)
 	segmentsSearchRequestFieldSort     = big.NewInt(1 << 3)
+	segmentsSearchRequestFieldFilter   = big.NewInt(1 << 4)
 )
 
 type SegmentsSearchRequest struct {
@@ -746,6 +898,8 @@ type SegmentsSearchRequest struct {
 	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
 	// The field to sort by, defaults to created timestamp
 	Sort *SegmentField `json:"sort,omitempty" url:"sort,omitempty"`
+	// The filter to apply to the segments.
+	Filter *SegmentFilter `json:"filter,omitempty" url:"filter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -780,6 +934,13 @@ func (s *SegmentsSearchRequest) GetSort() *SegmentField {
 		return nil
 	}
 	return s.Sort
+}
+
+func (s *SegmentsSearchRequest) GetFilter() *SegmentFilter {
+	if s == nil {
+		return nil
+	}
+	return s.Filter
 }
 
 func (s *SegmentsSearchRequest) GetExtraProperties() map[string]interface{} {
@@ -819,6 +980,13 @@ func (s *SegmentsSearchRequest) SetSortDesc(sortDesc *bool) {
 func (s *SegmentsSearchRequest) SetSort(sort *SegmentField) {
 	s.Sort = sort
 	s.require(segmentsSearchRequestFieldSort)
+}
+
+// SetFilter sets the Filter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentsSearchRequest) SetFilter(filter *SegmentFilter) {
+	s.Filter = filter
+	s.require(segmentsSearchRequestFieldFilter)
 }
 
 func (s *SegmentsSearchRequest) UnmarshalJSON(data []byte) error {
