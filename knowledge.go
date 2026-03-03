@@ -488,6 +488,7 @@ var (
 	knowledgeBaseFilterFieldMostRecentVersionStatus = big.NewInt(1 << 5)
 	knowledgeBaseFilterFieldLlmInclusionStatus      = big.NewInt(1 << 6)
 	knowledgeBaseFilterFieldSegmentID               = big.NewInt(1 << 7)
+	knowledgeBaseFilterFieldSegmentIDs              = big.NewInt(1 << 8)
 )
 
 type KnowledgeBaseFilter struct {
@@ -518,6 +519,8 @@ type KnowledgeBaseFilter struct {
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
 	// Filter knowledge bases by the segment they are assigned to.
 	SegmentID *string `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	// Filter knowledge bases by the segments they are assigned to. Uses OR semantics — returns knowledge bases assigned to any of the provided segments.
+	SegmentIDs []*EntityID `json:"segmentIds,omitempty" url:"segmentIds,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -580,6 +583,13 @@ func (k *KnowledgeBaseFilter) GetSegmentID() *string {
 		return nil
 	}
 	return k.SegmentID
+}
+
+func (k *KnowledgeBaseFilter) GetSegmentIDs() []*EntityID {
+	if k == nil {
+		return nil
+	}
+	return k.SegmentIDs
 }
 
 func (k *KnowledgeBaseFilter) GetExtraProperties() map[string]interface{} {
@@ -647,6 +657,13 @@ func (k *KnowledgeBaseFilter) SetLlmInclusionStatus(llmInclusionStatus *LlmInclu
 func (k *KnowledgeBaseFilter) SetSegmentID(segmentID *string) {
 	k.SegmentID = segmentID
 	k.require(knowledgeBaseFilterFieldSegmentID)
+}
+
+// SetSegmentIDs sets the SegmentIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseFilter) SetSegmentIDs(segmentIDs []*EntityID) {
+	k.SegmentIDs = segmentIDs
+	k.require(knowledgeBaseFilterFieldSegmentIDs)
 }
 
 func (k *KnowledgeBaseFilter) UnmarshalJSON(data []byte) error {

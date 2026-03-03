@@ -9775,6 +9775,7 @@ const (
 	EntityTypeSegment              EntityType = "SEGMENT"
 	EntityTypeCustomer             EntityType = "CUSTOMER"
 	EntityTypeIntelligentField     EntityType = "INTELLIGENT_FIELD"
+	EntityTypeCharter              EntityType = "CHARTER"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -9813,6 +9814,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeCustomer, nil
 	case "INTELLIGENT_FIELD":
 		return EntityTypeIntelligentField, nil
+	case "CHARTER":
+		return EntityTypeCharter, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
