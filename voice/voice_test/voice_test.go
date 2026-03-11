@@ -72,7 +72,7 @@ func TestVoiceSessionTokenWithWireMock(
 		),
 	)
 	request := &mavenagigo.VoiceSessionTokenRequest{
-		AppUserID: "appUserId",
+		AppUserID: "x",
 		Type:      mavenagigo.VoiceTokenTypeWebrtc,
 	}
 	_, invocationErr := client.Voice.SessionToken(

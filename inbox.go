@@ -494,6 +494,267 @@ func (i *InboxFilter) String() string {
 }
 
 var (
+	inboxItemCreateRequestFieldInboxItemID  = big.NewInt(1 << 0)
+	inboxItemCreateRequestFieldStatus       = big.NewInt(1 << 1)
+	inboxItemCreateRequestFieldSeverity     = big.NewInt(1 << 2)
+	inboxItemCreateRequestFieldMetadata     = big.NewInt(1 << 3)
+	inboxItemCreateRequestFieldTitle        = big.NewInt(1 << 4)
+	inboxItemCreateRequestFieldDescription  = big.NewInt(1 << 5)
+	inboxItemCreateRequestFieldExternalURL  = big.NewInt(1 << 6)
+	inboxItemCreateRequestFieldDeadline     = big.NewInt(1 << 7)
+	inboxItemCreateRequestFieldSnoozedUntil = big.NewInt(1 << 8)
+	inboxItemCreateRequestFieldAssignee     = big.NewInt(1 << 9)
+	inboxItemCreateRequestFieldReferences   = big.NewInt(1 << 10)
+)
+
+type InboxItemCreateRequest struct {
+	// ID that uniquely identifies this inbox item
+	InboxItemID *EntityIDBase `json:"inboxItemId" url:"inboxItemId"`
+	// Status of the inbox item.
+	Status InboxItemStatus `json:"status" url:"status"`
+	// Severity of the inbox item.
+	Severity InboxItemSeverity `json:"severity" url:"severity"`
+	// Additional metadata associated with the inbox item.
+	Metadata map[string]string `json:"metadata" url:"metadata"`
+	// Title of the inbox item.
+	Title *string `json:"title,omitempty" url:"title,omitempty"`
+	// Description of the inbox item.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// An optional URL that can be associated with the inbox item.
+	ExternalURL *string `json:"externalUrl,omitempty" url:"externalUrl,omitempty"`
+	// An optional deadline for the inbox item.
+	Deadline *time.Time `json:"deadline,omitempty" url:"deadline,omitempty"`
+	// An optional timestamp until which the inbox item is snoozed.
+	SnoozedUntil *time.Time `json:"snoozedUntil,omitempty" url:"snoozedUntil,omitempty"`
+	// An optional assignee for the inbox item.
+	Assignee *string `json:"assignee,omitempty" url:"assignee,omitempty"`
+	// An optional list of references to other entities that are related to this inbox item.
+	References []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *InboxItemCreateRequest) GetInboxItemID() *EntityIDBase {
+	if i == nil {
+		return nil
+	}
+	return i.InboxItemID
+}
+
+func (i *InboxItemCreateRequest) GetStatus() InboxItemStatus {
+	if i == nil {
+		return ""
+	}
+	return i.Status
+}
+
+func (i *InboxItemCreateRequest) GetSeverity() InboxItemSeverity {
+	if i == nil {
+		return ""
+	}
+	return i.Severity
+}
+
+func (i *InboxItemCreateRequest) GetMetadata() map[string]string {
+	if i == nil {
+		return nil
+	}
+	return i.Metadata
+}
+
+func (i *InboxItemCreateRequest) GetTitle() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Title
+}
+
+func (i *InboxItemCreateRequest) GetDescription() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Description
+}
+
+func (i *InboxItemCreateRequest) GetExternalURL() *string {
+	if i == nil {
+		return nil
+	}
+	return i.ExternalURL
+}
+
+func (i *InboxItemCreateRequest) GetDeadline() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.Deadline
+}
+
+func (i *InboxItemCreateRequest) GetSnoozedUntil() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.SnoozedUntil
+}
+
+func (i *InboxItemCreateRequest) GetAssignee() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Assignee
+}
+
+func (i *InboxItemCreateRequest) GetReferences() []*ScopedEntity {
+	if i == nil {
+		return nil
+	}
+	return i.References
+}
+
+func (i *InboxItemCreateRequest) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *InboxItemCreateRequest) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetInboxItemID sets the InboxItemID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetInboxItemID(inboxItemID *EntityIDBase) {
+	i.InboxItemID = inboxItemID
+	i.require(inboxItemCreateRequestFieldInboxItemID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetStatus(status InboxItemStatus) {
+	i.Status = status
+	i.require(inboxItemCreateRequestFieldStatus)
+}
+
+// SetSeverity sets the Severity field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetSeverity(severity InboxItemSeverity) {
+	i.Severity = severity
+	i.require(inboxItemCreateRequestFieldSeverity)
+}
+
+// SetMetadata sets the Metadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetMetadata(metadata map[string]string) {
+	i.Metadata = metadata
+	i.require(inboxItemCreateRequestFieldMetadata)
+}
+
+// SetTitle sets the Title field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetTitle(title *string) {
+	i.Title = title
+	i.require(inboxItemCreateRequestFieldTitle)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetDescription(description *string) {
+	i.Description = description
+	i.require(inboxItemCreateRequestFieldDescription)
+}
+
+// SetExternalURL sets the ExternalURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetExternalURL(externalURL *string) {
+	i.ExternalURL = externalURL
+	i.require(inboxItemCreateRequestFieldExternalURL)
+}
+
+// SetDeadline sets the Deadline field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetDeadline(deadline *time.Time) {
+	i.Deadline = deadline
+	i.require(inboxItemCreateRequestFieldDeadline)
+}
+
+// SetSnoozedUntil sets the SnoozedUntil field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetSnoozedUntil(snoozedUntil *time.Time) {
+	i.SnoozedUntil = snoozedUntil
+	i.require(inboxItemCreateRequestFieldSnoozedUntil)
+}
+
+// SetAssignee sets the Assignee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetAssignee(assignee *string) {
+	i.Assignee = assignee
+	i.require(inboxItemCreateRequestFieldAssignee)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCreateRequest) SetReferences(references []*ScopedEntity) {
+	i.References = references
+	i.require(inboxItemCreateRequestFieldReferences)
+}
+
+func (i *InboxItemCreateRequest) UnmarshalJSON(data []byte) error {
+	type embed InboxItemCreateRequest
+	var unmarshaler = struct {
+		embed
+		Deadline     *internal.DateTime `json:"deadline,omitempty"`
+		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
+	}{
+		embed: embed(*i),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*i = InboxItemCreateRequest(unmarshaler.embed)
+	i.Deadline = unmarshaler.Deadline.TimePtr()
+	i.SnoozedUntil = unmarshaler.SnoozedUntil.TimePtr()
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *InboxItemCreateRequest) MarshalJSON() ([]byte, error) {
+	type embed InboxItemCreateRequest
+	var marshaler = struct {
+		embed
+		Deadline     *internal.DateTime `json:"deadline,omitempty"`
+		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
+	}{
+		embed:        embed(*i),
+		Deadline:     internal.NewOptionalDateTime(i.Deadline),
+		SnoozedUntil: internal.NewOptionalDateTime(i.SnoozedUntil),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *InboxItemCreateRequest) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
+var (
 	inboxSearchRequestFieldPage     = big.NewInt(1 << 0)
 	inboxSearchRequestFieldSize     = big.NewInt(1 << 1)
 	inboxSearchRequestFieldSortDesc = big.NewInt(1 << 2)

@@ -56,6 +56,23 @@ func (c *Client) Search(
 	return response.Body, nil
 }
 
+// Update an inbox item or create it if it doesn't exist.
+func (c *Client) CreateOrUpdate(
+	ctx context.Context,
+	request *mavenagigo.InboxItemCreateRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.InboxItem, error) {
+	response, err := c.WithRawResponse.CreateOrUpdate(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
 // Update inbox item tag fields. All tags provided will overwrite the existing tags on the inbox item.
 func (c *Client) ApplyTags(
 	ctx context.Context,

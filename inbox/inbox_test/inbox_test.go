@@ -81,6 +81,72 @@ func TestInboxSearchWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/inbox/search", nil, 1)
 }
 
+func TestInboxCreateOrUpdateWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.InboxItemCreateRequest{
+		InboxItemID: &mavenagigo.EntityIDBase{
+			ReferenceID: "todo-item-1",
+		},
+		Status:   mavenagigo.InboxItemStatusOpen,
+		Severity: mavenagigo.InboxItemSeverityHigh,
+		Title: mavenagigo.String(
+			"Todo Item",
+		),
+		Description: mavenagigo.String(
+			"This is the first todo item.",
+		),
+		Metadata: map[string]string{
+			"key": "value",
+		},
+		ExternalURL: mavenagigo.String(
+			"todo.com",
+		),
+		Deadline: mavenagigo.Time(
+			mavenagigo.MustParseDateTime(
+				"2026-12-31T23:59:59Z",
+			),
+		),
+		SnoozedUntil: mavenagigo.Time(
+			mavenagigo.MustParseDateTime(
+				"2026-12-25T23:59:59Z",
+			),
+		),
+		References: []*mavenagigo.ScopedEntity{
+			&mavenagigo.ScopedEntity{
+				EntityID: &mavenagigo.EntityID{
+					Type:           mavenagigo.EntityTypeConversationMessage,
+					AppID:          "app1",
+					ReferenceID:    "msgRef1201",
+					OrganizationID: "acme",
+					AgentID:        "support",
+				},
+				ScopeEntityID: &mavenagigo.EntityID{
+					Type:           mavenagigo.EntityTypeConversation,
+					AppID:          "app1",
+					ReferenceID:    "ref1200",
+					OrganizationID: "acme",
+					AgentID:        "support",
+				},
+			},
+		},
+	}
+	_, invocationErr := client.Inbox.CreateOrUpdate(
+		context.TODO(),
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "PUT", "/v1/inbox", nil, 1)
+}
+
 func TestInboxApplyTagsWithWireMock(
 	t *testing.T,
 ) {

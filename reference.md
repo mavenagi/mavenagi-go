@@ -3499,6 +3499,111 @@ client.Inbox.Search(
 </dl>
 </details>
 
+<details><summary><code>client.Inbox.CreateOrUpdate(request) -> *mavenagigo.InboxItem</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update an inbox item or create it if it doesn't exist.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.InboxItemCreateRequest{
+        InboxItemID: &mavenagigo.EntityIDBase{
+            ReferenceID: "todo-item-1",
+        },
+        Status: mavenagigo.InboxItemStatusOpen,
+        Severity: mavenagigo.InboxItemSeverityHigh,
+        Title: mavenagigo.String(
+            "Todo Item",
+        ),
+        Description: mavenagigo.String(
+            "This is the first todo item.",
+        ),
+        Metadata: map[string]string{
+            "key": "value",
+        },
+        ExternalURL: mavenagigo.String(
+            "todo.com",
+        ),
+        Deadline: mavenagigo.Time(
+            mavenagigo.MustParseDateTime(
+                "2026-12-31T23:59:59Z",
+            ),
+        ),
+        SnoozedUntil: mavenagigo.Time(
+            mavenagigo.MustParseDateTime(
+                "2026-12-25T23:59:59Z",
+            ),
+        ),
+        References: []*mavenagigo.ScopedEntity{
+            &mavenagigo.ScopedEntity{
+                EntityID: &mavenagigo.EntityID{
+                    Type: mavenagigo.EntityTypeConversationMessage,
+                    AppID: "app1",
+                    ReferenceID: "msgRef1201",
+                    OrganizationID: "acme",
+                    AgentID: "support",
+                },
+                ScopeEntityID: &mavenagigo.EntityID{
+                    Type: mavenagigo.EntityTypeConversation,
+                    AppID: "app1",
+                    ReferenceID: "ref1200",
+                    OrganizationID: "acme",
+                    AgentID: "support",
+                },
+            },
+        },
+    }
+client.Inbox.CreateOrUpdate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.InboxItemCreateRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.Inbox.ApplyTags(InboxItemID, request) -> *mavenagigo.InboxItem</code></summary>
 <dl>
 <dd>
@@ -6495,7 +6600,7 @@ Creates a short-lived session token for authenticating voice connections.
 
 Supports two token types:
 - **webrtc**: A Twilio-compatible access token for browser-based WebRTC calls
-- **websocket**: An RS256 JWT for direct WebSocket connections to /v1/voice/conversations
+- **websocket**: An ES256 JWT for direct WebSocket connections to /v1/voice/conversations
 
 Session tokens are required before establishing any voice connection.
 </dd>
@@ -6513,7 +6618,7 @@ Session tokens are required before establishing any voice connection.
 
 ```go
 request := &mavenagigo.VoiceSessionTokenRequest{
-        AppUserID: "appUserId",
+        AppUserID: "x",
         Type: mavenagigo.VoiceTokenTypeWebrtc,
     }
 client.Voice.SessionToken(

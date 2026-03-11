@@ -12294,13 +12294,20 @@ func (i *InboxItemBase) String() string {
 }
 
 var (
-	inboxItemCustomFieldID        = big.NewInt(1 << 0)
-	inboxItemCustomFieldCreatedAt = big.NewInt(1 << 1)
-	inboxItemCustomFieldUpdatedAt = big.NewInt(1 << 2)
-	inboxItemCustomFieldStatus    = big.NewInt(1 << 3)
-	inboxItemCustomFieldSeverity  = big.NewInt(1 << 4)
-	inboxItemCustomFieldTags      = big.NewInt(1 << 5)
-	inboxItemCustomFieldMetadata  = big.NewInt(1 << 6)
+	inboxItemCustomFieldID           = big.NewInt(1 << 0)
+	inboxItemCustomFieldCreatedAt    = big.NewInt(1 << 1)
+	inboxItemCustomFieldUpdatedAt    = big.NewInt(1 << 2)
+	inboxItemCustomFieldStatus       = big.NewInt(1 << 3)
+	inboxItemCustomFieldSeverity     = big.NewInt(1 << 4)
+	inboxItemCustomFieldTags         = big.NewInt(1 << 5)
+	inboxItemCustomFieldMetadata     = big.NewInt(1 << 6)
+	inboxItemCustomFieldTitle        = big.NewInt(1 << 7)
+	inboxItemCustomFieldDescription  = big.NewInt(1 << 8)
+	inboxItemCustomFieldExternalURL  = big.NewInt(1 << 9)
+	inboxItemCustomFieldDeadline     = big.NewInt(1 << 10)
+	inboxItemCustomFieldSnoozedUntil = big.NewInt(1 << 11)
+	inboxItemCustomFieldAssignee     = big.NewInt(1 << 12)
+	inboxItemCustomFieldReferences   = big.NewInt(1 << 13)
 )
 
 type InboxItemCustom struct {
@@ -12318,6 +12325,20 @@ type InboxItemCustom struct {
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Additional metadata associated with the inbox item.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
+	// Title of the inbox item.
+	Title *string `json:"title,omitempty" url:"title,omitempty"`
+	// Description of the inbox item.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// An optional URL that can be associated with the inbox item.
+	ExternalURL *string `json:"externalUrl,omitempty" url:"externalUrl,omitempty"`
+	// An optional deadline for the inbox item.
+	Deadline *time.Time `json:"deadline,omitempty" url:"deadline,omitempty"`
+	// An optional timestamp until which the inbox item is snoozed.
+	SnoozedUntil *time.Time `json:"snoozedUntil,omitempty" url:"snoozedUntil,omitempty"`
+	// An optional assignee for the inbox item.
+	Assignee *string `json:"assignee,omitempty" url:"assignee,omitempty"`
+	// An optional list of references to other entities that are related to this inbox item.
+	References []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12373,6 +12394,55 @@ func (i *InboxItemCustom) GetMetadata() map[string]string {
 		return nil
 	}
 	return i.Metadata
+}
+
+func (i *InboxItemCustom) GetTitle() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Title
+}
+
+func (i *InboxItemCustom) GetDescription() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Description
+}
+
+func (i *InboxItemCustom) GetExternalURL() *string {
+	if i == nil {
+		return nil
+	}
+	return i.ExternalURL
+}
+
+func (i *InboxItemCustom) GetDeadline() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.Deadline
+}
+
+func (i *InboxItemCustom) GetSnoozedUntil() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.SnoozedUntil
+}
+
+func (i *InboxItemCustom) GetAssignee() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Assignee
+}
+
+func (i *InboxItemCustom) GetReferences() []*ScopedEntity {
+	if i == nil {
+		return nil
+	}
+	return i.References
 }
 
 func (i *InboxItemCustom) GetExtraProperties() map[string]interface{} {
@@ -12435,12 +12505,63 @@ func (i *InboxItemCustom) SetMetadata(metadata map[string]string) {
 	i.require(inboxItemCustomFieldMetadata)
 }
 
+// SetTitle sets the Title field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetTitle(title *string) {
+	i.Title = title
+	i.require(inboxItemCustomFieldTitle)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetDescription(description *string) {
+	i.Description = description
+	i.require(inboxItemCustomFieldDescription)
+}
+
+// SetExternalURL sets the ExternalURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetExternalURL(externalURL *string) {
+	i.ExternalURL = externalURL
+	i.require(inboxItemCustomFieldExternalURL)
+}
+
+// SetDeadline sets the Deadline field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetDeadline(deadline *time.Time) {
+	i.Deadline = deadline
+	i.require(inboxItemCustomFieldDeadline)
+}
+
+// SetSnoozedUntil sets the SnoozedUntil field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetSnoozedUntil(snoozedUntil *time.Time) {
+	i.SnoozedUntil = snoozedUntil
+	i.require(inboxItemCustomFieldSnoozedUntil)
+}
+
+// SetAssignee sets the Assignee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetAssignee(assignee *string) {
+	i.Assignee = assignee
+	i.require(inboxItemCustomFieldAssignee)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemCustom) SetReferences(references []*ScopedEntity) {
+	i.References = references
+	i.require(inboxItemCustomFieldReferences)
+}
+
 func (i *InboxItemCustom) UnmarshalJSON(data []byte) error {
 	type embed InboxItemCustom
 	var unmarshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt"`
-		UpdatedAt *internal.DateTime `json:"updatedAt"`
+		CreatedAt    *internal.DateTime `json:"createdAt"`
+		UpdatedAt    *internal.DateTime `json:"updatedAt"`
+		Deadline     *internal.DateTime `json:"deadline,omitempty"`
+		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
 	}{
 		embed: embed(*i),
 	}
@@ -12450,6 +12571,8 @@ func (i *InboxItemCustom) UnmarshalJSON(data []byte) error {
 	*i = InboxItemCustom(unmarshaler.embed)
 	i.CreatedAt = unmarshaler.CreatedAt.Time()
 	i.UpdatedAt = unmarshaler.UpdatedAt.Time()
+	i.Deadline = unmarshaler.Deadline.TimePtr()
+	i.SnoozedUntil = unmarshaler.SnoozedUntil.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *i)
 	if err != nil {
 		return err
@@ -12463,12 +12586,16 @@ func (i *InboxItemCustom) MarshalJSON() ([]byte, error) {
 	type embed InboxItemCustom
 	var marshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt"`
-		UpdatedAt *internal.DateTime `json:"updatedAt"`
+		CreatedAt    *internal.DateTime `json:"createdAt"`
+		UpdatedAt    *internal.DateTime `json:"updatedAt"`
+		Deadline     *internal.DateTime `json:"deadline,omitempty"`
+		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
 	}{
-		embed:     embed(*i),
-		CreatedAt: internal.NewDateTime(i.CreatedAt),
-		UpdatedAt: internal.NewDateTime(i.UpdatedAt),
+		embed:        embed(*i),
+		CreatedAt:    internal.NewDateTime(i.CreatedAt),
+		UpdatedAt:    internal.NewDateTime(i.UpdatedAt),
+		Deadline:     internal.NewOptionalDateTime(i.Deadline),
+		SnoozedUntil: internal.NewOptionalDateTime(i.SnoozedUntil),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -21394,6 +21521,8 @@ const (
 	UserEventNameChatClosed UserEventName = "CHAT_CLOSED"
 	// A text was inserted into a field
 	UserEventNameTextInserted UserEventName = "TEXT_INSERTED"
+	// A CSAT rating was submitted
+	UserEventNameCsatSubmitted UserEventName = "CSAT_SUBMITTED"
 )
 
 func NewUserEventNameFromString(s string) (UserEventName, error) {
@@ -21408,6 +21537,8 @@ func NewUserEventNameFromString(s string) (UserEventName, error) {
 		return UserEventNameChatClosed, nil
 	case "TEXT_INSERTED":
 		return UserEventNameTextInserted, nil
+	case "CSAT_SUBMITTED":
+		return UserEventNameCsatSubmitted, nil
 	}
 	var t UserEventName
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
