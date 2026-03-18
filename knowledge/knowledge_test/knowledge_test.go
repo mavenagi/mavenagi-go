@@ -152,6 +152,27 @@ func TestKnowledgeRefreshKnowledgeBaseWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/refresh", nil, 1)
 }
 
+func TestKnowledgeCancelKnowledgeBaseVersionWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.CancelKnowledgeBaseVersionRequest{}
+	invocationErr := client.Knowledge.CancelKnowledgeBaseVersion(
+		context.TODO(),
+		"knowledgeBaseReferenceId",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/knowledgeBaseReferenceId/cancel", nil, 1)
+}
+
 func TestKnowledgePatchKnowledgeBaseWithWireMock(
 	t *testing.T,
 ) {

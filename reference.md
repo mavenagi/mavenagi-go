@@ -4314,6 +4314,77 @@ client.Knowledge.RefreshKnowledgeBase(
 </dl>
 </details>
 
+<details><summary><code>client.Knowledge.CancelKnowledgeBaseVersion(KnowledgeBaseReferenceID, request) -> error</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+in-progress knowledge base version.
+
+If the knowledge base has a version that is currently being ingested,
+this will cancel the ingestion workflow and set the version status to FAILED.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CancelKnowledgeBaseVersionRequest{}
+client.Knowledge.CancelKnowledgeBaseVersion(
+        context.TODO(),
+        "knowledgeBaseReferenceId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to cancel ingestion for. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CancelKnowledgeBaseVersionRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.Knowledge.PatchKnowledgeBase(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeBaseResponse</code></summary>
 <dl>
 <dd>

@@ -342,6 +342,85 @@ func (b *BaseKnowledgeDocument) String() string {
 }
 
 var (
+	cancelKnowledgeBaseVersionRequestFieldVersionID = big.NewInt(1 << 0)
+)
+
+type CancelKnowledgeBaseVersionRequest struct {
+	// ID that uniquely identifies which knowledge base version to cancel. If not provided will use the most recent version of the knowledge base.
+	VersionID *EntityIDWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) GetVersionID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VersionID
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetVersionID sets the VersionID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CancelKnowledgeBaseVersionRequest) SetVersionID(versionID *EntityIDWithoutAgent) {
+	c.VersionID = versionID
+	c.require(cancelKnowledgeBaseVersionRequestFieldVersionID)
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler CancelKnowledgeBaseVersionRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CancelKnowledgeBaseVersionRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) MarshalJSON() ([]byte, error) {
+	type embed CancelKnowledgeBaseVersionRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
 	finalizeKnowledgeBaseVersionRequestFieldVersionID    = big.NewInt(1 << 0)
 	finalizeKnowledgeBaseVersionRequestFieldStatus       = big.NewInt(1 << 1)
 	finalizeKnowledgeBaseVersionRequestFieldErrorMessage = big.NewInt(1 << 2)

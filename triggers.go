@@ -50,11 +50,14 @@ func (p *PartialUpdateRequest) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	eventTriggerBaseFieldDescription = big.NewInt(1 << 0)
-	eventTriggerBaseFieldType        = big.NewInt(1 << 1)
+	eventTriggerBaseFieldName        = big.NewInt(1 << 0)
+	eventTriggerBaseFieldDescription = big.NewInt(1 << 1)
+	eventTriggerBaseFieldType        = big.NewInt(1 << 2)
 )
 
 type EventTriggerBase struct {
+	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
 	// The description of what the event trigger does, shown in the Maven Dashboard
 	Description string `json:"description" url:"description"`
 	// The type of event trigger this app wishes to handle.
@@ -70,6 +73,13 @@ type EventTriggerBase struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (e *EventTriggerBase) GetName() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Name
 }
 
 func (e *EventTriggerBase) GetDescription() string {
@@ -95,6 +105,13 @@ func (e *EventTriggerBase) require(field *big.Int) {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerBase) SetName(name *string) {
+	e.Name = name
+	e.require(eventTriggerBaseFieldName)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
@@ -151,12 +168,15 @@ func (e *EventTriggerBase) String() string {
 }
 
 var (
-	eventTriggerRequestFieldDescription = big.NewInt(1 << 0)
-	eventTriggerRequestFieldType        = big.NewInt(1 << 1)
-	eventTriggerRequestFieldTriggerID   = big.NewInt(1 << 2)
+	eventTriggerRequestFieldName        = big.NewInt(1 << 0)
+	eventTriggerRequestFieldDescription = big.NewInt(1 << 1)
+	eventTriggerRequestFieldType        = big.NewInt(1 << 2)
+	eventTriggerRequestFieldTriggerID   = big.NewInt(1 << 3)
 )
 
 type EventTriggerRequest struct {
+	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
 	// The description of what the event trigger does, shown in the Maven Dashboard
 	Description string `json:"description" url:"description"`
 	// The type of event trigger this app wishes to handle.
@@ -174,6 +194,13 @@ type EventTriggerRequest struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (e *EventTriggerRequest) GetName() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Name
 }
 
 func (e *EventTriggerRequest) GetDescription() string {
@@ -206,6 +233,13 @@ func (e *EventTriggerRequest) require(field *big.Int) {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerRequest) SetName(name *string) {
+	e.Name = name
+	e.require(eventTriggerRequestFieldName)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
@@ -269,13 +303,16 @@ func (e *EventTriggerRequest) String() string {
 }
 
 var (
-	eventTriggerResponseFieldDescription = big.NewInt(1 << 0)
-	eventTriggerResponseFieldType        = big.NewInt(1 << 1)
-	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 2)
-	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 3)
+	eventTriggerResponseFieldName        = big.NewInt(1 << 0)
+	eventTriggerResponseFieldDescription = big.NewInt(1 << 1)
+	eventTriggerResponseFieldType        = big.NewInt(1 << 2)
+	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 3)
+	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 4)
 )
 
 type EventTriggerResponse struct {
+	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
 	// The description of what the event trigger does, shown in the Maven Dashboard
 	Description string `json:"description" url:"description"`
 	// The type of event trigger this app wishes to handle.
@@ -295,6 +332,13 @@ type EventTriggerResponse struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (e *EventTriggerResponse) GetName() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Name
 }
 
 func (e *EventTriggerResponse) GetDescription() string {
@@ -334,6 +378,13 @@ func (e *EventTriggerResponse) require(field *big.Int) {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerResponse) SetName(name *string) {
+	e.Name = name
+	e.require(eventTriggerResponseFieldName)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;

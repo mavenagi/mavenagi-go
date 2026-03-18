@@ -212,6 +212,51 @@ func (r *RawClient) RefreshKnowledgeBase(
 	}, nil
 }
 
+func (r *RawClient) CancelKnowledgeBaseVersion(
+	ctx context.Context,
+	// The reference ID of the knowledge base to cancel ingestion for. All other entity ID fields are inferred from the request.
+	knowledgeBaseReferenceID string,
+	request *mavenagigo.CancelKnowledgeBaseVersionRequest,
+	opts ...option.RequestOption,
+) (*core.Response[any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := internal.EncodeURL(
+		baseURL+"/v1/knowledge/%v/cancel",
+		knowledgeBaseReferenceID,
+	)
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       nil,
+	}, nil
+}
+
 func (r *RawClient) PatchKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.

@@ -116,6 +116,29 @@ func (c *Client) RefreshKnowledgeBase(
 	return nil
 }
 
+// in-progress knowledge base version.
+//
+// If the knowledge base has a version that is currently being ingested,
+// this will cancel the ingestion workflow and set the version status to FAILED.
+func (c *Client) CancelKnowledgeBaseVersion(
+	ctx context.Context,
+	// The reference ID of the knowledge base to cancel ingestion for. All other entity ID fields are inferred from the request.
+	knowledgeBaseReferenceID string,
+	request *mavenagigo.CancelKnowledgeBaseVersionRequest,
+	opts ...option.RequestOption,
+) error {
+	_, err := c.WithRawResponse.CancelKnowledgeBaseVersion(
+		ctx,
+		knowledgeBaseReferenceID,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Update mutable knowledge base fields
 //
 // The `appId` field can be provided to update a knowledge base owned by a different app.
