@@ -33,7 +33,7 @@ type ActionBase struct {
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
 	Name string `json:"name" url:"name"`
-	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
+	// The description of the action. Must be no more than 4096 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
 	Description string `json:"description" url:"description"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1236,7 +1236,7 @@ type ActionResponse struct {
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
 	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
 	Name string `json:"name" url:"name"`
-	// The description of the action. Must be less than 1024 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
+	// The description of the action. Must be no more than 4096 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
 	Description string `json:"description" url:"description"`
 	// ID that uniquely identifies this action
 	ActionID *EntityID `json:"actionId" url:"actionId"`
@@ -4262,6 +4262,234 @@ func (b *BotLogicActionReviewedDetail) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// A charter that matched the conversation state during evaluation.
+var (
+	botLogicCharterDetailFieldCharterID = big.NewInt(1 << 0)
+	botLogicCharterDetailFieldName      = big.NewInt(1 << 1)
+	botLogicCharterDetailFieldSegmentID = big.NewInt(1 << 2)
+	botLogicCharterDetailFieldParentID  = big.NewInt(1 << 3)
+)
+
+type BotLogicCharterDetail struct {
+	// The charter's entity ID.
+	CharterID *EntityIDWithoutAgent `json:"charterId" url:"charterId"`
+	// Human-readable charter name at the time of evaluation.
+	Name string `json:"name" url:"name"`
+	// The segment that gates this charter, if any. Absent for wildcard charters.
+	SegmentID *EntityIDWithoutAgent `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	// The parent charter in the hierarchy, if any. Absent for root-level charters.
+	ParentID *EntityIDWithoutAgent `json:"parentId,omitempty" url:"parentId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BotLogicCharterDetail) GetCharterID() *EntityIDWithoutAgent {
+	if b == nil {
+		return nil
+	}
+	return b.CharterID
+}
+
+func (b *BotLogicCharterDetail) GetName() string {
+	if b == nil {
+		return ""
+	}
+	return b.Name
+}
+
+func (b *BotLogicCharterDetail) GetSegmentID() *EntityIDWithoutAgent {
+	if b == nil {
+		return nil
+	}
+	return b.SegmentID
+}
+
+func (b *BotLogicCharterDetail) GetParentID() *EntityIDWithoutAgent {
+	if b == nil {
+		return nil
+	}
+	return b.ParentID
+}
+
+func (b *BotLogicCharterDetail) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BotLogicCharterDetail) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetCharterID sets the CharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicCharterDetail) SetCharterID(charterID *EntityIDWithoutAgent) {
+	b.CharterID = charterID
+	b.require(botLogicCharterDetailFieldCharterID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicCharterDetail) SetName(name string) {
+	b.Name = name
+	b.require(botLogicCharterDetailFieldName)
+}
+
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicCharterDetail) SetSegmentID(segmentID *EntityIDWithoutAgent) {
+	b.SegmentID = segmentID
+	b.require(botLogicCharterDetailFieldSegmentID)
+}
+
+// SetParentID sets the ParentID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicCharterDetail) SetParentID(parentID *EntityIDWithoutAgent) {
+	b.ParentID = parentID
+	b.require(botLogicCharterDetailFieldParentID)
+}
+
+func (b *BotLogicCharterDetail) UnmarshalJSON(data []byte) error {
+	type unmarshaler BotLogicCharterDetail
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BotLogicCharterDetail(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BotLogicCharterDetail) MarshalJSON() ([]byte, error) {
+	type embed BotLogicCharterDetail
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BotLogicCharterDetail) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+// Charter evaluation results for this bot response.
+var (
+	botLogicChartersItemFieldMatchedCharters     = big.NewInt(1 << 0)
+	botLogicChartersItemFieldEvaluationTruncated = big.NewInt(1 << 1)
+)
+
+type BotLogicChartersItem struct {
+	// Charters that matched the conversation state and were used to generate this response.
+	MatchedCharters []*BotLogicCharterDetail `json:"matchedCharters" url:"matchedCharters"`
+	// True when too many charters fit the initial criteria and evaluation was cut short. The matchedCharters list may be incomplete.
+	EvaluationTruncated bool `json:"evaluationTruncated" url:"evaluationTruncated"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BotLogicChartersItem) GetMatchedCharters() []*BotLogicCharterDetail {
+	if b == nil {
+		return nil
+	}
+	return b.MatchedCharters
+}
+
+func (b *BotLogicChartersItem) GetEvaluationTruncated() bool {
+	if b == nil {
+		return false
+	}
+	return b.EvaluationTruncated
+}
+
+func (b *BotLogicChartersItem) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BotLogicChartersItem) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetMatchedCharters sets the MatchedCharters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicChartersItem) SetMatchedCharters(matchedCharters []*BotLogicCharterDetail) {
+	b.MatchedCharters = matchedCharters
+	b.require(botLogicChartersItemFieldMatchedCharters)
+}
+
+// SetEvaluationTruncated sets the EvaluationTruncated field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicChartersItem) SetEvaluationTruncated(evaluationTruncated bool) {
+	b.EvaluationTruncated = evaluationTruncated
+	b.require(botLogicChartersItemFieldEvaluationTruncated)
+}
+
+func (b *BotLogicChartersItem) UnmarshalJSON(data []byte) error {
+	type unmarshaler BotLogicChartersItem
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BotLogicChartersItem(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BotLogicChartersItem) MarshalJSON() ([]byte, error) {
+	type embed BotLogicChartersItem
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BotLogicChartersItem) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
 var (
 	botLogicFormSubmissionItemFieldActionID         = big.NewInt(1 << 0)
 	botLogicFormSubmissionItemFieldActionName       = big.NewInt(1 << 1)
@@ -4404,14 +4632,236 @@ func (b *BotLogicFormSubmissionItem) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+var (
+	botLogicIntelligentFieldDetailFieldFieldID    = big.NewInt(1 << 0)
+	botLogicIntelligentFieldDetailFieldName       = big.NewInt(1 << 1)
+	botLogicIntelligentFieldDetailFieldValue      = big.NewInt(1 << 2)
+	botLogicIntelligentFieldDetailFieldConfidence = big.NewInt(1 << 3)
+	botLogicIntelligentFieldDetailFieldRationale  = big.NewInt(1 << 4)
+)
+
+type BotLogicIntelligentFieldDetail struct {
+	FieldID    *EntityIDWithoutAgent `json:"fieldId" url:"fieldId"`
+	Name       string                `json:"name" url:"name"`
+	Value      *string               `json:"value,omitempty" url:"value,omitempty"`
+	Confidence *float64              `json:"confidence,omitempty" url:"confidence,omitempty"`
+	Rationale  *string               `json:"rationale,omitempty" url:"rationale,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BotLogicIntelligentFieldDetail) GetFieldID() *EntityIDWithoutAgent {
+	if b == nil {
+		return nil
+	}
+	return b.FieldID
+}
+
+func (b *BotLogicIntelligentFieldDetail) GetName() string {
+	if b == nil {
+		return ""
+	}
+	return b.Name
+}
+
+func (b *BotLogicIntelligentFieldDetail) GetValue() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Value
+}
+
+func (b *BotLogicIntelligentFieldDetail) GetConfidence() *float64 {
+	if b == nil {
+		return nil
+	}
+	return b.Confidence
+}
+
+func (b *BotLogicIntelligentFieldDetail) GetRationale() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Rationale
+}
+
+func (b *BotLogicIntelligentFieldDetail) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BotLogicIntelligentFieldDetail) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetFieldID sets the FieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicIntelligentFieldDetail) SetFieldID(fieldID *EntityIDWithoutAgent) {
+	b.FieldID = fieldID
+	b.require(botLogicIntelligentFieldDetailFieldFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicIntelligentFieldDetail) SetName(name string) {
+	b.Name = name
+	b.require(botLogicIntelligentFieldDetailFieldName)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicIntelligentFieldDetail) SetValue(value *string) {
+	b.Value = value
+	b.require(botLogicIntelligentFieldDetailFieldValue)
+}
+
+// SetConfidence sets the Confidence field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicIntelligentFieldDetail) SetConfidence(confidence *float64) {
+	b.Confidence = confidence
+	b.require(botLogicIntelligentFieldDetailFieldConfidence)
+}
+
+// SetRationale sets the Rationale field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicIntelligentFieldDetail) SetRationale(rationale *string) {
+	b.Rationale = rationale
+	b.require(botLogicIntelligentFieldDetailFieldRationale)
+}
+
+func (b *BotLogicIntelligentFieldDetail) UnmarshalJSON(data []byte) error {
+	type unmarshaler BotLogicIntelligentFieldDetail
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BotLogicIntelligentFieldDetail(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BotLogicIntelligentFieldDetail) MarshalJSON() ([]byte, error) {
+	type embed BotLogicIntelligentFieldDetail
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BotLogicIntelligentFieldDetail) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+var (
+	botLogicIntelligentFieldsItemFieldRefreshedFields = big.NewInt(1 << 0)
+)
+
+type BotLogicIntelligentFieldsItem struct {
+	RefreshedFields []*BotLogicIntelligentFieldDetail `json:"refreshedFields" url:"refreshedFields"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BotLogicIntelligentFieldsItem) GetRefreshedFields() []*BotLogicIntelligentFieldDetail {
+	if b == nil {
+		return nil
+	}
+	return b.RefreshedFields
+}
+
+func (b *BotLogicIntelligentFieldsItem) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BotLogicIntelligentFieldsItem) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetRefreshedFields sets the RefreshedFields field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicIntelligentFieldsItem) SetRefreshedFields(refreshedFields []*BotLogicIntelligentFieldDetail) {
+	b.RefreshedFields = refreshedFields
+	b.require(botLogicIntelligentFieldsItemFieldRefreshedFields)
+}
+
+func (b *BotLogicIntelligentFieldsItem) UnmarshalJSON(data []byte) error {
+	type unmarshaler BotLogicIntelligentFieldsItem
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BotLogicIntelligentFieldsItem(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BotLogicIntelligentFieldsItem) MarshalJSON() ([]byte, error) {
+	type embed BotLogicIntelligentFieldsItem
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BotLogicIntelligentFieldsItem) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
 type BotLogicItem struct {
-	Type      string
-	Knowledge *BotLogicKnowledgeItem
-	Actions   *BotLogicActionItem
-	Form      *BotLogicFormSubmissionItem
-	Safety    *BotLogicSafetyItem
-	User      *BotLogicUserItem
-	Segments  *BotLogicSegmentsItem
+	Type              string
+	Knowledge         *BotLogicKnowledgeItem
+	Actions           *BotLogicActionItem
+	Form              *BotLogicFormSubmissionItem
+	Safety            *BotLogicSafetyItem
+	User              *BotLogicUserItem
+	Segments          *BotLogicSegmentsItem
+	IntelligentFields *BotLogicIntelligentFieldsItem
+	Charters          *BotLogicChartersItem
 }
 
 func (b *BotLogicItem) GetType() string {
@@ -4463,6 +4913,20 @@ func (b *BotLogicItem) GetSegments() *BotLogicSegmentsItem {
 	return b.Segments
 }
 
+func (b *BotLogicItem) GetIntelligentFields() *BotLogicIntelligentFieldsItem {
+	if b == nil {
+		return nil
+	}
+	return b.IntelligentFields
+}
+
+func (b *BotLogicItem) GetCharters() *BotLogicChartersItem {
+	if b == nil {
+		return nil
+	}
+	return b.Charters
+}
+
 func (b *BotLogicItem) UnmarshalJSON(data []byte) error {
 	var unmarshaler struct {
 		Type string `json:"type"`
@@ -4511,6 +4975,18 @@ func (b *BotLogicItem) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		b.Segments = value
+	case "intelligentFields":
+		value := new(BotLogicIntelligentFieldsItem)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		b.IntelligentFields = value
+	case "charters":
+		value := new(BotLogicChartersItem)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		b.Charters = value
 	}
 	return nil
 }
@@ -4537,6 +5013,12 @@ func (b BotLogicItem) MarshalJSON() ([]byte, error) {
 	if b.Segments != nil {
 		return internal.MarshalJSONWithExtraProperty(b.Segments, "type", "segments")
 	}
+	if b.IntelligentFields != nil {
+		return internal.MarshalJSONWithExtraProperty(b.IntelligentFields, "type", "intelligentFields")
+	}
+	if b.Charters != nil {
+		return internal.MarshalJSONWithExtraProperty(b.Charters, "type", "charters")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", b)
 }
 
@@ -4547,6 +5029,8 @@ type BotLogicItemVisitor interface {
 	VisitSafety(*BotLogicSafetyItem) error
 	VisitUser(*BotLogicUserItem) error
 	VisitSegments(*BotLogicSegmentsItem) error
+	VisitIntelligentFields(*BotLogicIntelligentFieldsItem) error
+	VisitCharters(*BotLogicChartersItem) error
 }
 
 func (b *BotLogicItem) Accept(visitor BotLogicItemVisitor) error {
@@ -4567,6 +5051,12 @@ func (b *BotLogicItem) Accept(visitor BotLogicItemVisitor) error {
 	}
 	if b.Segments != nil {
 		return visitor.VisitSegments(b.Segments)
+	}
+	if b.IntelligentFields != nil {
+		return visitor.VisitIntelligentFields(b.IntelligentFields)
+	}
+	if b.Charters != nil {
+		return visitor.VisitCharters(b.Charters)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", b)
 }
@@ -4593,6 +5083,12 @@ func (b *BotLogicItem) validate() error {
 	}
 	if b.Segments != nil {
 		fields = append(fields, "segments")
+	}
+	if b.IntelligentFields != nil {
+		fields = append(fields, "intelligentFields")
+	}
+	if b.Charters != nil {
+		fields = append(fields, "charters")
 	}
 	if len(fields) == 0 {
 		if b.Type != "" {
@@ -12294,20 +12790,18 @@ func (i *InboxItemBase) String() string {
 }
 
 var (
-	inboxItemCustomFieldID           = big.NewInt(1 << 0)
-	inboxItemCustomFieldCreatedAt    = big.NewInt(1 << 1)
-	inboxItemCustomFieldUpdatedAt    = big.NewInt(1 << 2)
-	inboxItemCustomFieldStatus       = big.NewInt(1 << 3)
-	inboxItemCustomFieldSeverity     = big.NewInt(1 << 4)
-	inboxItemCustomFieldTags         = big.NewInt(1 << 5)
-	inboxItemCustomFieldMetadata     = big.NewInt(1 << 6)
-	inboxItemCustomFieldTitle        = big.NewInt(1 << 7)
-	inboxItemCustomFieldDescription  = big.NewInt(1 << 8)
-	inboxItemCustomFieldExternalURL  = big.NewInt(1 << 9)
-	inboxItemCustomFieldDeadline     = big.NewInt(1 << 10)
-	inboxItemCustomFieldSnoozedUntil = big.NewInt(1 << 11)
-	inboxItemCustomFieldAssignee     = big.NewInt(1 << 12)
-	inboxItemCustomFieldReferences   = big.NewInt(1 << 13)
+	inboxItemCustomFieldID          = big.NewInt(1 << 0)
+	inboxItemCustomFieldCreatedAt   = big.NewInt(1 << 1)
+	inboxItemCustomFieldUpdatedAt   = big.NewInt(1 << 2)
+	inboxItemCustomFieldStatus      = big.NewInt(1 << 3)
+	inboxItemCustomFieldSeverity    = big.NewInt(1 << 4)
+	inboxItemCustomFieldTags        = big.NewInt(1 << 5)
+	inboxItemCustomFieldMetadata    = big.NewInt(1 << 6)
+	inboxItemCustomFieldTitle       = big.NewInt(1 << 7)
+	inboxItemCustomFieldDescription = big.NewInt(1 << 8)
+	inboxItemCustomFieldExternalURL = big.NewInt(1 << 9)
+	inboxItemCustomFieldAssignee    = big.NewInt(1 << 10)
+	inboxItemCustomFieldReferences  = big.NewInt(1 << 11)
 )
 
 type InboxItemCustom struct {
@@ -12331,12 +12825,8 @@ type InboxItemCustom struct {
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// An optional URL that can be associated with the inbox item.
 	ExternalURL *string `json:"externalUrl,omitempty" url:"externalUrl,omitempty"`
-	// An optional deadline for the inbox item.
-	Deadline *time.Time `json:"deadline,omitempty" url:"deadline,omitempty"`
-	// An optional timestamp until which the inbox item is snoozed.
-	SnoozedUntil *time.Time `json:"snoozedUntil,omitempty" url:"snoozedUntil,omitempty"`
 	// An optional assignee for the inbox item.
-	Assignee *string `json:"assignee,omitempty" url:"assignee,omitempty"`
+	Assignee *ScopedEntity `json:"assignee,omitempty" url:"assignee,omitempty"`
 	// An optional list of references to other entities that are related to this inbox item.
 	References []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
 
@@ -12417,21 +12907,7 @@ func (i *InboxItemCustom) GetExternalURL() *string {
 	return i.ExternalURL
 }
 
-func (i *InboxItemCustom) GetDeadline() *time.Time {
-	if i == nil {
-		return nil
-	}
-	return i.Deadline
-}
-
-func (i *InboxItemCustom) GetSnoozedUntil() *time.Time {
-	if i == nil {
-		return nil
-	}
-	return i.SnoozedUntil
-}
-
-func (i *InboxItemCustom) GetAssignee() *string {
+func (i *InboxItemCustom) GetAssignee() *ScopedEntity {
 	if i == nil {
 		return nil
 	}
@@ -12526,23 +13002,9 @@ func (i *InboxItemCustom) SetExternalURL(externalURL *string) {
 	i.require(inboxItemCustomFieldExternalURL)
 }
 
-// SetDeadline sets the Deadline field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCustom) SetDeadline(deadline *time.Time) {
-	i.Deadline = deadline
-	i.require(inboxItemCustomFieldDeadline)
-}
-
-// SetSnoozedUntil sets the SnoozedUntil field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCustom) SetSnoozedUntil(snoozedUntil *time.Time) {
-	i.SnoozedUntil = snoozedUntil
-	i.require(inboxItemCustomFieldSnoozedUntil)
-}
-
 // SetAssignee sets the Assignee field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCustom) SetAssignee(assignee *string) {
+func (i *InboxItemCustom) SetAssignee(assignee *ScopedEntity) {
 	i.Assignee = assignee
 	i.require(inboxItemCustomFieldAssignee)
 }
@@ -12558,10 +13020,8 @@ func (i *InboxItemCustom) UnmarshalJSON(data []byte) error {
 	type embed InboxItemCustom
 	var unmarshaler = struct {
 		embed
-		CreatedAt    *internal.DateTime `json:"createdAt"`
-		UpdatedAt    *internal.DateTime `json:"updatedAt"`
-		Deadline     *internal.DateTime `json:"deadline,omitempty"`
-		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed: embed(*i),
 	}
@@ -12571,8 +13031,6 @@ func (i *InboxItemCustom) UnmarshalJSON(data []byte) error {
 	*i = InboxItemCustom(unmarshaler.embed)
 	i.CreatedAt = unmarshaler.CreatedAt.Time()
 	i.UpdatedAt = unmarshaler.UpdatedAt.Time()
-	i.Deadline = unmarshaler.Deadline.TimePtr()
-	i.SnoozedUntil = unmarshaler.SnoozedUntil.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *i)
 	if err != nil {
 		return err
@@ -12586,16 +13044,12 @@ func (i *InboxItemCustom) MarshalJSON() ([]byte, error) {
 	type embed InboxItemCustom
 	var marshaler = struct {
 		embed
-		CreatedAt    *internal.DateTime `json:"createdAt"`
-		UpdatedAt    *internal.DateTime `json:"updatedAt"`
-		Deadline     *internal.DateTime `json:"deadline,omitempty"`
-		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
-		embed:        embed(*i),
-		CreatedAt:    internal.NewDateTime(i.CreatedAt),
-		UpdatedAt:    internal.NewDateTime(i.UpdatedAt),
-		Deadline:     internal.NewOptionalDateTime(i.Deadline),
-		SnoozedUntil: internal.NewOptionalDateTime(i.SnoozedUntil),
+		embed:     embed(*i),
+		CreatedAt: internal.NewDateTime(i.CreatedAt),
+		UpdatedAt: internal.NewDateTime(i.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -13874,16 +14328,19 @@ func (i *IntelligentFieldPrecondition) String() string {
 // A single computed value for an intelligent field on a specific entity
 var (
 	intelligentFieldValueResponseFieldFieldID    = big.NewInt(1 << 0)
-	intelligentFieldValueResponseFieldEntityID   = big.NewInt(1 << 1)
-	intelligentFieldValueResponseFieldValue      = big.NewInt(1 << 2)
-	intelligentFieldValueResponseFieldConfidence = big.NewInt(1 << 3)
-	intelligentFieldValueResponseFieldRationale  = big.NewInt(1 << 4)
-	intelligentFieldValueResponseFieldCreatedAt  = big.NewInt(1 << 5)
+	intelligentFieldValueResponseFieldName       = big.NewInt(1 << 1)
+	intelligentFieldValueResponseFieldEntityID   = big.NewInt(1 << 2)
+	intelligentFieldValueResponseFieldValue      = big.NewInt(1 << 3)
+	intelligentFieldValueResponseFieldConfidence = big.NewInt(1 << 4)
+	intelligentFieldValueResponseFieldRationale  = big.NewInt(1 << 5)
+	intelligentFieldValueResponseFieldCreatedAt  = big.NewInt(1 << 6)
 )
 
 type IntelligentFieldValueResponse struct {
 	// The intelligent field that this value belongs to
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
+	// Display name of the intelligent field
+	Name string `json:"name" url:"name"`
 	// The entity this value is for
 	EntityID *EntityID `json:"entityId" url:"entityId"`
 	// The computed value (typed according to validationType)
@@ -13907,6 +14364,13 @@ func (i *IntelligentFieldValueResponse) GetFieldID() *EntityID {
 		return nil
 	}
 	return i.FieldID
+}
+
+func (i *IntelligentFieldValueResponse) GetName() string {
+	if i == nil {
+		return ""
+	}
+	return i.Name
 }
 
 func (i *IntelligentFieldValueResponse) GetEntityID() *EntityID {
@@ -13960,6 +14424,13 @@ func (i *IntelligentFieldValueResponse) require(field *big.Int) {
 func (i *IntelligentFieldValueResponse) SetFieldID(fieldID *EntityID) {
 	i.FieldID = fieldID
 	i.require(intelligentFieldValueResponseFieldFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldValueResponse) SetName(name string) {
+	i.Name = name
+	i.require(intelligentFieldValueResponseFieldName)
 }
 
 // SetEntityID sets the EntityID field and marks it as non-optional;

@@ -3532,9 +3532,7 @@ request := &mavenagigo.InboxItemCreateRequest{
         },
         Status: mavenagigo.InboxItemStatusOpen,
         Severity: mavenagigo.InboxItemSeverityHigh,
-        Title: mavenagigo.String(
-            "Todo Item",
-        ),
+        Title: "Todo Item",
         Description: mavenagigo.String(
             "This is the first todo item.",
         ),
@@ -3543,16 +3541,6 @@ request := &mavenagigo.InboxItemCreateRequest{
         },
         ExternalURL: mavenagigo.String(
             "todo.com",
-        ),
-        Deadline: mavenagigo.Time(
-            mavenagigo.MustParseDateTime(
-                "2026-12-31T23:59:59Z",
-            ),
-        ),
-        SnoozedUntil: mavenagigo.Time(
-            mavenagigo.MustParseDateTime(
-                "2026-12-25T23:59:59Z",
-            ),
         ),
         References: []*mavenagigo.ScopedEntity{
             &mavenagigo.ScopedEntity{
@@ -3593,6 +3581,106 @@ client.Inbox.CreateOrUpdate(
 <dd>
 
 **request:** `*mavenagigo.InboxItemCreateRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Inbox.Patch(InboxItemID, request) -> *mavenagigo.InboxItem</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update mutable inbox item fields. Only supported for custom inbox items.
+
+The `appId` field can be provided to update a inbox item owned by a different app.
+All other fields will overwrite the existing value on the inbox item only if provided.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.InboxItemPatchRequest{
+        Status: mavenagigo.InboxItemStatusOpen.Ptr(),
+        Metadata: map[string]string{
+            "key": "value",
+        },
+    }
+client.Inbox.Patch(
+        context.TODO(),
+        "custom-item-1",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**inboxItemID:** `string` — The ID of the inbox item to patch
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the inbox item to patch. If not provided the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*mavenagigo.InboxItemStatus` — Status of the inbox item.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**severity:** `*mavenagigo.InboxItemSeverity` — Severity of the inbox item.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**metadata:** `map[string]string` — Additional metadata associated with the inbox item.
     
 </dd>
 </dl>

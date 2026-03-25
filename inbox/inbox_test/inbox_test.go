@@ -97,9 +97,7 @@ func TestInboxCreateOrUpdateWithWireMock(
 		},
 		Status:   mavenagigo.InboxItemStatusOpen,
 		Severity: mavenagigo.InboxItemSeverityHigh,
-		Title: mavenagigo.String(
-			"Todo Item",
-		),
+		Title:    "Todo Item",
 		Description: mavenagigo.String(
 			"This is the first todo item.",
 		),
@@ -108,16 +106,6 @@ func TestInboxCreateOrUpdateWithWireMock(
 		},
 		ExternalURL: mavenagigo.String(
 			"todo.com",
-		),
-		Deadline: mavenagigo.Time(
-			mavenagigo.MustParseDateTime(
-				"2026-12-31T23:59:59Z",
-			),
-		),
-		SnoozedUntil: mavenagigo.Time(
-			mavenagigo.MustParseDateTime(
-				"2026-12-25T23:59:59Z",
-			),
 		),
 		References: []*mavenagigo.ScopedEntity{
 			&mavenagigo.ScopedEntity{
@@ -145,6 +133,32 @@ func TestInboxCreateOrUpdateWithWireMock(
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "PUT", "/v1/inbox", nil, 1)
+}
+
+func TestInboxPatchWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.InboxItemPatchRequest{
+		Status: mavenagigo.InboxItemStatusOpen.Ptr(),
+		Metadata: map[string]string{
+			"key": "value",
+		},
+	}
+	_, invocationErr := client.Inbox.Patch(
+		context.TODO(),
+		"custom-item-1",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "PATCH", "/v1/inbox/custom-item-1", nil, 1)
 }
 
 func TestInboxApplyTagsWithWireMock(

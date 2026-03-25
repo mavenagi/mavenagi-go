@@ -114,6 +114,53 @@ func (r *RawClient) CreateOrUpdate(
 	}, nil
 }
 
+func (r *RawClient) Patch(
+	ctx context.Context,
+	// The ID of the inbox item to patch
+	inboxItemID string,
+	request *mavenagigo.InboxItemPatchRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*mavenagigo.InboxItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := internal.EncodeURL(
+		baseURL+"/v1/inbox/%v",
+		inboxItemID,
+	)
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response *mavenagigo.InboxItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPatch,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*mavenagigo.InboxItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
 func (r *RawClient) ApplyTags(
 	ctx context.Context,
 	// The ID of the inbox item to add tags to.

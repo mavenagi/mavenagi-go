@@ -73,6 +73,29 @@ func (c *Client) CreateOrUpdate(
 	return response.Body, nil
 }
 
+// Update mutable inbox item fields. Only supported for custom inbox items.
+//
+// The `appId` field can be provided to update a inbox item owned by a different app.
+// All other fields will overwrite the existing value on the inbox item only if provided.
+func (c *Client) Patch(
+	ctx context.Context,
+	// The ID of the inbox item to patch
+	inboxItemID string,
+	request *mavenagigo.InboxItemPatchRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.InboxItem, error) {
+	response, err := c.WithRawResponse.Patch(
+		ctx,
+		inboxItemID,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
 // Update inbox item tag fields. All tags provided will overwrite the existing tags on the inbox item.
 func (c *Client) ApplyTags(
 	ctx context.Context,

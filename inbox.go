@@ -125,6 +125,62 @@ func (i *InboxItemIgnoreRequest) SetAppID(appID string) {
 }
 
 var (
+	inboxItemPatchRequestFieldAppID    = big.NewInt(1 << 0)
+	inboxItemPatchRequestFieldStatus   = big.NewInt(1 << 1)
+	inboxItemPatchRequestFieldSeverity = big.NewInt(1 << 2)
+	inboxItemPatchRequestFieldMetadata = big.NewInt(1 << 3)
+)
+
+type InboxItemPatchRequest struct {
+	// The App ID of the inbox item to patch. If not provided the ID of the calling app will be used.
+	AppID *string `json:"appId,omitempty" url:"-"`
+	// Status of the inbox item.
+	Status *InboxItemStatus `json:"status,omitempty" url:"-"`
+	// Severity of the inbox item.
+	Severity *InboxItemSeverity `json:"severity,omitempty" url:"-"`
+	// Additional metadata associated with the inbox item.
+	Metadata map[string]string `json:"metadata,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (i *InboxItemPatchRequest) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemPatchRequest) SetAppID(appID *string) {
+	i.AppID = appID
+	i.require(inboxItemPatchRequestFieldAppID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemPatchRequest) SetStatus(status *InboxItemStatus) {
+	i.Status = status
+	i.require(inboxItemPatchRequestFieldStatus)
+}
+
+// SetSeverity sets the Severity field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemPatchRequest) SetSeverity(severity *InboxItemSeverity) {
+	i.Severity = severity
+	i.require(inboxItemPatchRequestFieldSeverity)
+}
+
+// SetMetadata sets the Metadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxItemPatchRequest) SetMetadata(metadata map[string]string) {
+	i.Metadata = metadata
+	i.require(inboxItemPatchRequestFieldMetadata)
+}
+
+var (
 	addDocumentFixRequestFieldKnowledgeDocumentRequest = big.NewInt(1 << 0)
 	addDocumentFixRequestFieldKnowledgeBaseReferenceID = big.NewInt(1 << 1)
 )
@@ -494,17 +550,15 @@ func (i *InboxFilter) String() string {
 }
 
 var (
-	inboxItemCreateRequestFieldInboxItemID  = big.NewInt(1 << 0)
-	inboxItemCreateRequestFieldStatus       = big.NewInt(1 << 1)
-	inboxItemCreateRequestFieldSeverity     = big.NewInt(1 << 2)
-	inboxItemCreateRequestFieldMetadata     = big.NewInt(1 << 3)
-	inboxItemCreateRequestFieldTitle        = big.NewInt(1 << 4)
-	inboxItemCreateRequestFieldDescription  = big.NewInt(1 << 5)
-	inboxItemCreateRequestFieldExternalURL  = big.NewInt(1 << 6)
-	inboxItemCreateRequestFieldDeadline     = big.NewInt(1 << 7)
-	inboxItemCreateRequestFieldSnoozedUntil = big.NewInt(1 << 8)
-	inboxItemCreateRequestFieldAssignee     = big.NewInt(1 << 9)
-	inboxItemCreateRequestFieldReferences   = big.NewInt(1 << 10)
+	inboxItemCreateRequestFieldInboxItemID = big.NewInt(1 << 0)
+	inboxItemCreateRequestFieldStatus      = big.NewInt(1 << 1)
+	inboxItemCreateRequestFieldSeverity    = big.NewInt(1 << 2)
+	inboxItemCreateRequestFieldMetadata    = big.NewInt(1 << 3)
+	inboxItemCreateRequestFieldTitle       = big.NewInt(1 << 4)
+	inboxItemCreateRequestFieldDescription = big.NewInt(1 << 5)
+	inboxItemCreateRequestFieldExternalURL = big.NewInt(1 << 6)
+	inboxItemCreateRequestFieldAssignee    = big.NewInt(1 << 7)
+	inboxItemCreateRequestFieldReferences  = big.NewInt(1 << 8)
 )
 
 type InboxItemCreateRequest struct {
@@ -517,17 +571,13 @@ type InboxItemCreateRequest struct {
 	// Additional metadata associated with the inbox item.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
 	// Title of the inbox item.
-	Title *string `json:"title,omitempty" url:"title,omitempty"`
+	Title string `json:"title" url:"title"`
 	// Description of the inbox item.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// An optional URL that can be associated with the inbox item.
 	ExternalURL *string `json:"externalUrl,omitempty" url:"externalUrl,omitempty"`
-	// An optional deadline for the inbox item.
-	Deadline *time.Time `json:"deadline,omitempty" url:"deadline,omitempty"`
-	// An optional timestamp until which the inbox item is snoozed.
-	SnoozedUntil *time.Time `json:"snoozedUntil,omitempty" url:"snoozedUntil,omitempty"`
 	// An optional assignee for the inbox item.
-	Assignee *string `json:"assignee,omitempty" url:"assignee,omitempty"`
+	Assignee *ScopedEntity `json:"assignee,omitempty" url:"assignee,omitempty"`
 	// An optional list of references to other entities that are related to this inbox item.
 	References []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
 
@@ -566,9 +616,9 @@ func (i *InboxItemCreateRequest) GetMetadata() map[string]string {
 	return i.Metadata
 }
 
-func (i *InboxItemCreateRequest) GetTitle() *string {
+func (i *InboxItemCreateRequest) GetTitle() string {
 	if i == nil {
-		return nil
+		return ""
 	}
 	return i.Title
 }
@@ -587,21 +637,7 @@ func (i *InboxItemCreateRequest) GetExternalURL() *string {
 	return i.ExternalURL
 }
 
-func (i *InboxItemCreateRequest) GetDeadline() *time.Time {
-	if i == nil {
-		return nil
-	}
-	return i.Deadline
-}
-
-func (i *InboxItemCreateRequest) GetSnoozedUntil() *time.Time {
-	if i == nil {
-		return nil
-	}
-	return i.SnoozedUntil
-}
-
-func (i *InboxItemCreateRequest) GetAssignee() *string {
+func (i *InboxItemCreateRequest) GetAssignee() *ScopedEntity {
 	if i == nil {
 		return nil
 	}
@@ -656,7 +692,7 @@ func (i *InboxItemCreateRequest) SetMetadata(metadata map[string]string) {
 
 // SetTitle sets the Title field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCreateRequest) SetTitle(title *string) {
+func (i *InboxItemCreateRequest) SetTitle(title string) {
 	i.Title = title
 	i.require(inboxItemCreateRequestFieldTitle)
 }
@@ -675,23 +711,9 @@ func (i *InboxItemCreateRequest) SetExternalURL(externalURL *string) {
 	i.require(inboxItemCreateRequestFieldExternalURL)
 }
 
-// SetDeadline sets the Deadline field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCreateRequest) SetDeadline(deadline *time.Time) {
-	i.Deadline = deadline
-	i.require(inboxItemCreateRequestFieldDeadline)
-}
-
-// SetSnoozedUntil sets the SnoozedUntil field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCreateRequest) SetSnoozedUntil(snoozedUntil *time.Time) {
-	i.SnoozedUntil = snoozedUntil
-	i.require(inboxItemCreateRequestFieldSnoozedUntil)
-}
-
 // SetAssignee sets the Assignee field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InboxItemCreateRequest) SetAssignee(assignee *string) {
+func (i *InboxItemCreateRequest) SetAssignee(assignee *ScopedEntity) {
 	i.Assignee = assignee
 	i.require(inboxItemCreateRequestFieldAssignee)
 }
@@ -704,20 +726,12 @@ func (i *InboxItemCreateRequest) SetReferences(references []*ScopedEntity) {
 }
 
 func (i *InboxItemCreateRequest) UnmarshalJSON(data []byte) error {
-	type embed InboxItemCreateRequest
-	var unmarshaler = struct {
-		embed
-		Deadline     *internal.DateTime `json:"deadline,omitempty"`
-		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
-	}{
-		embed: embed(*i),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler InboxItemCreateRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*i = InboxItemCreateRequest(unmarshaler.embed)
-	i.Deadline = unmarshaler.Deadline.TimePtr()
-	i.SnoozedUntil = unmarshaler.SnoozedUntil.TimePtr()
+	*i = InboxItemCreateRequest(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *i)
 	if err != nil {
 		return err
@@ -731,12 +745,8 @@ func (i *InboxItemCreateRequest) MarshalJSON() ([]byte, error) {
 	type embed InboxItemCreateRequest
 	var marshaler = struct {
 		embed
-		Deadline     *internal.DateTime `json:"deadline,omitempty"`
-		SnoozedUntil *internal.DateTime `json:"snoozedUntil,omitempty"`
 	}{
-		embed:        embed(*i),
-		Deadline:     internal.NewOptionalDateTime(i.Deadline),
-		SnoozedUntil: internal.NewOptionalDateTime(i.SnoozedUntil),
+		embed: embed(*i),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
 	return json.Marshal(explicitMarshaler)
