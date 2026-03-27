@@ -2578,7 +2578,10 @@ type KnowledgeDocumentRequest struct {
 	ContentType KnowledgeDocumentContentType `json:"contentType" url:"contentType"`
 	// The title of the document. Will be shown as part of answers.
 	Title string `json:"title" url:"title"`
-	// (Currently in BETA. Use at your own risk, and may not work in some circumstances) ID of the asset associated with this document. This asset will be transformed into text and set as the content of the document. The following types are supported: `application/pdf`, `text/plain`.  Either this or content is required, but not both.
+	// (Beta: under development, endpoint may change.)
+	// ID of the asset associated with this document. This asset will be transformed into
+	// text and set as the content of the document. Supported MIME types are those accepted by `initiateUpload`.
+	// Either this or content is required, but not both. The asset must have a checksum provided at commit time (see `commitUpload`).
 	AssetID *EntityIDWithoutAgent `json:"assetId,omitempty" url:"assetId,omitempty"`
 	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
@@ -2887,8 +2890,8 @@ type KnowledgeDocumentResponse struct {
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 	// The current processing status of the knowledge document
 	ProcessingStatus *KnowledgeDocumentStatus `json:"processingStatus,omitempty" url:"processingStatus,omitempty"`
-	// The content of the document in markdown format. Not shown directly to users.
-	Content string `json:"content" url:"content"`
+	// The content of the document in markdown format. Not shown directly to users. May be absent for asset-backed documents that have not yet been processed.
+	Content *string `json:"content,omitempty" url:"content,omitempty"`
 	// If the document is associated with an asset, this will contain the asset metadata
 	Asset *AttachmentResponse `json:"asset,omitempty" url:"asset,omitempty"`
 	// Metadata for the knowledge document.
@@ -2987,9 +2990,9 @@ func (k *KnowledgeDocumentResponse) GetProcessingStatus() *KnowledgeDocumentStat
 	return k.ProcessingStatus
 }
 
-func (k *KnowledgeDocumentResponse) GetContent() string {
+func (k *KnowledgeDocumentResponse) GetContent() *string {
 	if k == nil {
-		return ""
+		return nil
 	}
 	return k.Content
 }
@@ -3112,7 +3115,7 @@ func (k *KnowledgeDocumentResponse) SetProcessingStatus(processingStatus *Knowle
 
 // SetContent sets the Content field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetContent(content string) {
+func (k *KnowledgeDocumentResponse) SetContent(content *string) {
 	k.Content = content
 	k.require(knowledgeDocumentResponseFieldContent)
 }
