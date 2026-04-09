@@ -53,6 +53,29 @@ func (n *NotFoundError) Unwrap() error {
 	return n.APIError
 }
 
+type PayloadTooLargeError struct {
+	*core.APIError
+	Body *ErrorMessage
+}
+
+func (p *PayloadTooLargeError) UnmarshalJSON(data []byte) error {
+	var body *ErrorMessage
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	p.StatusCode = 413
+	p.Body = body
+	return nil
+}
+
+func (p *PayloadTooLargeError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.Body)
+}
+
+func (p *PayloadTooLargeError) Unwrap() error {
+	return p.APIError
+}
+
 type ServerError struct {
 	*core.APIError
 	Body *ErrorMessage

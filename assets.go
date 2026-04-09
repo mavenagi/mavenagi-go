@@ -15,7 +15,7 @@ var (
 )
 
 type CommitAssetUploadRequest struct {
-	// MD5 hex digest of the uploaded file. Required for assets attached to knowledge documents. Used to verify blob integrity at ingestion time.
+	// MD5 hex digest of the uploaded file. When provided, used to verify blob integrity.
 	Checksum *string `json:"checksum,omitempty" url:"checksum,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
