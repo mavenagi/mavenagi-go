@@ -8043,6 +8043,219 @@ func (c *ConversationPrecondition) validate() error {
 	return nil
 }
 
+type ConversationPreconditionResponse struct {
+	ConversationPreconditionType string
+	Tags                         *TagsPrecondition
+	Metadata                     *MetadataPrecondition
+	ActionExecuted               *ConversationExecutedActionPrecondition
+	ResponseConfig               *ResponseConfigPrecondition
+	App                          *AppPrecondition
+	IntelligentField             *IntelligentFieldPreconditionResponse
+}
+
+func (c *ConversationPreconditionResponse) GetConversationPreconditionType() string {
+	if c == nil {
+		return ""
+	}
+	return c.ConversationPreconditionType
+}
+
+func (c *ConversationPreconditionResponse) GetTags() *TagsPrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.Tags
+}
+
+func (c *ConversationPreconditionResponse) GetMetadata() *MetadataPrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.Metadata
+}
+
+func (c *ConversationPreconditionResponse) GetActionExecuted() *ConversationExecutedActionPrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.ActionExecuted
+}
+
+func (c *ConversationPreconditionResponse) GetResponseConfig() *ResponseConfigPrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.ResponseConfig
+}
+
+func (c *ConversationPreconditionResponse) GetApp() *AppPrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.App
+}
+
+func (c *ConversationPreconditionResponse) GetIntelligentField() *IntelligentFieldPreconditionResponse {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentField
+}
+
+func (c *ConversationPreconditionResponse) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		ConversationPreconditionType string `json:"conversationPreconditionType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	c.ConversationPreconditionType = unmarshaler.ConversationPreconditionType
+	if unmarshaler.ConversationPreconditionType == "" {
+		return fmt.Errorf("%T did not include discriminant conversationPreconditionType", c)
+	}
+	switch unmarshaler.ConversationPreconditionType {
+	case "tags":
+		value := new(TagsPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Tags = value
+	case "metadata":
+		value := new(MetadataPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Metadata = value
+	case "actionExecuted":
+		value := new(ConversationExecutedActionPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ActionExecuted = value
+	case "responseConfig":
+		value := new(ResponseConfigPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ResponseConfig = value
+	case "app":
+		value := new(AppPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.App = value
+	case "intelligentField":
+		value := new(IntelligentFieldPreconditionResponse)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.IntelligentField = value
+	}
+	return nil
+}
+
+func (c ConversationPreconditionResponse) MarshalJSON() ([]byte, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	if c.Tags != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Tags, "conversationPreconditionType", "tags")
+	}
+	if c.Metadata != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Metadata, "conversationPreconditionType", "metadata")
+	}
+	if c.ActionExecuted != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ActionExecuted, "conversationPreconditionType", "actionExecuted")
+	}
+	if c.ResponseConfig != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ResponseConfig, "conversationPreconditionType", "responseConfig")
+	}
+	if c.App != nil {
+		return internal.MarshalJSONWithExtraProperty(c.App, "conversationPreconditionType", "app")
+	}
+	if c.IntelligentField != nil {
+		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+type ConversationPreconditionResponseVisitor interface {
+	VisitTags(*TagsPrecondition) error
+	VisitMetadata(*MetadataPrecondition) error
+	VisitActionExecuted(*ConversationExecutedActionPrecondition) error
+	VisitResponseConfig(*ResponseConfigPrecondition) error
+	VisitApp(*AppPrecondition) error
+	VisitIntelligentField(*IntelligentFieldPreconditionResponse) error
+}
+
+func (c *ConversationPreconditionResponse) Accept(visitor ConversationPreconditionResponseVisitor) error {
+	if c.Tags != nil {
+		return visitor.VisitTags(c.Tags)
+	}
+	if c.Metadata != nil {
+		return visitor.VisitMetadata(c.Metadata)
+	}
+	if c.ActionExecuted != nil {
+		return visitor.VisitActionExecuted(c.ActionExecuted)
+	}
+	if c.ResponseConfig != nil {
+		return visitor.VisitResponseConfig(c.ResponseConfig)
+	}
+	if c.App != nil {
+		return visitor.VisitApp(c.App)
+	}
+	if c.IntelligentField != nil {
+		return visitor.VisitIntelligentField(c.IntelligentField)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+func (c *ConversationPreconditionResponse) validate() error {
+	if c == nil {
+		return fmt.Errorf("type %T is nil", c)
+	}
+	var fields []string
+	if c.Tags != nil {
+		fields = append(fields, "tags")
+	}
+	if c.Metadata != nil {
+		fields = append(fields, "metadata")
+	}
+	if c.ActionExecuted != nil {
+		fields = append(fields, "actionExecuted")
+	}
+	if c.ResponseConfig != nil {
+		fields = append(fields, "responseConfig")
+	}
+	if c.App != nil {
+		fields = append(fields, "app")
+	}
+	if c.IntelligentField != nil {
+		fields = append(fields, "intelligentField")
+	}
+	if len(fields) == 0 {
+		if c.ConversationPreconditionType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", c, c.ConversationPreconditionType)
+		}
+		return fmt.Errorf("type %T is empty", c)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", c, fields)
+	}
+	if c.ConversationPreconditionType != "" {
+		field := fields[0]
+		if c.ConversationPreconditionType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				c,
+				c.ConversationPreconditionType,
+				c,
+			)
+		}
+	}
+	return nil
+}
+
 var (
 	conversationPreviewFieldResponseConfig    = big.NewInt(1 << 0)
 	conversationPreviewFieldSubject           = big.NewInt(1 << 1)
@@ -14325,6 +14538,121 @@ func (i *IntelligentFieldPrecondition) String() string {
 	return fmt.Sprintf("%#v", i)
 }
 
+// Response variant of IntelligentFieldPrecondition.
+// Includes the resolved display name of the intelligent field.
+var (
+	intelligentFieldPreconditionResponseFieldFieldIDWithoutAgent = big.NewInt(1 << 0)
+	intelligentFieldPreconditionResponseFieldName                = big.NewInt(1 << 1)
+	intelligentFieldPreconditionResponseFieldFieldCondition      = big.NewInt(1 << 2)
+)
+
+type IntelligentFieldPreconditionResponse struct {
+	// The ID of the intelligent field.
+	FieldIDWithoutAgent *EntityIDWithoutAgent `json:"fieldIdWithoutAgent" url:"fieldIdWithoutAgent"`
+	// Human-readable display name of the intelligent field. Resolved server-side.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// The condition to evaluate against the field's value.
+	FieldCondition *IntelligentFieldCondition `json:"fieldCondition" url:"fieldCondition"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldPreconditionResponse) GetFieldIDWithoutAgent() *EntityIDWithoutAgent {
+	if i == nil {
+		return nil
+	}
+	return i.FieldIDWithoutAgent
+}
+
+func (i *IntelligentFieldPreconditionResponse) GetName() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Name
+}
+
+func (i *IntelligentFieldPreconditionResponse) GetFieldCondition() *IntelligentFieldCondition {
+	if i == nil {
+		return nil
+	}
+	return i.FieldCondition
+}
+
+func (i *IntelligentFieldPreconditionResponse) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldPreconditionResponse) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetFieldIDWithoutAgent sets the FieldIDWithoutAgent field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPreconditionResponse) SetFieldIDWithoutAgent(fieldIDWithoutAgent *EntityIDWithoutAgent) {
+	i.FieldIDWithoutAgent = fieldIDWithoutAgent
+	i.require(intelligentFieldPreconditionResponseFieldFieldIDWithoutAgent)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPreconditionResponse) SetName(name *string) {
+	i.Name = name
+	i.require(intelligentFieldPreconditionResponseFieldName)
+}
+
+// SetFieldCondition sets the FieldCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPreconditionResponse) SetFieldCondition(fieldCondition *IntelligentFieldCondition) {
+	i.FieldCondition = fieldCondition
+	i.require(intelligentFieldPreconditionResponseFieldFieldCondition)
+}
+
+func (i *IntelligentFieldPreconditionResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler IntelligentFieldPreconditionResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = IntelligentFieldPreconditionResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldPreconditionResponse) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldPreconditionResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldPreconditionResponse) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
 // A single computed value for an intelligent field on a specific entity
 var (
 	intelligentFieldValueResponseFieldFieldID    = big.NewInt(1 << 0)
@@ -18028,6 +18356,100 @@ func (p PreconditionGroupOperator) Ptr() *PreconditionGroupOperator {
 	return &p
 }
 
+var (
+	preconditionGroupResponseFieldOperator      = big.NewInt(1 << 0)
+	preconditionGroupResponseFieldPreconditions = big.NewInt(1 << 1)
+)
+
+type PreconditionGroupResponse struct {
+	Operator      PreconditionGroupOperator `json:"operator" url:"operator"`
+	Preconditions []*PreconditionResponse   `json:"preconditions" url:"preconditions"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (p *PreconditionGroupResponse) GetOperator() PreconditionGroupOperator {
+	if p == nil {
+		return ""
+	}
+	return p.Operator
+}
+
+func (p *PreconditionGroupResponse) GetPreconditions() []*PreconditionResponse {
+	if p == nil {
+		return nil
+	}
+	return p.Preconditions
+}
+
+func (p *PreconditionGroupResponse) GetExtraProperties() map[string]interface{} {
+	return p.extraProperties
+}
+
+func (p *PreconditionGroupResponse) require(field *big.Int) {
+	if p.explicitFields == nil {
+		p.explicitFields = big.NewInt(0)
+	}
+	p.explicitFields.Or(p.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PreconditionGroupResponse) SetOperator(operator PreconditionGroupOperator) {
+	p.Operator = operator
+	p.require(preconditionGroupResponseFieldOperator)
+}
+
+// SetPreconditions sets the Preconditions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PreconditionGroupResponse) SetPreconditions(preconditions []*PreconditionResponse) {
+	p.Preconditions = preconditions
+	p.require(preconditionGroupResponseFieldPreconditions)
+}
+
+func (p *PreconditionGroupResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler PreconditionGroupResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*p = PreconditionGroupResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *p)
+	if err != nil {
+		return err
+	}
+	p.extraProperties = extraProperties
+	p.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (p *PreconditionGroupResponse) MarshalJSON() ([]byte, error) {
+	type embed PreconditionGroupResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*p),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, p.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (p *PreconditionGroupResponse) String() string {
+	if len(p.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(p.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(p); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", p)
+}
+
 type PreconditionOperator string
 
 const (
@@ -18070,6 +18492,156 @@ func NewPreconditionOperatorFromString(s string) (PreconditionOperator, error) {
 
 func (p PreconditionOperator) Ptr() *PreconditionOperator {
 	return &p
+}
+
+type PreconditionResponse struct {
+	PreconditionType string
+	User             *MetadataPrecondition
+	Conversation     *ConversationPreconditionResponse
+	Group            *PreconditionGroupResponse
+}
+
+func (p *PreconditionResponse) GetPreconditionType() string {
+	if p == nil {
+		return ""
+	}
+	return p.PreconditionType
+}
+
+func (p *PreconditionResponse) GetUser() *MetadataPrecondition {
+	if p == nil {
+		return nil
+	}
+	return p.User
+}
+
+func (p *PreconditionResponse) GetConversation() *ConversationPreconditionResponse {
+	if p == nil {
+		return nil
+	}
+	return p.Conversation
+}
+
+func (p *PreconditionResponse) GetGroup() *PreconditionGroupResponse {
+	if p == nil {
+		return nil
+	}
+	return p.Group
+}
+
+func (p *PreconditionResponse) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		PreconditionType string `json:"preconditionType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	p.PreconditionType = unmarshaler.PreconditionType
+	if unmarshaler.PreconditionType == "" {
+		return fmt.Errorf("%T did not include discriminant preconditionType", p)
+	}
+	switch unmarshaler.PreconditionType {
+	case "user":
+		value := new(MetadataPrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		p.User = value
+	case "conversation":
+		var valueUnmarshaler struct {
+			Conversation *ConversationPreconditionResponse `json:"value"`
+		}
+		if err := json.Unmarshal(data, &valueUnmarshaler); err != nil {
+			return err
+		}
+		p.Conversation = valueUnmarshaler.Conversation
+	case "group":
+		value := new(PreconditionGroupResponse)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		p.Group = value
+	}
+	return nil
+}
+
+func (p PreconditionResponse) MarshalJSON() ([]byte, error) {
+	if err := p.validate(); err != nil {
+		return nil, err
+	}
+	if p.User != nil {
+		return internal.MarshalJSONWithExtraProperty(p.User, "preconditionType", "user")
+	}
+	if p.Conversation != nil {
+		var marshaler = struct {
+			PreconditionType string                            `json:"preconditionType"`
+			Conversation     *ConversationPreconditionResponse `json:"value"`
+		}{
+			PreconditionType: "conversation",
+			Conversation:     p.Conversation,
+		}
+		return json.Marshal(marshaler)
+	}
+	if p.Group != nil {
+		return internal.MarshalJSONWithExtraProperty(p.Group, "preconditionType", "group")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", p)
+}
+
+type PreconditionResponseVisitor interface {
+	VisitUser(*MetadataPrecondition) error
+	VisitConversation(*ConversationPreconditionResponse) error
+	VisitGroup(*PreconditionGroupResponse) error
+}
+
+func (p *PreconditionResponse) Accept(visitor PreconditionResponseVisitor) error {
+	if p.User != nil {
+		return visitor.VisitUser(p.User)
+	}
+	if p.Conversation != nil {
+		return visitor.VisitConversation(p.Conversation)
+	}
+	if p.Group != nil {
+		return visitor.VisitGroup(p.Group)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", p)
+}
+
+func (p *PreconditionResponse) validate() error {
+	if p == nil {
+		return fmt.Errorf("type %T is nil", p)
+	}
+	var fields []string
+	if p.User != nil {
+		fields = append(fields, "user")
+	}
+	if p.Conversation != nil {
+		fields = append(fields, "conversation")
+	}
+	if p.Group != nil {
+		fields = append(fields, "group")
+	}
+	if len(fields) == 0 {
+		if p.PreconditionType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", p, p.PreconditionType)
+		}
+		return fmt.Errorf("type %T is empty", p)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", p, fields)
+	}
+	if p.PreconditionType != "" {
+		field := fields[0]
+		if p.PreconditionType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				p,
+				p.PreconditionType,
+				p,
+			)
+		}
+	}
+	return nil
 }
 
 type Quality string

@@ -63,9 +63,8 @@ func (s *SegmentGetRequest) SetAppID(appID *string) {
 }
 
 var (
-	segmentBaseFieldName         = big.NewInt(1 << 0)
-	segmentBaseFieldDescription  = big.NewInt(1 << 1)
-	segmentBaseFieldPrecondition = big.NewInt(1 << 2)
+	segmentBaseFieldName        = big.NewInt(1 << 0)
+	segmentBaseFieldDescription = big.NewInt(1 << 1)
 )
 
 type SegmentBase struct {
@@ -73,8 +72,6 @@ type SegmentBase struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the segment.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// The precondition that must be met for a conversation message to be included in the segment.
-	Precondition *Precondition `json:"precondition" url:"precondition"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -95,13 +92,6 @@ func (s *SegmentBase) GetDescription() *string {
 		return nil
 	}
 	return s.Description
-}
-
-func (s *SegmentBase) GetPrecondition() *Precondition {
-	if s == nil {
-		return nil
-	}
-	return s.Precondition
 }
 
 func (s *SegmentBase) GetExtraProperties() map[string]interface{} {
@@ -127,13 +117,6 @@ func (s *SegmentBase) SetName(name string) {
 func (s *SegmentBase) SetDescription(description *string) {
 	s.Description = description
 	s.require(segmentBaseFieldDescription)
-}
-
-// SetPrecondition sets the Precondition field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SegmentBase) SetPrecondition(precondition *Precondition) {
-	s.Precondition = precondition
-	s.require(segmentBaseFieldPrecondition)
 }
 
 func (s *SegmentBase) UnmarshalJSON(data []byte) error {
@@ -464,8 +447,8 @@ func (s *SegmentPatchRequest) String() string {
 var (
 	segmentRequestFieldName         = big.NewInt(1 << 0)
 	segmentRequestFieldDescription  = big.NewInt(1 << 1)
-	segmentRequestFieldPrecondition = big.NewInt(1 << 2)
-	segmentRequestFieldSegmentID    = big.NewInt(1 << 3)
+	segmentRequestFieldSegmentID    = big.NewInt(1 << 2)
+	segmentRequestFieldPrecondition = big.NewInt(1 << 3)
 	segmentRequestFieldStatus       = big.NewInt(1 << 4)
 )
 
@@ -474,10 +457,10 @@ type SegmentRequest struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the segment.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// The precondition that must be met for a conversation message to be included in the segment.
-	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// ID that uniquely identifies this segment
 	SegmentID *EntityIDBase `json:"segmentId" url:"segmentId"`
+	// The precondition that must be met for a conversation message to be included in the segment.
+	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// Desired status for the segment. If omitted, defaults to ACTIVE. In the future this will become required, so specify ACTIVE or INACTIVE if possible.
 	Status *SegmentStatus `json:"status,omitempty" url:"status,omitempty"`
 
@@ -502,18 +485,18 @@ func (s *SegmentRequest) GetDescription() *string {
 	return s.Description
 }
 
-func (s *SegmentRequest) GetPrecondition() *Precondition {
-	if s == nil {
-		return nil
-	}
-	return s.Precondition
-}
-
 func (s *SegmentRequest) GetSegmentID() *EntityIDBase {
 	if s == nil {
 		return nil
 	}
 	return s.SegmentID
+}
+
+func (s *SegmentRequest) GetPrecondition() *Precondition {
+	if s == nil {
+		return nil
+	}
+	return s.Precondition
 }
 
 func (s *SegmentRequest) GetStatus() *SegmentStatus {
@@ -548,18 +531,18 @@ func (s *SegmentRequest) SetDescription(description *string) {
 	s.require(segmentRequestFieldDescription)
 }
 
-// SetPrecondition sets the Precondition field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SegmentRequest) SetPrecondition(precondition *Precondition) {
-	s.Precondition = precondition
-	s.require(segmentRequestFieldPrecondition)
-}
-
 // SetSegmentID sets the SegmentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (s *SegmentRequest) SetSegmentID(segmentID *EntityIDBase) {
 	s.SegmentID = segmentID
 	s.require(segmentRequestFieldSegmentID)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentRequest) SetPrecondition(precondition *Precondition) {
+	s.Precondition = precondition
+	s.require(segmentRequestFieldPrecondition)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -611,8 +594,8 @@ func (s *SegmentRequest) String() string {
 var (
 	segmentResponseFieldName                         = big.NewInt(1 << 0)
 	segmentResponseFieldDescription                  = big.NewInt(1 << 1)
-	segmentResponseFieldPrecondition                 = big.NewInt(1 << 2)
-	segmentResponseFieldSegmentID                    = big.NewInt(1 << 3)
+	segmentResponseFieldSegmentID                    = big.NewInt(1 << 2)
+	segmentResponseFieldPrecondition                 = big.NewInt(1 << 3)
 	segmentResponseFieldCreatedAt                    = big.NewInt(1 << 4)
 	segmentResponseFieldUpdatedAt                    = big.NewInt(1 << 5)
 	segmentResponseFieldReferencedKnowledgeBaseCount = big.NewInt(1 << 6)
@@ -626,10 +609,10 @@ type SegmentResponse struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the segment.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// The precondition that must be met for a conversation message to be included in the segment.
-	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// ID that uniquely identifies this segment
 	SegmentID *EntityID `json:"segmentId" url:"segmentId"`
+	// The precondition that must be met for a conversation message to be included in the segment.
+	Precondition *PreconditionResponse `json:"precondition" url:"precondition"`
 	// The date and time when the segment was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The date and time when the segment was last updated.
@@ -668,18 +651,18 @@ func (s *SegmentResponse) GetDescription() *string {
 	return s.Description
 }
 
-func (s *SegmentResponse) GetPrecondition() *Precondition {
-	if s == nil {
-		return nil
-	}
-	return s.Precondition
-}
-
 func (s *SegmentResponse) GetSegmentID() *EntityID {
 	if s == nil {
 		return nil
 	}
 	return s.SegmentID
+}
+
+func (s *SegmentResponse) GetPrecondition() *PreconditionResponse {
+	if s == nil {
+		return nil
+	}
+	return s.Precondition
 }
 
 func (s *SegmentResponse) GetCreatedAt() time.Time {
@@ -749,18 +732,18 @@ func (s *SegmentResponse) SetDescription(description *string) {
 	s.require(segmentResponseFieldDescription)
 }
 
-// SetPrecondition sets the Precondition field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SegmentResponse) SetPrecondition(precondition *Precondition) {
-	s.Precondition = precondition
-	s.require(segmentResponseFieldPrecondition)
-}
-
 // SetSegmentID sets the SegmentID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (s *SegmentResponse) SetSegmentID(segmentID *EntityID) {
 	s.SegmentID = segmentID
 	s.require(segmentResponseFieldSegmentID)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentResponse) SetPrecondition(precondition *PreconditionResponse) {
+	s.Precondition = precondition
+	s.require(segmentResponseFieldPrecondition)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
