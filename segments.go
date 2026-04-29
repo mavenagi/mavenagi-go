@@ -875,7 +875,7 @@ var (
 type SegmentsSearchRequest struct {
 	// Page number to return, defaults to 0
 	Page *int `json:"page,omitempty" url:"page,omitempty"`
-	// The size of the page to return, defaults to 20
+	// The size of the page to return, defaults to 20. Max 1000.
 	Size *int `json:"size,omitempty" url:"size,omitempty"`
 	// Whether to sort descending, defaults to true
 	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`

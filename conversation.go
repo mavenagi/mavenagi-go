@@ -1315,6 +1315,7 @@ var (
 	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 21)
 	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 22)
 	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 23)
+	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 24)
 )
 
 type ConversationFilter struct {
@@ -1386,6 +1387,8 @@ type ConversationFilter struct {
 	InboxItemIDs []*EntityIDFilter `json:"inboxItemIds,omitempty" url:"inboxItemIds,omitempty"`
 	// Whether to include simulation conversations in search results. Defaults to only non-simulation conversations.
 	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"simulationFilter,omitempty"`
+	// Filter by intelligent field values. All conditions are ANDed together.
+	IntelligentFields *IntelligentFieldFilter `json:"intelligentFields,omitempty" url:"intelligentFields,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1560,6 +1563,13 @@ func (c *ConversationFilter) GetSimulationFilter() *SimulationFilter {
 		return nil
 	}
 	return c.SimulationFilter
+}
+
+func (c *ConversationFilter) GetIntelligentFields() *IntelligentFieldFilter {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFields
 }
 
 func (c *ConversationFilter) GetExtraProperties() map[string]interface{} {
@@ -1739,6 +1749,13 @@ func (c *ConversationFilter) SetInboxItemIDs(inboxItemIDs []*EntityIDFilter) {
 func (c *ConversationFilter) SetSimulationFilter(simulationFilter *SimulationFilter) {
 	c.SimulationFilter = simulationFilter
 	c.require(conversationFilterFieldSimulationFilter)
+}
+
+// SetIntelligentFields sets the IntelligentFields field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetIntelligentFields(intelligentFields *IntelligentFieldFilter) {
+	c.IntelligentFields = intelligentFields
+	c.require(conversationFilterFieldIntelligentFields)
 }
 
 func (c *ConversationFilter) UnmarshalJSON(data []byte) error {
@@ -3503,6 +3520,244 @@ func (f *FeedbackRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", f)
+}
+
+// Filter conversations by intelligent field values. All conditions are ANDed.
+var (
+	intelligentFieldFilterFieldConditions = big.NewInt(1 << 0)
+)
+
+type IntelligentFieldFilter struct {
+	// List of conditions to filter by. All conditions must match (AND logic).
+	Conditions []*IntelligentFieldSearchCondition `json:"conditions" url:"conditions"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldFilter) GetConditions() []*IntelligentFieldSearchCondition {
+	if i == nil {
+		return nil
+	}
+	return i.Conditions
+}
+
+func (i *IntelligentFieldFilter) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldFilter) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetConditions sets the Conditions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldFilter) SetConditions(conditions []*IntelligentFieldSearchCondition) {
+	i.Conditions = conditions
+	i.require(intelligentFieldFilterFieldConditions)
+}
+
+func (i *IntelligentFieldFilter) UnmarshalJSON(data []byte) error {
+	type unmarshaler IntelligentFieldFilter
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = IntelligentFieldFilter(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldFilter) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldFilter
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldFilter) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
+// Comparison operators for intelligent field filtering.
+type IntelligentFieldOperator string
+
+const (
+	IntelligentFieldOperatorEq        IntelligentFieldOperator = "EQ"
+	IntelligentFieldOperatorNeq       IntelligentFieldOperator = "NEQ"
+	IntelligentFieldOperatorContains  IntelligentFieldOperator = "CONTAINS"
+	IntelligentFieldOperatorGt        IntelligentFieldOperator = "GT"
+	IntelligentFieldOperatorGte       IntelligentFieldOperator = "GTE"
+	IntelligentFieldOperatorLt        IntelligentFieldOperator = "LT"
+	IntelligentFieldOperatorLte       IntelligentFieldOperator = "LTE"
+	IntelligentFieldOperatorExists    IntelligentFieldOperator = "EXISTS"
+	IntelligentFieldOperatorNotExists IntelligentFieldOperator = "NOT_EXISTS"
+)
+
+func NewIntelligentFieldOperatorFromString(s string) (IntelligentFieldOperator, error) {
+	switch s {
+	case "EQ":
+		return IntelligentFieldOperatorEq, nil
+	case "NEQ":
+		return IntelligentFieldOperatorNeq, nil
+	case "CONTAINS":
+		return IntelligentFieldOperatorContains, nil
+	case "GT":
+		return IntelligentFieldOperatorGt, nil
+	case "GTE":
+		return IntelligentFieldOperatorGte, nil
+	case "LT":
+		return IntelligentFieldOperatorLt, nil
+	case "LTE":
+		return IntelligentFieldOperatorLte, nil
+	case "EXISTS":
+		return IntelligentFieldOperatorExists, nil
+	case "NOT_EXISTS":
+		return IntelligentFieldOperatorNotExists, nil
+	}
+	var t IntelligentFieldOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (i IntelligentFieldOperator) Ptr() *IntelligentFieldOperator {
+	return &i
+}
+
+// A single condition on an intelligent field value.
+var (
+	intelligentFieldSearchConditionFieldFieldID  = big.NewInt(1 << 0)
+	intelligentFieldSearchConditionFieldOperator = big.NewInt(1 << 1)
+	intelligentFieldSearchConditionFieldValue    = big.NewInt(1 << 2)
+)
+
+type IntelligentFieldSearchCondition struct {
+	// The intelligent field to filter on (referenceId + appId)
+	FieldID *EntityIDFilter `json:"fieldId" url:"fieldId"`
+	// The comparison operator to apply
+	Operator IntelligentFieldOperator `json:"operator" url:"operator"`
+	// The value to compare against. Required for all operators except EXISTS and NOT_EXISTS. For BOOLEAN fields use "true" or "false". For NUMBER fields use a numeric string.
+	Value *string `json:"value,omitempty" url:"value,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldSearchCondition) GetFieldID() *EntityIDFilter {
+	if i == nil {
+		return nil
+	}
+	return i.FieldID
+}
+
+func (i *IntelligentFieldSearchCondition) GetOperator() IntelligentFieldOperator {
+	if i == nil {
+		return ""
+	}
+	return i.Operator
+}
+
+func (i *IntelligentFieldSearchCondition) GetValue() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Value
+}
+
+func (i *IntelligentFieldSearchCondition) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldSearchCondition) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetFieldID sets the FieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldSearchCondition) SetFieldID(fieldID *EntityIDFilter) {
+	i.FieldID = fieldID
+	i.require(intelligentFieldSearchConditionFieldFieldID)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldSearchCondition) SetOperator(operator IntelligentFieldOperator) {
+	i.Operator = operator
+	i.require(intelligentFieldSearchConditionFieldOperator)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldSearchCondition) SetValue(value *string) {
+	i.Value = value
+	i.require(intelligentFieldSearchConditionFieldValue)
+}
+
+func (i *IntelligentFieldSearchCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler IntelligentFieldSearchCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = IntelligentFieldSearchCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldSearchCondition) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldSearchCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldSearchCondition) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
 }
 
 type NumericConversationField string

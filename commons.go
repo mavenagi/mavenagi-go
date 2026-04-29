@@ -2915,6 +2915,123 @@ func (b *BaseAttachment) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Pagination parameters for endpoints that enforce a tighter page-size ceiling (max 1000)
+// than the default BasePaginatedRequest (max 10000). Defined as a sibling of
+// BasePaginatedRequest (not a subtype) so the tight bound is the only max constraint
+// applied at request validation.
+var (
+	baseCappedPaginatedRequestFieldPage     = big.NewInt(1 << 0)
+	baseCappedPaginatedRequestFieldSize     = big.NewInt(1 << 1)
+	baseCappedPaginatedRequestFieldSortDesc = big.NewInt(1 << 2)
+)
+
+type BaseCappedPaginatedRequest struct {
+	// Page number to return, defaults to 0
+	Page *int `json:"page,omitempty" url:"page,omitempty"`
+	// The size of the page to return, defaults to 20. Max 1000.
+	Size *int `json:"size,omitempty" url:"size,omitempty"`
+	// Whether to sort descending, defaults to true
+	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BaseCappedPaginatedRequest) GetPage() *int {
+	if b == nil {
+		return nil
+	}
+	return b.Page
+}
+
+func (b *BaseCappedPaginatedRequest) GetSize() *int {
+	if b == nil {
+		return nil
+	}
+	return b.Size
+}
+
+func (b *BaseCappedPaginatedRequest) GetSortDesc() *bool {
+	if b == nil {
+		return nil
+	}
+	return b.SortDesc
+}
+
+func (b *BaseCappedPaginatedRequest) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BaseCappedPaginatedRequest) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetPage sets the Page field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseCappedPaginatedRequest) SetPage(page *int) {
+	b.Page = page
+	b.require(baseCappedPaginatedRequestFieldPage)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseCappedPaginatedRequest) SetSize(size *int) {
+	b.Size = size
+	b.require(baseCappedPaginatedRequestFieldSize)
+}
+
+// SetSortDesc sets the SortDesc field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseCappedPaginatedRequest) SetSortDesc(sortDesc *bool) {
+	b.SortDesc = sortDesc
+	b.require(baseCappedPaginatedRequestFieldSortDesc)
+}
+
+func (b *BaseCappedPaginatedRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler BaseCappedPaginatedRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BaseCappedPaginatedRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BaseCappedPaginatedRequest) MarshalJSON() ([]byte, error) {
+	type embed BaseCappedPaginatedRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BaseCappedPaginatedRequest) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
 var (
 	baseConversationResponseFieldResponseConfig    = big.NewInt(1 << 0)
 	baseConversationResponseFieldSubject           = big.NewInt(1 << 1)
