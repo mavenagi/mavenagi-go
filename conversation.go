@@ -3803,31 +3803,6 @@ func (n NumericConversationField) Ptr() *NumericConversationField {
 	return &n
 }
 
-type ResolutionStatus string
-
-const (
-	ResolutionStatusResolved   ResolutionStatus = "RESOLVED"
-	ResolutionStatusEscalated  ResolutionStatus = "ESCALATED"
-	ResolutionStatusInProgress ResolutionStatus = "IN_PROGRESS"
-)
-
-func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
-	switch s {
-	case "RESOLVED":
-		return ResolutionStatusResolved, nil
-	case "ESCALATED":
-		return ResolutionStatusEscalated, nil
-	case "IN_PROGRESS":
-		return ResolutionStatusInProgress, nil
-	}
-	var t ResolutionStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (r ResolutionStatus) Ptr() *ResolutionStatus {
-	return &r
-}
-
 type SimulationFilter string
 
 const (

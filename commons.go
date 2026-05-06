@@ -7285,7 +7285,7 @@ type ConversationAnalysis struct {
 	// Generated agent response summary of the conversation
 	AgentResponse *string `json:"agentResponse,omitempty" url:"agentResponse,omitempty"`
 	// Generated resolution status of the conversation
-	ResolutionStatus *string `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
+	ResolutionStatus *ResolutionStatus `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
 	// Generated category of the conversation
 	Category *string `json:"category,omitempty" url:"category,omitempty"`
 	// Generated sentiment of the conversation
@@ -7326,7 +7326,7 @@ func (c *ConversationAnalysis) GetAgentResponse() *string {
 	return c.AgentResponse
 }
 
-func (c *ConversationAnalysis) GetResolutionStatus() *string {
+func (c *ConversationAnalysis) GetResolutionStatus() *ResolutionStatus {
 	if c == nil {
 		return nil
 	}
@@ -7423,7 +7423,7 @@ func (c *ConversationAnalysis) SetAgentResponse(agentResponse *string) {
 
 // SetResolutionStatus sets the ResolutionStatus field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationAnalysis) SetResolutionStatus(resolutionStatus *string) {
+func (c *ConversationAnalysis) SetResolutionStatus(resolutionStatus *ResolutionStatus) {
 	c.ResolutionStatus = resolutionStatus
 	c.require(conversationAnalysisFieldResolutionStatus)
 }
@@ -10652,10 +10652,17 @@ func (e EntityType) Ptr() *EntityType {
 }
 
 var (
-	errorMessageFieldMessage = big.NewInt(1 << 0)
+	errorMessageFieldStatus  = big.NewInt(1 << 0)
+	errorMessageFieldError   = big.NewInt(1 << 1)
+	errorMessageFieldMessage = big.NewInt(1 << 2)
 )
 
 type ErrorMessage struct {
+	// HTTP status code returned by the API.
+	Status *int `json:"status,omitempty" url:"status,omitempty"`
+	// HTTP reason phrase for the status code.
+	Error *string `json:"error,omitempty" url:"error,omitempty"`
+	// Human-readable error details.
 	Message *string `json:"message,omitempty" url:"message,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -10663,6 +10670,20 @@ type ErrorMessage struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (e *ErrorMessage) GetStatus() *int {
+	if e == nil {
+		return nil
+	}
+	return e.Status
+}
+
+func (e *ErrorMessage) GetError() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Error
 }
 
 func (e *ErrorMessage) GetMessage() *string {
@@ -10681,6 +10702,20 @@ func (e *ErrorMessage) require(field *big.Int) {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *ErrorMessage) SetStatus(status *int) {
+	e.Status = status
+	e.require(errorMessageFieldStatus)
+}
+
+// SetError sets the Error field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *ErrorMessage) SetError(error_ *string) {
+	e.Error = error_
+	e.require(errorMessageFieldError)
 }
 
 // SetMessage sets the Message field and marks it as non-optional;
@@ -18827,6 +18862,43 @@ func NewQualityReasonFromString(s string) (QualityReason, error) {
 
 func (q QualityReason) Ptr() *QualityReason {
 	return &q
+}
+
+type ResolutionStatus string
+
+const (
+	ResolutionStatusUnknown          ResolutionStatus = "UNKNOWN"
+	ResolutionStatusError            ResolutionStatus = "ERROR"
+	ResolutionStatusInProgress       ResolutionStatus = "IN_PROGRESS"
+	ResolutionStatusResolved         ResolutionStatus = "RESOLVED"
+	ResolutionStatusEscalated        ResolutionStatus = "ESCALATED"
+	ResolutionStatusNegativeFeedback ResolutionStatus = "NEGATIVE_FEEDBACK"
+	ResolutionStatusIneligible       ResolutionStatus = "INELIGIBLE"
+)
+
+func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
+	switch s {
+	case "UNKNOWN":
+		return ResolutionStatusUnknown, nil
+	case "ERROR":
+		return ResolutionStatusError, nil
+	case "IN_PROGRESS":
+		return ResolutionStatusInProgress, nil
+	case "RESOLVED":
+		return ResolutionStatusResolved, nil
+	case "ESCALATED":
+		return ResolutionStatusEscalated, nil
+	case "NEGATIVE_FEEDBACK":
+		return ResolutionStatusNegativeFeedback, nil
+	case "INELIGIBLE":
+		return ResolutionStatusIneligible, nil
+	}
+	var t ResolutionStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (r ResolutionStatus) Ptr() *ResolutionStatus {
+	return &r
 }
 
 var (

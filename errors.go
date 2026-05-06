@@ -98,3 +98,34 @@ func (s *ServerError) MarshalJSON() ([]byte, error) {
 func (s *ServerError) Unwrap() error {
 	return s.APIError
 }
+
+// The request was rejected by Maven API rate limiting.
+//
+// 429 responses include `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
+// and `X-RateLimit-Reset` when the limiter can compute them. Public API v2 responses
+// also include `Maven-Rate-Limited-Reason`. Current reason values include `global-rate`
+// and `endpoint-rate`; clients must tolerate unknown future values. Generated SDK error
+// bodies expose `status`, `error`, and `message`; read the raw response headers for
+// `Maven-Rate-Limited-Reason` and other rate-limit metadata.
+type TooManyRequestsError struct {
+	*core.APIError
+	Body *ErrorMessage
+}
+
+func (t *TooManyRequestsError) UnmarshalJSON(data []byte) error {
+	var body *ErrorMessage
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	t.StatusCode = 429
+	t.Body = body
+	return nil
+}
+
+func (t *TooManyRequestsError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.Body)
+}
+
+func (t *TooManyRequestsError) Unwrap() error {
+	return t.APIError
+}
