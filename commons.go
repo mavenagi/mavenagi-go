@@ -18867,13 +18867,15 @@ func (q QualityReason) Ptr() *QualityReason {
 type ResolutionStatus string
 
 const (
-	ResolutionStatusUnknown          ResolutionStatus = "UNKNOWN"
-	ResolutionStatusError            ResolutionStatus = "ERROR"
-	ResolutionStatusInProgress       ResolutionStatus = "IN_PROGRESS"
-	ResolutionStatusResolved         ResolutionStatus = "RESOLVED"
-	ResolutionStatusEscalated        ResolutionStatus = "ESCALATED"
-	ResolutionStatusNegativeFeedback ResolutionStatus = "NEGATIVE_FEEDBACK"
-	ResolutionStatusIneligible       ResolutionStatus = "INELIGIBLE"
+	ResolutionStatusUnknown              ResolutionStatus = "UNKNOWN"
+	ResolutionStatusError                ResolutionStatus = "ERROR"
+	ResolutionStatusInProgress           ResolutionStatus = "IN_PROGRESS"
+	ResolutionStatusResolved             ResolutionStatus = "RESOLVED"
+	ResolutionStatusEscalated            ResolutionStatus = "ESCALATED"
+	ResolutionStatusNegativeFeedback     ResolutionStatus = "NEGATIVE_FEEDBACK"
+	ResolutionStatusContentSafetyFlagged ResolutionStatus = "CONTENT_SAFETY_FLAGGED"
+	ResolutionStatusPromptAttackFlagged  ResolutionStatus = "PROMPT_ATTACK_FLAGGED"
+	ResolutionStatusIneligible           ResolutionStatus = "INELIGIBLE"
 )
 
 func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
@@ -18890,6 +18892,10 @@ func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
 		return ResolutionStatusEscalated, nil
 	case "NEGATIVE_FEEDBACK":
 		return ResolutionStatusNegativeFeedback, nil
+	case "CONTENT_SAFETY_FLAGGED":
+		return ResolutionStatusContentSafetyFlagged, nil
+	case "PROMPT_ATTACK_FLAGGED":
+		return ResolutionStatusPromptAttackFlagged, nil
 	case "INELIGIBLE":
 		return ResolutionStatusIneligible, nil
 	}
