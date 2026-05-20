@@ -1313,9 +1313,11 @@ var (
 	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 19)
 	conversationFilterFieldHasAttachment          = big.NewInt(1 << 20)
 	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 21)
-	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 22)
-	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 23)
-	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 24)
+	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 22)
+	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 23)
+	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 24)
+	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 25)
+	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 26)
 )
 
 type ConversationFilter struct {
@@ -1383,6 +1385,13 @@ type ConversationFilter struct {
 	HasAttachment *bool `json:"hasAttachment,omitempty" url:"hasAttachment,omitempty"`
 	// Filter by the segments that any message on a conversation matched.
 	MatchedSegmentIDs []*EntityIDFilter `json:"matchedSegmentIds,omitempty" url:"matchedSegmentIds,omitempty"`
+	// Filter by the charters that any bot-response message on a conversation matched.
+	// References without a matching charter for the calling agent contribute nothing
+	// to the filter — they neither error nor warn, they simply produce no matches.
+	MatchedCharterIDs []*EntityIDFilter `json:"matchedCharterIds,omitempty" url:"matchedCharterIds,omitempty"`
+	// Filter by whether any bot-response message in the conversation ran in charter mode.
+	// Omit to match every conversation regardless of charter state.
+	AnyMsgCharterMode *bool `json:"anyMsgCharterMode,omitempty" url:"anyMsgCharterMode,omitempty"`
 	// Filter by inbox item IDs associated with the conversation
 	InboxItemIDs []*EntityIDFilter `json:"inboxItemIds,omitempty" url:"inboxItemIds,omitempty"`
 	// Whether to include simulation conversations in search results. Defaults to only non-simulation conversations.
@@ -1549,6 +1558,20 @@ func (c *ConversationFilter) GetMatchedSegmentIDs() []*EntityIDFilter {
 		return nil
 	}
 	return c.MatchedSegmentIDs
+}
+
+func (c *ConversationFilter) GetMatchedCharterIDs() []*EntityIDFilter {
+	if c == nil {
+		return nil
+	}
+	return c.MatchedCharterIDs
+}
+
+func (c *ConversationFilter) GetAnyMsgCharterMode() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.AnyMsgCharterMode
 }
 
 func (c *ConversationFilter) GetInboxItemIDs() []*EntityIDFilter {
@@ -1735,6 +1758,20 @@ func (c *ConversationFilter) SetHasAttachment(hasAttachment *bool) {
 func (c *ConversationFilter) SetMatchedSegmentIDs(matchedSegmentIDs []*EntityIDFilter) {
 	c.MatchedSegmentIDs = matchedSegmentIDs
 	c.require(conversationFilterFieldMatchedSegmentIDs)
+}
+
+// SetMatchedCharterIDs sets the MatchedCharterIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetMatchedCharterIDs(matchedCharterIDs []*EntityIDFilter) {
+	c.MatchedCharterIDs = matchedCharterIDs
+	c.require(conversationFilterFieldMatchedCharterIDs)
+}
+
+// SetAnyMsgCharterMode sets the AnyMsgCharterMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetAnyMsgCharterMode(anyMsgCharterMode *bool) {
+	c.AnyMsgCharterMode = anyMsgCharterMode
+	c.require(conversationFilterFieldAnyMsgCharterMode)
 }
 
 // SetInboxItemIDs sets the InboxItemIDs field and marks it as non-optional;
