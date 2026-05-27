@@ -18875,6 +18875,7 @@ const (
 	ResolutionStatusNegativeFeedback     ResolutionStatus = "NEGATIVE_FEEDBACK"
 	ResolutionStatusContentSafetyFlagged ResolutionStatus = "CONTENT_SAFETY_FLAGGED"
 	ResolutionStatusPromptAttackFlagged  ResolutionStatus = "PROMPT_ATTACK_FLAGGED"
+	ResolutionStatusHangup               ResolutionStatus = "HANGUP"
 	ResolutionStatusIneligible           ResolutionStatus = "INELIGIBLE"
 )
 
@@ -18896,6 +18897,8 @@ func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
 		return ResolutionStatusContentSafetyFlagged, nil
 	case "PROMPT_ATTACK_FLAGGED":
 		return ResolutionStatusPromptAttackFlagged, nil
+	case "HANGUP":
+		return ResolutionStatusHangup, nil
 	case "INELIGIBLE":
 		return ResolutionStatusIneligible, nil
 	}
