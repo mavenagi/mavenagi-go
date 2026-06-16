@@ -797,6 +797,188 @@ func (k *KnowledgeBaseFilter) String() string {
 }
 
 var (
+	knowledgeBaseIndexingProgressStateFieldVersionID     = big.NewInt(1 << 0)
+	knowledgeBaseIndexingProgressStateFieldStatus        = big.NewInt(1 << 1)
+	knowledgeBaseIndexingProgressStateFieldExpectedCount = big.NewInt(1 << 2)
+	knowledgeBaseIndexingProgressStateFieldIndexedCount  = big.NewInt(1 << 3)
+	knowledgeBaseIndexingProgressStateFieldFailedCount   = big.NewInt(1 << 4)
+)
+
+type KnowledgeBaseIndexingProgressState struct {
+	// The unique ID of a knowledge base version.
+	VersionID *EntityID `json:"versionId" url:"versionId"`
+	// The status of the knowledge base indexing process.
+	Status KnowledgeBaseIndexingStatus `json:"status" url:"status"`
+	// The expected number of documents to be indexed for the latest knowledge base version.
+	ExpectedCount int64 `json:"expectedCount" url:"expectedCount"`
+	// The number of documents that have been indexed so far for the latest knowledge base version.
+	IndexedCount int64 `json:"indexedCount" url:"indexedCount"`
+	// The number of documents that have failed to index for the latest knowledge base version.
+	FailedCount int64 `json:"failedCount" url:"failedCount"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeBaseIndexingProgressState) GetVersionID() *EntityID {
+	if k == nil {
+		return nil
+	}
+	return k.VersionID
+}
+
+func (k *KnowledgeBaseIndexingProgressState) GetStatus() KnowledgeBaseIndexingStatus {
+	if k == nil {
+		return ""
+	}
+	return k.Status
+}
+
+func (k *KnowledgeBaseIndexingProgressState) GetExpectedCount() int64 {
+	if k == nil {
+		return 0
+	}
+	return k.ExpectedCount
+}
+
+func (k *KnowledgeBaseIndexingProgressState) GetIndexedCount() int64 {
+	if k == nil {
+		return 0
+	}
+	return k.IndexedCount
+}
+
+func (k *KnowledgeBaseIndexingProgressState) GetFailedCount() int64 {
+	if k == nil {
+		return 0
+	}
+	return k.FailedCount
+}
+
+func (k *KnowledgeBaseIndexingProgressState) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeBaseIndexingProgressState) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetVersionID sets the VersionID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseIndexingProgressState) SetVersionID(versionID *EntityID) {
+	k.VersionID = versionID
+	k.require(knowledgeBaseIndexingProgressStateFieldVersionID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseIndexingProgressState) SetStatus(status KnowledgeBaseIndexingStatus) {
+	k.Status = status
+	k.require(knowledgeBaseIndexingProgressStateFieldStatus)
+}
+
+// SetExpectedCount sets the ExpectedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseIndexingProgressState) SetExpectedCount(expectedCount int64) {
+	k.ExpectedCount = expectedCount
+	k.require(knowledgeBaseIndexingProgressStateFieldExpectedCount)
+}
+
+// SetIndexedCount sets the IndexedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseIndexingProgressState) SetIndexedCount(indexedCount int64) {
+	k.IndexedCount = indexedCount
+	k.require(knowledgeBaseIndexingProgressStateFieldIndexedCount)
+}
+
+// SetFailedCount sets the FailedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseIndexingProgressState) SetFailedCount(failedCount int64) {
+	k.FailedCount = failedCount
+	k.require(knowledgeBaseIndexingProgressStateFieldFailedCount)
+}
+
+func (k *KnowledgeBaseIndexingProgressState) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeBaseIndexingProgressState
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeBaseIndexingProgressState(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeBaseIndexingProgressState) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeBaseIndexingProgressState
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeBaseIndexingProgressState) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
+}
+
+// The indexing status of the knowledge base version
+type KnowledgeBaseIndexingStatus string
+
+const (
+	KnowledgeBaseIndexingStatusBuilding   KnowledgeBaseIndexingStatus = "BUILDING"
+	KnowledgeBaseIndexingStatusIndexing   KnowledgeBaseIndexingStatus = "INDEXING"
+	KnowledgeBaseIndexingStatusIndexed    KnowledgeBaseIndexingStatus = "INDEXED"
+	KnowledgeBaseIndexingStatusPublished  KnowledgeBaseIndexingStatus = "PUBLISHED"
+	KnowledgeBaseIndexingStatusFailed     KnowledgeBaseIndexingStatus = "FAILED"
+	KnowledgeBaseIndexingStatusSuperseded KnowledgeBaseIndexingStatus = "SUPERSEDED"
+)
+
+func NewKnowledgeBaseIndexingStatusFromString(s string) (KnowledgeBaseIndexingStatus, error) {
+	switch s {
+	case "BUILDING":
+		return KnowledgeBaseIndexingStatusBuilding, nil
+	case "INDEXING":
+		return KnowledgeBaseIndexingStatusIndexing, nil
+	case "INDEXED":
+		return KnowledgeBaseIndexingStatusIndexed, nil
+	case "PUBLISHED":
+		return KnowledgeBaseIndexingStatusPublished, nil
+	case "FAILED":
+		return KnowledgeBaseIndexingStatusFailed, nil
+	case "SUPERSEDED":
+		return KnowledgeBaseIndexingStatusSuperseded, nil
+	}
+	var t KnowledgeBaseIndexingStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (k KnowledgeBaseIndexingStatus) Ptr() *KnowledgeBaseIndexingStatus {
+	return &k
+}
+
+var (
 	knowledgeBasePropertiesFieldName         = big.NewInt(1 << 0)
 	knowledgeBasePropertiesFieldPrecondition = big.NewInt(1 << 1)
 )
@@ -1013,7 +1195,12 @@ type KnowledgeBaseRequest struct {
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// ID that uniquely identifies this knowledge base
 	KnowledgeBaseID *EntityIDBase `json:"knowledgeBaseId" url:"knowledgeBaseId"`
-	// Metadata for the knowledge base.
+	// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing
+	// additional information about the object in a structured format, and querying for objects
+	// via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 64 characters. Values are strings with a maximum
+	// length of 512 characters.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1145,6 +1332,7 @@ var (
 	knowledgeBaseResponseFieldSegmentID               = big.NewInt(1 << 12)
 	knowledgeBaseResponseFieldSegmentIDs              = big.NewInt(1 << 13)
 	knowledgeBaseResponseFieldURL                     = big.NewInt(1 << 14)
+	knowledgeBaseResponseFieldIndexingState           = big.NewInt(1 << 15)
 )
 
 type KnowledgeBaseResponse struct {
@@ -1184,6 +1372,8 @@ type KnowledgeBaseResponse struct {
 	SegmentIDs []*EntityID `json:"segmentIds" url:"segmentIds"`
 	// The source URL of URL and RSS knowledge bases that was used for crawl.
 	URL *string `json:"url,omitempty" url:"url,omitempty"`
+	// The indexing status of the latest version of the knowledge base.
+	IndexingState *KnowledgeBaseIndexingProgressState `json:"indexingState,omitempty" url:"indexingState,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1295,6 +1485,13 @@ func (k *KnowledgeBaseResponse) GetURL() *string {
 		return nil
 	}
 	return k.URL
+}
+
+func (k *KnowledgeBaseResponse) GetIndexingState() *KnowledgeBaseIndexingProgressState {
+	if k == nil {
+		return nil
+	}
+	return k.IndexingState
 }
 
 func (k *KnowledgeBaseResponse) GetExtraProperties() map[string]interface{} {
@@ -1411,6 +1608,13 @@ func (k *KnowledgeBaseResponse) SetSegmentIDs(segmentIDs []*EntityID) {
 func (k *KnowledgeBaseResponse) SetURL(url *string) {
 	k.URL = url
 	k.require(knowledgeBaseResponseFieldURL)
+}
+
+// SetIndexingState sets the IndexingState field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseResponse) SetIndexingState(indexingState *KnowledgeBaseIndexingProgressState) {
+	k.IndexingState = indexingState
+	k.require(knowledgeBaseResponseFieldIndexingState)
 }
 
 func (k *KnowledgeBaseResponse) UnmarshalJSON(data []byte) error {
@@ -1643,12 +1847,13 @@ func (k KnowledgeBaseType) Ptr() *KnowledgeBaseType {
 }
 
 var (
-	knowledgeBaseVersionFieldType         = big.NewInt(1 << 0)
-	knowledgeBaseVersionFieldVersionID    = big.NewInt(1 << 1)
-	knowledgeBaseVersionFieldStatus       = big.NewInt(1 << 2)
-	knowledgeBaseVersionFieldErrorMessage = big.NewInt(1 << 3)
-	knowledgeBaseVersionFieldCreatedAt    = big.NewInt(1 << 4)
-	knowledgeBaseVersionFieldUpdatedAt    = big.NewInt(1 << 5)
+	knowledgeBaseVersionFieldType          = big.NewInt(1 << 0)
+	knowledgeBaseVersionFieldVersionID     = big.NewInt(1 << 1)
+	knowledgeBaseVersionFieldStatus        = big.NewInt(1 << 2)
+	knowledgeBaseVersionFieldErrorMessage  = big.NewInt(1 << 3)
+	knowledgeBaseVersionFieldCreatedAt     = big.NewInt(1 << 4)
+	knowledgeBaseVersionFieldUpdatedAt     = big.NewInt(1 << 5)
+	knowledgeBaseVersionFieldIndexingState = big.NewInt(1 << 6)
 )
 
 type KnowledgeBaseVersion struct {
@@ -1664,6 +1869,8 @@ type KnowledgeBaseVersion struct {
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The date and time the knowledge base version was last updated.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// The indexing status of the knowledge base version.
+	IndexingState *KnowledgeBaseIndexingProgressState `json:"indexingState,omitempty" url:"indexingState,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1712,6 +1919,13 @@ func (k *KnowledgeBaseVersion) GetUpdatedAt() time.Time {
 		return time.Time{}
 	}
 	return k.UpdatedAt
+}
+
+func (k *KnowledgeBaseVersion) GetIndexingState() *KnowledgeBaseIndexingProgressState {
+	if k == nil {
+		return nil
+	}
+	return k.IndexingState
 }
 
 func (k *KnowledgeBaseVersion) GetExtraProperties() map[string]interface{} {
@@ -1765,6 +1979,13 @@ func (k *KnowledgeBaseVersion) SetCreatedAt(createdAt time.Time) {
 func (k *KnowledgeBaseVersion) SetUpdatedAt(updatedAt time.Time) {
 	k.UpdatedAt = updatedAt
 	k.require(knowledgeBaseVersionFieldUpdatedAt)
+}
+
+// SetIndexingState sets the IndexingState field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersion) SetIndexingState(indexingState *KnowledgeBaseIndexingProgressState) {
+	k.IndexingState = indexingState
+	k.require(knowledgeBaseVersionFieldIndexingState)
 }
 
 func (k *KnowledgeBaseVersion) UnmarshalJSON(data []byte) error {
@@ -2585,7 +2806,12 @@ type KnowledgeDocumentRequest struct {
 	AssetID *EntityIDWithoutAgent `json:"assetId,omitempty" url:"assetId,omitempty"`
 	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
-	// Metadata for the knowledge document.
+	// Set of 16 key-value pairs that can be attached to the knowledge document. This can be useful
+	// for storing additional information about the object in a structured format, and querying for
+	// objects via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 64 characters. Values are strings with a maximum
+	// length of 512 characters.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
 	// The time at which this document was created.
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`

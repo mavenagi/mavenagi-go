@@ -2279,6 +2279,13 @@ type ConversationRequest struct {
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The tags of the conversation. Used for filtering in Agent Designer.
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
+	// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing
+	// additional information about the object in a structured format, and querying for objects
+	// via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a maximum
+	// length of 512 characters.
+	//
 	// The metadata of the conversation supplied by the app which created the conversation.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
 	// The messages in the conversation
@@ -4222,7 +4229,11 @@ var (
 type UpdateMetadataRequest struct {
 	// The App ID of the conversation to modify metadata for. If not provided the ID of the calling app will be used.
 	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
-	// The metadata values to add to the conversation.
+	// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing
+	// additional information about the object in a structured format, and querying for objects
+	// via API or the dashboard.
+	//
+	// Keys and values are strings with a maximum length of 500 characters.
 	Values map[string]string `json:"values" url:"values"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
