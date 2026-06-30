@@ -18872,6 +18872,7 @@ const (
 	ResolutionStatusInProgress           ResolutionStatus = "IN_PROGRESS"
 	ResolutionStatusResolved             ResolutionStatus = "RESOLVED"
 	ResolutionStatusEscalated            ResolutionStatus = "ESCALATED"
+	ResolutionStatusIncomplete           ResolutionStatus = "INCOMPLETE"
 	ResolutionStatusNegativeFeedback     ResolutionStatus = "NEGATIVE_FEEDBACK"
 	ResolutionStatusContentSafetyFlagged ResolutionStatus = "CONTENT_SAFETY_FLAGGED"
 	ResolutionStatusPromptAttackFlagged  ResolutionStatus = "PROMPT_ATTACK_FLAGGED"
@@ -18891,6 +18892,8 @@ func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
 		return ResolutionStatusResolved, nil
 	case "ESCALATED":
 		return ResolutionStatusEscalated, nil
+	case "INCOMPLETE":
+		return ResolutionStatusIncomplete, nil
 	case "NEGATIVE_FEEDBACK":
 		return ResolutionStatusNegativeFeedback, nil
 	case "CONTENT_SAFETY_FLAGGED":
