@@ -1738,7 +1738,7 @@ client.Assets.CommitUpload(
 </details>
 
 ## Conversation
-<details><summary><code>client.Conversation.Initialize(request) -> *mavenagigo.ConversationResponse</code></summary>
+<details><summary><code>client.Conversation.Initialize(request) -> *mavenagigo.InitializeConversationResponse</code></summary>
 <dl>
 <dd>
 

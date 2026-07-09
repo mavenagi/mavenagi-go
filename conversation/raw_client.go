@@ -36,7 +36,7 @@ func (r *RawClient) Initialize(
 	ctx context.Context,
 	request *mavenagigo.ConversationRequest,
 	opts ...option.RequestOption,
-) (*core.Response[*mavenagigo.ConversationResponse], error) {
+) (*core.Response[*mavenagigo.InitializeConversationResponse], error) {
 	options := core.NewRequestOptions(opts...)
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
@@ -48,7 +48,7 @@ func (r *RawClient) Initialize(
 		r.options.ToHeader(),
 		options.ToHeader(),
 	)
-	var response *mavenagigo.ConversationResponse
+	var response *mavenagigo.InitializeConversationResponse
 	raw, err := r.caller.Call(
 		ctx,
 		&internal.CallParams{
@@ -67,7 +67,7 @@ func (r *RawClient) Initialize(
 	if err != nil {
 		return nil, err
 	}
-	return &core.Response[*mavenagigo.ConversationResponse]{
+	return &core.Response[*mavenagigo.InitializeConversationResponse]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
 		Body:       response,

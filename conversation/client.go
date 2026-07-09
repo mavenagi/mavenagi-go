@@ -53,7 +53,7 @@ func (c *Client) Initialize(
 	ctx context.Context,
 	request *mavenagigo.ConversationRequest,
 	opts ...option.RequestOption,
-) (*mavenagigo.ConversationResponse, error) {
+) (*mavenagigo.InitializeConversationResponse, error) {
 	response, err := c.WithRawResponse.Initialize(
 		ctx,
 		request,

@@ -7723,6 +7723,124 @@ func (c *ConversationInformation) String() string {
 }
 
 var (
+	conversationKickoffResultFieldStatus  = big.NewInt(1 << 0)
+	conversationKickoffResultFieldMessage = big.NewInt(1 << 1)
+)
+
+type ConversationKickoffResult struct {
+	// Whether the Conversation Kickoff completed successfully.
+	Status ConversationKickoffStatus `json:"status" url:"status"`
+	// Additional detail about the Conversation Kickoff result.
+	Message *string `json:"message,omitempty" url:"message,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationKickoffResult) GetStatus() ConversationKickoffStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *ConversationKickoffResult) GetMessage() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Message
+}
+
+func (c *ConversationKickoffResult) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationKickoffResult) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffResult) SetStatus(status ConversationKickoffStatus) {
+	c.Status = status
+	c.require(conversationKickoffResultFieldStatus)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffResult) SetMessage(message *string) {
+	c.Message = message
+	c.require(conversationKickoffResultFieldMessage)
+}
+
+func (c *ConversationKickoffResult) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationKickoffResult
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationKickoffResult(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationKickoffResult) MarshalJSON() ([]byte, error) {
+	type embed ConversationKickoffResult
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationKickoffResult) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+type ConversationKickoffStatus string
+
+const (
+	ConversationKickoffStatusSuccess ConversationKickoffStatus = "SUCCESS"
+	ConversationKickoffStatusFailed  ConversationKickoffStatus = "FAILED"
+)
+
+func NewConversationKickoffStatusFromString(s string) (ConversationKickoffStatus, error) {
+	switch s {
+	case "SUCCESS":
+		return ConversationKickoffStatusSuccess, nil
+	case "FAILED":
+		return ConversationKickoffStatusFailed, nil
+	}
+	var t ConversationKickoffStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConversationKickoffStatus) Ptr() *ConversationKickoffStatus {
+	return &c
+}
+
+var (
 	conversationMessageBaseFieldCreatedAt = big.NewInt(1 << 0)
 	conversationMessageBaseFieldUpdatedAt = big.NewInt(1 << 1)
 )
@@ -10602,6 +10720,8 @@ const (
 	EntityTypeCustomer             EntityType = "CUSTOMER"
 	EntityTypeIntelligentField     EntityType = "INTELLIGENT_FIELD"
 	EntityTypeCharter              EntityType = "CHARTER"
+	EntityTypeConversationKickoff  EntityType = "CONVERSATION_KICKOFF"
+	EntityTypeAgentVariant         EntityType = "AGENT_VARIANT"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -10642,6 +10762,10 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeIntelligentField, nil
 	case "CHARTER":
 		return EntityTypeCharter, nil
+	case "CONVERSATION_KICKOFF":
+		return EntityTypeConversationKickoff, nil
+	case "AGENT_VARIANT":
+		return EntityTypeAgentVariant, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -14378,6 +14502,397 @@ func NewInboxItemTypeFromString(s string) (InboxItemType, error) {
 
 func (i InboxItemType) Ptr() *InboxItemType {
 	return &i
+}
+
+// A conversation as returned by the `initialize` endpoint. Extends the shared
+// ConversationResponse with the Conversation Kickoff result, which is only available at
+// initialization time.
+var (
+	initializeConversationResponseFieldResponseConfig            = big.NewInt(1 << 0)
+	initializeConversationResponseFieldSubject                   = big.NewInt(1 << 1)
+	initializeConversationResponseFieldURL                       = big.NewInt(1 << 2)
+	initializeConversationResponseFieldCreatedAt                 = big.NewInt(1 << 3)
+	initializeConversationResponseFieldUpdatedAt                 = big.NewInt(1 << 4)
+	initializeConversationResponseFieldTags                      = big.NewInt(1 << 5)
+	initializeConversationResponseFieldMetadata                  = big.NewInt(1 << 6)
+	initializeConversationResponseFieldAllMetadata               = big.NewInt(1 << 7)
+	initializeConversationResponseFieldConversationID            = big.NewInt(1 << 8)
+	initializeConversationResponseFieldAnalysis                  = big.NewInt(1 << 9)
+	initializeConversationResponseFieldSummary                   = big.NewInt(1 << 10)
+	initializeConversationResponseFieldDeleted                   = big.NewInt(1 << 11)
+	initializeConversationResponseFieldOpen                      = big.NewInt(1 << 12)
+	initializeConversationResponseFieldLlmEnabled                = big.NewInt(1 << 13)
+	initializeConversationResponseFieldSimulationContext         = big.NewInt(1 << 14)
+	initializeConversationResponseFieldMessages                  = big.NewInt(1 << 15)
+	initializeConversationResponseFieldAttachments               = big.NewInt(1 << 16)
+	initializeConversationResponseFieldConversationKickoffResult = big.NewInt(1 << 17)
+)
+
+type InitializeConversationResponse struct {
+	// Optional configurations for responses to this conversation
+	ResponseConfig *ResponseConfig `json:"responseConfig,omitempty" url:"responseConfig,omitempty"`
+	// The subject of the conversation
+	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
+	// The url of the conversation
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
+	// The date and time the conversation was created
+	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
+	// The date and time the conversation was last updated
+	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// The tags of the conversation. Used for filtering in Agent Designer.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
+	// The metadata of the conversation supplied by the app which created the conversation.
+	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
+	// All metadata for the conversation. Keyed by appId.
+	AllMetadata map[string]map[string]string `json:"allMetadata" url:"allMetadata"`
+	// The ID that uniquely identifies this conversation
+	ConversationID *EntityID `json:"conversationId" url:"conversationId"`
+	// An analysis of the conversation. Fields are generated by Maven via an analysis of user messages. This object is calculated on a delay. Fields will not be up to date on ask requests.
+	Analysis *ConversationAnalysis `json:"analysis" url:"analysis"`
+	// A summary of the conversation. Fields are calculated from conversation data. Unlike analysis, all fields can be derived from other data available in the API. This object is provided as a convenience and is calculated on a delay. Fields will not be up to date on ask requests.
+	Summary *ConversationSummary `json:"summary" url:"summary"`
+	// Whether the conversation user-specific data has been deleted. See `deleteConversation` for details.
+	Deleted bool `json:"deleted" url:"deleted"`
+	// Whether the conversation is able to receive asynchronous messages.
+	// Only applicable if a conversation is initialized with the `ASYNC` capability. Defaults to true. Can be closed using the `PATCH` API.
+	Open bool `json:"open" url:"open"`
+	// Whether the LLM is enabled for this conversation.
+	// If true, `USER` messages sent via the ask API will be sent to the LLM and a `BOT_RESPONSE` or `BOT_SUGGESTION` message will be generated.
+	// If false, `USER` messages will not be sent to the LLM.
+	LlmEnabled bool `json:"llmEnabled" url:"llmEnabled"`
+	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
+	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
+	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// The messages in the conversation
+	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
+	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
+	//
+	// Message attachments are included in LLM context, conversation attachments are not.
+	Attachments []*AttachmentResponse `json:"attachments" url:"attachments"`
+	// Result of the Conversation Kickoff, when one ran during conversation initialization.
+	// Only present on this initialize response; other endpoints that return a conversation
+	// do not include it.
+	ConversationKickoffResult *ConversationKickoffResult `json:"conversationKickoffResult,omitempty" url:"conversationKickoffResult,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *InitializeConversationResponse) GetResponseConfig() *ResponseConfig {
+	if i == nil {
+		return nil
+	}
+	return i.ResponseConfig
+}
+
+func (i *InitializeConversationResponse) GetSubject() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Subject
+}
+
+func (i *InitializeConversationResponse) GetURL() *string {
+	if i == nil {
+		return nil
+	}
+	return i.URL
+}
+
+func (i *InitializeConversationResponse) GetCreatedAt() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.CreatedAt
+}
+
+func (i *InitializeConversationResponse) GetUpdatedAt() *time.Time {
+	if i == nil {
+		return nil
+	}
+	return i.UpdatedAt
+}
+
+func (i *InitializeConversationResponse) GetTags() []string {
+	if i == nil {
+		return nil
+	}
+	return i.Tags
+}
+
+func (i *InitializeConversationResponse) GetMetadata() map[string]string {
+	if i == nil {
+		return nil
+	}
+	return i.Metadata
+}
+
+func (i *InitializeConversationResponse) GetAllMetadata() map[string]map[string]string {
+	if i == nil {
+		return nil
+	}
+	return i.AllMetadata
+}
+
+func (i *InitializeConversationResponse) GetConversationID() *EntityID {
+	if i == nil {
+		return nil
+	}
+	return i.ConversationID
+}
+
+func (i *InitializeConversationResponse) GetAnalysis() *ConversationAnalysis {
+	if i == nil {
+		return nil
+	}
+	return i.Analysis
+}
+
+func (i *InitializeConversationResponse) GetSummary() *ConversationSummary {
+	if i == nil {
+		return nil
+	}
+	return i.Summary
+}
+
+func (i *InitializeConversationResponse) GetDeleted() bool {
+	if i == nil {
+		return false
+	}
+	return i.Deleted
+}
+
+func (i *InitializeConversationResponse) GetOpen() bool {
+	if i == nil {
+		return false
+	}
+	return i.Open
+}
+
+func (i *InitializeConversationResponse) GetLlmEnabled() bool {
+	if i == nil {
+		return false
+	}
+	return i.LlmEnabled
+}
+
+func (i *InitializeConversationResponse) GetSimulationContext() *SimulationContext {
+	if i == nil {
+		return nil
+	}
+	return i.SimulationContext
+}
+
+func (i *InitializeConversationResponse) GetMessages() []*ConversationMessageResponse {
+	if i == nil {
+		return nil
+	}
+	return i.Messages
+}
+
+func (i *InitializeConversationResponse) GetAttachments() []*AttachmentResponse {
+	if i == nil {
+		return nil
+	}
+	return i.Attachments
+}
+
+func (i *InitializeConversationResponse) GetConversationKickoffResult() *ConversationKickoffResult {
+	if i == nil {
+		return nil
+	}
+	return i.ConversationKickoffResult
+}
+
+func (i *InitializeConversationResponse) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *InitializeConversationResponse) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetResponseConfig sets the ResponseConfig field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetResponseConfig(responseConfig *ResponseConfig) {
+	i.ResponseConfig = responseConfig
+	i.require(initializeConversationResponseFieldResponseConfig)
+}
+
+// SetSubject sets the Subject field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetSubject(subject *string) {
+	i.Subject = subject
+	i.require(initializeConversationResponseFieldSubject)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetURL(url *string) {
+	i.URL = url
+	i.require(initializeConversationResponseFieldURL)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetCreatedAt(createdAt *time.Time) {
+	i.CreatedAt = createdAt
+	i.require(initializeConversationResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetUpdatedAt(updatedAt *time.Time) {
+	i.UpdatedAt = updatedAt
+	i.require(initializeConversationResponseFieldUpdatedAt)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetTags(tags []string) {
+	i.Tags = tags
+	i.require(initializeConversationResponseFieldTags)
+}
+
+// SetMetadata sets the Metadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetMetadata(metadata map[string]string) {
+	i.Metadata = metadata
+	i.require(initializeConversationResponseFieldMetadata)
+}
+
+// SetAllMetadata sets the AllMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetAllMetadata(allMetadata map[string]map[string]string) {
+	i.AllMetadata = allMetadata
+	i.require(initializeConversationResponseFieldAllMetadata)
+}
+
+// SetConversationID sets the ConversationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetConversationID(conversationID *EntityID) {
+	i.ConversationID = conversationID
+	i.require(initializeConversationResponseFieldConversationID)
+}
+
+// SetAnalysis sets the Analysis field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetAnalysis(analysis *ConversationAnalysis) {
+	i.Analysis = analysis
+	i.require(initializeConversationResponseFieldAnalysis)
+}
+
+// SetSummary sets the Summary field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetSummary(summary *ConversationSummary) {
+	i.Summary = summary
+	i.require(initializeConversationResponseFieldSummary)
+}
+
+// SetDeleted sets the Deleted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetDeleted(deleted bool) {
+	i.Deleted = deleted
+	i.require(initializeConversationResponseFieldDeleted)
+}
+
+// SetOpen sets the Open field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetOpen(open bool) {
+	i.Open = open
+	i.require(initializeConversationResponseFieldOpen)
+}
+
+// SetLlmEnabled sets the LlmEnabled field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetLlmEnabled(llmEnabled bool) {
+	i.LlmEnabled = llmEnabled
+	i.require(initializeConversationResponseFieldLlmEnabled)
+}
+
+// SetSimulationContext sets the SimulationContext field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetSimulationContext(simulationContext *SimulationContext) {
+	i.SimulationContext = simulationContext
+	i.require(initializeConversationResponseFieldSimulationContext)
+}
+
+// SetMessages sets the Messages field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetMessages(messages []*ConversationMessageResponse) {
+	i.Messages = messages
+	i.require(initializeConversationResponseFieldMessages)
+}
+
+// SetAttachments sets the Attachments field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetAttachments(attachments []*AttachmentResponse) {
+	i.Attachments = attachments
+	i.require(initializeConversationResponseFieldAttachments)
+}
+
+// SetConversationKickoffResult sets the ConversationKickoffResult field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetConversationKickoffResult(conversationKickoffResult *ConversationKickoffResult) {
+	i.ConversationKickoffResult = conversationKickoffResult
+	i.require(initializeConversationResponseFieldConversationKickoffResult)
+}
+
+func (i *InitializeConversationResponse) UnmarshalJSON(data []byte) error {
+	type embed InitializeConversationResponse
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
+		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+	}{
+		embed: embed(*i),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*i = InitializeConversationResponse(unmarshaler.embed)
+	i.CreatedAt = unmarshaler.CreatedAt.TimePtr()
+	i.UpdatedAt = unmarshaler.UpdatedAt.TimePtr()
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *InitializeConversationResponse) MarshalJSON() ([]byte, error) {
+	type embed InitializeConversationResponse
+	var marshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
+		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+	}{
+		embed:     embed(*i),
+		CreatedAt: internal.NewOptionalDateTime(i.CreatedAt),
+		UpdatedAt: internal.NewOptionalDateTime(i.UpdatedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *InitializeConversationResponse) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
 }
 
 // The condition to evaluate against an intelligent field's value.
