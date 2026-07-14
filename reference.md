@@ -4480,6 +4480,64 @@ client.Knowledge.CancelKnowledgeBaseVersion(
 </dl>
 </details>
 
+<details><summary><code>client.Knowledge.RollbackKnowledgeBaseVersion(KnowledgeBaseReferenceID) -> error</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Rolls the knowledge base back to its previous published version.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+client.Knowledge.RollbackKnowledgeBaseVersion(
+        context.TODO(),
+        "knowledgeBaseReferenceId",
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to roll back. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.Knowledge.PatchKnowledgeBase(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeBaseResponse</code></summary>
 <dl>
 <dd>

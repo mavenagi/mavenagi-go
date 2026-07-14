@@ -139,6 +139,24 @@ func (c *Client) CancelKnowledgeBaseVersion(
 	return nil
 }
 
+// Rolls the knowledge base back to its previous published version.
+func (c *Client) RollbackKnowledgeBaseVersion(
+	ctx context.Context,
+	// The reference ID of the knowledge base to roll back. All other entity ID fields are inferred from the request.
+	knowledgeBaseReferenceID string,
+	opts ...option.RequestOption,
+) error {
+	_, err := c.WithRawResponse.RollbackKnowledgeBaseVersion(
+		ctx,
+		knowledgeBaseReferenceID,
+		opts...,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Update mutable knowledge base fields
 //
 // The `appId` field can be provided to update a knowledge base owned by a different app.

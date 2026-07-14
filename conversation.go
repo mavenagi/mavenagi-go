@@ -247,6 +247,7 @@ var (
 	askRequestFieldAttachments           = big.NewInt(1 << 3)
 	askRequestFieldTransientData         = big.NewInt(1 << 4)
 	askRequestFieldTimezone              = big.NewInt(1 << 5)
+	askRequestFieldAppMetadata           = big.NewInt(1 << 6)
 )
 
 type AskRequest struct {
@@ -263,6 +264,13 @@ type AskRequest struct {
 	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
 	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
 	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Key-value metadata to persist on the user message created by this request. Unlike
+	// `transientData` (which is never persisted) this is stored and returned when the message
+	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
+	// Applied only when the message is first created — if `conversationMessageId` already
+	// exists the message is reused and its metadata is not updated. Keys and values are strings
+	// with a maximum length of 500 characters each.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -311,6 +319,13 @@ func (a *AskRequest) GetTimezone() *string {
 		return nil
 	}
 	return a.Timezone
+}
+
+func (a *AskRequest) GetAppMetadata() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.AppMetadata
 }
 
 func (a *AskRequest) GetExtraProperties() map[string]interface{} {
@@ -364,6 +379,13 @@ func (a *AskRequest) SetTransientData(transientData map[string]string) {
 func (a *AskRequest) SetTimezone(timezone *string) {
 	a.Timezone = timezone
 	a.require(askRequestFieldTimezone)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetAppMetadata(appMetadata map[string]string) {
+	a.AppMetadata = appMetadata
+	a.require(askRequestFieldAppMetadata)
 }
 
 func (a *AskRequest) UnmarshalJSON(data []byte) error {
@@ -1849,11 +1871,12 @@ func (c *ConversationFilter) String() string {
 var (
 	conversationMessageRequestFieldCreatedAt             = big.NewInt(1 << 0)
 	conversationMessageRequestFieldUpdatedAt             = big.NewInt(1 << 1)
-	conversationMessageRequestFieldUserID                = big.NewInt(1 << 2)
-	conversationMessageRequestFieldText                  = big.NewInt(1 << 3)
-	conversationMessageRequestFieldUserMessageType       = big.NewInt(1 << 4)
-	conversationMessageRequestFieldConversationMessageID = big.NewInt(1 << 5)
-	conversationMessageRequestFieldAttachments           = big.NewInt(1 << 6)
+	conversationMessageRequestFieldAppMetadata           = big.NewInt(1 << 2)
+	conversationMessageRequestFieldUserID                = big.NewInt(1 << 3)
+	conversationMessageRequestFieldText                  = big.NewInt(1 << 4)
+	conversationMessageRequestFieldUserMessageType       = big.NewInt(1 << 5)
+	conversationMessageRequestFieldConversationMessageID = big.NewInt(1 << 6)
+	conversationMessageRequestFieldAttachments           = big.NewInt(1 << 7)
 )
 
 type ConversationMessageRequest struct {
@@ -1861,6 +1884,13 @@ type ConversationMessageRequest struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// Key-value metadata for this message, supplied by the app which created the message.
+	// Useful for storing additional structured information about the message and querying
+	// for it via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a
+	// maximum length of 500 characters.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// ID that uniquely identifies the user that created this message
 	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message. Cannot be empty
@@ -1890,6 +1920,13 @@ func (c *ConversationMessageRequest) GetUpdatedAt() *time.Time {
 		return nil
 	}
 	return c.UpdatedAt
+}
+
+func (c *ConversationMessageRequest) GetAppMetadata() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.AppMetadata
 }
 
 func (c *ConversationMessageRequest) GetUserID() *EntityIDBase {
@@ -1950,6 +1987,13 @@ func (c *ConversationMessageRequest) SetCreatedAt(createdAt *time.Time) {
 func (c *ConversationMessageRequest) SetUpdatedAt(updatedAt *time.Time) {
 	c.UpdatedAt = updatedAt
 	c.require(conversationMessageRequestFieldUpdatedAt)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationMessageRequest) SetAppMetadata(appMetadata map[string]string) {
+	c.AppMetadata = appMetadata
+	c.require(conversationMessageRequestFieldAppMetadata)
 }
 
 // SetUserID sets the UserID field and marks it as non-optional;

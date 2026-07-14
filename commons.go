@@ -5704,12 +5704,13 @@ func (b *BotLogicUserItem) String() string {
 var (
 	botMessageFieldCreatedAt             = big.NewInt(1 << 0)
 	botMessageFieldUpdatedAt             = big.NewInt(1 << 1)
-	botMessageFieldConversationMessageID = big.NewInt(1 << 2)
-	botMessageFieldBotMessageType        = big.NewInt(1 << 3)
-	botMessageFieldResponses             = big.NewInt(1 << 4)
-	botMessageFieldMetadata              = big.NewInt(1 << 5)
-	botMessageFieldStatus                = big.NewInt(1 << 6)
-	botMessageFieldLogic                 = big.NewInt(1 << 7)
+	botMessageFieldAppMetadata           = big.NewInt(1 << 2)
+	botMessageFieldConversationMessageID = big.NewInt(1 << 3)
+	botMessageFieldBotMessageType        = big.NewInt(1 << 4)
+	botMessageFieldResponses             = big.NewInt(1 << 5)
+	botMessageFieldMetadata              = big.NewInt(1 << 6)
+	botMessageFieldStatus                = big.NewInt(1 << 7)
+	botMessageFieldLogic                 = big.NewInt(1 << 8)
 )
 
 type BotMessage struct {
@@ -5717,6 +5718,13 @@ type BotMessage struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// Key-value metadata for this message, supplied by the app which created the message.
+	// Useful for storing additional structured information about the message and querying
+	// for it via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a
+	// maximum length of 500 characters.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// The ID that uniquely identifies this message within the conversation
 	ConversationMessageID *EntityID                  `json:"conversationMessageId" url:"conversationMessageId"`
 	BotMessageType        BotConversationMessageType `json:"botMessageType" url:"botMessageType"`
@@ -5745,6 +5753,13 @@ func (b *BotMessage) GetUpdatedAt() *time.Time {
 		return nil
 	}
 	return b.UpdatedAt
+}
+
+func (b *BotMessage) GetAppMetadata() map[string]string {
+	if b == nil {
+		return nil
+	}
+	return b.AppMetadata
 }
 
 func (b *BotMessage) GetConversationMessageID() *EntityID {
@@ -5812,6 +5827,13 @@ func (b *BotMessage) SetCreatedAt(createdAt *time.Time) {
 func (b *BotMessage) SetUpdatedAt(updatedAt *time.Time) {
 	b.UpdatedAt = updatedAt
 	b.require(botMessageFieldUpdatedAt)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotMessage) SetAppMetadata(appMetadata map[string]string) {
+	b.AppMetadata = appMetadata
+	b.require(botMessageFieldAppMetadata)
 }
 
 // SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
@@ -7841,8 +7863,9 @@ func (c ConversationKickoffStatus) Ptr() *ConversationKickoffStatus {
 }
 
 var (
-	conversationMessageBaseFieldCreatedAt = big.NewInt(1 << 0)
-	conversationMessageBaseFieldUpdatedAt = big.NewInt(1 << 1)
+	conversationMessageBaseFieldCreatedAt   = big.NewInt(1 << 0)
+	conversationMessageBaseFieldUpdatedAt   = big.NewInt(1 << 1)
+	conversationMessageBaseFieldAppMetadata = big.NewInt(1 << 2)
 )
 
 type ConversationMessageBase struct {
@@ -7850,6 +7873,13 @@ type ConversationMessageBase struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// Key-value metadata for this message, supplied by the app which created the message.
+	// Useful for storing additional structured information about the message and querying
+	// for it via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a
+	// maximum length of 500 characters.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7870,6 +7900,13 @@ func (c *ConversationMessageBase) GetUpdatedAt() *time.Time {
 		return nil
 	}
 	return c.UpdatedAt
+}
+
+func (c *ConversationMessageBase) GetAppMetadata() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.AppMetadata
 }
 
 func (c *ConversationMessageBase) GetExtraProperties() map[string]interface{} {
@@ -7895,6 +7932,13 @@ func (c *ConversationMessageBase) SetCreatedAt(createdAt *time.Time) {
 func (c *ConversationMessageBase) SetUpdatedAt(updatedAt *time.Time) {
 	c.UpdatedAt = updatedAt
 	c.require(conversationMessageBaseFieldUpdatedAt)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationMessageBase) SetAppMetadata(appMetadata map[string]string) {
+	c.AppMetadata = appMetadata
+	c.require(conversationMessageBaseFieldAppMetadata)
 }
 
 func (c *ConversationMessageBase) UnmarshalJSON(data []byte) error {
@@ -23310,16 +23354,17 @@ func (u UserEventName) Ptr() *UserEventName {
 var (
 	userMessageFieldCreatedAt             = big.NewInt(1 << 0)
 	userMessageFieldUpdatedAt             = big.NewInt(1 << 1)
-	userMessageFieldUserID                = big.NewInt(1 << 2)
-	userMessageFieldText                  = big.NewInt(1 << 3)
-	userMessageFieldUserMessageType       = big.NewInt(1 << 4)
-	userMessageFieldConversationMessageID = big.NewInt(1 << 5)
-	userMessageFieldLanguage              = big.NewInt(1 << 6)
-	userMessageFieldAttachments           = big.NewInt(1 << 7)
-	userMessageFieldAgentUserID           = big.NewInt(1 << 8)
-	userMessageFieldUserDisplayName       = big.NewInt(1 << 9)
-	userMessageFieldStatus                = big.NewInt(1 << 10)
-	userMessageFieldResponseState         = big.NewInt(1 << 11)
+	userMessageFieldAppMetadata           = big.NewInt(1 << 2)
+	userMessageFieldUserID                = big.NewInt(1 << 3)
+	userMessageFieldText                  = big.NewInt(1 << 4)
+	userMessageFieldUserMessageType       = big.NewInt(1 << 5)
+	userMessageFieldConversationMessageID = big.NewInt(1 << 6)
+	userMessageFieldLanguage              = big.NewInt(1 << 7)
+	userMessageFieldAttachments           = big.NewInt(1 << 8)
+	userMessageFieldAgentUserID           = big.NewInt(1 << 9)
+	userMessageFieldUserDisplayName       = big.NewInt(1 << 10)
+	userMessageFieldStatus                = big.NewInt(1 << 11)
+	userMessageFieldResponseState         = big.NewInt(1 << 12)
 )
 
 type UserMessage struct {
@@ -23327,6 +23372,13 @@ type UserMessage struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// Key-value metadata for this message, supplied by the app which created the message.
+	// Useful for storing additional structured information about the message and querying
+	// for it via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a
+	// maximum length of 500 characters.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// ID that uniquely identifies the user that created this message
 	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message. Cannot be empty
@@ -23376,6 +23428,13 @@ func (u *UserMessage) GetUpdatedAt() *time.Time {
 		return nil
 	}
 	return u.UpdatedAt
+}
+
+func (u *UserMessage) GetAppMetadata() map[string]string {
+	if u == nil {
+		return nil
+	}
+	return u.AppMetadata
 }
 
 func (u *UserMessage) GetUserID() *EntityIDBase {
@@ -23471,6 +23530,13 @@ func (u *UserMessage) SetCreatedAt(createdAt *time.Time) {
 func (u *UserMessage) SetUpdatedAt(updatedAt *time.Time) {
 	u.UpdatedAt = updatedAt
 	u.require(userMessageFieldUpdatedAt)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserMessage) SetAppMetadata(appMetadata map[string]string) {
+	u.AppMetadata = appMetadata
+	u.require(userMessageFieldAppMetadata)
 }
 
 // SetUserID sets the UserID field and marks it as non-optional;
@@ -23597,9 +23663,10 @@ func (u *UserMessage) String() string {
 var (
 	userMessageBaseFieldCreatedAt       = big.NewInt(1 << 0)
 	userMessageBaseFieldUpdatedAt       = big.NewInt(1 << 1)
-	userMessageBaseFieldUserID          = big.NewInt(1 << 2)
-	userMessageBaseFieldText            = big.NewInt(1 << 3)
-	userMessageBaseFieldUserMessageType = big.NewInt(1 << 4)
+	userMessageBaseFieldAppMetadata     = big.NewInt(1 << 2)
+	userMessageBaseFieldUserID          = big.NewInt(1 << 3)
+	userMessageBaseFieldText            = big.NewInt(1 << 4)
+	userMessageBaseFieldUserMessageType = big.NewInt(1 << 5)
 )
 
 type UserMessageBase struct {
@@ -23607,6 +23674,13 @@ type UserMessageBase struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the conversation was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
+	// Key-value metadata for this message, supplied by the app which created the message.
+	// Useful for storing additional structured information about the message and querying
+	// for it via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a
+	// maximum length of 500 characters.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// ID that uniquely identifies the user that created this message
 	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The text of the message. Cannot be empty
@@ -23632,6 +23706,13 @@ func (u *UserMessageBase) GetUpdatedAt() *time.Time {
 		return nil
 	}
 	return u.UpdatedAt
+}
+
+func (u *UserMessageBase) GetAppMetadata() map[string]string {
+	if u == nil {
+		return nil
+	}
+	return u.AppMetadata
 }
 
 func (u *UserMessageBase) GetUserID() *EntityIDBase {
@@ -23678,6 +23759,13 @@ func (u *UserMessageBase) SetCreatedAt(createdAt *time.Time) {
 func (u *UserMessageBase) SetUpdatedAt(updatedAt *time.Time) {
 	u.UpdatedAt = updatedAt
 	u.require(userMessageBaseFieldUpdatedAt)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserMessageBase) SetAppMetadata(appMetadata map[string]string) {
+	u.AppMetadata = appMetadata
+	u.require(userMessageBaseFieldAppMetadata)
 }
 
 // SetUserID sets the UserID field and marks it as non-optional;

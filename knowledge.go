@@ -947,12 +947,14 @@ func (k *KnowledgeBaseIndexingProgressState) String() string {
 type KnowledgeBaseIndexingStatus string
 
 const (
-	KnowledgeBaseIndexingStatusBuilding   KnowledgeBaseIndexingStatus = "BUILDING"
-	KnowledgeBaseIndexingStatusIndexing   KnowledgeBaseIndexingStatus = "INDEXING"
-	KnowledgeBaseIndexingStatusIndexed    KnowledgeBaseIndexingStatus = "INDEXED"
-	KnowledgeBaseIndexingStatusPublished  KnowledgeBaseIndexingStatus = "PUBLISHED"
-	KnowledgeBaseIndexingStatusFailed     KnowledgeBaseIndexingStatus = "FAILED"
-	KnowledgeBaseIndexingStatusSuperseded KnowledgeBaseIndexingStatus = "SUPERSEDED"
+	KnowledgeBaseIndexingStatusBuilding    KnowledgeBaseIndexingStatus = "BUILDING"
+	KnowledgeBaseIndexingStatusIndexing    KnowledgeBaseIndexingStatus = "INDEXING"
+	KnowledgeBaseIndexingStatusIndexed     KnowledgeBaseIndexingStatus = "INDEXED"
+	KnowledgeBaseIndexingStatusPublished   KnowledgeBaseIndexingStatus = "PUBLISHED"
+	KnowledgeBaseIndexingStatusRollingBack KnowledgeBaseIndexingStatus = "ROLLING_BACK"
+	KnowledgeBaseIndexingStatusFailed      KnowledgeBaseIndexingStatus = "FAILED"
+	KnowledgeBaseIndexingStatusSuperseded  KnowledgeBaseIndexingStatus = "SUPERSEDED"
+	KnowledgeBaseIndexingStatusRolledBack  KnowledgeBaseIndexingStatus = "ROLLED_BACK"
 )
 
 func NewKnowledgeBaseIndexingStatusFromString(s string) (KnowledgeBaseIndexingStatus, error) {
@@ -965,10 +967,14 @@ func NewKnowledgeBaseIndexingStatusFromString(s string) (KnowledgeBaseIndexingSt
 		return KnowledgeBaseIndexingStatusIndexed, nil
 	case "PUBLISHED":
 		return KnowledgeBaseIndexingStatusPublished, nil
+	case "ROLLING_BACK":
+		return KnowledgeBaseIndexingStatusRollingBack, nil
 	case "FAILED":
 		return KnowledgeBaseIndexingStatusFailed, nil
 	case "SUPERSEDED":
 		return KnowledgeBaseIndexingStatusSuperseded, nil
+	case "ROLLED_BACK":
+		return KnowledgeBaseIndexingStatusRolledBack, nil
 	}
 	var t KnowledgeBaseIndexingStatus
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
