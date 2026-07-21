@@ -9238,24 +9238,27 @@ func (c *ConversationResponse) String() string {
 }
 
 var (
-	conversationSummaryFieldActionIDs               = big.NewInt(1 << 0)
-	conversationSummaryFieldIncompleteActionIDs     = big.NewInt(1 << 1)
-	conversationSummaryFieldInsertCount             = big.NewInt(1 << 2)
-	conversationSummaryFieldThumbsUpCount           = big.NewInt(1 << 3)
-	conversationSummaryFieldThumbsDownCount         = big.NewInt(1 << 4)
-	conversationSummaryFieldHandoffCount            = big.NewInt(1 << 5)
-	conversationSummaryFieldUserMessageCount        = big.NewInt(1 << 6)
-	conversationSummaryFieldBotMessageCount         = big.NewInt(1 << 7)
-	conversationSummaryFieldCsat                    = big.NewInt(1 << 8)
-	conversationSummaryFieldHandleTime              = big.NewInt(1 << 9)
-	conversationSummaryFieldHumanAgentResponseDelay = big.NewInt(1 << 10)
-	conversationSummaryFieldHumanAgents             = big.NewInt(1 << 11)
-	conversationSummaryFieldHumanAgentsWithInserts  = big.NewInt(1 << 12)
-	conversationSummaryFieldUsers                   = big.NewInt(1 << 13)
-	conversationSummaryFieldUserIdentifiers         = big.NewInt(1 << 14)
-	conversationSummaryFieldLastUserMessage         = big.NewInt(1 << 15)
-	conversationSummaryFieldLastBotMessage          = big.NewInt(1 << 16)
-	conversationSummaryFieldInvolvedAppIDs          = big.NewInt(1 << 17)
+	conversationSummaryFieldActionIDs                    = big.NewInt(1 << 0)
+	conversationSummaryFieldIncompleteActionIDs          = big.NewInt(1 << 1)
+	conversationSummaryFieldMatchedCharterIDs            = big.NewInt(1 << 2)
+	conversationSummaryFieldMatchedCharterNames          = big.NewInt(1 << 3)
+	conversationSummaryFieldMatchedSegmentedCharterNames = big.NewInt(1 << 4)
+	conversationSummaryFieldInsertCount                  = big.NewInt(1 << 5)
+	conversationSummaryFieldThumbsUpCount                = big.NewInt(1 << 6)
+	conversationSummaryFieldThumbsDownCount              = big.NewInt(1 << 7)
+	conversationSummaryFieldHandoffCount                 = big.NewInt(1 << 8)
+	conversationSummaryFieldUserMessageCount             = big.NewInt(1 << 9)
+	conversationSummaryFieldBotMessageCount              = big.NewInt(1 << 10)
+	conversationSummaryFieldCsat                         = big.NewInt(1 << 11)
+	conversationSummaryFieldHandleTime                   = big.NewInt(1 << 12)
+	conversationSummaryFieldHumanAgentResponseDelay      = big.NewInt(1 << 13)
+	conversationSummaryFieldHumanAgents                  = big.NewInt(1 << 14)
+	conversationSummaryFieldHumanAgentsWithInserts       = big.NewInt(1 << 15)
+	conversationSummaryFieldUsers                        = big.NewInt(1 << 16)
+	conversationSummaryFieldUserIdentifiers              = big.NewInt(1 << 17)
+	conversationSummaryFieldLastUserMessage              = big.NewInt(1 << 18)
+	conversationSummaryFieldLastBotMessage               = big.NewInt(1 << 19)
+	conversationSummaryFieldInvolvedAppIDs               = big.NewInt(1 << 20)
 )
 
 type ConversationSummary struct {
@@ -9263,6 +9266,12 @@ type ConversationSummary struct {
 	ActionIDs []*EntityIDWithoutAgent `json:"actionIds" url:"actionIds"`
 	// The IDs of the actions that were taken by Maven but not completed in the conversation. Occurs when the user is shown an action form but does not submit it.
 	IncompleteActionIDs []*EntityIDWithoutAgent `json:"incompleteActionIds" url:"incompleteActionIds"`
+	// The IDs of the charters that were matched anywhere in the conversation.
+	MatchedCharterIDs []*EntityIDWithoutAgent `json:"matchedCharterIds" url:"matchedCharterIds"`
+	// The names of the charters that were matched anywhere in the conversation.
+	MatchedCharterNames []string `json:"matchedCharterNames" url:"matchedCharterNames"`
+	// The names of the matched charters that are gated by a segment (i.e. have a segment condition) anywhere in the conversation.
+	MatchedSegmentedCharterNames []string `json:"matchedSegmentedCharterNames" url:"matchedSegmentedCharterNames"`
 	// The number of insert events on messages in the conversation.
 	InsertCount int `json:"insertCount" url:"insertCount"`
 	// The number of thumbs up events on messages in the conversation.
@@ -9324,6 +9333,27 @@ func (c *ConversationSummary) GetIncompleteActionIDs() []*EntityIDWithoutAgent {
 		return nil
 	}
 	return c.IncompleteActionIDs
+}
+
+func (c *ConversationSummary) GetMatchedCharterIDs() []*EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.MatchedCharterIDs
+}
+
+func (c *ConversationSummary) GetMatchedCharterNames() []string {
+	if c == nil {
+		return nil
+	}
+	return c.MatchedCharterNames
+}
+
+func (c *ConversationSummary) GetMatchedSegmentedCharterNames() []string {
+	if c == nil {
+		return nil
+	}
+	return c.MatchedSegmentedCharterNames
 }
 
 func (c *ConversationSummary) GetInsertCount() int {
@@ -9461,6 +9491,27 @@ func (c *ConversationSummary) SetActionIDs(actionIDs []*EntityIDWithoutAgent) {
 func (c *ConversationSummary) SetIncompleteActionIDs(incompleteActionIDs []*EntityIDWithoutAgent) {
 	c.IncompleteActionIDs = incompleteActionIDs
 	c.require(conversationSummaryFieldIncompleteActionIDs)
+}
+
+// SetMatchedCharterIDs sets the MatchedCharterIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetMatchedCharterIDs(matchedCharterIDs []*EntityIDWithoutAgent) {
+	c.MatchedCharterIDs = matchedCharterIDs
+	c.require(conversationSummaryFieldMatchedCharterIDs)
+}
+
+// SetMatchedCharterNames sets the MatchedCharterNames field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetMatchedCharterNames(matchedCharterNames []string) {
+	c.MatchedCharterNames = matchedCharterNames
+	c.require(conversationSummaryFieldMatchedCharterNames)
+}
+
+// SetMatchedSegmentedCharterNames sets the MatchedSegmentedCharterNames field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSummary) SetMatchedSegmentedCharterNames(matchedSegmentedCharterNames []string) {
+	c.MatchedSegmentedCharterNames = matchedSegmentedCharterNames
+	c.require(conversationSummaryFieldMatchedSegmentedCharterNames)
 }
 
 // SetInsertCount sets the InsertCount field and marks it as non-optional;
@@ -10766,6 +10817,7 @@ const (
 	EntityTypeCharter              EntityType = "CHARTER"
 	EntityTypeConversationKickoff  EntityType = "CONVERSATION_KICKOFF"
 	EntityTypeAgentVariant         EntityType = "AGENT_VARIANT"
+	EntityTypeConfigSnapshot       EntityType = "CONFIG_SNAPSHOT"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -10810,6 +10862,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeConversationKickoff, nil
 	case "AGENT_VARIANT":
 		return EntityTypeAgentVariant, nil
+	case "CONFIG_SNAPSHOT":
+		return EntityTypeConfigSnapshot, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
