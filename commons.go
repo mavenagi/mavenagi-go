@@ -15011,6 +15011,7 @@ type IntelligentFieldCondition struct {
 	Numeric             *NumericCondition
 	Boolean             *BooleanCondition
 	Set                 *SetCondition
+	Universal           *UniversalCondition
 }
 
 func (i *IntelligentFieldCondition) GetFieldValidationType() string {
@@ -15046,6 +15047,13 @@ func (i *IntelligentFieldCondition) GetSet() *SetCondition {
 		return nil
 	}
 	return i.Set
+}
+
+func (i *IntelligentFieldCondition) GetUniversal() *UniversalCondition {
+	if i == nil {
+		return nil
+	}
+	return i.Universal
 }
 
 func (i *IntelligentFieldCondition) UnmarshalJSON(data []byte) error {
@@ -15090,6 +15098,14 @@ func (i *IntelligentFieldCondition) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		i.Set = valueUnmarshaler.Set
+	case "universal":
+		var valueUnmarshaler struct {
+			Universal *UniversalCondition `json:"value"`
+		}
+		if err := json.Unmarshal(data, &valueUnmarshaler); err != nil {
+			return err
+		}
+		i.Universal = valueUnmarshaler.Universal
 	}
 	return nil
 }
@@ -15131,6 +15147,16 @@ func (i IntelligentFieldCondition) MarshalJSON() ([]byte, error) {
 		}
 		return json.Marshal(marshaler)
 	}
+	if i.Universal != nil {
+		var marshaler = struct {
+			FieldValidationType string              `json:"fieldValidationType"`
+			Universal           *UniversalCondition `json:"value"`
+		}{
+			FieldValidationType: "universal",
+			Universal:           i.Universal,
+		}
+		return json.Marshal(marshaler)
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", i)
 }
 
@@ -15139,6 +15165,7 @@ type IntelligentFieldConditionVisitor interface {
 	VisitNumeric(*NumericCondition) error
 	VisitBoolean(*BooleanCondition) error
 	VisitSet(*SetCondition) error
+	VisitUniversal(*UniversalCondition) error
 }
 
 func (i *IntelligentFieldCondition) Accept(visitor IntelligentFieldConditionVisitor) error {
@@ -15153,6 +15180,9 @@ func (i *IntelligentFieldCondition) Accept(visitor IntelligentFieldConditionVisi
 	}
 	if i.Set != nil {
 		return visitor.VisitSet(i.Set)
+	}
+	if i.Universal != nil {
+		return visitor.VisitUniversal(i.Universal)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", i)
 }
@@ -15173,6 +15203,9 @@ func (i *IntelligentFieldCondition) validate() error {
 	}
 	if i.Set != nil {
 		fields = append(fields, "set")
+	}
+	if i.Universal != nil {
+		fields = append(fields, "universal")
 	}
 	if len(fields) == 0 {
 		if i.FieldValidationType != "" {
@@ -15684,6 +15717,182 @@ func (i *IPInfo) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", i)
+}
+
+var (
+	jSONSchemaSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	jSONSchemaSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	jSONSchemaSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	jSONSchemaSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	jSONSchemaSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	jSONSchemaSettingsSchemaEntryFieldJSONSchema   = big.NewInt(1 << 5)
+	jSONSchemaSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 6)
+)
+
+type JSONSchemaSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// JSON Schema (as a JSON string) describing the expected shape of this setting's value.
+	JSONSchema   string      `json:"jsonSchema" url:"jsonSchema"`
+	DefaultValue interface{} `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetKey() string {
+	if j == nil {
+		return ""
+	}
+	return j.Key
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetDisplayName() string {
+	if j == nil {
+		return ""
+	}
+	return j.DisplayName
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetDescription() *string {
+	if j == nil {
+		return nil
+	}
+	return j.Description
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if j == nil {
+		return nil
+	}
+	return j.Visibility
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetRequired() *bool {
+	if j == nil {
+		return nil
+	}
+	return j.Required
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetJSONSchema() string {
+	if j == nil {
+		return ""
+	}
+	return j.JSONSchema
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetDefaultValue() interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.DefaultValue
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return j.extraProperties
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) require(field *big.Int) {
+	if j.explicitFields == nil {
+		j.explicitFields = big.NewInt(0)
+	}
+	j.explicitFields.Or(j.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetKey(key string) {
+	j.Key = key
+	j.require(jSONSchemaSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetDisplayName(displayName string) {
+	j.DisplayName = displayName
+	j.require(jSONSchemaSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetDescription(description *string) {
+	j.Description = description
+	j.require(jSONSchemaSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	j.Visibility = visibility
+	j.require(jSONSchemaSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetRequired(required *bool) {
+	j.Required = required
+	j.require(jSONSchemaSettingsSchemaEntryFieldRequired)
+}
+
+// SetJSONSchema sets the JSONSchema field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetJSONSchema(jsonSchema string) {
+	j.JSONSchema = jsonSchema
+	j.require(jSONSchemaSettingsSchemaEntryFieldJSONSchema)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JSONSchemaSettingsSchemaEntry) SetDefaultValue(defaultValue interface{}) {
+	j.DefaultValue = defaultValue
+	j.require(jSONSchemaSettingsSchemaEntryFieldDefaultValue)
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler JSONSchemaSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JSONSchemaSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed JSONSchemaSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JSONSchemaSettingsSchemaEntry) String() string {
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
 }
 
 var (
@@ -19409,6 +19618,115 @@ func (p *PreconditionResponse) validate() error {
 	return nil
 }
 
+// A type-independent check on whether an intelligent field is determined or
+// undetermined. Works for every field validationType.
+var (
+	presenceConditionFieldOperator = big.NewInt(1 << 0)
+)
+
+type PresenceCondition struct {
+	// The presence operator to apply
+	Operator PresenceOperator `json:"operator" url:"operator"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (p *PresenceCondition) GetOperator() PresenceOperator {
+	if p == nil {
+		return ""
+	}
+	return p.Operator
+}
+
+func (p *PresenceCondition) GetExtraProperties() map[string]interface{} {
+	return p.extraProperties
+}
+
+func (p *PresenceCondition) require(field *big.Int) {
+	if p.explicitFields == nil {
+		p.explicitFields = big.NewInt(0)
+	}
+	p.explicitFields.Or(p.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PresenceCondition) SetOperator(operator PresenceOperator) {
+	p.Operator = operator
+	p.require(presenceConditionFieldOperator)
+}
+
+func (p *PresenceCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler PresenceCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*p = PresenceCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *p)
+	if err != nil {
+		return err
+	}
+	p.extraProperties = extraProperties
+	p.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (p *PresenceCondition) MarshalJSON() ([]byte, error) {
+	type embed PresenceCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*p),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, p.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (p *PresenceCondition) String() string {
+	if len(p.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(p.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(p); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", p)
+}
+
+// Type-independent operators that check whether an intelligent field has a
+// determined value on the conversation, rather than comparing its value.
+type PresenceOperator string
+
+const (
+	// The field has no determined value — the LLM could not determine one, the
+	// computation failed, is still running, or has not run. Surfaced to authors as
+	// the special "Undetermined" value.
+	PresenceOperatorIsUndetermined PresenceOperator = "IS_UNDETERMINED"
+	// The field has a determined (non-null) value.
+	PresenceOperatorIsDetermined PresenceOperator = "IS_DETERMINED"
+)
+
+func NewPresenceOperatorFromString(s string) (PresenceOperator, error) {
+	switch s {
+	case "IS_UNDETERMINED":
+		return PresenceOperatorIsUndetermined, nil
+	case "IS_DETERMINED":
+		return PresenceOperatorIsDetermined, nil
+	}
+	var t PresenceOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (p PresenceOperator) Ptr() *PresenceOperator {
+	return &p
+}
+
 type Quality string
 
 const (
@@ -20915,11 +21233,13 @@ type SettingsSchemaEntry struct {
 	Color        *ColorSettingsSchemaEntry
 	Image        *ImageSettingsSchemaEntry
 	Checkbox     *CheckboxSettingsSchemaEntry
+	Switch       *SwitchSettingsSchemaEntry
 	Dropdown     *DropdownSettingsSchemaEntry
 	Section      *SectionSettingsSchemaEntry
 	Oauth        *OAuthSettingsSchemaEntry
 	Number       *NumberSettingsSchemaEntry
 	OneOf        *OneOfSettingsSchemaEntry
+	JSONSchema   *JSONSchemaSettingsSchemaEntry
 }
 
 func (s *SettingsSchemaEntry) GetType() string {
@@ -20978,6 +21298,13 @@ func (s *SettingsSchemaEntry) GetCheckbox() *CheckboxSettingsSchemaEntry {
 	return s.Checkbox
 }
 
+func (s *SettingsSchemaEntry) GetSwitch() *SwitchSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.Switch
+}
+
 func (s *SettingsSchemaEntry) GetDropdown() *DropdownSettingsSchemaEntry {
 	if s == nil {
 		return nil
@@ -21011,6 +21338,13 @@ func (s *SettingsSchemaEntry) GetOneOf() *OneOfSettingsSchemaEntry {
 		return nil
 	}
 	return s.OneOf
+}
+
+func (s *SettingsSchemaEntry) GetJSONSchema() *JSONSchemaSettingsSchemaEntry {
+	if s == nil {
+		return nil
+	}
+	return s.JSONSchema
 }
 
 func (s *SettingsSchemaEntry) UnmarshalJSON(data []byte) error {
@@ -21067,6 +21401,12 @@ func (s *SettingsSchemaEntry) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		s.Checkbox = value
+	case "switch":
+		value := new(SwitchSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Switch = value
 	case "dropdown":
 		value := new(DropdownSettingsSchemaEntry)
 		if err := json.Unmarshal(data, &value); err != nil {
@@ -21097,6 +21437,12 @@ func (s *SettingsSchemaEntry) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		s.OneOf = value
+	case "jsonSchema":
+		value := new(JSONSchemaSettingsSchemaEntry)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.JSONSchema = value
 	}
 	return nil
 }
@@ -21126,6 +21472,9 @@ func (s SettingsSchemaEntry) MarshalJSON() ([]byte, error) {
 	if s.Checkbox != nil {
 		return internal.MarshalJSONWithExtraProperty(s.Checkbox, "type", "checkbox")
 	}
+	if s.Switch != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Switch, "type", "switch")
+	}
 	if s.Dropdown != nil {
 		return internal.MarshalJSONWithExtraProperty(s.Dropdown, "type", "dropdown")
 	}
@@ -21141,6 +21490,9 @@ func (s SettingsSchemaEntry) MarshalJSON() ([]byte, error) {
 	if s.OneOf != nil {
 		return internal.MarshalJSONWithExtraProperty(s.OneOf, "type", "oneOf")
 	}
+	if s.JSONSchema != nil {
+		return internal.MarshalJSONWithExtraProperty(s.JSONSchema, "type", "jsonSchema")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", s)
 }
 
@@ -21152,11 +21504,13 @@ type SettingsSchemaEntryVisitor interface {
 	VisitColor(*ColorSettingsSchemaEntry) error
 	VisitImage(*ImageSettingsSchemaEntry) error
 	VisitCheckbox(*CheckboxSettingsSchemaEntry) error
+	VisitSwitch(*SwitchSettingsSchemaEntry) error
 	VisitDropdown(*DropdownSettingsSchemaEntry) error
 	VisitSection(*SectionSettingsSchemaEntry) error
 	VisitOauth(*OAuthSettingsSchemaEntry) error
 	VisitNumber(*NumberSettingsSchemaEntry) error
 	VisitOneOf(*OneOfSettingsSchemaEntry) error
+	VisitJSONSchema(*JSONSchemaSettingsSchemaEntry) error
 }
 
 func (s *SettingsSchemaEntry) Accept(visitor SettingsSchemaEntryVisitor) error {
@@ -21181,6 +21535,9 @@ func (s *SettingsSchemaEntry) Accept(visitor SettingsSchemaEntryVisitor) error {
 	if s.Checkbox != nil {
 		return visitor.VisitCheckbox(s.Checkbox)
 	}
+	if s.Switch != nil {
+		return visitor.VisitSwitch(s.Switch)
+	}
 	if s.Dropdown != nil {
 		return visitor.VisitDropdown(s.Dropdown)
 	}
@@ -21195,6 +21552,9 @@ func (s *SettingsSchemaEntry) Accept(visitor SettingsSchemaEntryVisitor) error {
 	}
 	if s.OneOf != nil {
 		return visitor.VisitOneOf(s.OneOf)
+	}
+	if s.JSONSchema != nil {
+		return visitor.VisitJSONSchema(s.JSONSchema)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", s)
 }
@@ -21225,6 +21585,9 @@ func (s *SettingsSchemaEntry) validate() error {
 	if s.Checkbox != nil {
 		fields = append(fields, "checkbox")
 	}
+	if s.Switch != nil {
+		fields = append(fields, "switch")
+	}
 	if s.Dropdown != nil {
 		fields = append(fields, "dropdown")
 	}
@@ -21239,6 +21602,9 @@ func (s *SettingsSchemaEntry) validate() error {
 	}
 	if s.OneOf != nil {
 		fields = append(fields, "oneOf")
+	}
+	if s.JSONSchema != nil {
+		fields = append(fields, "jsonSchema")
 	}
 	if len(fields) == 0 {
 		if s.Type != "" {
@@ -22375,6 +22741,165 @@ func (s *SurveyInfo) String() string {
 }
 
 var (
+	switchSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
+	switchSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
+	switchSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
+	switchSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
+	switchSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
+	switchSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
+)
+
+type SwitchSettingsSchemaEntry struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required     *bool `json:"required,omitempty" url:"required,omitempty"`
+	DefaultValue *bool `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SwitchSettingsSchemaEntry) GetKey() string {
+	if s == nil {
+		return ""
+	}
+	return s.Key
+}
+
+func (s *SwitchSettingsSchemaEntry) GetDisplayName() string {
+	if s == nil {
+		return ""
+	}
+	return s.DisplayName
+}
+
+func (s *SwitchSettingsSchemaEntry) GetDescription() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Description
+}
+
+func (s *SwitchSettingsSchemaEntry) GetVisibility() *VisibilityType {
+	if s == nil {
+		return nil
+	}
+	return s.Visibility
+}
+
+func (s *SwitchSettingsSchemaEntry) GetRequired() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.Required
+}
+
+func (s *SwitchSettingsSchemaEntry) GetDefaultValue() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.DefaultValue
+}
+
+func (s *SwitchSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SwitchSettingsSchemaEntry) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SwitchSettingsSchemaEntry) SetKey(key string) {
+	s.Key = key
+	s.require(switchSettingsSchemaEntryFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SwitchSettingsSchemaEntry) SetDisplayName(displayName string) {
+	s.DisplayName = displayName
+	s.require(switchSettingsSchemaEntryFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SwitchSettingsSchemaEntry) SetDescription(description *string) {
+	s.Description = description
+	s.require(switchSettingsSchemaEntryFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SwitchSettingsSchemaEntry) SetVisibility(visibility *VisibilityType) {
+	s.Visibility = visibility
+	s.require(switchSettingsSchemaEntryFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SwitchSettingsSchemaEntry) SetRequired(required *bool) {
+	s.Required = required
+	s.require(switchSettingsSchemaEntryFieldRequired)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SwitchSettingsSchemaEntry) SetDefaultValue(defaultValue *bool) {
+	s.DefaultValue = defaultValue
+	s.require(switchSettingsSchemaEntryFieldDefaultValue)
+}
+
+func (s *SwitchSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
+	type unmarshaler SwitchSettingsSchemaEntry
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SwitchSettingsSchemaEntry(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SwitchSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
+	type embed SwitchSettingsSchemaEntry
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SwitchSettingsSchemaEntry) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+var (
 	systemEventFieldTimestamp   = big.NewInt(1 << 0)
 	systemEventFieldReferences  = big.NewInt(1 << 1)
 	systemEventFieldSourceInfo  = big.NewInt(1 << 2)
@@ -22855,6 +23380,103 @@ func (t *TextSettingsSchemaEntry) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", t)
+}
+
+// Type-independent conditions that apply to any intelligent field regardless of its
+// validationType. Currently only a presence (determined/undetermined) check. Modeled as
+// its own discriminated union so future type-independent operators can be added without
+// changing the top-level IntelligentFieldCondition union.
+type UniversalCondition struct {
+	OpType   string
+	Presence *PresenceCondition
+}
+
+func (u *UniversalCondition) GetOpType() string {
+	if u == nil {
+		return ""
+	}
+	return u.OpType
+}
+
+func (u *UniversalCondition) GetPresence() *PresenceCondition {
+	if u == nil {
+		return nil
+	}
+	return u.Presence
+}
+
+func (u *UniversalCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		OpType string `json:"opType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	u.OpType = unmarshaler.OpType
+	if unmarshaler.OpType == "" {
+		return fmt.Errorf("%T did not include discriminant opType", u)
+	}
+	switch unmarshaler.OpType {
+	case "presence":
+		value := new(PresenceCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		u.Presence = value
+	}
+	return nil
+}
+
+func (u UniversalCondition) MarshalJSON() ([]byte, error) {
+	if err := u.validate(); err != nil {
+		return nil, err
+	}
+	if u.Presence != nil {
+		return internal.MarshalJSONWithExtraProperty(u.Presence, "opType", "presence")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", u)
+}
+
+type UniversalConditionVisitor interface {
+	VisitPresence(*PresenceCondition) error
+}
+
+func (u *UniversalCondition) Accept(visitor UniversalConditionVisitor) error {
+	if u.Presence != nil {
+		return visitor.VisitPresence(u.Presence)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", u)
+}
+
+func (u *UniversalCondition) validate() error {
+	if u == nil {
+		return fmt.Errorf("type %T is nil", u)
+	}
+	var fields []string
+	if u.Presence != nil {
+		fields = append(fields, "presence")
+	}
+	if len(fields) == 0 {
+		if u.OpType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", u, u.OpType)
+		}
+		return fmt.Errorf("type %T is empty", u)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", u, fields)
+	}
+	if u.OpType != "" {
+		field := fields[0]
+		if u.OpType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				u,
+				u.OpType,
+				u,
+			)
+		}
+	}
+	return nil
 }
 
 // The type of user message

@@ -1231,6 +1231,7 @@ const (
 	ConversationFieldLanguages              ConversationField = "Languages"
 	ConversationFieldActions                ConversationField = "Actions"
 	ConversationFieldIncompleteActions      ConversationField = "IncompleteActions"
+	ConversationFieldCharters               ConversationField = "Charters"
 	ConversationFieldSources                ConversationField = "Sources"
 	ConversationFieldCreatedAt              ConversationField = "CreatedAt"
 	ConversationFieldPredictedNps           ConversationField = "PredictedNPS"
@@ -1287,6 +1288,8 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 		return ConversationFieldActions, nil
 	case "IncompleteActions":
 		return ConversationFieldIncompleteActions, nil
+	case "Charters":
+		return ConversationFieldCharters, nil
 	case "Sources":
 		return ConversationFieldSources, nil
 	case "CreatedAt":
