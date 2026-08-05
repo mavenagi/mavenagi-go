@@ -1128,6 +1128,35 @@ func (a *AskStreamTextEvent) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+// Fields used to filter conversations by billing status:
+// - ELIGIBLE_AND_BILLABLE: Billable conversations with a RESOLVED resolution status.
+// - ELIGIBLE_AND_NOT_BILLABLE: Conversations eligible for billing consideration but not currently billable. Includes ERROR, IN_PROGRESS, ESCALATED, INCOMPLETE, and NEGATIVE_FEEDBACK.
+// - INELIGIBLE: Conversations excluded from billing consideration. Includes CONTENT_SAFETY_FLAGGED, PROMPT_ATTACK_FLAGGED, HANGUP, INELIGIBLE, and UNKNOWN.
+type BillableFilterField string
+
+const (
+	BillableFilterFieldEligibleAndBillable    BillableFilterField = "ELIGIBLE_AND_BILLABLE"
+	BillableFilterFieldEligibleAndNotBillable BillableFilterField = "ELIGIBLE_AND_NOT_BILLABLE"
+	BillableFilterFieldIneligible             BillableFilterField = "INELIGIBLE"
+)
+
+func NewBillableFilterFieldFromString(s string) (BillableFilterField, error) {
+	switch s {
+	case "ELIGIBLE_AND_BILLABLE":
+		return BillableFilterFieldEligibleAndBillable, nil
+	case "ELIGIBLE_AND_NOT_BILLABLE":
+		return BillableFilterFieldEligibleAndNotBillable, nil
+	case "INELIGIBLE":
+		return BillableFilterFieldIneligible, nil
+	}
+	var t BillableFilterField
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BillableFilterField) Ptr() *BillableFilterField {
+	return &b
+}
+
 var (
 	categorizationResponseFieldCategory = big.NewInt(1 << 0)
 )
@@ -1343,6 +1372,7 @@ var (
 	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 24)
 	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 25)
 	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 26)
+	conversationFilterFieldBillable               = big.NewInt(1 << 27)
 )
 
 type ConversationFilter struct {
@@ -1401,8 +1431,16 @@ type ConversationFilter struct {
 	// Filter by agent user IDs associated with the conversation
 	AgentUserIDs []string `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
 	// Filter by conversation resolution status which is determined by AI based on the conversation content.
+	//
+	// When `resolutionStatus`, `resolvedByMaven`, and `billable` are combined in a single filter,
+	// precedence is applied in the following order: `resolutionStatus`, `resolvedByMaven`,
+	// and then `billable`.
 	ResolutionStatus []ResolutionStatus `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
-	// Filter conversations based on whether they were resolved by Maven AI
+	// Filter conversations based on whether they were resolved by Maven AI.
+	//
+	// When `resolutionStatus`, `resolvedByMaven`, and `billable` are combined in a single filter,
+	// precedence is applied in the following order: `resolutionStatus`, `resolvedByMaven`,
+	// and then `billable`.
 	ResolvedByMaven *bool `json:"resolvedByMaven,omitempty" url:"resolvedByMaven,omitempty"`
 	// Filter by the number of messages sent by the user in the conversation
 	UserMessageCount *NumberRange `json:"userMessageCount,omitempty" url:"userMessageCount,omitempty"`
@@ -1423,6 +1461,16 @@ type ConversationFilter struct {
 	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"simulationFilter,omitempty"`
 	// Filter by intelligent field values. All conditions are ANDed together.
 	IntelligentFields *IntelligentFieldFilter `json:"intelligentFields,omitempty" url:"intelligentFields,omitempty"`
+	// Filter by whether the conversation is billable. Defaults to all eligible conversations,
+	// which means ELIGIBLE_AND_BILLABLE and ELIGIBLE_AND_NOT_BILLABLE.
+	//
+	// When `resolutionStatus`, `resolvedByMaven`, and `billable` are combined in a single filter,
+	// precedence is applied in the following order: `resolutionStatus`, `resolvedByMaven`,
+	// and then `billable`.
+	//
+	// If billable is `null` or `[]` then defaults to all eligible conversations,
+	// which means ELIGIBLE_AND_BILLABLE and ELIGIBLE_AND_NOT_BILLABLE.
+	Billable []BillableFilterField `json:"billable,omitempty" url:"billable,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1618,6 +1666,13 @@ func (c *ConversationFilter) GetIntelligentFields() *IntelligentFieldFilter {
 		return nil
 	}
 	return c.IntelligentFields
+}
+
+func (c *ConversationFilter) GetBillable() []BillableFilterField {
+	if c == nil {
+		return nil
+	}
+	return c.Billable
 }
 
 func (c *ConversationFilter) GetExtraProperties() map[string]interface{} {
@@ -1818,6 +1873,13 @@ func (c *ConversationFilter) SetSimulationFilter(simulationFilter *SimulationFil
 func (c *ConversationFilter) SetIntelligentFields(intelligentFields *IntelligentFieldFilter) {
 	c.IntelligentFields = intelligentFields
 	c.require(conversationFilterFieldIntelligentFields)
+}
+
+// SetBillable sets the Billable field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetBillable(billable []BillableFilterField) {
+	c.Billable = billable
+	c.require(conversationFilterFieldBillable)
 }
 
 func (c *ConversationFilter) UnmarshalJSON(data []byte) error {
@@ -2295,16 +2357,17 @@ func (c *ConversationPatchRequest) String() string {
 }
 
 var (
-	conversationRequestFieldConversationID    = big.NewInt(1 << 0)
-	conversationRequestFieldSimulationContext = big.NewInt(1 << 1)
-	conversationRequestFieldResponseConfig    = big.NewInt(1 << 2)
-	conversationRequestFieldSubject           = big.NewInt(1 << 3)
-	conversationRequestFieldURL               = big.NewInt(1 << 4)
-	conversationRequestFieldCreatedAt         = big.NewInt(1 << 5)
-	conversationRequestFieldUpdatedAt         = big.NewInt(1 << 6)
-	conversationRequestFieldTags              = big.NewInt(1 << 7)
-	conversationRequestFieldMetadata          = big.NewInt(1 << 8)
-	conversationRequestFieldMessages          = big.NewInt(1 << 9)
+	conversationRequestFieldConversationID            = big.NewInt(1 << 0)
+	conversationRequestFieldSimulationContext         = big.NewInt(1 << 1)
+	conversationRequestFieldResponseConfig            = big.NewInt(1 << 2)
+	conversationRequestFieldSubject                   = big.NewInt(1 << 3)
+	conversationRequestFieldURL                       = big.NewInt(1 << 4)
+	conversationRequestFieldCreatedAt                 = big.NewInt(1 << 5)
+	conversationRequestFieldUpdatedAt                 = big.NewInt(1 << 6)
+	conversationRequestFieldTags                      = big.NewInt(1 << 7)
+	conversationRequestFieldMetadata                  = big.NewInt(1 << 8)
+	conversationRequestFieldMessages                  = big.NewInt(1 << 9)
+	conversationRequestFieldSpawnedFromConversationID = big.NewInt(1 << 10)
 )
 
 type ConversationRequest struct {
@@ -2337,6 +2400,8 @@ type ConversationRequest struct {
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageRequest `json:"messages" url:"messages"`
+	// The unique identifier of the conversation this new conversation was spawned from, if applicable.
+	SpawnedFromConversationID *EntityID `json:"spawnedFromConversationId,omitempty" url:"spawnedFromConversationId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2413,6 +2478,13 @@ func (c *ConversationRequest) GetMessages() []*ConversationMessageRequest {
 		return nil
 	}
 	return c.Messages
+}
+
+func (c *ConversationRequest) GetSpawnedFromConversationID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.SpawnedFromConversationID
 }
 
 func (c *ConversationRequest) GetExtraProperties() map[string]interface{} {
@@ -2494,6 +2566,13 @@ func (c *ConversationRequest) SetMetadata(metadata map[string]string) {
 func (c *ConversationRequest) SetMessages(messages []*ConversationMessageRequest) {
 	c.Messages = messages
 	c.require(conversationRequestFieldMessages)
+}
+
+// SetSpawnedFromConversationID sets the SpawnedFromConversationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRequest) SetSpawnedFromConversationID(spawnedFromConversationID *EntityID) {
+	c.SpawnedFromConversationID = spawnedFromConversationID
+	c.require(conversationRequestFieldSpawnedFromConversationID)
 }
 
 func (c *ConversationRequest) UnmarshalJSON(data []byte) error {

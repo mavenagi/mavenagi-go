@@ -2464,6 +2464,8 @@ type AttachmentRequest struct {
 	// - image/webp
 	// - application/pdf
 	// - text/plain
+	// - text/markdown
+	// - text/x-markdown
 	// - text/csv
 	// - application/vnd.openxmlformats-officedocument.wordprocessingml.document
 	// - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
@@ -2617,6 +2619,8 @@ type AttachmentResponse struct {
 	// - image/webp
 	// - application/pdf
 	// - text/plain
+	// - text/markdown
+	// - text/x-markdown
 	// - text/csv
 	// - application/vnd.openxmlformats-officedocument.wordprocessingml.document
 	// - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
@@ -2811,6 +2815,8 @@ type BaseAttachment struct {
 	// - image/webp
 	// - application/pdf
 	// - text/plain
+	// - text/markdown
+	// - text/x-markdown
 	// - text/csv
 	// - application/vnd.openxmlformats-officedocument.wordprocessingml.document
 	// - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
@@ -3048,6 +3054,7 @@ var (
 	baseConversationResponseFieldOpen              = big.NewInt(1 << 12)
 	baseConversationResponseFieldLlmEnabled        = big.NewInt(1 << 13)
 	baseConversationResponseFieldSimulationContext = big.NewInt(1 << 14)
+	baseConversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
 )
 
 type BaseConversationResponse struct {
@@ -3085,6 +3092,11 @@ type BaseConversationResponse struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Related entity ids grouped by relationship type.
+	//
+	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
+	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
+	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3196,6 +3208,13 @@ func (b *BaseConversationResponse) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return b.SimulationContext
+}
+
+func (b *BaseConversationResponse) GetRelatedEntities() map[RelationshipType][]*EntityID {
+	if b == nil {
+		return nil
+	}
+	return b.RelatedEntities
 }
 
 func (b *BaseConversationResponse) GetExtraProperties() map[string]interface{} {
@@ -3312,6 +3331,13 @@ func (b *BaseConversationResponse) SetLlmEnabled(llmEnabled bool) {
 func (b *BaseConversationResponse) SetSimulationContext(simulationContext *SimulationContext) {
 	b.SimulationContext = simulationContext
 	b.require(baseConversationResponseFieldSimulationContext)
+}
+
+// SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseConversationResponse) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
+	b.RelatedEntities = relatedEntities
+	b.require(baseConversationResponseFieldRelatedEntities)
 }
 
 func (b *BaseConversationResponse) UnmarshalJSON(data []byte) error {
@@ -7553,9 +7579,10 @@ func (c *ConversationAnalysis) String() string {
 }
 
 var (
-	conversationExecutedActionPreconditionFieldOperator = big.NewInt(1 << 0)
-	conversationExecutedActionPreconditionFieldActionID = big.NewInt(1 << 1)
-	conversationExecutedActionPreconditionFieldAppID    = big.NewInt(1 << 2)
+	conversationExecutedActionPreconditionFieldOperator          = big.NewInt(1 << 0)
+	conversationExecutedActionPreconditionFieldActionID          = big.NewInt(1 << 1)
+	conversationExecutedActionPreconditionFieldAppID             = big.NewInt(1 << 2)
+	conversationExecutedActionPreconditionFieldConversationRound = big.NewInt(1 << 3)
 )
 
 type ConversationExecutedActionPrecondition struct {
@@ -7565,6 +7592,8 @@ type ConversationExecutedActionPrecondition struct {
 	ActionID string `json:"actionId" url:"actionId"`
 	// App ID that the given actionId belongs to. If not provided, the calling appId will be used.
 	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
+	// Restricts which round the action must have executed in. Defaults to ANY when omitted, matching an action executed in any round.
+	ConversationRound *ConversationRound `json:"conversationRound,omitempty" url:"conversationRound,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7592,6 +7621,13 @@ func (c *ConversationExecutedActionPrecondition) GetAppID() *string {
 		return nil
 	}
 	return c.AppID
+}
+
+func (c *ConversationExecutedActionPrecondition) GetConversationRound() *ConversationRound {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationRound
 }
 
 func (c *ConversationExecutedActionPrecondition) GetExtraProperties() map[string]interface{} {
@@ -7624,6 +7660,13 @@ func (c *ConversationExecutedActionPrecondition) SetActionID(actionID string) {
 func (c *ConversationExecutedActionPrecondition) SetAppID(appID *string) {
 	c.AppID = appID
 	c.require(conversationExecutedActionPreconditionFieldAppID)
+}
+
+// SetConversationRound sets the ConversationRound field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationExecutedActionPrecondition) SetConversationRound(conversationRound *ConversationRound) {
+	c.ConversationRound = conversationRound
+	c.require(conversationExecutedActionPreconditionFieldConversationRound)
 }
 
 func (c *ConversationExecutedActionPrecondition) UnmarshalJSON(data []byte) error {
@@ -7744,16 +7787,33 @@ func (c *ConversationInformation) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
+// A single persisted Conversation Kickoff execution result, with timing.
 var (
-	conversationKickoffResultFieldStatus  = big.NewInt(1 << 0)
-	conversationKickoffResultFieldMessage = big.NewInt(1 << 1)
+	conversationKickoffExecutionResponseFieldReferenceID = big.NewInt(1 << 0)
+	conversationKickoffExecutionResponseFieldAppID       = big.NewInt(1 << 1)
+	conversationKickoffExecutionResponseFieldStatus      = big.NewInt(1 << 2)
+	conversationKickoffExecutionResponseFieldMessage     = big.NewInt(1 << 3)
+	conversationKickoffExecutionResponseFieldStartedAt   = big.NewInt(1 << 4)
+	conversationKickoffExecutionResponseFieldCompletedAt = big.NewInt(1 << 5)
+	conversationKickoffExecutionResponseFieldDurationMs  = big.NewInt(1 << 6)
 )
 
-type ConversationKickoffResult struct {
+type ConversationKickoffExecutionResponse struct {
+	// The kickoff config (external) id that ran.
+	ReferenceID *string `json:"referenceId,omitempty" url:"referenceId,omitempty"`
+	// The Maven app that registered the kickoff. Combined with referenceId this identifies
+	// the kickoff.
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 	// Whether the Conversation Kickoff completed successfully.
 	Status ConversationKickoffStatus `json:"status" url:"status"`
 	// Additional detail about the Conversation Kickoff result.
 	Message *string `json:"message,omitempty" url:"message,omitempty"`
+	// When the Conversation Kickoff started.
+	StartedAt *time.Time `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	// When the Conversation Kickoff completed.
+	CompletedAt *time.Time `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	// How long the Conversation Kickoff took, in milliseconds.
+	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7762,52 +7822,130 @@ type ConversationKickoffResult struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *ConversationKickoffResult) GetStatus() ConversationKickoffStatus {
+func (c *ConversationKickoffExecutionResponse) GetReferenceID() *string {
+	if c == nil {
+		return nil
+	}
+	return c.ReferenceID
+}
+
+func (c *ConversationKickoffExecutionResponse) GetAppID() *string {
+	if c == nil {
+		return nil
+	}
+	return c.AppID
+}
+
+func (c *ConversationKickoffExecutionResponse) GetStatus() ConversationKickoffStatus {
 	if c == nil {
 		return ""
 	}
 	return c.Status
 }
 
-func (c *ConversationKickoffResult) GetMessage() *string {
+func (c *ConversationKickoffExecutionResponse) GetMessage() *string {
 	if c == nil {
 		return nil
 	}
 	return c.Message
 }
 
-func (c *ConversationKickoffResult) GetExtraProperties() map[string]interface{} {
+func (c *ConversationKickoffExecutionResponse) GetStartedAt() *time.Time {
+	if c == nil {
+		return nil
+	}
+	return c.StartedAt
+}
+
+func (c *ConversationKickoffExecutionResponse) GetCompletedAt() *time.Time {
+	if c == nil {
+		return nil
+	}
+	return c.CompletedAt
+}
+
+func (c *ConversationKickoffExecutionResponse) GetDurationMs() *int64 {
+	if c == nil {
+		return nil
+	}
+	return c.DurationMs
+}
+
+func (c *ConversationKickoffExecutionResponse) GetExtraProperties() map[string]interface{} {
 	return c.extraProperties
 }
 
-func (c *ConversationKickoffResult) require(field *big.Int) {
+func (c *ConversationKickoffExecutionResponse) require(field *big.Int) {
 	if c.explicitFields == nil {
 		c.explicitFields = big.NewInt(0)
 	}
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffExecutionResponse) SetReferenceID(referenceID *string) {
+	c.ReferenceID = referenceID
+	c.require(conversationKickoffExecutionResponseFieldReferenceID)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffExecutionResponse) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(conversationKickoffExecutionResponseFieldAppID)
+}
+
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationKickoffResult) SetStatus(status ConversationKickoffStatus) {
+func (c *ConversationKickoffExecutionResponse) SetStatus(status ConversationKickoffStatus) {
 	c.Status = status
-	c.require(conversationKickoffResultFieldStatus)
+	c.require(conversationKickoffExecutionResponseFieldStatus)
 }
 
 // SetMessage sets the Message field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationKickoffResult) SetMessage(message *string) {
+func (c *ConversationKickoffExecutionResponse) SetMessage(message *string) {
 	c.Message = message
-	c.require(conversationKickoffResultFieldMessage)
+	c.require(conversationKickoffExecutionResponseFieldMessage)
 }
 
-func (c *ConversationKickoffResult) UnmarshalJSON(data []byte) error {
-	type unmarshaler ConversationKickoffResult
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffExecutionResponse) SetStartedAt(startedAt *time.Time) {
+	c.StartedAt = startedAt
+	c.require(conversationKickoffExecutionResponseFieldStartedAt)
+}
+
+// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffExecutionResponse) SetCompletedAt(completedAt *time.Time) {
+	c.CompletedAt = completedAt
+	c.require(conversationKickoffExecutionResponseFieldCompletedAt)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffExecutionResponse) SetDurationMs(durationMs *int64) {
+	c.DurationMs = durationMs
+	c.require(conversationKickoffExecutionResponseFieldDurationMs)
+}
+
+func (c *ConversationKickoffExecutionResponse) UnmarshalJSON(data []byte) error {
+	type embed ConversationKickoffExecutionResponse
+	var unmarshaler = struct {
+		embed
+		StartedAt   *internal.DateTime `json:"startedAt,omitempty"`
+		CompletedAt *internal.DateTime `json:"completedAt,omitempty"`
+	}{
+		embed: embed(*c),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*c = ConversationKickoffResult(value)
+	*c = ConversationKickoffExecutionResponse(unmarshaler.embed)
+	c.StartedAt = unmarshaler.StartedAt.TimePtr()
+	c.CompletedAt = unmarshaler.CompletedAt.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *c)
 	if err != nil {
 		return err
@@ -7817,18 +7955,22 @@ func (c *ConversationKickoffResult) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ConversationKickoffResult) MarshalJSON() ([]byte, error) {
-	type embed ConversationKickoffResult
+func (c *ConversationKickoffExecutionResponse) MarshalJSON() ([]byte, error) {
+	type embed ConversationKickoffExecutionResponse
 	var marshaler = struct {
 		embed
+		StartedAt   *internal.DateTime `json:"startedAt,omitempty"`
+		CompletedAt *internal.DateTime `json:"completedAt,omitempty"`
 	}{
-		embed: embed(*c),
+		embed:       embed(*c),
+		StartedAt:   internal.NewOptionalDateTime(c.StartedAt),
+		CompletedAt: internal.NewOptionalDateTime(c.CompletedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (c *ConversationKickoffResult) String() string {
+func (c *ConversationKickoffExecutionResponse) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value
@@ -8116,6 +8258,7 @@ type ConversationPrecondition struct {
 	ActionExecuted               *ConversationExecutedActionPrecondition
 	ResponseConfig               *ResponseConfigPrecondition
 	App                          *AppPrecondition
+	ConversationState            *ConversationStatePrecondition
 	IntelligentField             *IntelligentFieldPrecondition
 }
 
@@ -8159,6 +8302,13 @@ func (c *ConversationPrecondition) GetApp() *AppPrecondition {
 		return nil
 	}
 	return c.App
+}
+
+func (c *ConversationPrecondition) GetConversationState() *ConversationStatePrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationState
 }
 
 func (c *ConversationPrecondition) GetIntelligentField() *IntelligentFieldPrecondition {
@@ -8210,6 +8360,12 @@ func (c *ConversationPrecondition) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.App = value
+	case "conversationState":
+		value := new(ConversationStatePrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ConversationState = value
 	case "intelligentField":
 		value := new(IntelligentFieldPrecondition)
 		if err := json.Unmarshal(data, &value); err != nil {
@@ -8239,6 +8395,9 @@ func (c ConversationPrecondition) MarshalJSON() ([]byte, error) {
 	if c.App != nil {
 		return internal.MarshalJSONWithExtraProperty(c.App, "conversationPreconditionType", "app")
 	}
+	if c.ConversationState != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ConversationState, "conversationPreconditionType", "conversationState")
+	}
 	if c.IntelligentField != nil {
 		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
 	}
@@ -8251,6 +8410,7 @@ type ConversationPreconditionVisitor interface {
 	VisitActionExecuted(*ConversationExecutedActionPrecondition) error
 	VisitResponseConfig(*ResponseConfigPrecondition) error
 	VisitApp(*AppPrecondition) error
+	VisitConversationState(*ConversationStatePrecondition) error
 	VisitIntelligentField(*IntelligentFieldPrecondition) error
 }
 
@@ -8269,6 +8429,9 @@ func (c *ConversationPrecondition) Accept(visitor ConversationPreconditionVisito
 	}
 	if c.App != nil {
 		return visitor.VisitApp(c.App)
+	}
+	if c.ConversationState != nil {
+		return visitor.VisitConversationState(c.ConversationState)
 	}
 	if c.IntelligentField != nil {
 		return visitor.VisitIntelligentField(c.IntelligentField)
@@ -8295,6 +8458,9 @@ func (c *ConversationPrecondition) validate() error {
 	}
 	if c.App != nil {
 		fields = append(fields, "app")
+	}
+	if c.ConversationState != nil {
+		fields = append(fields, "conversationState")
 	}
 	if c.IntelligentField != nil {
 		fields = append(fields, "intelligentField")
@@ -8329,6 +8495,7 @@ type ConversationPreconditionResponse struct {
 	ActionExecuted               *ConversationExecutedActionPrecondition
 	ResponseConfig               *ResponseConfigPrecondition
 	App                          *AppPrecondition
+	ConversationState            *ConversationStatePrecondition
 	IntelligentField             *IntelligentFieldPreconditionResponse
 }
 
@@ -8372,6 +8539,13 @@ func (c *ConversationPreconditionResponse) GetApp() *AppPrecondition {
 		return nil
 	}
 	return c.App
+}
+
+func (c *ConversationPreconditionResponse) GetConversationState() *ConversationStatePrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationState
 }
 
 func (c *ConversationPreconditionResponse) GetIntelligentField() *IntelligentFieldPreconditionResponse {
@@ -8423,6 +8597,12 @@ func (c *ConversationPreconditionResponse) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.App = value
+	case "conversationState":
+		value := new(ConversationStatePrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ConversationState = value
 	case "intelligentField":
 		value := new(IntelligentFieldPreconditionResponse)
 		if err := json.Unmarshal(data, &value); err != nil {
@@ -8452,6 +8632,9 @@ func (c ConversationPreconditionResponse) MarshalJSON() ([]byte, error) {
 	if c.App != nil {
 		return internal.MarshalJSONWithExtraProperty(c.App, "conversationPreconditionType", "app")
 	}
+	if c.ConversationState != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ConversationState, "conversationPreconditionType", "conversationState")
+	}
 	if c.IntelligentField != nil {
 		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
 	}
@@ -8464,6 +8647,7 @@ type ConversationPreconditionResponseVisitor interface {
 	VisitActionExecuted(*ConversationExecutedActionPrecondition) error
 	VisitResponseConfig(*ResponseConfigPrecondition) error
 	VisitApp(*AppPrecondition) error
+	VisitConversationState(*ConversationStatePrecondition) error
 	VisitIntelligentField(*IntelligentFieldPreconditionResponse) error
 }
 
@@ -8482,6 +8666,9 @@ func (c *ConversationPreconditionResponse) Accept(visitor ConversationPreconditi
 	}
 	if c.App != nil {
 		return visitor.VisitApp(c.App)
+	}
+	if c.ConversationState != nil {
+		return visitor.VisitConversationState(c.ConversationState)
 	}
 	if c.IntelligentField != nil {
 		return visitor.VisitIntelligentField(c.IntelligentField)
@@ -8508,6 +8695,9 @@ func (c *ConversationPreconditionResponse) validate() error {
 	}
 	if c.App != nil {
 		fields = append(fields, "app")
+	}
+	if c.ConversationState != nil {
+		fields = append(fields, "conversationState")
 	}
 	if c.IntelligentField != nil {
 		fields = append(fields, "intelligentField")
@@ -8551,6 +8741,7 @@ var (
 	conversationPreviewFieldOpen              = big.NewInt(1 << 12)
 	conversationPreviewFieldLlmEnabled        = big.NewInt(1 << 13)
 	conversationPreviewFieldSimulationContext = big.NewInt(1 << 14)
+	conversationPreviewFieldRelatedEntities   = big.NewInt(1 << 15)
 )
 
 type ConversationPreview struct {
@@ -8588,6 +8779,11 @@ type ConversationPreview struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Related entity ids grouped by relationship type.
+	//
+	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
+	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
+	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -8699,6 +8895,13 @@ func (c *ConversationPreview) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return c.SimulationContext
+}
+
+func (c *ConversationPreview) GetRelatedEntities() map[RelationshipType][]*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.RelatedEntities
 }
 
 func (c *ConversationPreview) GetExtraProperties() map[string]interface{} {
@@ -8817,6 +9020,13 @@ func (c *ConversationPreview) SetSimulationContext(simulationContext *Simulation
 	c.require(conversationPreviewFieldSimulationContext)
 }
 
+// SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationPreview) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
+	c.RelatedEntities = relatedEntities
+	c.require(conversationPreviewFieldRelatedEntities)
+}
+
 func (c *ConversationPreview) UnmarshalJSON(data []byte) error {
 	type embed ConversationPreview
 	var unmarshaler = struct {
@@ -8884,8 +9094,9 @@ var (
 	conversationResponseFieldOpen              = big.NewInt(1 << 12)
 	conversationResponseFieldLlmEnabled        = big.NewInt(1 << 13)
 	conversationResponseFieldSimulationContext = big.NewInt(1 << 14)
-	conversationResponseFieldMessages          = big.NewInt(1 << 15)
-	conversationResponseFieldAttachments       = big.NewInt(1 << 16)
+	conversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
+	conversationResponseFieldMessages          = big.NewInt(1 << 16)
+	conversationResponseFieldAttachments       = big.NewInt(1 << 17)
 )
 
 type ConversationResponse struct {
@@ -8923,6 +9134,11 @@ type ConversationResponse struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Related entity ids grouped by relationship type.
+	//
+	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
+	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
+	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
 	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
@@ -9040,6 +9256,13 @@ func (c *ConversationResponse) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return c.SimulationContext
+}
+
+func (c *ConversationResponse) GetRelatedEntities() map[RelationshipType][]*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.RelatedEntities
 }
 
 func (c *ConversationResponse) GetMessages() []*ConversationMessageResponse {
@@ -9172,6 +9395,13 @@ func (c *ConversationResponse) SetSimulationContext(simulationContext *Simulatio
 	c.require(conversationResponseFieldSimulationContext)
 }
 
+// SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationResponse) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
+	c.RelatedEntities = relatedEntities
+	c.require(conversationResponseFieldRelatedEntities)
+}
+
 // SetMessages sets the Messages field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ConversationResponse) SetMessages(messages []*ConversationMessageResponse) {
@@ -9226,6 +9456,151 @@ func (c *ConversationResponse) MarshalJSON() ([]byte, error) {
 }
 
 func (c *ConversationResponse) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Which round of the conversation an action must have executed in for a ConversationExecutedActionPrecondition to be met. A round is a single bot response to the user; the current round is the bot response being generated now.
+type ConversationRound string
+
+const (
+	// The action has executed in any round of the conversation.
+	ConversationRoundAny ConversationRound = "ANY"
+	// The action has executed in the current round — the bot response being generated now.
+	ConversationRoundCurrent ConversationRound = "CURRENT"
+	// The action has executed in a round before the current round.
+	ConversationRoundPrevious ConversationRound = "PREVIOUS"
+)
+
+func NewConversationRoundFromString(s string) (ConversationRound, error) {
+	switch s {
+	case "ANY":
+		return ConversationRoundAny, nil
+	case "CURRENT":
+		return ConversationRoundCurrent, nil
+	case "PREVIOUS":
+		return ConversationRoundPrevious, nil
+	}
+	var t ConversationRound
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConversationRound) Ptr() *ConversationRound {
+	return &c
+}
+
+type ConversationState string
+
+const (
+	// The welcome state — the very first round of the conversation, before the bot has sent a message to the user.
+	ConversationStateWelcome ConversationState = "WELCOME"
+)
+
+func NewConversationStateFromString(s string) (ConversationState, error) {
+	switch s {
+	case "WELCOME":
+		return ConversationStateWelcome, nil
+	}
+	var t ConversationState
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConversationState) Ptr() *ConversationState {
+	return &c
+}
+
+var (
+	conversationStatePreconditionFieldOperator = big.NewInt(1 << 0)
+	conversationStatePreconditionFieldState    = big.NewInt(1 << 1)
+)
+
+type ConversationStatePrecondition struct {
+	// Operator to apply to this precondition
+	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
+	// The conversation state that must be active for the precondition to be met. Combine with the NOT operator to match every state except this one (e.g. NOT + WELCOME gates on "not the welcome state").
+	State ConversationState `json:"state" url:"state"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationStatePrecondition) GetOperator() *PreconditionOperator {
+	if c == nil {
+		return nil
+	}
+	return c.Operator
+}
+
+func (c *ConversationStatePrecondition) GetState() ConversationState {
+	if c == nil {
+		return ""
+	}
+	return c.State
+}
+
+func (c *ConversationStatePrecondition) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationStatePrecondition) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationStatePrecondition) SetOperator(operator *PreconditionOperator) {
+	c.Operator = operator
+	c.require(conversationStatePreconditionFieldOperator)
+}
+
+// SetState sets the State field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationStatePrecondition) SetState(state ConversationState) {
+	c.State = state
+	c.require(conversationStatePreconditionFieldState)
+}
+
+func (c *ConversationStatePrecondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationStatePrecondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationStatePrecondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationStatePrecondition) MarshalJSON() ([]byte, error) {
+	type embed ConversationStatePrecondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationStatePrecondition) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value
@@ -10818,6 +11193,7 @@ const (
 	EntityTypeConversationKickoff  EntityType = "CONVERSATION_KICKOFF"
 	EntityTypeAgentVariant         EntityType = "AGENT_VARIANT"
 	EntityTypeConfigSnapshot       EntityType = "CONFIG_SNAPSHOT"
+	EntityTypeAsset                EntityType = "ASSET"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -10864,6 +11240,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeAgentVariant, nil
 	case "CONFIG_SNAPSHOT":
 		return EntityTypeConfigSnapshot, nil
+	case "ASSET":
+		return EntityTypeAsset, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -14606,24 +14984,25 @@ func (i InboxItemType) Ptr() *InboxItemType {
 // ConversationResponse with the Conversation Kickoff result, which is only available at
 // initialization time.
 var (
-	initializeConversationResponseFieldResponseConfig            = big.NewInt(1 << 0)
-	initializeConversationResponseFieldSubject                   = big.NewInt(1 << 1)
-	initializeConversationResponseFieldURL                       = big.NewInt(1 << 2)
-	initializeConversationResponseFieldCreatedAt                 = big.NewInt(1 << 3)
-	initializeConversationResponseFieldUpdatedAt                 = big.NewInt(1 << 4)
-	initializeConversationResponseFieldTags                      = big.NewInt(1 << 5)
-	initializeConversationResponseFieldMetadata                  = big.NewInt(1 << 6)
-	initializeConversationResponseFieldAllMetadata               = big.NewInt(1 << 7)
-	initializeConversationResponseFieldConversationID            = big.NewInt(1 << 8)
-	initializeConversationResponseFieldAnalysis                  = big.NewInt(1 << 9)
-	initializeConversationResponseFieldSummary                   = big.NewInt(1 << 10)
-	initializeConversationResponseFieldDeleted                   = big.NewInt(1 << 11)
-	initializeConversationResponseFieldOpen                      = big.NewInt(1 << 12)
-	initializeConversationResponseFieldLlmEnabled                = big.NewInt(1 << 13)
-	initializeConversationResponseFieldSimulationContext         = big.NewInt(1 << 14)
-	initializeConversationResponseFieldMessages                  = big.NewInt(1 << 15)
-	initializeConversationResponseFieldAttachments               = big.NewInt(1 << 16)
-	initializeConversationResponseFieldConversationKickoffResult = big.NewInt(1 << 17)
+	initializeConversationResponseFieldResponseConfig             = big.NewInt(1 << 0)
+	initializeConversationResponseFieldSubject                    = big.NewInt(1 << 1)
+	initializeConversationResponseFieldURL                        = big.NewInt(1 << 2)
+	initializeConversationResponseFieldCreatedAt                  = big.NewInt(1 << 3)
+	initializeConversationResponseFieldUpdatedAt                  = big.NewInt(1 << 4)
+	initializeConversationResponseFieldTags                       = big.NewInt(1 << 5)
+	initializeConversationResponseFieldMetadata                   = big.NewInt(1 << 6)
+	initializeConversationResponseFieldAllMetadata                = big.NewInt(1 << 7)
+	initializeConversationResponseFieldConversationID             = big.NewInt(1 << 8)
+	initializeConversationResponseFieldAnalysis                   = big.NewInt(1 << 9)
+	initializeConversationResponseFieldSummary                    = big.NewInt(1 << 10)
+	initializeConversationResponseFieldDeleted                    = big.NewInt(1 << 11)
+	initializeConversationResponseFieldOpen                       = big.NewInt(1 << 12)
+	initializeConversationResponseFieldLlmEnabled                 = big.NewInt(1 << 13)
+	initializeConversationResponseFieldSimulationContext          = big.NewInt(1 << 14)
+	initializeConversationResponseFieldRelatedEntities            = big.NewInt(1 << 15)
+	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 16)
+	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 17)
+	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 18)
 )
 
 type InitializeConversationResponse struct {
@@ -14661,16 +15040,22 @@ type InitializeConversationResponse struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Related entity ids grouped by relationship type.
+	//
+	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
+	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
+	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
 	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
 	//
 	// Message attachments are included in LLM context, conversation attachments are not.
 	Attachments []*AttachmentResponse `json:"attachments" url:"attachments"`
-	// Result of the Conversation Kickoff, when one ran during conversation initialization.
-	// Only present on this initialize response; other endpoints that return a conversation
-	// do not include it.
-	ConversationKickoffResult *ConversationKickoffResult `json:"conversationKickoffResult,omitempty" url:"conversationKickoffResult,omitempty"`
+	// Results of the Conversation Kickoffs that ran during conversation initialization, one
+	// entry per kickoff in the order they were recorded. Empty when no kickoff ran. Only
+	// present on this initialize response; other endpoints that return a conversation do not
+	// include it.
+	ConversationKickoffResults []*ConversationKickoffExecutionResponse `json:"conversationKickoffResults" url:"conversationKickoffResults"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14784,6 +15169,13 @@ func (i *InitializeConversationResponse) GetSimulationContext() *SimulationConte
 	return i.SimulationContext
 }
 
+func (i *InitializeConversationResponse) GetRelatedEntities() map[RelationshipType][]*EntityID {
+	if i == nil {
+		return nil
+	}
+	return i.RelatedEntities
+}
+
 func (i *InitializeConversationResponse) GetMessages() []*ConversationMessageResponse {
 	if i == nil {
 		return nil
@@ -14798,11 +15190,11 @@ func (i *InitializeConversationResponse) GetAttachments() []*AttachmentResponse 
 	return i.Attachments
 }
 
-func (i *InitializeConversationResponse) GetConversationKickoffResult() *ConversationKickoffResult {
+func (i *InitializeConversationResponse) GetConversationKickoffResults() []*ConversationKickoffExecutionResponse {
 	if i == nil {
 		return nil
 	}
-	return i.ConversationKickoffResult
+	return i.ConversationKickoffResults
 }
 
 func (i *InitializeConversationResponse) GetExtraProperties() map[string]interface{} {
@@ -14921,6 +15313,13 @@ func (i *InitializeConversationResponse) SetSimulationContext(simulationContext 
 	i.require(initializeConversationResponseFieldSimulationContext)
 }
 
+// SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
+	i.RelatedEntities = relatedEntities
+	i.require(initializeConversationResponseFieldRelatedEntities)
+}
+
 // SetMessages sets the Messages field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (i *InitializeConversationResponse) SetMessages(messages []*ConversationMessageResponse) {
@@ -14935,11 +15334,11 @@ func (i *InitializeConversationResponse) SetAttachments(attachments []*Attachmen
 	i.require(initializeConversationResponseFieldAttachments)
 }
 
-// SetConversationKickoffResult sets the ConversationKickoffResult field and marks it as non-optional;
+// SetConversationKickoffResults sets the ConversationKickoffResults field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *InitializeConversationResponse) SetConversationKickoffResult(conversationKickoffResult *ConversationKickoffResult) {
-	i.ConversationKickoffResult = conversationKickoffResult
-	i.require(initializeConversationResponseFieldConversationKickoffResult)
+func (i *InitializeConversationResponse) SetConversationKickoffResults(conversationKickoffResults []*ConversationKickoffExecutionResponse) {
+	i.ConversationKickoffResults = conversationKickoffResults
+	i.require(initializeConversationResponseFieldConversationKickoffResults)
 }
 
 func (i *InitializeConversationResponse) UnmarshalJSON(data []byte) error {
@@ -19793,6 +20192,33 @@ func NewQualityReasonFromString(s string) (QualityReason, error) {
 
 func (q QualityReason) Ptr() *QualityReason {
 	return &q
+}
+
+// The kind of relationship (edge) between two entities. Names the edge,
+// not the node — `EntityId` already carries the node type.
+//
+// * `SPAWN_FROM`: the entity this one was spawned from.
+// * `SPAWN_TO`: the entities that were spawned from this one.
+type RelationshipType string
+
+const (
+	RelationshipTypeSpawnFrom RelationshipType = "SPAWN_FROM"
+	RelationshipTypeSpawnTo   RelationshipType = "SPAWN_TO"
+)
+
+func NewRelationshipTypeFromString(s string) (RelationshipType, error) {
+	switch s {
+	case "SPAWN_FROM":
+		return RelationshipTypeSpawnFrom, nil
+	case "SPAWN_TO":
+		return RelationshipTypeSpawnTo, nil
+	}
+	var t RelationshipType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (r RelationshipType) Ptr() *RelationshipType {
+	return &r
 }
 
 type ResolutionStatus string

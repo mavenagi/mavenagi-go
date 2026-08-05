@@ -564,10 +564,11 @@ var (
 	knowledgeBaseFilterFieldCreatedAfter            = big.NewInt(1 << 2)
 	knowledgeBaseFilterFieldCreatedBefore           = big.NewInt(1 << 3)
 	knowledgeBaseFilterFieldAppIDs                  = big.NewInt(1 << 4)
-	knowledgeBaseFilterFieldMostRecentVersionStatus = big.NewInt(1 << 5)
-	knowledgeBaseFilterFieldLlmInclusionStatus      = big.NewInt(1 << 6)
-	knowledgeBaseFilterFieldSegmentID               = big.NewInt(1 << 7)
-	knowledgeBaseFilterFieldSegmentIDs              = big.NewInt(1 << 8)
+	knowledgeBaseFilterFieldTypes                   = big.NewInt(1 << 5)
+	knowledgeBaseFilterFieldMostRecentVersionStatus = big.NewInt(1 << 6)
+	knowledgeBaseFilterFieldLlmInclusionStatus      = big.NewInt(1 << 7)
+	knowledgeBaseFilterFieldSegmentID               = big.NewInt(1 << 8)
+	knowledgeBaseFilterFieldSegmentIDs              = big.NewInt(1 << 9)
 )
 
 type KnowledgeBaseFilter struct {
@@ -592,6 +593,8 @@ type KnowledgeBaseFilter struct {
 	CreatedBefore *time.Time `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
 	// Filter by app IDs
 	AppIDs []string `json:"appIds,omitempty" url:"appIds,omitempty"`
+	// Filter by knowledge base type.
+	Types []KnowledgeBaseType `json:"types,omitempty" url:"types,omitempty"`
 	// Filter knowledge bases by the most recent version status
 	MostRecentVersionStatus []KnowledgeBaseVersionStatus `json:"mostRecentVersionStatus,omitempty" url:"mostRecentVersionStatus,omitempty"`
 	// Filter knowledge bases by the LLM inclusion status
@@ -641,6 +644,13 @@ func (k *KnowledgeBaseFilter) GetAppIDs() []string {
 		return nil
 	}
 	return k.AppIDs
+}
+
+func (k *KnowledgeBaseFilter) GetTypes() []KnowledgeBaseType {
+	if k == nil {
+		return nil
+	}
+	return k.Types
 }
 
 func (k *KnowledgeBaseFilter) GetMostRecentVersionStatus() []KnowledgeBaseVersionStatus {
@@ -715,6 +725,13 @@ func (k *KnowledgeBaseFilter) SetCreatedBefore(createdBefore *time.Time) {
 func (k *KnowledgeBaseFilter) SetAppIDs(appIDs []string) {
 	k.AppIDs = appIDs
 	k.require(knowledgeBaseFilterFieldAppIDs)
+}
+
+// SetTypes sets the Types field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseFilter) SetTypes(types []KnowledgeBaseType) {
+	k.Types = types
+	k.require(knowledgeBaseFilterFieldTypes)
 }
 
 // SetMostRecentVersionStatus sets the MostRecentVersionStatus field and marks it as non-optional;
@@ -2806,8 +2823,18 @@ type KnowledgeDocumentRequest struct {
 	// The title of the document. Will be shown as part of answers.
 	Title string `json:"title" url:"title"`
 	// (Beta: under development, endpoint may change.)
-	// ID of the asset associated with this document. This asset will be transformed into
-	// text and set as the content of the document. Supported MIME types are those accepted by `initiateUpload`.
+	// ID of the asset associated with this document. This asset is transformed into text and
+	// set as the content of a single document, so only single-document MIME types are supported:
+	//   - text/plain
+	//   - text/markdown
+	//   - text/x-markdown
+	//   - application/pdf
+	//   - application/vnd.openxmlformats-officedocument.wordprocessingml.document (docx)
+	//   - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet (xlsx)
+	//
+	// Multi-record formats that fan out into many documents (text/csv, application/json,
+	// application/jsonl) are not supported here. Any other type accepted by `initiateUpload`
+	// (e.g. images, audio, video) will result in a failed knowledge base version.
 	// Either this or content is required, but not both. The asset must have a checksum provided at commit time (see `commitUpload`).
 	AssetID *EntityIDWithoutAgent `json:"assetId,omitempty" url:"assetId,omitempty"`
 	// The content of the document. Not shown directly to users. May be provided in HTML or markdown. HTML will be converted to markdown automatically. Images are not currently supported and will be ignored. Either this or assetId is required, but not both
