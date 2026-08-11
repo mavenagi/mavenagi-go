@@ -243,11 +243,12 @@ func (a *ActionFormRequestParamValue) Accept(visitor ActionFormRequestParamValue
 var (
 	askRequestFieldConversationMessageID = big.NewInt(1 << 0)
 	askRequestFieldUserID                = big.NewInt(1 << 1)
-	askRequestFieldText                  = big.NewInt(1 << 2)
-	askRequestFieldAttachments           = big.NewInt(1 << 3)
-	askRequestFieldTransientData         = big.NewInt(1 << 4)
-	askRequestFieldTimezone              = big.NewInt(1 << 5)
-	askRequestFieldAppMetadata           = big.NewInt(1 << 6)
+	askRequestFieldType                  = big.NewInt(1 << 2)
+	askRequestFieldText                  = big.NewInt(1 << 3)
+	askRequestFieldAttachments           = big.NewInt(1 << 4)
+	askRequestFieldTransientData         = big.NewInt(1 << 5)
+	askRequestFieldTimezone              = big.NewInt(1 << 6)
+	askRequestFieldAppMetadata           = big.NewInt(1 << 7)
 )
 
 type AskRequest struct {
@@ -255,8 +256,16 @@ type AskRequest struct {
 	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
 	// Externally supplied ID to uniquely identify the user that created this message
 	UserID *EntityIDBase `json:"userId" url:"userId"`
-	// The text of the message
-	Text string `json:"text" url:"text"`
+	// What prompts this assistant turn. Omit (or send USER_MESSAGE) for a normal user
+	// question — this is the backwards-compatible default. Use WELCOME for an agent-authored
+	// opener, or PROACTIVE for a message the user did not prompt.
+	Type *AskType `json:"type,omitempty" url:"type,omitempty"`
+	// For USER_MESSAGE (the default) this is the user's message, in the user's own words, and
+	// is required. For WELCOME and PROACTIVE it is optional and, when provided, steers the
+	// agent's response (a directive to the agent, not the user's own words). (Changed from
+	// required to optional to support the non-user turn types — existing USER_MESSAGE callers
+	// are unaffected.)
+	Text *string `json:"text,omitempty" url:"text,omitempty"`
 	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
 	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
 	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
@@ -293,9 +302,16 @@ func (a *AskRequest) GetUserID() *EntityIDBase {
 	return a.UserID
 }
 
-func (a *AskRequest) GetText() string {
+func (a *AskRequest) GetType() *AskType {
 	if a == nil {
-		return ""
+		return nil
+	}
+	return a.Type
+}
+
+func (a *AskRequest) GetText() *string {
+	if a == nil {
+		return nil
 	}
 	return a.Text
 }
@@ -353,9 +369,16 @@ func (a *AskRequest) SetUserID(userID *EntityIDBase) {
 	a.require(askRequestFieldUserID)
 }
 
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetType(type_ *AskType) {
+	a.Type = type_
+	a.require(askRequestFieldType)
+}
+
 // SetText sets the Text field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetText(text string) {
+func (a *AskRequest) SetText(text *string) {
 	a.Text = text
 	a.require(askRequestFieldText)
 }
@@ -1260,6 +1283,9 @@ const (
 	ConversationFieldLanguages              ConversationField = "Languages"
 	ConversationFieldActions                ConversationField = "Actions"
 	ConversationFieldIncompleteActions      ConversationField = "IncompleteActions"
+	ConversationFieldErroredActions         ConversationField = "ErroredActions"
+	ConversationFieldActionExecutionCount   ConversationField = "ActionExecutionCount"
+	ConversationFieldActionErrorCount       ConversationField = "ActionErrorCount"
 	ConversationFieldCharters               ConversationField = "Charters"
 	ConversationFieldSources                ConversationField = "Sources"
 	ConversationFieldCreatedAt              ConversationField = "CreatedAt"
@@ -1317,6 +1343,12 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 		return ConversationFieldActions, nil
 	case "IncompleteActions":
 		return ConversationFieldIncompleteActions, nil
+	case "ErroredActions":
+		return ConversationFieldErroredActions, nil
+	case "ActionExecutionCount":
+		return ConversationFieldActionExecutionCount, nil
+	case "ActionErrorCount":
+		return ConversationFieldActionErrorCount, nil
 	case "Charters":
 		return ConversationFieldCharters, nil
 	case "Sources":
@@ -1352,27 +1384,28 @@ var (
 	conversationFilterFieldCategories             = big.NewInt(1 << 4)
 	conversationFilterFieldActions                = big.NewInt(1 << 5)
 	conversationFilterFieldIncompleteActions      = big.NewInt(1 << 6)
-	conversationFilterFieldFeedback               = big.NewInt(1 << 7)
-	conversationFilterFieldHumanAgents            = big.NewInt(1 << 8)
-	conversationFilterFieldHumanAgentsWithInserts = big.NewInt(1 << 9)
-	conversationFilterFieldLanguages              = big.NewInt(1 << 10)
-	conversationFilterFieldQuality                = big.NewInt(1 << 11)
-	conversationFilterFieldQualityReason          = big.NewInt(1 << 12)
-	conversationFilterFieldResponseLength         = big.NewInt(1 << 13)
-	conversationFilterFieldSentiment              = big.NewInt(1 << 14)
-	conversationFilterFieldTags                   = big.NewInt(1 << 15)
-	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 16)
-	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 17)
-	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 18)
-	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 19)
-	conversationFilterFieldHasAttachment          = big.NewInt(1 << 20)
-	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 21)
-	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 22)
-	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 23)
-	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 24)
-	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 25)
-	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 26)
-	conversationFilterFieldBillable               = big.NewInt(1 << 27)
+	conversationFilterFieldErroredActions         = big.NewInt(1 << 7)
+	conversationFilterFieldFeedback               = big.NewInt(1 << 8)
+	conversationFilterFieldHumanAgents            = big.NewInt(1 << 9)
+	conversationFilterFieldHumanAgentsWithInserts = big.NewInt(1 << 10)
+	conversationFilterFieldLanguages              = big.NewInt(1 << 11)
+	conversationFilterFieldQuality                = big.NewInt(1 << 12)
+	conversationFilterFieldQualityReason          = big.NewInt(1 << 13)
+	conversationFilterFieldResponseLength         = big.NewInt(1 << 14)
+	conversationFilterFieldSentiment              = big.NewInt(1 << 15)
+	conversationFilterFieldTags                   = big.NewInt(1 << 16)
+	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 17)
+	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 18)
+	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 19)
+	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 20)
+	conversationFilterFieldHasAttachment          = big.NewInt(1 << 21)
+	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 22)
+	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 23)
+	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 24)
+	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 25)
+	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 26)
+	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 27)
+	conversationFilterFieldBillable               = big.NewInt(1 << 28)
 )
 
 type ConversationFilter struct {
@@ -1408,6 +1441,8 @@ type ConversationFilter struct {
 	Actions []*EntityIDFilter `json:"actions,omitempty" url:"actions,omitempty"`
 	// Filter by actions that were suggested but not completed by the AI agent
 	IncompleteActions []*EntityIDFilter `json:"incompleteActions,omitempty" url:"incompleteActions,omitempty"`
+	// Filter by actions that returned an error when executed in the conversation
+	ErroredActions []*EntityIDFilter `json:"erroredActions,omitempty" url:"erroredActions,omitempty"`
 	// Filter by feedback types received in the conversation.
 	// This is a legacy field that maps to Events saved in the system for `ThumbsUp`, `ThumbsDown`, and `Insert`.
 	// The `Handoff` filter will pass if any bot responses on the conversation returned the system fallback message; there are no corresponding handoff events.
@@ -1526,6 +1561,13 @@ func (c *ConversationFilter) GetIncompleteActions() []*EntityIDFilter {
 		return nil
 	}
 	return c.IncompleteActions
+}
+
+func (c *ConversationFilter) GetErroredActions() []*EntityIDFilter {
+	if c == nil {
+		return nil
+	}
+	return c.ErroredActions
 }
 
 func (c *ConversationFilter) GetFeedback() []FeedbackType {
@@ -1733,6 +1775,13 @@ func (c *ConversationFilter) SetActions(actions []*EntityIDFilter) {
 func (c *ConversationFilter) SetIncompleteActions(incompleteActions []*EntityIDFilter) {
 	c.IncompleteActions = incompleteActions
 	c.require(conversationFilterFieldIncompleteActions)
+}
+
+// SetErroredActions sets the ErroredActions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetErroredActions(erroredActions []*EntityIDFilter) {
+	c.ErroredActions = erroredActions
+	c.require(conversationFilterFieldErroredActions)
 }
 
 // SetFeedback sets the Feedback field and marks it as non-optional;
@@ -3933,15 +3982,17 @@ func (i *IntelligentFieldSearchCondition) String() string {
 type NumericConversationField string
 
 const (
-	NumericConversationFieldThumbsUpCount     NumericConversationField = "ThumbsUpCount"
-	NumericConversationFieldThumbsDownCount   NumericConversationField = "ThumbsDownCount"
-	NumericConversationFieldInsertCount       NumericConversationField = "InsertCount"
-	NumericConversationFieldUserMessageCount  NumericConversationField = "UserMessageCount"
-	NumericConversationFieldBotMessageCount   NumericConversationField = "BotMessageCount"
-	NumericConversationFieldHandleTime        NumericConversationField = "HandleTime"
-	NumericConversationFieldFirstResponseTime NumericConversationField = "FirstResponseTime"
-	NumericConversationFieldPredictedNps      NumericConversationField = "PredictedNPS"
-	NumericConversationFieldCsat              NumericConversationField = "Csat"
+	NumericConversationFieldThumbsUpCount        NumericConversationField = "ThumbsUpCount"
+	NumericConversationFieldThumbsDownCount      NumericConversationField = "ThumbsDownCount"
+	NumericConversationFieldInsertCount          NumericConversationField = "InsertCount"
+	NumericConversationFieldUserMessageCount     NumericConversationField = "UserMessageCount"
+	NumericConversationFieldBotMessageCount      NumericConversationField = "BotMessageCount"
+	NumericConversationFieldHandleTime           NumericConversationField = "HandleTime"
+	NumericConversationFieldFirstResponseTime    NumericConversationField = "FirstResponseTime"
+	NumericConversationFieldPredictedNps         NumericConversationField = "PredictedNPS"
+	NumericConversationFieldCsat                 NumericConversationField = "Csat"
+	NumericConversationFieldActionExecutionCount NumericConversationField = "ActionExecutionCount"
+	NumericConversationFieldActionErrorCount     NumericConversationField = "ActionErrorCount"
 )
 
 func NewNumericConversationFieldFromString(s string) (NumericConversationField, error) {
@@ -3964,6 +4015,10 @@ func NewNumericConversationFieldFromString(s string) (NumericConversationField, 
 		return NumericConversationFieldPredictedNps, nil
 	case "Csat":
 		return NumericConversationFieldCsat, nil
+	case "ActionExecutionCount":
+		return NumericConversationFieldActionExecutionCount, nil
+	case "ActionErrorCount":
+		return NumericConversationFieldActionErrorCount, nil
 	}
 	var t NumericConversationField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

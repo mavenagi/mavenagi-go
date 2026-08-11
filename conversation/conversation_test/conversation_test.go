@@ -235,7 +235,9 @@ func TestConversationAskWithWireMock(
 		UserID: &mavenagigo.EntityIDBase{
 			ReferenceID: "user-0",
 		},
-		Text: "How do I reset my password?",
+		Text: mavenagigo.String(
+			"How do I reset my password?",
+		),
 		Attachments: []*mavenagigo.AttachmentRequest{
 			&mavenagigo.AttachmentRequest{
 				Type:    "image/png",
@@ -277,7 +279,9 @@ func TestConversationAskStreamWithWireMock(
 		UserID: &mavenagigo.EntityIDBase{
 			ReferenceID: "user-0",
 		},
-		Text: "How do I reset my password?",
+		Text: mavenagigo.String(
+			"How do I reset my password?",
+		),
 		Attachments: []*mavenagigo.AttachmentRequest{
 			&mavenagigo.AttachmentRequest{
 				Type:    "image/png",

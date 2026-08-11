@@ -1253,7 +1253,7 @@ type ActionResponse struct {
 	// Segments are replacing inline preconditions - an Action may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
-	// A human-readable explanation of the precondition associated with this action, if present.
+	// No longer populated. This field is always absent and will be removed in a future release.
 	PreconditionExplanation *string `json:"preconditionExplanation,omitempty" url:"preconditionExplanation,omitempty"`
 	// Whether the action has been deleted. Deleted actions will not sent to the LLM nor returned in search results.
 	Deleted bool `json:"deleted" url:"deleted"`
@@ -2434,6 +2434,35 @@ func (a *ArraySettingsSchemaEntry) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", a)
+}
+
+// What prompts the assistant turn produced by an ask. Defaults to USER_MESSAGE when omitted.
+type AskType string
+
+const (
+	// The default. Respond to a message the user sent; the user's words are in `text` (required).
+	AskTypeUserMessage AskType = "USER_MESSAGE"
+	// The agent opens the conversation with its own greeting, with no user input. `text` is optional here; when provided it steers the greeting. Intended as the first turn of a conversation.
+	AskTypeWelcome AskType = "WELCOME"
+	// The agent proactively sends a message the user did not prompt. `text` is optional here; when provided it steers what the agent says (e.g. "tell the user to restart their machine") and is a directive to the agent, not the user's own words.
+	AskTypeProactive AskType = "PROACTIVE"
+)
+
+func NewAskTypeFromString(s string) (AskType, error) {
+	switch s {
+	case "USER_MESSAGE":
+		return AskTypeUserMessage, nil
+	case "WELCOME":
+		return AskTypeWelcome, nil
+	case "PROACTIVE":
+		return AskTypeProactive, nil
+	}
+	var t AskType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a AskType) Ptr() *AskType {
+	return &a
 }
 
 // Attachments can be created either with inline data (up to 5MB) using the `content` field or by
@@ -5005,6 +5034,7 @@ type BotLogicItem struct {
 	Segments          *BotLogicSegmentsItem
 	IntelligentFields *BotLogicIntelligentFieldsItem
 	Charters          *BotLogicChartersItem
+	Steering          *BotLogicSteeringItem
 }
 
 func (b *BotLogicItem) GetType() string {
@@ -5070,6 +5100,13 @@ func (b *BotLogicItem) GetCharters() *BotLogicChartersItem {
 	return b.Charters
 }
 
+func (b *BotLogicItem) GetSteering() *BotLogicSteeringItem {
+	if b == nil {
+		return nil
+	}
+	return b.Steering
+}
+
 func (b *BotLogicItem) UnmarshalJSON(data []byte) error {
 	var unmarshaler struct {
 		Type string `json:"type"`
@@ -5130,6 +5167,12 @@ func (b *BotLogicItem) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		b.Charters = value
+	case "steering":
+		value := new(BotLogicSteeringItem)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		b.Steering = value
 	}
 	return nil
 }
@@ -5162,6 +5205,9 @@ func (b BotLogicItem) MarshalJSON() ([]byte, error) {
 	if b.Charters != nil {
 		return internal.MarshalJSONWithExtraProperty(b.Charters, "type", "charters")
 	}
+	if b.Steering != nil {
+		return internal.MarshalJSONWithExtraProperty(b.Steering, "type", "steering")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", b)
 }
 
@@ -5174,6 +5220,7 @@ type BotLogicItemVisitor interface {
 	VisitSegments(*BotLogicSegmentsItem) error
 	VisitIntelligentFields(*BotLogicIntelligentFieldsItem) error
 	VisitCharters(*BotLogicChartersItem) error
+	VisitSteering(*BotLogicSteeringItem) error
 }
 
 func (b *BotLogicItem) Accept(visitor BotLogicItemVisitor) error {
@@ -5200,6 +5247,9 @@ func (b *BotLogicItem) Accept(visitor BotLogicItemVisitor) error {
 	}
 	if b.Charters != nil {
 		return visitor.VisitCharters(b.Charters)
+	}
+	if b.Steering != nil {
+		return visitor.VisitSteering(b.Steering)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", b)
 }
@@ -5232,6 +5282,9 @@ func (b *BotLogicItem) validate() error {
 	}
 	if b.Charters != nil {
 		fields = append(fields, "charters")
+	}
+	if b.Steering != nil {
+		fields = append(fields, "steering")
 	}
 	if len(fields) == 0 {
 		if b.Type != "" {
@@ -5638,6 +5691,103 @@ func (b *BotLogicSegmentsItem) MarshalJSON() ([]byte, error) {
 }
 
 func (b *BotLogicSegmentsItem) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+// Present when this response was triggered by a steering ask (WELCOME or PROACTIVE) rather than a user message. The steering message itself is not returned in the conversation.
+var (
+	botLogicSteeringItemFieldAskType = big.NewInt(1 << 0)
+	botLogicSteeringItemFieldText    = big.NewInt(1 << 1)
+)
+
+type BotLogicSteeringItem struct {
+	// The ask type that triggered this response.
+	AskType AskType `json:"askType" url:"askType"`
+	// The steering text the agent was given, if any.
+	Text *string `json:"text,omitempty" url:"text,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BotLogicSteeringItem) GetAskType() AskType {
+	if b == nil {
+		return ""
+	}
+	return b.AskType
+}
+
+func (b *BotLogicSteeringItem) GetText() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Text
+}
+
+func (b *BotLogicSteeringItem) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BotLogicSteeringItem) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetAskType sets the AskType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicSteeringItem) SetAskType(askType AskType) {
+	b.AskType = askType
+	b.require(botLogicSteeringItemFieldAskType)
+}
+
+// SetText sets the Text field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicSteeringItem) SetText(text *string) {
+	b.Text = text
+	b.require(botLogicSteeringItemFieldText)
+}
+
+func (b *BotLogicSteeringItem) UnmarshalJSON(data []byte) error {
+	type unmarshaler BotLogicSteeringItem
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BotLogicSteeringItem(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BotLogicSteeringItem) MarshalJSON() ([]byte, error) {
+	type embed BotLogicSteeringItem
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BotLogicSteeringItem) String() string {
 	if len(b.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
 			return value
@@ -11194,6 +11344,7 @@ const (
 	EntityTypeAgentVariant         EntityType = "AGENT_VARIANT"
 	EntityTypeConfigSnapshot       EntityType = "CONFIG_SNAPSHOT"
 	EntityTypeAsset                EntityType = "ASSET"
+	EntityTypeTrafficConfig        EntityType = "TRAFFIC_CONFIG"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -11242,6 +11393,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeConfigSnapshot, nil
 	case "ASSET":
 		return EntityTypeAsset, nil
+	case "TRAFFIC_CONFIG":
+		return EntityTypeTrafficConfig, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
