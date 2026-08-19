@@ -3084,6 +3084,7 @@ var (
 	baseConversationResponseFieldLlmEnabled        = big.NewInt(1 << 13)
 	baseConversationResponseFieldSimulationContext = big.NewInt(1 << 14)
 	baseConversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
+	baseConversationResponseFieldConversationMode  = big.NewInt(1 << 16)
 )
 
 type BaseConversationResponse struct {
@@ -3126,6 +3127,9 @@ type BaseConversationResponse struct {
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
 	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
 	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
+	// Whether the conversation is spoken or written. Set by the platform and read-only —
+	// it cannot be supplied when creating or updating a conversation.
+	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3244,6 +3248,13 @@ func (b *BaseConversationResponse) GetRelatedEntities() map[RelationshipType][]*
 		return nil
 	}
 	return b.RelatedEntities
+}
+
+func (b *BaseConversationResponse) GetConversationMode() *ConversationMode {
+	if b == nil {
+		return nil
+	}
+	return b.ConversationMode
 }
 
 func (b *BaseConversationResponse) GetExtraProperties() map[string]interface{} {
@@ -3367,6 +3378,13 @@ func (b *BaseConversationResponse) SetSimulationContext(simulationContext *Simul
 func (b *BaseConversationResponse) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
 	b.RelatedEntities = relatedEntities
 	b.require(baseConversationResponseFieldRelatedEntities)
+}
+
+// SetConversationMode sets the ConversationMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseConversationResponse) SetConversationMode(conversationMode *ConversationMode) {
+	b.ConversationMode = conversationMode
+	b.require(baseConversationResponseFieldConversationMode)
 }
 
 func (b *BaseConversationResponse) UnmarshalJSON(data []byte) error {
@@ -7733,6 +7751,7 @@ var (
 	conversationExecutedActionPreconditionFieldActionID          = big.NewInt(1 << 1)
 	conversationExecutedActionPreconditionFieldAppID             = big.NewInt(1 << 2)
 	conversationExecutedActionPreconditionFieldConversationRound = big.NewInt(1 << 3)
+	conversationExecutedActionPreconditionFieldDataCondition     = big.NewInt(1 << 4)
 )
 
 type ConversationExecutedActionPrecondition struct {
@@ -7744,6 +7763,17 @@ type ConversationExecutedActionPrecondition struct {
 	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 	// Restricts which round the action must have executed in. Defaults to ANY when omitted, matching an action executed in any round.
 	ConversationRound *ConversationRound `json:"conversationRound,omitempty" url:"conversationRound,omitempty"`
+	// Restricts the match to executions whose returned data satisfies this condition.
+	// When omitted, any execution of the action matches regardless of what it returned.
+	//
+	// Actions may return `{response, data}`, where `data` is a JSON object persisted
+	// alongside the response. This gates the precondition on what the action returned
+	// rather than only on whether it ran.
+	//
+	// The precondition is met when *some* execution of the action in scope returned data
+	// satisfying this condition. An action that executed but returned no data never
+	// matches, except via `universal` `IS_UNDETERMINED`.
+	DataCondition *ObjectCondition `json:"dataCondition,omitempty" url:"dataCondition,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7778,6 +7808,13 @@ func (c *ConversationExecutedActionPrecondition) GetConversationRound() *Convers
 		return nil
 	}
 	return c.ConversationRound
+}
+
+func (c *ConversationExecutedActionPrecondition) GetDataCondition() *ObjectCondition {
+	if c == nil {
+		return nil
+	}
+	return c.DataCondition
 }
 
 func (c *ConversationExecutedActionPrecondition) GetExtraProperties() map[string]interface{} {
@@ -7817,6 +7854,13 @@ func (c *ConversationExecutedActionPrecondition) SetAppID(appID *string) {
 func (c *ConversationExecutedActionPrecondition) SetConversationRound(conversationRound *ConversationRound) {
 	c.ConversationRound = conversationRound
 	c.require(conversationExecutedActionPreconditionFieldConversationRound)
+}
+
+// SetDataCondition sets the DataCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationExecutedActionPrecondition) SetDataCondition(dataCondition *ObjectCondition) {
+	c.DataCondition = dataCondition
+	c.require(conversationExecutedActionPreconditionFieldDataCondition)
 }
 
 func (c *ConversationExecutedActionPrecondition) UnmarshalJSON(data []byte) error {
@@ -8401,6 +8445,130 @@ func (c *ConversationMessageResponse) validate() error {
 	return nil
 }
 
+// Whether a conversation is spoken or written.
+type ConversationMode string
+
+const (
+	// A spoken conversation — phone or realtime audio.
+	ConversationModeVoice ConversationMode = "VOICE"
+	// A written conversation. The default for any conversation the platform does not identify as voice.
+	ConversationModeText ConversationMode = "TEXT"
+)
+
+func NewConversationModeFromString(s string) (ConversationMode, error) {
+	switch s {
+	case "VOICE":
+		return ConversationModeVoice, nil
+	case "TEXT":
+		return ConversationModeText, nil
+	}
+	var t ConversationMode
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConversationMode) Ptr() *ConversationMode {
+	return &c
+}
+
+// A precondition based on the mode — voice or text — the conversation is running in.
+//
+// The mode is set by the platform and is not customer-writable.
+var (
+	conversationModePreconditionFieldOperator         = big.NewInt(1 << 0)
+	conversationModePreconditionFieldConversationMode = big.NewInt(1 << 1)
+)
+
+type ConversationModePrecondition struct {
+	// Operator to apply to this precondition
+	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
+	// The mode the conversation must be running in for the precondition to be met. Omit the operator for an exact match, or set it to NOT to invert (NOT + VOICE is equivalent to TEXT). Any other operator is rejected with a 400.
+	ConversationMode ConversationMode `json:"conversationMode" url:"conversationMode"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationModePrecondition) GetOperator() *PreconditionOperator {
+	if c == nil {
+		return nil
+	}
+	return c.Operator
+}
+
+func (c *ConversationModePrecondition) GetConversationMode() ConversationMode {
+	if c == nil {
+		return ""
+	}
+	return c.ConversationMode
+}
+
+func (c *ConversationModePrecondition) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationModePrecondition) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationModePrecondition) SetOperator(operator *PreconditionOperator) {
+	c.Operator = operator
+	c.require(conversationModePreconditionFieldOperator)
+}
+
+// SetConversationMode sets the ConversationMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationModePrecondition) SetConversationMode(conversationMode ConversationMode) {
+	c.ConversationMode = conversationMode
+	c.require(conversationModePreconditionFieldConversationMode)
+}
+
+func (c *ConversationModePrecondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationModePrecondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationModePrecondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationModePrecondition) MarshalJSON() ([]byte, error) {
+	type embed ConversationModePrecondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationModePrecondition) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
 type ConversationPrecondition struct {
 	ConversationPreconditionType string
 	Tags                         *TagsPrecondition
@@ -8409,6 +8577,7 @@ type ConversationPrecondition struct {
 	ResponseConfig               *ResponseConfigPrecondition
 	App                          *AppPrecondition
 	ConversationState            *ConversationStatePrecondition
+	ConversationMode             *ConversationModePrecondition
 	IntelligentField             *IntelligentFieldPrecondition
 }
 
@@ -8459,6 +8628,13 @@ func (c *ConversationPrecondition) GetConversationState() *ConversationStatePrec
 		return nil
 	}
 	return c.ConversationState
+}
+
+func (c *ConversationPrecondition) GetConversationMode() *ConversationModePrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMode
 }
 
 func (c *ConversationPrecondition) GetIntelligentField() *IntelligentFieldPrecondition {
@@ -8516,6 +8692,12 @@ func (c *ConversationPrecondition) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.ConversationState = value
+	case "conversationMode":
+		value := new(ConversationModePrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ConversationMode = value
 	case "intelligentField":
 		value := new(IntelligentFieldPrecondition)
 		if err := json.Unmarshal(data, &value); err != nil {
@@ -8548,6 +8730,9 @@ func (c ConversationPrecondition) MarshalJSON() ([]byte, error) {
 	if c.ConversationState != nil {
 		return internal.MarshalJSONWithExtraProperty(c.ConversationState, "conversationPreconditionType", "conversationState")
 	}
+	if c.ConversationMode != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ConversationMode, "conversationPreconditionType", "conversationMode")
+	}
 	if c.IntelligentField != nil {
 		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
 	}
@@ -8561,6 +8746,7 @@ type ConversationPreconditionVisitor interface {
 	VisitResponseConfig(*ResponseConfigPrecondition) error
 	VisitApp(*AppPrecondition) error
 	VisitConversationState(*ConversationStatePrecondition) error
+	VisitConversationMode(*ConversationModePrecondition) error
 	VisitIntelligentField(*IntelligentFieldPrecondition) error
 }
 
@@ -8582,6 +8768,9 @@ func (c *ConversationPrecondition) Accept(visitor ConversationPreconditionVisito
 	}
 	if c.ConversationState != nil {
 		return visitor.VisitConversationState(c.ConversationState)
+	}
+	if c.ConversationMode != nil {
+		return visitor.VisitConversationMode(c.ConversationMode)
 	}
 	if c.IntelligentField != nil {
 		return visitor.VisitIntelligentField(c.IntelligentField)
@@ -8611,6 +8800,9 @@ func (c *ConversationPrecondition) validate() error {
 	}
 	if c.ConversationState != nil {
 		fields = append(fields, "conversationState")
+	}
+	if c.ConversationMode != nil {
+		fields = append(fields, "conversationMode")
 	}
 	if c.IntelligentField != nil {
 		fields = append(fields, "intelligentField")
@@ -8646,6 +8838,7 @@ type ConversationPreconditionResponse struct {
 	ResponseConfig               *ResponseConfigPrecondition
 	App                          *AppPrecondition
 	ConversationState            *ConversationStatePrecondition
+	ConversationMode             *ConversationModePrecondition
 	IntelligentField             *IntelligentFieldPreconditionResponse
 }
 
@@ -8696,6 +8889,13 @@ func (c *ConversationPreconditionResponse) GetConversationState() *ConversationS
 		return nil
 	}
 	return c.ConversationState
+}
+
+func (c *ConversationPreconditionResponse) GetConversationMode() *ConversationModePrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMode
 }
 
 func (c *ConversationPreconditionResponse) GetIntelligentField() *IntelligentFieldPreconditionResponse {
@@ -8753,6 +8953,12 @@ func (c *ConversationPreconditionResponse) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.ConversationState = value
+	case "conversationMode":
+		value := new(ConversationModePrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ConversationMode = value
 	case "intelligentField":
 		value := new(IntelligentFieldPreconditionResponse)
 		if err := json.Unmarshal(data, &value); err != nil {
@@ -8785,6 +8991,9 @@ func (c ConversationPreconditionResponse) MarshalJSON() ([]byte, error) {
 	if c.ConversationState != nil {
 		return internal.MarshalJSONWithExtraProperty(c.ConversationState, "conversationPreconditionType", "conversationState")
 	}
+	if c.ConversationMode != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ConversationMode, "conversationPreconditionType", "conversationMode")
+	}
 	if c.IntelligentField != nil {
 		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
 	}
@@ -8798,6 +9007,7 @@ type ConversationPreconditionResponseVisitor interface {
 	VisitResponseConfig(*ResponseConfigPrecondition) error
 	VisitApp(*AppPrecondition) error
 	VisitConversationState(*ConversationStatePrecondition) error
+	VisitConversationMode(*ConversationModePrecondition) error
 	VisitIntelligentField(*IntelligentFieldPreconditionResponse) error
 }
 
@@ -8819,6 +9029,9 @@ func (c *ConversationPreconditionResponse) Accept(visitor ConversationPreconditi
 	}
 	if c.ConversationState != nil {
 		return visitor.VisitConversationState(c.ConversationState)
+	}
+	if c.ConversationMode != nil {
+		return visitor.VisitConversationMode(c.ConversationMode)
 	}
 	if c.IntelligentField != nil {
 		return visitor.VisitIntelligentField(c.IntelligentField)
@@ -8848,6 +9061,9 @@ func (c *ConversationPreconditionResponse) validate() error {
 	}
 	if c.ConversationState != nil {
 		fields = append(fields, "conversationState")
+	}
+	if c.ConversationMode != nil {
+		fields = append(fields, "conversationMode")
 	}
 	if c.IntelligentField != nil {
 		fields = append(fields, "intelligentField")
@@ -8892,6 +9108,7 @@ var (
 	conversationPreviewFieldLlmEnabled        = big.NewInt(1 << 13)
 	conversationPreviewFieldSimulationContext = big.NewInt(1 << 14)
 	conversationPreviewFieldRelatedEntities   = big.NewInt(1 << 15)
+	conversationPreviewFieldConversationMode  = big.NewInt(1 << 16)
 )
 
 type ConversationPreview struct {
@@ -8934,6 +9151,9 @@ type ConversationPreview struct {
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
 	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
 	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
+	// Whether the conversation is spoken or written. Set by the platform and read-only —
+	// it cannot be supplied when creating or updating a conversation.
+	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -9052,6 +9272,13 @@ func (c *ConversationPreview) GetRelatedEntities() map[RelationshipType][]*Entit
 		return nil
 	}
 	return c.RelatedEntities
+}
+
+func (c *ConversationPreview) GetConversationMode() *ConversationMode {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMode
 }
 
 func (c *ConversationPreview) GetExtraProperties() map[string]interface{} {
@@ -9177,6 +9404,13 @@ func (c *ConversationPreview) SetRelatedEntities(relatedEntities map[Relationshi
 	c.require(conversationPreviewFieldRelatedEntities)
 }
 
+// SetConversationMode sets the ConversationMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationPreview) SetConversationMode(conversationMode *ConversationMode) {
+	c.ConversationMode = conversationMode
+	c.require(conversationPreviewFieldConversationMode)
+}
+
 func (c *ConversationPreview) UnmarshalJSON(data []byte) error {
 	type embed ConversationPreview
 	var unmarshaler = struct {
@@ -9245,8 +9479,9 @@ var (
 	conversationResponseFieldLlmEnabled        = big.NewInt(1 << 13)
 	conversationResponseFieldSimulationContext = big.NewInt(1 << 14)
 	conversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
-	conversationResponseFieldMessages          = big.NewInt(1 << 16)
-	conversationResponseFieldAttachments       = big.NewInt(1 << 17)
+	conversationResponseFieldConversationMode  = big.NewInt(1 << 16)
+	conversationResponseFieldMessages          = big.NewInt(1 << 17)
+	conversationResponseFieldAttachments       = big.NewInt(1 << 18)
 )
 
 type ConversationResponse struct {
@@ -9289,6 +9524,9 @@ type ConversationResponse struct {
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
 	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
 	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
+	// Whether the conversation is spoken or written. Set by the platform and read-only —
+	// it cannot be supplied when creating or updating a conversation.
+	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
 	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
@@ -9413,6 +9651,13 @@ func (c *ConversationResponse) GetRelatedEntities() map[RelationshipType][]*Enti
 		return nil
 	}
 	return c.RelatedEntities
+}
+
+func (c *ConversationResponse) GetConversationMode() *ConversationMode {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMode
 }
 
 func (c *ConversationResponse) GetMessages() []*ConversationMessageResponse {
@@ -9550,6 +9795,13 @@ func (c *ConversationResponse) SetSimulationContext(simulationContext *Simulatio
 func (c *ConversationResponse) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
 	c.RelatedEntities = relatedEntities
 	c.require(conversationResponseFieldRelatedEntities)
+}
+
+// SetConversationMode sets the ConversationMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationResponse) SetConversationMode(conversationMode *ConversationMode) {
+	c.ConversationMode = conversationMode
+	c.require(conversationResponseFieldConversationMode)
 }
 
 // SetMessages sets the Messages field and marks it as non-optional;
@@ -15153,9 +15405,10 @@ var (
 	initializeConversationResponseFieldLlmEnabled                 = big.NewInt(1 << 13)
 	initializeConversationResponseFieldSimulationContext          = big.NewInt(1 << 14)
 	initializeConversationResponseFieldRelatedEntities            = big.NewInt(1 << 15)
-	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 16)
-	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 17)
-	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 18)
+	initializeConversationResponseFieldConversationMode           = big.NewInt(1 << 16)
+	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 17)
+	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 18)
+	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 19)
 )
 
 type InitializeConversationResponse struct {
@@ -15198,6 +15451,9 @@ type InitializeConversationResponse struct {
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
 	// - `SPAWN_TO`: the conversations that were spawned from this conversation.
 	RelatedEntities map[RelationshipType][]*EntityID `json:"relatedEntities,omitempty" url:"relatedEntities,omitempty"`
+	// Whether the conversation is spoken or written. Set by the platform and read-only —
+	// it cannot be supplied when creating or updating a conversation.
+	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
 	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
@@ -15327,6 +15583,13 @@ func (i *InitializeConversationResponse) GetRelatedEntities() map[RelationshipTy
 		return nil
 	}
 	return i.RelatedEntities
+}
+
+func (i *InitializeConversationResponse) GetConversationMode() *ConversationMode {
+	if i == nil {
+		return nil
+	}
+	return i.ConversationMode
 }
 
 func (i *InitializeConversationResponse) GetMessages() []*ConversationMessageResponse {
@@ -15471,6 +15734,13 @@ func (i *InitializeConversationResponse) SetSimulationContext(simulationContext 
 func (i *InitializeConversationResponse) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
 	i.RelatedEntities = relatedEntities
 	i.require(initializeConversationResponseFieldRelatedEntities)
+}
+
+// SetConversationMode sets the ConversationMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetConversationMode(conversationMode *ConversationMode) {
+	i.ConversationMode = conversationMode
+	i.require(initializeConversationResponseFieldConversationMode)
 }
 
 // SetMessages sets the Messages field and marks it as non-optional;
@@ -16445,6 +16715,104 @@ func (j *JSONSchemaSettingsSchemaEntry) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", j)
+}
+
+// A condition on one entry inside a JSON object, addressed by path.
+var (
+	keyValueEntryConditionFieldPath      = big.NewInt(1 << 0)
+	keyValueEntryConditionFieldCondition = big.NewInt(1 << 1)
+)
+
+type KeyValueEntryCondition struct {
+	// Dot-separated path to a value inside the object, e.g. `name` or `customer.tier`. Array elements are indexed with brackets (`orders[0].id`), and a key containing a dot needs bracket notation (`['a.b']`). A path that reaches nothing resolves to undetermined rather than failing.
+	// The path must address a single value. Wildcards, filters, slices and recursive descent (`orders[*].total`, `$..total`) address many values and are rejected, as is a path with a syntax error.
+	Path string `json:"path" url:"path"`
+	// The condition to evaluate against the value at `path`.
+	Condition *IntelligentFieldCondition `json:"condition" url:"condition"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KeyValueEntryCondition) GetPath() string {
+	if k == nil {
+		return ""
+	}
+	return k.Path
+}
+
+func (k *KeyValueEntryCondition) GetCondition() *IntelligentFieldCondition {
+	if k == nil {
+		return nil
+	}
+	return k.Condition
+}
+
+func (k *KeyValueEntryCondition) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KeyValueEntryCondition) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetPath sets the Path field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KeyValueEntryCondition) SetPath(path string) {
+	k.Path = path
+	k.require(keyValueEntryConditionFieldPath)
+}
+
+// SetCondition sets the Condition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KeyValueEntryCondition) SetCondition(condition *IntelligentFieldCondition) {
+	k.Condition = condition
+	k.require(keyValueEntryConditionFieldCondition)
+}
+
+func (k *KeyValueEntryCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler KeyValueEntryCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KeyValueEntryCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KeyValueEntryCondition) MarshalJSON() ([]byte, error) {
+	type embed KeyValueEntryCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KeyValueEntryCondition) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
 }
 
 var (
@@ -18757,6 +19125,100 @@ func (o *OAuthSettingsSchemaEntry) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", o)
+}
+
+// A condition on a JSON object.
+type ObjectCondition struct {
+	ObjectConditionType string
+	Entry               *KeyValueEntryCondition
+}
+
+func (o *ObjectCondition) GetObjectConditionType() string {
+	if o == nil {
+		return ""
+	}
+	return o.ObjectConditionType
+}
+
+func (o *ObjectCondition) GetEntry() *KeyValueEntryCondition {
+	if o == nil {
+		return nil
+	}
+	return o.Entry
+}
+
+func (o *ObjectCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		ObjectConditionType string `json:"objectConditionType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	o.ObjectConditionType = unmarshaler.ObjectConditionType
+	if unmarshaler.ObjectConditionType == "" {
+		return fmt.Errorf("%T did not include discriminant objectConditionType", o)
+	}
+	switch unmarshaler.ObjectConditionType {
+	case "entry":
+		value := new(KeyValueEntryCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		o.Entry = value
+	}
+	return nil
+}
+
+func (o ObjectCondition) MarshalJSON() ([]byte, error) {
+	if err := o.validate(); err != nil {
+		return nil, err
+	}
+	if o.Entry != nil {
+		return internal.MarshalJSONWithExtraProperty(o.Entry, "objectConditionType", "entry")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", o)
+}
+
+type ObjectConditionVisitor interface {
+	VisitEntry(*KeyValueEntryCondition) error
+}
+
+func (o *ObjectCondition) Accept(visitor ObjectConditionVisitor) error {
+	if o.Entry != nil {
+		return visitor.VisitEntry(o.Entry)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", o)
+}
+
+func (o *ObjectCondition) validate() error {
+	if o == nil {
+		return fmt.Errorf("type %T is nil", o)
+	}
+	var fields []string
+	if o.Entry != nil {
+		fields = append(fields, "entry")
+	}
+	if len(fields) == 0 {
+		if o.ObjectConditionType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", o, o.ObjectConditionType)
+		}
+		return fmt.Errorf("type %T is empty", o)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", o, fields)
+	}
+	if o.ObjectConditionType != "" {
+		field := fields[0]
+		if o.ObjectConditionType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				o,
+				o.ObjectConditionType,
+				o,
+			)
+		}
+	}
+	return nil
 }
 
 var (

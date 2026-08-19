@@ -342,10 +342,13 @@ func (b *BaseKnowledgeDocument) String() string {
 }
 
 var (
-	cancelKnowledgeBaseVersionRequestFieldVersionID = big.NewInt(1 << 0)
+	cancelKnowledgeBaseVersionRequestFieldAppID     = big.NewInt(1 << 0)
+	cancelKnowledgeBaseVersionRequestFieldVersionID = big.NewInt(1 << 1)
 )
 
 type CancelKnowledgeBaseVersionRequest struct {
+	// The App ID of the knowledge base to cancel. If not provided the ID of the calling app will be used.
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
 	// ID that uniquely identifies which knowledge base version to cancel. If not provided will use the most recent version of the knowledge base.
 	VersionID *EntityIDWithoutAgent `json:"versionId,omitempty" url:"versionId,omitempty"`
 
@@ -354,6 +357,13 @@ type CancelKnowledgeBaseVersionRequest struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (c *CancelKnowledgeBaseVersionRequest) GetAppID() *string {
+	if c == nil {
+		return nil
+	}
+	return c.AppID
 }
 
 func (c *CancelKnowledgeBaseVersionRequest) GetVersionID() *EntityIDWithoutAgent {
@@ -372,6 +382,13 @@ func (c *CancelKnowledgeBaseVersionRequest) require(field *big.Int) {
 		c.explicitFields = big.NewInt(0)
 	}
 	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CancelKnowledgeBaseVersionRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(cancelKnowledgeBaseVersionRequestFieldAppID)
 }
 
 // SetVersionID sets the VersionID field and marks it as non-optional;
@@ -2062,12 +2079,15 @@ func (k *KnowledgeBaseVersion) String() string {
 	return fmt.Sprintf("%#v", k)
 }
 
-// Whether the knowledge base version processing was successful or not.
+// How the knowledge base version processing ended.
 type KnowledgeBaseVersionFinalizeStatus string
 
 const (
 	KnowledgeBaseVersionFinalizeStatusSucceeded KnowledgeBaseVersionFinalizeStatus = "SUCCEEDED"
 	KnowledgeBaseVersionFinalizeStatusFailed    KnowledgeBaseVersionFinalizeStatus = "FAILED"
+	// Processing stopped before completing because it was cancelled, rather than because it
+	// failed.
+	KnowledgeBaseVersionFinalizeStatusCanceled KnowledgeBaseVersionFinalizeStatus = "CANCELED"
 )
 
 func NewKnowledgeBaseVersionFinalizeStatusFromString(s string) (KnowledgeBaseVersionFinalizeStatus, error) {
@@ -2076,6 +2096,8 @@ func NewKnowledgeBaseVersionFinalizeStatusFromString(s string) (KnowledgeBaseVer
 		return KnowledgeBaseVersionFinalizeStatusSucceeded, nil
 	case "FAILED":
 		return KnowledgeBaseVersionFinalizeStatusFailed, nil
+	case "CANCELED":
+		return KnowledgeBaseVersionFinalizeStatusCanceled, nil
 	}
 	var t KnowledgeBaseVersionFinalizeStatus
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -2171,6 +2193,8 @@ const (
 	KnowledgeBaseVersionStatusSucceeded  KnowledgeBaseVersionStatus = "SUCCEEDED"
 	KnowledgeBaseVersionStatusFailed     KnowledgeBaseVersionStatus = "FAILED"
 	KnowledgeBaseVersionStatusInProgress KnowledgeBaseVersionStatus = "IN_PROGRESS"
+	// Stopped before completing, by a cancel request rather than a failure.
+	KnowledgeBaseVersionStatusCanceled KnowledgeBaseVersionStatus = "CANCELED"
 )
 
 func NewKnowledgeBaseVersionStatusFromString(s string) (KnowledgeBaseVersionStatus, error) {
@@ -2181,6 +2205,8 @@ func NewKnowledgeBaseVersionStatusFromString(s string) (KnowledgeBaseVersionStat
 		return KnowledgeBaseVersionStatusFailed, nil
 	case "IN_PROGRESS":
 		return KnowledgeBaseVersionStatusInProgress, nil
+	case "CANCELED":
+		return KnowledgeBaseVersionStatusCanceled, nil
 	}
 	var t KnowledgeBaseVersionStatus
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
