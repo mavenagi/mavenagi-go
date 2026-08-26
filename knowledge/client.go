@@ -225,6 +225,30 @@ func (c *Client) FinalizeKnowledgeBaseVersion(
 	return response.Body, nil
 }
 
+// Report refresh progress for an in-progress knowledge base version.
+//
+// Progress is advisory and shown to users while a refresh runs. Each call replaces the
+// version's entire progress state - no history is kept, only the most recent value is
+// retained. Will throw an exception if the target version is not in progress.
+func (c *Client) UpdateKnowledgeBaseVersionProgress(
+	ctx context.Context,
+	// The reference ID of the knowledge base to report progress for. All other entity ID fields are inferred from the request.
+	knowledgeBaseReferenceID string,
+	request *mavenagigo.KnowledgeBaseVersionProgressRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.KnowledgeBaseVersion, error) {
+	response, err := c.WithRawResponse.UpdateKnowledgeBaseVersionProgress(
+		ctx,
+		knowledgeBaseReferenceID,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
 // List all active versions for a knowledge base. Returns the most recent versions first.
 func (c *Client) ListKnowledgeBaseVersions(
 	ctx context.Context,

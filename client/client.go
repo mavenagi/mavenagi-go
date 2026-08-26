@@ -14,6 +14,7 @@ import (
 	events "github.com/mavenagi/mavenagi-go/events"
 	inbox "github.com/mavenagi/mavenagi-go/inbox"
 	integrations "github.com/mavenagi/mavenagi-go/integrations"
+	intelligentfields "github.com/mavenagi/mavenagi-go/intelligentfields"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	knowledge "github.com/mavenagi/mavenagi-go/knowledge"
 	option "github.com/mavenagi/mavenagi-go/option"
@@ -27,23 +28,24 @@ import (
 )
 
 type MavenAGI struct {
-	Actions       *actions.Client
-	Agents        *agents.Client
-	Analytics     *analytics.Client
-	AppSettings   *appsettings.Client
-	Assets        *assets.Client
-	Conversation  *conversation.Client
-	Customers     *customers.Client
-	Events        *events.Client
-	Inbox         *inbox.Client
-	Integrations  *integrations.Client
-	Knowledge     *knowledge.Client
-	Organizations *organizations.Client
-	Segments      *segments.Client
-	Translations  *translations.Client
-	Triggers      *triggers.Client
-	Users         *users.Client
-	Voice         *voice.Client
+	Actions           *actions.Client
+	Agents            *agents.Client
+	Analytics         *analytics.Client
+	AppSettings       *appsettings.Client
+	Assets            *assets.Client
+	Conversation      *conversation.Client
+	Customers         *customers.Client
+	Events            *events.Client
+	Inbox             *inbox.Client
+	Integrations      *integrations.Client
+	IntelligentFields *intelligentfields.Client
+	Knowledge         *knowledge.Client
+	Organizations     *organizations.Client
+	Segments          *segments.Client
+	Translations      *translations.Client
+	Triggers          *triggers.Client
+	Users             *users.Client
+	Voice             *voice.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -59,25 +61,26 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
 	}
 	return &MavenAGI{
-		Actions:       actions.NewClient(options),
-		Agents:        agents.NewClient(options),
-		Analytics:     analytics.NewClient(options),
-		AppSettings:   appsettings.NewClient(options),
-		Assets:        assets.NewClient(options),
-		Conversation:  conversation.NewClient(options),
-		Customers:     customers.NewClient(options),
-		Events:        events.NewClient(options),
-		Inbox:         inbox.NewClient(options),
-		Integrations:  integrations.NewClient(options),
-		Knowledge:     knowledge.NewClient(options),
-		Organizations: organizations.NewClient(options),
-		Segments:      segments.NewClient(options),
-		Translations:  translations.NewClient(options),
-		Triggers:      triggers.NewClient(options),
-		Users:         users.NewClient(options),
-		Voice:         voice.NewClient(options),
-		options:       options,
-		baseURL:       options.BaseURL,
+		Actions:           actions.NewClient(options),
+		Agents:            agents.NewClient(options),
+		Analytics:         analytics.NewClient(options),
+		AppSettings:       appsettings.NewClient(options),
+		Assets:            assets.NewClient(options),
+		Conversation:      conversation.NewClient(options),
+		Customers:         customers.NewClient(options),
+		Events:            events.NewClient(options),
+		Inbox:             inbox.NewClient(options),
+		Integrations:      integrations.NewClient(options),
+		IntelligentFields: intelligentfields.NewClient(options),
+		Knowledge:         knowledge.NewClient(options),
+		Organizations:     organizations.NewClient(options),
+		Segments:          segments.NewClient(options),
+		Translations:      translations.NewClient(options),
+		Triggers:          triggers.NewClient(options),
+		Users:             users.NewClient(options),
+		Voice:             voice.NewClient(options),
+		options:           options,
+		baseURL:           options.BaseURL,
 		caller: internal.NewCaller(
 			&internal.CallerParams{
 				Client:      options.HTTPClient,

@@ -1373,6 +1373,7 @@ var (
 	knowledgeBaseResponseFieldSegmentIDs              = big.NewInt(1 << 13)
 	knowledgeBaseResponseFieldURL                     = big.NewInt(1 << 14)
 	knowledgeBaseResponseFieldIndexingState           = big.NewInt(1 << 15)
+	knowledgeBaseResponseFieldProgress                = big.NewInt(1 << 16)
 )
 
 type KnowledgeBaseResponse struct {
@@ -1414,6 +1415,9 @@ type KnowledgeBaseResponse struct {
 	URL *string `json:"url,omitempty" url:"url,omitempty"`
 	// The indexing status of the latest version of the knowledge base.
 	IndexingState *KnowledgeBaseIndexingProgressState `json:"indexingState,omitempty" url:"indexingState,omitempty"`
+	// Refresh progress most recently reported by the app that owns this knowledge base.
+	// Only populated while the latest version is in progress - absent once it has completed.
+	Progress *KnowledgeBaseVersionProgress `json:"progress,omitempty" url:"progress,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1532,6 +1536,13 @@ func (k *KnowledgeBaseResponse) GetIndexingState() *KnowledgeBaseIndexingProgres
 		return nil
 	}
 	return k.IndexingState
+}
+
+func (k *KnowledgeBaseResponse) GetProgress() *KnowledgeBaseVersionProgress {
+	if k == nil {
+		return nil
+	}
+	return k.Progress
 }
 
 func (k *KnowledgeBaseResponse) GetExtraProperties() map[string]interface{} {
@@ -1655,6 +1666,13 @@ func (k *KnowledgeBaseResponse) SetURL(url *string) {
 func (k *KnowledgeBaseResponse) SetIndexingState(indexingState *KnowledgeBaseIndexingProgressState) {
 	k.IndexingState = indexingState
 	k.require(knowledgeBaseResponseFieldIndexingState)
+}
+
+// SetProgress sets the Progress field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseResponse) SetProgress(progress *KnowledgeBaseVersionProgress) {
+	k.Progress = progress
+	k.require(knowledgeBaseResponseFieldProgress)
 }
 
 func (k *KnowledgeBaseResponse) UnmarshalJSON(data []byte) error {
@@ -1894,6 +1912,7 @@ var (
 	knowledgeBaseVersionFieldCreatedAt     = big.NewInt(1 << 4)
 	knowledgeBaseVersionFieldUpdatedAt     = big.NewInt(1 << 5)
 	knowledgeBaseVersionFieldIndexingState = big.NewInt(1 << 6)
+	knowledgeBaseVersionFieldProgress      = big.NewInt(1 << 7)
 )
 
 type KnowledgeBaseVersion struct {
@@ -1911,6 +1930,9 @@ type KnowledgeBaseVersion struct {
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
 	// The indexing status of the knowledge base version.
 	IndexingState *KnowledgeBaseIndexingProgressState `json:"indexingState,omitempty" url:"indexingState,omitempty"`
+	// Refresh progress most recently reported by the app that owns this knowledge base.
+	// Only populated while the version is in progress - absent once the version has completed.
+	Progress *KnowledgeBaseVersionProgress `json:"progress,omitempty" url:"progress,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1966,6 +1988,13 @@ func (k *KnowledgeBaseVersion) GetIndexingState() *KnowledgeBaseIndexingProgress
 		return nil
 	}
 	return k.IndexingState
+}
+
+func (k *KnowledgeBaseVersion) GetProgress() *KnowledgeBaseVersionProgress {
+	if k == nil {
+		return nil
+	}
+	return k.Progress
 }
 
 func (k *KnowledgeBaseVersion) GetExtraProperties() map[string]interface{} {
@@ -2026,6 +2055,13 @@ func (k *KnowledgeBaseVersion) SetUpdatedAt(updatedAt time.Time) {
 func (k *KnowledgeBaseVersion) SetIndexingState(indexingState *KnowledgeBaseIndexingProgressState) {
 	k.IndexingState = indexingState
 	k.require(knowledgeBaseVersionFieldIndexingState)
+}
+
+// SetProgress sets the Progress field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersion) SetProgress(progress *KnowledgeBaseVersionProgress) {
+	k.Progress = progress
+	k.require(knowledgeBaseVersionFieldProgress)
 }
 
 func (k *KnowledgeBaseVersion) UnmarshalJSON(data []byte) error {
@@ -2105,6 +2141,240 @@ func NewKnowledgeBaseVersionFinalizeStatusFromString(s string) (KnowledgeBaseVer
 
 func (k KnowledgeBaseVersionFinalizeStatus) Ptr() *KnowledgeBaseVersionFinalizeStatus {
 	return &k
+}
+
+// Refresh progress reported by the app that owns a knowledge base, surfaced to users while
+// a version is being built. Shared by the progress update request and the version response.
+//
+// The `message` is always present. The two counts are optional but must be supplied
+// together - providing one without the other is rejected, since a progress bar needs both.
+var (
+	knowledgeBaseVersionProgressFieldMessage        = big.NewInt(1 << 0)
+	knowledgeBaseVersionProgressFieldCompletedCount = big.NewInt(1 << 1)
+	knowledgeBaseVersionProgressFieldTotalCount     = big.NewInt(1 << 2)
+)
+
+type KnowledgeBaseVersionProgress struct {
+	// A user-facing message describing what the refresh is currently doing.
+	Message string `json:"message" url:"message"`
+	// How many units of work the refresh has finished so far. The numerator of a progress bar.
+	// Must be supplied together with `totalCount`.
+	CompletedCount *int64 `json:"completedCount,omitempty" url:"completedCount,omitempty"`
+	// How many units of work the refresh expects in total. The denominator of a progress bar.
+	// Must be supplied together with `completedCount`. Apps may revise this as a refresh
+	// discovers more work.
+	TotalCount *int64 `json:"totalCount,omitempty" url:"totalCount,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeBaseVersionProgress) GetMessage() string {
+	if k == nil {
+		return ""
+	}
+	return k.Message
+}
+
+func (k *KnowledgeBaseVersionProgress) GetCompletedCount() *int64 {
+	if k == nil {
+		return nil
+	}
+	return k.CompletedCount
+}
+
+func (k *KnowledgeBaseVersionProgress) GetTotalCount() *int64 {
+	if k == nil {
+		return nil
+	}
+	return k.TotalCount
+}
+
+func (k *KnowledgeBaseVersionProgress) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeBaseVersionProgress) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionProgress) SetMessage(message string) {
+	k.Message = message
+	k.require(knowledgeBaseVersionProgressFieldMessage)
+}
+
+// SetCompletedCount sets the CompletedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionProgress) SetCompletedCount(completedCount *int64) {
+	k.CompletedCount = completedCount
+	k.require(knowledgeBaseVersionProgressFieldCompletedCount)
+}
+
+// SetTotalCount sets the TotalCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionProgress) SetTotalCount(totalCount *int64) {
+	k.TotalCount = totalCount
+	k.require(knowledgeBaseVersionProgressFieldTotalCount)
+}
+
+func (k *KnowledgeBaseVersionProgress) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeBaseVersionProgress
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeBaseVersionProgress(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeBaseVersionProgress) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeBaseVersionProgress
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeBaseVersionProgress) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
+}
+
+var (
+	knowledgeBaseVersionProgressRequestFieldAppID     = big.NewInt(1 << 0)
+	knowledgeBaseVersionProgressRequestFieldVersionID = big.NewInt(1 << 1)
+	knowledgeBaseVersionProgressRequestFieldProgress  = big.NewInt(1 << 2)
+)
+
+type KnowledgeBaseVersionProgressRequest struct {
+	// The App ID of the knowledge base to report progress for. If not provided the ID of the calling app will be used.
+	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
+	// ID that uniquely identifies which knowledge base version to report progress for.
+	VersionID *EntityIDWithoutAgent `json:"versionId" url:"versionId"`
+	// The progress state to store on the version, replacing any previously reported progress.
+	Progress *KnowledgeBaseVersionProgress `json:"progress" url:"progress"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) GetAppID() *string {
+	if k == nil {
+		return nil
+	}
+	return k.AppID
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) GetVersionID() *EntityIDWithoutAgent {
+	if k == nil {
+		return nil
+	}
+	return k.VersionID
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) GetProgress() *KnowledgeBaseVersionProgress {
+	if k == nil {
+		return nil
+	}
+	return k.Progress
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionProgressRequest) SetAppID(appID *string) {
+	k.AppID = appID
+	k.require(knowledgeBaseVersionProgressRequestFieldAppID)
+}
+
+// SetVersionID sets the VersionID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionProgressRequest) SetVersionID(versionID *EntityIDWithoutAgent) {
+	k.VersionID = versionID
+	k.require(knowledgeBaseVersionProgressRequestFieldVersionID)
+}
+
+// SetProgress sets the Progress field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionProgressRequest) SetProgress(progress *KnowledgeBaseVersionProgress) {
+	k.Progress = progress
+	k.require(knowledgeBaseVersionProgressRequestFieldProgress)
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeBaseVersionProgressRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeBaseVersionProgressRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeBaseVersionProgressRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeBaseVersionProgressRequest) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
 }
 
 var (

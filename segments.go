@@ -11,12 +11,24 @@ import (
 )
 
 var (
-	segmentDeleteRequestFieldAppID = big.NewInt(1 << 0)
+	segmentDeleteRequestFieldAppID              = big.NewInt(1 << 0)
+	segmentDeleteRequestFieldVariantReferenceID = big.NewInt(1 << 1)
+	segmentDeleteRequestFieldVariantAppID       = big.NewInt(1 << 2)
 )
 
 type SegmentDeleteRequest struct {
 	// The App ID of the segment to delete. If not provided, the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
+	// The reference ID of the agent variant this delete is scoped to. When set, the
+	// deletion is staged in that variant's working set instead of being applied to the
+	// agent's live configuration.
+	//
+	// Omit this parameter to delete directly from the agent. Variant scoping is not
+	// active yet: a variant supplied today is accepted and ignored, and the delete applies
+	// to the agent.
+	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
+	// The App ID of the agent variant named by `variantReferenceId`. If not provided, the ID of the calling app will be used.
+	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -34,6 +46,20 @@ func (s *SegmentDeleteRequest) require(field *big.Int) {
 func (s *SegmentDeleteRequest) SetAppID(appID *string) {
 	s.AppID = appID
 	s.require(segmentDeleteRequestFieldAppID)
+}
+
+// SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentDeleteRequest) SetVariantReferenceID(variantReferenceID *string) {
+	s.VariantReferenceID = variantReferenceID
+	s.require(segmentDeleteRequestFieldVariantReferenceID)
+}
+
+// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentDeleteRequest) SetVariantAppID(variantAppID *string) {
+	s.VariantAppID = variantAppID
+	s.require(segmentDeleteRequestFieldVariantAppID)
 }
 
 var (
@@ -303,6 +329,7 @@ var (
 	segmentPatchRequestFieldDescription  = big.NewInt(1 << 2)
 	segmentPatchRequestFieldPrecondition = big.NewInt(1 << 3)
 	segmentPatchRequestFieldStatus       = big.NewInt(1 << 4)
+	segmentPatchRequestFieldVariantID    = big.NewInt(1 << 5)
 )
 
 type SegmentPatchRequest struct {
@@ -316,6 +343,12 @@ type SegmentPatchRequest struct {
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The status of the segment. Segments can only be deactivated if they are not set on any actions or active knowledge bases.
 	Status *SegmentStatus `json:"status,omitempty" url:"status,omitempty"`
+	// The agent variant this patch is scoped to. When set, the patch is staged in that
+	// variant's working set instead of being applied to the agent's live configuration.
+	//
+	// Omit this field to patch the agent directly. Variant scoping is not active yet: a
+	// variant supplied today is accepted and ignored, and the patch applies to the agent.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -357,6 +390,13 @@ func (s *SegmentPatchRequest) GetStatus() *SegmentStatus {
 		return nil
 	}
 	return s.Status
+}
+
+func (s *SegmentPatchRequest) GetVariantID() *EntityIDWithoutAgent {
+	if s == nil {
+		return nil
+	}
+	return s.VariantID
 }
 
 func (s *SegmentPatchRequest) GetExtraProperties() map[string]interface{} {
@@ -405,6 +445,13 @@ func (s *SegmentPatchRequest) SetStatus(status *SegmentStatus) {
 	s.require(segmentPatchRequestFieldStatus)
 }
 
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentPatchRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	s.VariantID = variantID
+	s.require(segmentPatchRequestFieldVariantID)
+}
+
 func (s *SegmentPatchRequest) UnmarshalJSON(data []byte) error {
 	type unmarshaler SegmentPatchRequest
 	var value unmarshaler
@@ -448,8 +495,9 @@ var (
 	segmentRequestFieldName         = big.NewInt(1 << 0)
 	segmentRequestFieldDescription  = big.NewInt(1 << 1)
 	segmentRequestFieldSegmentID    = big.NewInt(1 << 2)
-	segmentRequestFieldPrecondition = big.NewInt(1 << 3)
-	segmentRequestFieldStatus       = big.NewInt(1 << 4)
+	segmentRequestFieldVariantID    = big.NewInt(1 << 3)
+	segmentRequestFieldPrecondition = big.NewInt(1 << 4)
+	segmentRequestFieldStatus       = big.NewInt(1 << 5)
 )
 
 type SegmentRequest struct {
@@ -459,6 +507,12 @@ type SegmentRequest struct {
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// ID that uniquely identifies this segment
 	SegmentID *EntityIDBase `json:"segmentId" url:"segmentId"`
+	// The agent variant this write is scoped to. When set, the segment content is staged in
+	// that variant's working set instead of being applied to the agent's live configuration.
+	//
+	// Omit this field to write directly to the agent. Variant scoping is not active yet: a
+	// variant supplied today is accepted and ignored, and the write applies to the agent.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The precondition that must be met for a conversation message to be included in the segment.
 	Precondition *Precondition `json:"precondition" url:"precondition"`
 	// Desired status for the segment. If omitted, defaults to ACTIVE. In the future this will become required, so specify ACTIVE or INACTIVE if possible.
@@ -490,6 +544,13 @@ func (s *SegmentRequest) GetSegmentID() *EntityIDBase {
 		return nil
 	}
 	return s.SegmentID
+}
+
+func (s *SegmentRequest) GetVariantID() *EntityIDWithoutAgent {
+	if s == nil {
+		return nil
+	}
+	return s.VariantID
 }
 
 func (s *SegmentRequest) GetPrecondition() *Precondition {
@@ -536,6 +597,13 @@ func (s *SegmentRequest) SetDescription(description *string) {
 func (s *SegmentRequest) SetSegmentID(segmentID *EntityIDBase) {
 	s.SegmentID = segmentID
 	s.require(segmentRequestFieldSegmentID)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	s.VariantID = variantID
+	s.require(segmentRequestFieldVariantID)
 }
 
 // SetPrecondition sets the Precondition field and marks it as non-optional;
@@ -862,6 +930,137 @@ func NewSegmentStatusFromString(s string) (SegmentStatus, error) {
 
 func (s SegmentStatus) Ptr() *SegmentStatus {
 	return &s
+}
+
+// A lightweight segment representation containing identity, name, status, and precondition.
+var (
+	segmentSummaryFieldSegmentID    = big.NewInt(1 << 0)
+	segmentSummaryFieldName         = big.NewInt(1 << 1)
+	segmentSummaryFieldStatus       = big.NewInt(1 << 2)
+	segmentSummaryFieldPrecondition = big.NewInt(1 << 3)
+)
+
+type SegmentSummary struct {
+	// ID that uniquely identifies this segment.
+	SegmentID *EntityID `json:"segmentId" url:"segmentId"`
+	// The display name of the segment.
+	Name string `json:"name" url:"name"`
+	// The lifecycle status of the segment.
+	Status SegmentStatus `json:"status" url:"status"`
+	// The precondition that must be met for a conversation message to match this segment.
+	Precondition *PreconditionResponse `json:"precondition" url:"precondition"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SegmentSummary) GetSegmentID() *EntityID {
+	if s == nil {
+		return nil
+	}
+	return s.SegmentID
+}
+
+func (s *SegmentSummary) GetName() string {
+	if s == nil {
+		return ""
+	}
+	return s.Name
+}
+
+func (s *SegmentSummary) GetStatus() SegmentStatus {
+	if s == nil {
+		return ""
+	}
+	return s.Status
+}
+
+func (s *SegmentSummary) GetPrecondition() *PreconditionResponse {
+	if s == nil {
+		return nil
+	}
+	return s.Precondition
+}
+
+func (s *SegmentSummary) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SegmentSummary) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetSegmentID sets the SegmentID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentSummary) SetSegmentID(segmentID *EntityID) {
+	s.SegmentID = segmentID
+	s.require(segmentSummaryFieldSegmentID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentSummary) SetName(name string) {
+	s.Name = name
+	s.require(segmentSummaryFieldName)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentSummary) SetStatus(status SegmentStatus) {
+	s.Status = status
+	s.require(segmentSummaryFieldStatus)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SegmentSummary) SetPrecondition(precondition *PreconditionResponse) {
+	s.Precondition = precondition
+	s.require(segmentSummaryFieldPrecondition)
+}
+
+func (s *SegmentSummary) UnmarshalJSON(data []byte) error {
+	type unmarshaler SegmentSummary
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SegmentSummary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SegmentSummary) MarshalJSON() ([]byte, error) {
+	type embed SegmentSummary
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SegmentSummary) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
 }
 
 var (

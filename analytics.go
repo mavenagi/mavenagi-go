@@ -1288,12 +1288,16 @@ func (c *ConversationAnalyticsRequest) String() string {
 
 // Calculates the average value of the specified field.
 var (
-	conversationAverageFieldTargetField = big.NewInt(1 << 0)
+	conversationAverageFieldTargetField        = big.NewInt(1 << 0)
+	conversationAverageFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationAverage struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1307,6 +1311,13 @@ func (c *ConversationAverage) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationAverage) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationAverage) GetExtraProperties() map[string]interface{} {
@@ -1325,6 +1336,13 @@ func (c *ConversationAverage) require(field *big.Int) {
 func (c *ConversationAverage) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationAverageFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationAverage) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationAverageFieldIntelligentFieldID)
 }
 
 func (c *ConversationAverage) UnmarshalJSON(data []byte) error {
@@ -1540,12 +1558,16 @@ func (c *ConversationBarChartRequest) String() string {
 }
 
 var (
-	conversationBasicMetricFieldTargetField = big.NewInt(1 << 0)
+	conversationBasicMetricFieldTargetField        = big.NewInt(1 << 0)
+	conversationBasicMetricFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationBasicMetric struct {
 	// Field to apply the metric to.
 	TargetField ConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1559,6 +1581,13 @@ func (c *ConversationBasicMetric) GetTargetField() ConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationBasicMetric) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationBasicMetric) GetExtraProperties() map[string]interface{} {
@@ -1577,6 +1606,13 @@ func (c *ConversationBasicMetric) require(field *big.Int) {
 func (c *ConversationBasicMetric) SetTargetField(targetField ConversationField) {
 	c.TargetField = targetField
 	c.require(conversationBasicMetricFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationBasicMetric) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationBasicMetricFieldIntelligentFieldID)
 }
 
 func (c *ConversationBasicMetric) UnmarshalJSON(data []byte) error {
@@ -2078,12 +2114,16 @@ func (c *ConversationDateHistogramRequest) String() string {
 // Calculates the number of unique values in the specified field.
 // Supports fields with list values as well.
 var (
-	conversationDistinctCountFieldTargetField = big.NewInt(1 << 0)
+	conversationDistinctCountFieldTargetField        = big.NewInt(1 << 0)
+	conversationDistinctCountFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationDistinctCount struct {
 	// Field to apply the metric to.
 	TargetField ConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2097,6 +2137,13 @@ func (c *ConversationDistinctCount) GetTargetField() ConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationDistinctCount) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationDistinctCount) GetExtraProperties() map[string]interface{} {
@@ -2115,6 +2162,13 @@ func (c *ConversationDistinctCount) require(field *big.Int) {
 func (c *ConversationDistinctCount) SetTargetField(targetField ConversationField) {
 	c.TargetField = targetField
 	c.require(conversationDistinctCountFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationDistinctCount) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationDistinctCountFieldIntelligentFieldID)
 }
 
 func (c *ConversationDistinctCount) UnmarshalJSON(data []byte) error {
@@ -2157,9 +2211,10 @@ func (c *ConversationDistinctCount) String() string {
 }
 
 var (
-	conversationGroupByFieldLimit  = big.NewInt(1 << 0)
-	conversationGroupByFieldField  = big.NewInt(1 << 1)
-	conversationGroupByFieldRanges = big.NewInt(1 << 2)
+	conversationGroupByFieldLimit              = big.NewInt(1 << 0)
+	conversationGroupByFieldField              = big.NewInt(1 << 1)
+	conversationGroupByFieldIntelligentFieldID = big.NewInt(1 << 2)
+	conversationGroupByFieldRanges             = big.NewInt(1 << 3)
 )
 
 type ConversationGroupBy struct {
@@ -2167,7 +2222,11 @@ type ConversationGroupBy struct {
 	Limit *int `json:"limit,omitempty" url:"limit,omitempty"`
 	// Field used for data grouping.
 	Field ConversationField `json:"field" url:"field"`
-	// Numeric ranges for grouping data into predefined buckets. Applies only to numeric fields.
+	// Fully specified ID of the intelligent field. Required when `field` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
+	// Numeric ranges for grouping data into predefined buckets.
+	// Applies only to numeric fields and to NUMBER-validated intelligent fields.
 	Ranges []*Range `json:"ranges,omitempty" url:"ranges,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2189,6 +2248,13 @@ func (c *ConversationGroupBy) GetField() ConversationField {
 		return ""
 	}
 	return c.Field
+}
+
+func (c *ConversationGroupBy) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationGroupBy) GetRanges() []*Range {
@@ -2221,6 +2287,13 @@ func (c *ConversationGroupBy) SetLimit(limit *int) {
 func (c *ConversationGroupBy) SetField(field ConversationField) {
 	c.Field = field
 	c.require(conversationGroupByFieldField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationGroupBy) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationGroupByFieldIntelligentFieldID)
 }
 
 // SetRanges sets the Ranges field and marks it as non-optional;
@@ -2271,12 +2344,16 @@ func (c *ConversationGroupBy) String() string {
 
 // Retrieves the maximum value of the specified field.
 var (
-	conversationMaxFieldTargetField = big.NewInt(1 << 0)
+	conversationMaxFieldTargetField        = big.NewInt(1 << 0)
+	conversationMaxFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationMax struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2290,6 +2367,13 @@ func (c *ConversationMax) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationMax) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationMax) GetExtraProperties() map[string]interface{} {
@@ -2308,6 +2392,13 @@ func (c *ConversationMax) require(field *big.Int) {
 func (c *ConversationMax) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationMaxFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationMax) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationMaxFieldIntelligentFieldID)
 }
 
 func (c *ConversationMax) UnmarshalJSON(data []byte) error {
@@ -2351,12 +2442,16 @@ func (c *ConversationMax) String() string {
 
 // Computes the median value of the specified field.
 var (
-	conversationMedianFieldTargetField = big.NewInt(1 << 0)
+	conversationMedianFieldTargetField        = big.NewInt(1 << 0)
+	conversationMedianFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationMedian struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2370,6 +2465,13 @@ func (c *ConversationMedian) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationMedian) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationMedian) GetExtraProperties() map[string]interface{} {
@@ -2388,6 +2490,13 @@ func (c *ConversationMedian) require(field *big.Int) {
 func (c *ConversationMedian) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationMedianFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationMedian) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationMedianFieldIntelligentFieldID)
 }
 
 func (c *ConversationMedian) UnmarshalJSON(data []byte) error {
@@ -2694,12 +2803,16 @@ func (c *ConversationMetric) validate() error {
 
 // Retrieves the minimum value of the specified field.
 var (
-	conversationMinFieldTargetField = big.NewInt(1 << 0)
+	conversationMinFieldTargetField        = big.NewInt(1 << 0)
+	conversationMinFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationMin struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2713,6 +2826,13 @@ func (c *ConversationMin) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationMin) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationMin) GetExtraProperties() map[string]interface{} {
@@ -2731,6 +2851,13 @@ func (c *ConversationMin) require(field *big.Int) {
 func (c *ConversationMin) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationMinFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationMin) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationMinFieldIntelligentFieldID)
 }
 
 func (c *ConversationMin) UnmarshalJSON(data []byte) error {
@@ -2773,12 +2900,16 @@ func (c *ConversationMin) String() string {
 }
 
 var (
-	conversationNumericMetricFieldTargetField = big.NewInt(1 << 0)
+	conversationNumericMetricFieldTargetField        = big.NewInt(1 << 0)
+	conversationNumericMetricFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationNumericMetric struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2792,6 +2923,13 @@ func (c *ConversationNumericMetric) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationNumericMetric) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationNumericMetric) GetExtraProperties() map[string]interface{} {
@@ -2810,6 +2948,13 @@ func (c *ConversationNumericMetric) require(field *big.Int) {
 func (c *ConversationNumericMetric) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationNumericMetricFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationNumericMetric) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationNumericMetricFieldIntelligentFieldID)
 }
 
 func (c *ConversationNumericMetric) UnmarshalJSON(data []byte) error {
@@ -2853,13 +2998,17 @@ func (c *ConversationNumericMetric) String() string {
 
 // Calculates specified percentile for a numeric field.
 var (
-	conversationPercentileFieldTargetField = big.NewInt(1 << 0)
-	conversationPercentileFieldPercentile  = big.NewInt(1 << 1)
+	conversationPercentileFieldTargetField        = big.NewInt(1 << 0)
+	conversationPercentileFieldIntelligentFieldID = big.NewInt(1 << 1)
+	conversationPercentileFieldPercentile         = big.NewInt(1 << 2)
 )
 
 type ConversationPercentile struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 	// The percentile to calculate. Example: 25 computes the 25th percentile.
 	Percentile float64 `json:"percentile" url:"percentile"`
 
@@ -2875,6 +3024,13 @@ func (c *ConversationPercentile) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationPercentile) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationPercentile) GetPercentile() float64 {
@@ -2900,6 +3056,13 @@ func (c *ConversationPercentile) require(field *big.Int) {
 func (c *ConversationPercentile) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationPercentileFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationPercentile) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationPercentileFieldIntelligentFieldID)
 }
 
 // SetPercentile sets the Percentile field and marks it as non-optional;
@@ -3190,12 +3353,16 @@ func (c *ConversationRow) String() string {
 
 // Computes the sum of all values in the specified field.
 var (
-	conversationSumFieldTargetField = big.NewInt(1 << 0)
+	conversationSumFieldTargetField        = big.NewInt(1 << 0)
+	conversationSumFieldIntelligentFieldID = big.NewInt(1 << 1)
 )
 
 type ConversationSum struct {
 	// Numeric field to apply the metric to.
 	TargetField NumericConversationField `json:"targetField" url:"targetField"`
+	// Fully specified ID of the intelligent field. Required when `targetField` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3209,6 +3376,13 @@ func (c *ConversationSum) GetTargetField() NumericConversationField {
 		return ""
 	}
 	return c.TargetField
+}
+
+func (c *ConversationSum) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
 }
 
 func (c *ConversationSum) GetExtraProperties() map[string]interface{} {
@@ -3227,6 +3401,13 @@ func (c *ConversationSum) require(field *big.Int) {
 func (c *ConversationSum) SetTargetField(targetField NumericConversationField) {
 	c.TargetField = targetField
 	c.require(conversationSumFieldTargetField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSum) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationSumFieldIntelligentFieldID)
 }
 
 func (c *ConversationSum) UnmarshalJSON(data []byte) error {
@@ -3289,6 +3470,12 @@ type ConversationTableRequest struct {
 	// If multiple fields are provided, the result is grouped by their unique value combinations.
 	// If empty, all data is aggregated into a single row. |
 	// Note: The field `CreatedAt` should not be used here, all time-based grouping should be done using the `timeGrouping` field.
+	//
+	// Note: A row's `identifier` cannot name an intelligent field, so an `IntelligentField`
+	// grouping is not currently distinguishable here from a second `IntelligentField` grouping,
+	// nor from `timeGrouping`. Row counts are correct in both cases, but the identifier keeps
+	// only one value. Use a single `IntelligentField` grouping with no `timeGrouping`, or a
+	// chart, which is unaffected.
 	FieldGroupings []*ConversationGroupBy `json:"fieldGroupings" url:"fieldGroupings"`
 	// Specifies the metrics to be displayed as columns. Column headers act as keys, with computed metric values as their mapped values. There needs to be at least one column definition in the table request.
 	ColumnDefinitions []*ConversationColumnDefinition `json:"columnDefinitions" url:"columnDefinitions"`

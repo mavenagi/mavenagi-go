@@ -280,6 +280,42 @@ func TestKnowledgeFinalizeKnowledgeBaseVersionWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/version/finalize", nil, 1)
 }
 
+func TestKnowledgeUpdateKnowledgeBaseVersionProgressWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.KnowledgeBaseVersionProgressRequest{
+		VersionID: &mavenagigo.EntityIDWithoutAgent{
+			Type:        mavenagigo.EntityTypeKnowledgeBaseVersion,
+			ReferenceID: "versionId",
+			AppID:       "maven",
+		},
+		Progress: &mavenagigo.KnowledgeBaseVersionProgress{
+			Message: "Fetching articles from the help center",
+			CompletedCount: mavenagigo.Int64(
+				120,
+			),
+			TotalCount: mavenagigo.Int64(
+				500,
+			),
+		},
+	}
+	_, invocationErr := client.Knowledge.UpdateKnowledgeBaseVersionProgress(
+		context.TODO(),
+		"help-center",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/knowledge/help-center/version/progress", nil, 1)
+}
+
 func TestKnowledgeListKnowledgeBaseVersionsWithWireMock(
 	t *testing.T,
 ) {

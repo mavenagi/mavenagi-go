@@ -4146,6 +4146,459 @@ client.Integrations.Update(
 </dl>
 </details>
 
+## IntelligentFields
+<details><summary><code>client.IntelligentFields.CreateOrUpdate(request) -> *mavenagigo.IntelligentFieldResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Create a new intelligent field. Intelligent fields are used to store custom LLM-generated values on entities like conversations or events.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.IntelligentFieldRequest{
+        FieldID: &mavenagigo.EntityIDBase{
+            ReferenceID: "ticket-priority",
+        },
+        Name: "Ticket Priority",
+        Description: mavenagigo.String(
+            "The priority of the conversation based on urgency",
+        ),
+        EntityType: mavenagigo.EntityTypeConversation,
+        ValidationType: mavenagigo.IntelligentFieldTypeString,
+        EnumOptions: []*mavenagigo.EnumOption{
+            &mavenagigo.EnumOption{
+                Value: "HIGH",
+                Label: mavenagigo.String(
+                    "High Priority",
+                ),
+            },
+            &mavenagigo.EnumOption{
+                Value: "MEDIUM",
+                Label: mavenagigo.String(
+                    "Medium Priority",
+                ),
+            },
+            &mavenagigo.EnumOption{
+                Value: "LOW",
+                Label: mavenagigo.String(
+                    "Low Priority",
+                ),
+            },
+        },
+        Definition: "The priority of the conversation based on the urgency and importance; draw from the content / messages in the conversation; must be one of HIGH, MEDIUM, or LOW.",
+    }
+client.IntelligentFields.CreateOrUpdate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.IntelligentFieldRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.IntelligentFields.Get(FieldReferenceID) -> *mavenagigo.IntelligentFieldDetailResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Get an intelligent field by its supplied ID
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.IntelligentFieldGetRequest{}
+client.IntelligentFields.Get(
+        context.TODO(),
+        "ticket-priority",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**fieldReferenceID:** `string` — The reference ID of the intelligent field to get. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the intelligent field to get. If not provided the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.IntelligentFields.Patch(FieldReferenceID, request) -> *mavenagigo.IntelligentFieldResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Patch an intelligent field. Can be used to update the definition, status, or other mutable properties.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.IntelligentFieldPatchRequest{
+        Definition: mavenagigo.String(
+            "The priority of the conversation based on the urgency and importance; draw from the content / messages in the conversation; must be one of HIGH, MEDIUM, or LOW.",
+        ),
+    }
+client.IntelligentFields.Patch(
+        context.TODO(),
+        "ticket-priority",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**fieldReferenceID:** `string` — The reference ID of the intelligent field to patch.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the intelligent field to update. If not provided the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**definition:** `*string` — The definition of the intelligent field. This text will be influential in guiding the LLM to produce the desired results.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*mavenagigo.IntelligentFieldStatus` — The lifecycle state for whether this field is evaluated by workflows. Use INACTIVE to deactivate.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**description:** `*string` — A plain text description of the intelligent field.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**enumOptions:** `[]*mavenagigo.EnumOption` — Updated enum options for select/multi-select fields. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantID:** `*mavenagigo.EntityIDBase` — ID of the agent variant that this field belongs to, if applicable
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.IntelligentFields.Delete(FieldReferenceID) -> *mavenagigo.IntelligentFieldResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Soft delete an intelligent field. Only INACTIVE fields can be deleted.
+
+Deleted fields are excluded from search results but can still be retrieved by ID.
+Creating a new field with the same referenceId as a deleted field will overwrite
+the deleted field and restore it to INACTIVE status.
+
+Deleted fields cannot be modified.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.IntelligentFieldDeleteRequest{}
+client.IntelligentFields.Delete(
+        context.TODO(),
+        "ticket-priority",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**fieldReferenceID:** `string` — The reference ID of the intelligent field to delete.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the intelligent field to delete. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` — The agent variant reference ID of the intelligent field to delete.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The App ID of the agent variant reference for the intelligent field to delete. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.IntelligentFields.SearchValues(request) -> *mavenagigo.IntelligentFieldValueSearchResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Search computed values for intelligent fields across entities. Supports filtering by field properties and target entity.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.IntelligentFieldValueSearchRequest{
+        FieldFilter: &mavenagigo.IntelligentFieldValueFieldFilter{
+            FieldIDs: []*mavenagigo.EntityID{
+                &mavenagigo.EntityID{
+                    ReferenceID: "ticket-priority",
+                    AppID: "zendesk",
+                    Type: mavenagigo.EntityTypeIntelligentField,
+                    OrganizationID: "acme",
+                    AgentID: "support",
+                },
+            },
+        },
+        EntityFilter: &mavenagigo.IntelligentFieldValueEntityFilter{
+            EntityIDs: []*mavenagigo.EntityID{
+                &mavenagigo.EntityID{
+                    ReferenceID: "conv-123",
+                    AppID: "zendesk",
+                    Type: mavenagigo.EntityTypeConversation,
+                    OrganizationID: "acme",
+                    AgentID: "support",
+                },
+            },
+        },
+        Page: mavenagigo.Int(
+            0,
+        ),
+        Size: mavenagigo.Int(
+            20,
+        ),
+        Sort: mavenagigo.IntelligentFieldValueSortFieldCreatedAt.Ptr(),
+        SortDesc: mavenagigo.Bool(
+            true,
+        ),
+    }
+client.IntelligentFields.SearchValues(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.IntelligentFieldValueSearchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Knowledge
 <details><summary><code>client.Knowledge.SearchKnowledgeBases(request) -> *mavenagigo.KnowledgeBasesResponse</code></summary>
 <dl>
@@ -4836,6 +5289,93 @@ client.Knowledge.FinalizeKnowledgeBaseVersion(
 <dd>
 
 **request:** `*mavenagigo.FinalizeKnowledgeBaseVersionRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Knowledge.UpdateKnowledgeBaseVersionProgress(KnowledgeBaseReferenceID, request) -> *mavenagigo.KnowledgeBaseVersion</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Report refresh progress for an in-progress knowledge base version.
+
+Progress is advisory and shown to users while a refresh runs. Each call replaces the
+version's entire progress state - no history is kept, only the most recent value is
+retained. Will throw an exception if the target version is not in progress.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.KnowledgeBaseVersionProgressRequest{
+        VersionID: &mavenagigo.EntityIDWithoutAgent{
+            Type: mavenagigo.EntityTypeKnowledgeBaseVersion,
+            ReferenceID: "versionId",
+            AppID: "maven",
+        },
+        Progress: &mavenagigo.KnowledgeBaseVersionProgress{
+            Message: "Fetching articles from the help center",
+            CompletedCount: mavenagigo.Int64(
+                120,
+            ),
+            TotalCount: mavenagigo.Int64(
+                500,
+            ),
+        },
+    }
+client.Knowledge.UpdateKnowledgeBaseVersionProgress(
+        context.TODO(),
+        "help-center",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**knowledgeBaseReferenceID:** `string` — The reference ID of the knowledge base to report progress for. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.KnowledgeBaseVersionProgressRequest` 
     
 </dd>
 </dl>
@@ -6097,6 +6637,30 @@ client.Segments.Delete(
 <dd>
 
 **appID:** `*string` — The App ID of the segment to delete. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` 
+
+The reference ID of the agent variant this delete is scoped to. When set, the
+deletion is staged in that variant's working set instead of being applied to the
+agent's live configuration.
+
+Omit this parameter to delete directly from the agent. Variant scoping is not
+active yet: a variant supplied today is accepted and ignored, and the delete applies
+to the agent.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The App ID of the agent variant named by `variantReferenceId`. If not provided, the ID of the calling app will be used.
     
 </dd>
 </dl>

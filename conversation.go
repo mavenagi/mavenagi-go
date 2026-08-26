@@ -245,10 +245,11 @@ var (
 	askRequestFieldUserID                = big.NewInt(1 << 1)
 	askRequestFieldType                  = big.NewInt(1 << 2)
 	askRequestFieldText                  = big.NewInt(1 << 3)
-	askRequestFieldAttachments           = big.NewInt(1 << 4)
-	askRequestFieldTransientData         = big.NewInt(1 << 5)
-	askRequestFieldTimezone              = big.NewInt(1 << 6)
-	askRequestFieldAppMetadata           = big.NewInt(1 << 7)
+	askRequestFieldTextFormat            = big.NewInt(1 << 4)
+	askRequestFieldAttachments           = big.NewInt(1 << 5)
+	askRequestFieldTransientData         = big.NewInt(1 << 6)
+	askRequestFieldTimezone              = big.NewInt(1 << 7)
+	askRequestFieldAppMetadata           = big.NewInt(1 << 8)
 )
 
 type AskRequest struct {
@@ -266,6 +267,31 @@ type AskRequest struct {
 	// required to optional to support the non-user turn types — existing USER_MESSAGE callers
 	// are unaffected.)
 	Text *string `json:"text,omitempty" url:"text,omitempty"`
+	// What form the answer takes. Omit it for prose, or send `jsonSchema` to additionally get a
+	// `BotObjectResponse` matching a schema you supply.
+	//
+	// Set per ask and independent of `type`, so one conversation can mix prose and structured
+	// turns. Only the answer's form changes: knowledge, actions, charters and segments apply
+	// the same way either way.
+	//
+	// A structured answer accompanies the prose one rather than replacing it — the same turn
+	// produces both, so the conversation stays readable. On `ask_stream` the prose still streams
+	// on `text` events as it always has, and the object arrives whole on a single `object` event
+	// near the end.
+	//
+	// Every answering turn carries an object, including one where the agent asks a clarifying
+	// question rather than answering. Shape the schema so it can say "not enough information"
+	// — a populated object is not on its own evidence of a confident answer.
+	//
+	// Two exceptions. A turn that asks the user to *act* produces an action form from the
+	// action rather than from an answer, so it carries no object; the turn that answers after
+	// the form is submitted does carry one. Leave the `FORMS` capability off if you need an
+	// object on every turn.
+	//
+	// A turn answered verbatim by a `STRICT_RETURN` charter also carries no object. That
+	// charter's manual is returned exactly as written without consulting the agent, so there is
+	// nothing to shape into the requested schema — the turn returns the manual as `text` alone.
+	TextFormat *TextFormat `json:"textFormat,omitempty" url:"textFormat,omitempty"`
 	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
 	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
 	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
@@ -314,6 +340,13 @@ func (a *AskRequest) GetText() *string {
 		return nil
 	}
 	return a.Text
+}
+
+func (a *AskRequest) GetTextFormat() *TextFormat {
+	if a == nil {
+		return nil
+	}
+	return a.TextFormat
 }
 
 func (a *AskRequest) GetAttachments() []*AttachmentRequest {
@@ -381,6 +414,13 @@ func (a *AskRequest) SetType(type_ *AskType) {
 func (a *AskRequest) SetText(text *string) {
 	a.Text = text
 	a.require(askRequestFieldText)
+}
+
+// SetTextFormat sets the TextFormat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetTextFormat(textFormat *TextFormat) {
+	a.TextFormat = textFormat
+	a.require(askRequestFieldTextFormat)
 }
 
 // SetAttachments sets the Attachments field and marks it as non-optional;
@@ -994,6 +1034,87 @@ func (a *AskStreamOAuthButtonEvent) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+// The structured answer for an ask whose `textFormat` was `jsonSchema`, emitted once and already complete. There is nothing to concatenate, and no partial object is ever sent.
+// It arrives late in the stream — the object is only known once the whole answer parses — and alongside the `text` events carrying the prose answer, not instead of them.
+var (
+	askStreamObjectEventFieldObject = big.NewInt(1 << 0)
+)
+
+type AskStreamObjectEvent struct {
+	// The answer, matching the schema the ask supplied. Every property the schema requires is present, with `null` where a nullable one does not apply.
+	Object interface{} `json:"object" url:"object"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AskStreamObjectEvent) GetObject() interface{} {
+	if a == nil {
+		return nil
+	}
+	return a.Object
+}
+
+func (a *AskStreamObjectEvent) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AskStreamObjectEvent) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetObject sets the Object field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskStreamObjectEvent) SetObject(object interface{}) {
+	a.Object = object
+	a.require(askStreamObjectEventFieldObject)
+}
+
+func (a *AskStreamObjectEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler AskStreamObjectEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AskStreamObjectEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AskStreamObjectEvent) MarshalJSON() ([]byte, error) {
+	type embed AskStreamObjectEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AskStreamObjectEvent) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
 var (
 	askStreamStartEventFieldConversationMessageID = big.NewInt(1 << 0)
 )
@@ -1293,8 +1414,14 @@ const (
 	ConversationFieldCsat                   ConversationField = "Csat"
 	ConversationFieldOrganizationID         ConversationField = "OrganizationId"
 	ConversationFieldAgentID                ConversationField = "AgentId"
-	ConversationFieldInboxItems             ConversationField = "InboxItems"
-	ConversationFieldInvolvedApps           ConversationField = "InvolvedApps"
+	// The environment configured on the agent: DEMO, STAGING, or PRODUCTION. Constant within a
+	// single agent, so it only separates conversations on a cross-agent request.
+	ConversationFieldAgentEnvironment ConversationField = "AgentEnvironment"
+	ConversationFieldInboxItems       ConversationField = "InboxItems"
+	ConversationFieldInvolvedApps     ConversationField = "InvolvedApps"
+	// Selects an intelligent field rather than a built-in conversation field.
+	// When used, `intelligentFieldId` must also be set to identify which field.
+	ConversationFieldIntelligentField ConversationField = "IntelligentField"
 )
 
 func NewConversationFieldFromString(s string) (ConversationField, error) {
@@ -1363,10 +1490,14 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 		return ConversationFieldOrganizationID, nil
 	case "AgentId":
 		return ConversationFieldAgentID, nil
+	case "AgentEnvironment":
+		return ConversationFieldAgentEnvironment, nil
 	case "InboxItems":
 		return ConversationFieldInboxItems, nil
 	case "InvolvedApps":
 		return ConversationFieldInvolvedApps, nil
+	case "IntelligentField":
+		return ConversationFieldIntelligentField, nil
 	}
 	var t ConversationField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -2836,9 +2967,12 @@ type ConversationsSearchRequest struct {
 	// The size of the page to return, defaults to 20
 	Size *int `json:"size,omitempty" url:"size,omitempty"`
 	// Whether to sort descending, defaults to true
-	SortDesc *bool               `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
-	Sort     *ConversationField  `json:"sort,omitempty" url:"sort,omitempty"`
-	Filter   *ConversationFilter `json:"filter,omitempty" url:"filter,omitempty"`
+	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+	// Field to sort results by. `IntelligentField` is not supported here - sorting conversations
+	// by an intelligent field value is not available. Intelligent fields can be filtered on via
+	// `filter.intelligentFields`, and grouped or aggregated through the analytics APIs.
+	Sort   *ConversationField  `json:"sort,omitempty" url:"sort,omitempty"`
+	Filter *ConversationFilter `json:"filter,omitempty" url:"filter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3993,6 +4127,9 @@ const (
 	NumericConversationFieldCsat                 NumericConversationField = "Csat"
 	NumericConversationFieldActionExecutionCount NumericConversationField = "ActionExecutionCount"
 	NumericConversationFieldActionErrorCount     NumericConversationField = "ActionErrorCount"
+	// Selects a NUMBER-validated intelligent field rather than a built-in numeric field.
+	// When used, `intelligentFieldId` must also be set to identify which field.
+	NumericConversationFieldIntelligentField NumericConversationField = "IntelligentField"
 )
 
 func NewNumericConversationFieldFromString(s string) (NumericConversationField, error) {
@@ -4019,6 +4156,8 @@ func NewNumericConversationFieldFromString(s string) (NumericConversationField, 
 		return NumericConversationFieldActionExecutionCount, nil
 	case "ActionErrorCount":
 		return NumericConversationFieldActionErrorCount, nil
+	case "IntelligentField":
+		return NumericConversationFieldIntelligentField, nil
 	}
 	var t NumericConversationField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -4059,6 +4198,7 @@ type StreamResponse struct {
 	Action      *AskStreamActionEvent
 	OauthButton *AskStreamOAuthButtonEvent
 	Chart       *AskStreamChartEvent
+	Object      *AskStreamObjectEvent
 	Metadata    *AskStreamMetadataEvent
 	Start       *AskStreamStartEvent
 	End         *AskStreamEndEvent
@@ -4097,6 +4237,13 @@ func (s *StreamResponse) GetChart() *AskStreamChartEvent {
 		return nil
 	}
 	return s.Chart
+}
+
+func (s *StreamResponse) GetObject() *AskStreamObjectEvent {
+	if s == nil {
+		return nil
+	}
+	return s.Object
 }
 
 func (s *StreamResponse) GetMetadata() *AskStreamMetadataEvent {
@@ -4156,6 +4303,12 @@ func (s *StreamResponse) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		s.Chart = value
+	case "object":
+		value := new(AskStreamObjectEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		s.Object = value
 	case "metadata":
 		value := new(AskStreamMetadataEvent)
 		if err := json.Unmarshal(data, &value); err != nil {
@@ -4194,6 +4347,9 @@ func (s StreamResponse) MarshalJSON() ([]byte, error) {
 	if s.Chart != nil {
 		return internal.MarshalJSONWithExtraProperty(s.Chart, "eventType", "chart")
 	}
+	if s.Object != nil {
+		return internal.MarshalJSONWithExtraProperty(s.Object, "eventType", "object")
+	}
 	if s.Metadata != nil {
 		return internal.MarshalJSONWithExtraProperty(s.Metadata, "eventType", "metadata")
 	}
@@ -4211,6 +4367,7 @@ type StreamResponseVisitor interface {
 	VisitAction(*AskStreamActionEvent) error
 	VisitOauthButton(*AskStreamOAuthButtonEvent) error
 	VisitChart(*AskStreamChartEvent) error
+	VisitObject(*AskStreamObjectEvent) error
 	VisitMetadata(*AskStreamMetadataEvent) error
 	VisitStart(*AskStreamStartEvent) error
 	VisitEnd(*AskStreamEndEvent) error
@@ -4228,6 +4385,9 @@ func (s *StreamResponse) Accept(visitor StreamResponseVisitor) error {
 	}
 	if s.Chart != nil {
 		return visitor.VisitChart(s.Chart)
+	}
+	if s.Object != nil {
+		return visitor.VisitObject(s.Object)
 	}
 	if s.Metadata != nil {
 		return visitor.VisitMetadata(s.Metadata)
@@ -4257,6 +4417,9 @@ func (s *StreamResponse) validate() error {
 	}
 	if s.Chart != nil {
 		fields = append(fields, "chart")
+	}
+	if s.Object != nil {
+		fields = append(fields, "object")
 	}
 	if s.Metadata != nil {
 		fields = append(fields, "metadata")
