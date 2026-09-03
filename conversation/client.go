@@ -258,7 +258,9 @@ func (c *Client) Categorize(
 	return response.Body, nil
 }
 
-// Update feedback or create it if it doesn't exist
+// Replaced by the Create events API, which records feedback as a user event.
+//
+// Update feedback or create it if it doesn't exist.
 func (c *Client) CreateFeedback(
 	ctx context.Context,
 	request *mavenagigo.FeedbackRequest,
@@ -354,6 +356,33 @@ func (c *Client) Search(
 	opts ...option.RequestOption,
 ) (*mavenagigo.ConversationsResponse, error) {
 	response, err := c.WithRawResponse.Search(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// Search conversations using cursor pagination, which can read past the 10,000th result that
+// `search` cannot reach.
+//
+// Results are ordered by conversation creation time. Start with no `cursor`, then pass each
+// response's `nextCursor` back unchanged until the response omits it. Keep every other field
+// identical for the whole traversal — changing the filter, size, or sort direction mid-way is
+// rejected rather than silently restarting you at the beginning.
+//
+// `nextCursor` is the only reliable end-of-results signal. Do not stop early because a page
+// came back with fewer conversations than you asked for: that happens legitimately, and more
+// pages may still remain.
+func (c *Client) SearchCursor(
+	ctx context.Context,
+	request *mavenagigo.ConversationsCursorSearchRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.ConversationsCursorSearchResponse, error) {
+	response, err := c.WithRawResponse.SearchCursor(
 		ctx,
 		request,
 		opts...,

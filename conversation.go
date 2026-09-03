@@ -2581,6 +2581,15 @@ type ConversationRequest struct {
 	// The messages in the conversation
 	Messages []*ConversationMessageRequest `json:"messages" url:"messages"`
 	// The unique identifier of the conversation this new conversation was spawned from, if applicable.
+	//
+	// Setting this also gives the new conversation access to the context it branched from: when the bot
+	// answers, the transcript of the spawned-from conversation (and of the conversations that one was
+	// spawned from, in turn) is merged into the prompt ahead of this conversation's own messages. Each
+	// ancestor is truncated at the point the spawn happened, so messages it receives afterwards are not
+	// included.
+	//
+	// The referenced conversation must belong to the same agent. Because the merged transcript is read
+	// back to the end user, only set this to a conversation the current user is entitled to see.
 	SpawnedFromConversationID *EntityID `json:"spawnedFromConversationId,omitempty" url:"spawnedFromConversationId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2795,6 +2804,256 @@ func (c *ConversationRequest) MarshalJSON() ([]byte, error) {
 }
 
 func (c *ConversationRequest) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	conversationsCursorSearchRequestFieldSize     = big.NewInt(1 << 0)
+	conversationsCursorSearchRequestFieldSortDesc = big.NewInt(1 << 1)
+	conversationsCursorSearchRequestFieldCursor   = big.NewInt(1 << 2)
+	conversationsCursorSearchRequestFieldFilter   = big.NewInt(1 << 3)
+)
+
+type ConversationsCursorSearchRequest struct {
+	// The size of the page to return, defaults to 20. Max 200.
+	Size *int `json:"size,omitempty" url:"size,omitempty"`
+	// Whether to sort descending, defaults to true
+	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+	// Opaque cursor from the previous response's `nextCursor`, passed back unchanged. Omit it to
+	// start a new traversal. Every other field must stay identical for the whole traversal;
+	// changing one is rejected rather than silently restarting from the beginning. Cursors have
+	// no expiry, but a cursor can still be rejected with a 400 if the server's signing key has
+	// since been rotated out; if that happens, discard it and restart the traversal.
+	Cursor *string             `json:"cursor,omitempty" url:"cursor,omitempty"`
+	Filter *ConversationFilter `json:"filter,omitempty" url:"filter,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationsCursorSearchRequest) GetSize() *int {
+	if c == nil {
+		return nil
+	}
+	return c.Size
+}
+
+func (c *ConversationsCursorSearchRequest) GetSortDesc() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.SortDesc
+}
+
+func (c *ConversationsCursorSearchRequest) GetCursor() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Cursor
+}
+
+func (c *ConversationsCursorSearchRequest) GetFilter() *ConversationFilter {
+	if c == nil {
+		return nil
+	}
+	return c.Filter
+}
+
+func (c *ConversationsCursorSearchRequest) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationsCursorSearchRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchRequest) SetSize(size *int) {
+	c.Size = size
+	c.require(conversationsCursorSearchRequestFieldSize)
+}
+
+// SetSortDesc sets the SortDesc field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchRequest) SetSortDesc(sortDesc *bool) {
+	c.SortDesc = sortDesc
+	c.require(conversationsCursorSearchRequestFieldSortDesc)
+}
+
+// SetCursor sets the Cursor field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchRequest) SetCursor(cursor *string) {
+	c.Cursor = cursor
+	c.require(conversationsCursorSearchRequestFieldCursor)
+}
+
+// SetFilter sets the Filter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchRequest) SetFilter(filter *ConversationFilter) {
+	c.Filter = filter
+	c.require(conversationsCursorSearchRequestFieldFilter)
+}
+
+func (c *ConversationsCursorSearchRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationsCursorSearchRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationsCursorSearchRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationsCursorSearchRequest) MarshalJSON() ([]byte, error) {
+	type embed ConversationsCursorSearchRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationsCursorSearchRequest) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	conversationsCursorSearchResponseFieldNextCursor    = big.NewInt(1 << 0)
+	conversationsCursorSearchResponseFieldConversations = big.NewInt(1 << 1)
+	conversationsCursorSearchResponseFieldTotalElements = big.NewInt(1 << 2)
+)
+
+type ConversationsCursorSearchResponse struct {
+	// Pass this back as `cursor` to read the next page. Omitted when the traversal is
+	// complete. This is the only reliable end-of-results signal — a page can legitimately hold
+	// fewer items than `size` while more pages remain.
+	NextCursor *string `json:"nextCursor,omitempty" url:"nextCursor,omitempty"`
+	// The conversations that match the search criteria
+	Conversations []*ConversationPreview `json:"conversations" url:"conversations"`
+	// The total number of matching conversations, returned only on the first page of a
+	// traversal and omitted on continuations — the count is paid for once. A snapshot taken
+	// when the traversal began; the underlying set may grow while you read.
+	TotalElements *int64 `json:"totalElements,omitempty" url:"totalElements,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationsCursorSearchResponse) GetNextCursor() *string {
+	if c == nil {
+		return nil
+	}
+	return c.NextCursor
+}
+
+func (c *ConversationsCursorSearchResponse) GetConversations() []*ConversationPreview {
+	if c == nil {
+		return nil
+	}
+	return c.Conversations
+}
+
+func (c *ConversationsCursorSearchResponse) GetTotalElements() *int64 {
+	if c == nil {
+		return nil
+	}
+	return c.TotalElements
+}
+
+func (c *ConversationsCursorSearchResponse) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationsCursorSearchResponse) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetNextCursor sets the NextCursor field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchResponse) SetNextCursor(nextCursor *string) {
+	c.NextCursor = nextCursor
+	c.require(conversationsCursorSearchResponseFieldNextCursor)
+}
+
+// SetConversations sets the Conversations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchResponse) SetConversations(conversations []*ConversationPreview) {
+	c.Conversations = conversations
+	c.require(conversationsCursorSearchResponseFieldConversations)
+}
+
+// SetTotalElements sets the TotalElements field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationsCursorSearchResponse) SetTotalElements(totalElements *int64) {
+	c.TotalElements = totalElements
+	c.require(conversationsCursorSearchResponseFieldTotalElements)
+}
+
+func (c *ConversationsCursorSearchResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationsCursorSearchResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationsCursorSearchResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationsCursorSearchResponse) MarshalJSON() ([]byte, error) {
+	type embed ConversationsCursorSearchResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationsCursorSearchResponse) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value

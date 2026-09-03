@@ -2429,7 +2429,9 @@ client.Conversation.Categorize(
 <dl>
 <dd>
 
-Update feedback or create it if it doesn't exist
+Replaced by the Create events API, which records feedback as a user event.
+
+Update feedback or create it if it doesn't exist.
 </dd>
 </dl>
 </dd>
@@ -2775,6 +2777,75 @@ client.Conversation.Search(
 <dd>
 
 **request:** `*mavenagigo.ConversationsSearchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Conversation.SearchCursor(request) -> *mavenagigo.ConversationsCursorSearchResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Search conversations using cursor pagination, which can read past the 10,000th result that
+`search` cannot reach.
+
+Results are ordered by conversation creation time. Start with no `cursor`, then pass each
+response's `nextCursor` back unchanged until the response omits it. Keep every other field
+identical for the whole traversal — changing the filter, size, or sort direction mid-way is
+rejected rather than silently restarting you at the beginning.
+
+`nextCursor` is the only reliable end-of-results signal. Do not stop early because a page
+came back with fewer conversations than you asked for: that happens legitimately, and more
+pages may still remain.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.ConversationsCursorSearchRequest{}
+client.Conversation.SearchCursor(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.ConversationsCursorSearchRequest` 
     
 </dd>
 </dl>

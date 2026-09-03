@@ -3438,6 +3438,128 @@ func (b *BaseConversationResponse) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Pagination parameters for endpoints traversed by an opaque cursor rather than by page offset.
+// Defined as a sibling of BasePaginatedRequest, not a subtype: a cursor traversal has no page
+// number, and offering `page` alongside `cursor` would let a caller send a self-contradictory
+// request. The 200 ceiling is tighter than either offset variant because cursor traversal is
+// designed to walk a whole result set in many small pages.
+var (
+	baseCursorRequestFieldSize     = big.NewInt(1 << 0)
+	baseCursorRequestFieldSortDesc = big.NewInt(1 << 1)
+	baseCursorRequestFieldCursor   = big.NewInt(1 << 2)
+)
+
+type BaseCursorRequest struct {
+	// The size of the page to return, defaults to 20. Max 200.
+	Size *int `json:"size,omitempty" url:"size,omitempty"`
+	// Whether to sort descending, defaults to true
+	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+	// Opaque cursor from the previous response's `nextCursor`, passed back unchanged. Omit it to
+	// start a new traversal. Every other field must stay identical for the whole traversal;
+	// changing one is rejected rather than silently restarting from the beginning. Cursors have
+	// no expiry, but a cursor can still be rejected with a 400 if the server's signing key has
+	// since been rotated out; if that happens, discard it and restart the traversal.
+	Cursor *string `json:"cursor,omitempty" url:"cursor,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BaseCursorRequest) GetSize() *int {
+	if b == nil {
+		return nil
+	}
+	return b.Size
+}
+
+func (b *BaseCursorRequest) GetSortDesc() *bool {
+	if b == nil {
+		return nil
+	}
+	return b.SortDesc
+}
+
+func (b *BaseCursorRequest) GetCursor() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Cursor
+}
+
+func (b *BaseCursorRequest) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BaseCursorRequest) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseCursorRequest) SetSize(size *int) {
+	b.Size = size
+	b.require(baseCursorRequestFieldSize)
+}
+
+// SetSortDesc sets the SortDesc field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseCursorRequest) SetSortDesc(sortDesc *bool) {
+	b.SortDesc = sortDesc
+	b.require(baseCursorRequestFieldSortDesc)
+}
+
+// SetCursor sets the Cursor field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseCursorRequest) SetCursor(cursor *string) {
+	b.Cursor = cursor
+	b.require(baseCursorRequestFieldCursor)
+}
+
+func (b *BaseCursorRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler BaseCursorRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BaseCursorRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BaseCursorRequest) MarshalJSON() ([]byte, error) {
+	type embed BaseCursorRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BaseCursorRequest) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
 var (
 	basePaginatedRequestFieldPage     = big.NewInt(1 << 0)
 	basePaginatedRequestFieldSize     = big.NewInt(1 << 1)
@@ -10510,6 +10632,89 @@ func (c *CsatInfo) MarshalJSON() ([]byte, error) {
 }
 
 func (c *CsatInfo) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Pagination metadata for a cursor traversal. The counterpart to Page, which describes an
+// offset-paginated response.
+var (
+	cursorPageFieldNextCursor = big.NewInt(1 << 0)
+)
+
+type CursorPage struct {
+	// Pass this back as `cursor` to read the next page. Omitted when the traversal is
+	// complete. This is the only reliable end-of-results signal — a page can legitimately hold
+	// fewer items than `size` while more pages remain.
+	NextCursor *string `json:"nextCursor,omitempty" url:"nextCursor,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CursorPage) GetNextCursor() *string {
+	if c == nil {
+		return nil
+	}
+	return c.NextCursor
+}
+
+func (c *CursorPage) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CursorPage) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetNextCursor sets the NextCursor field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CursorPage) SetNextCursor(nextCursor *string) {
+	c.NextCursor = nextCursor
+	c.require(cursorPageFieldNextCursor)
+}
+
+func (c *CursorPage) UnmarshalJSON(data []byte) error {
+	type unmarshaler CursorPage
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CursorPage(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CursorPage) MarshalJSON() ([]byte, error) {
+	type embed CursorPage
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CursorPage) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value

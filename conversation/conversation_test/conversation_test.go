@@ -463,6 +463,26 @@ func TestConversationSearchWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/conversations/search", nil, 1)
 }
 
+func TestConversationSearchCursorWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.ConversationsCursorSearchRequest{}
+	_, invocationErr := client.Conversation.SearchCursor(
+		context.TODO(),
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/conversations/search/cursor", nil, 1)
+}
+
 func TestConversationExportWithWireMock(
 	t *testing.T,
 ) {

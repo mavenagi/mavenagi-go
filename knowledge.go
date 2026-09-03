@@ -550,6 +550,125 @@ func (f *FinalizeKnowledgeBaseVersionRequest) String() string {
 	return fmt.Sprintf("%#v", f)
 }
 
+// How a knowledge base version changed the knowledge base, relative to the version that was
+// published when it finalized.
+//
+// Documents are identified by their reference ID, so re-sending a document with changed content
+// counts as an update rather than as an add plus a remove. A full refresh removes a document
+// implicitly, by not including it.
+var (
+	knowledgeBaseDocumentDeltasFieldAddedCount   = big.NewInt(1 << 0)
+	knowledgeBaseDocumentDeltasFieldUpdatedCount = big.NewInt(1 << 1)
+	knowledgeBaseDocumentDeltasFieldRemovedCount = big.NewInt(1 << 2)
+)
+
+type KnowledgeBaseDocumentDeltas struct {
+	// The number of documents this version added.
+	AddedCount int64 `json:"addedCount" url:"addedCount"`
+	// The number of documents this version replaced with new content.
+	UpdatedCount int64 `json:"updatedCount" url:"updatedCount"`
+	// The number of documents this version removed.
+	RemovedCount int64 `json:"removedCount" url:"removedCount"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeBaseDocumentDeltas) GetAddedCount() int64 {
+	if k == nil {
+		return 0
+	}
+	return k.AddedCount
+}
+
+func (k *KnowledgeBaseDocumentDeltas) GetUpdatedCount() int64 {
+	if k == nil {
+		return 0
+	}
+	return k.UpdatedCount
+}
+
+func (k *KnowledgeBaseDocumentDeltas) GetRemovedCount() int64 {
+	if k == nil {
+		return 0
+	}
+	return k.RemovedCount
+}
+
+func (k *KnowledgeBaseDocumentDeltas) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeBaseDocumentDeltas) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetAddedCount sets the AddedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseDocumentDeltas) SetAddedCount(addedCount int64) {
+	k.AddedCount = addedCount
+	k.require(knowledgeBaseDocumentDeltasFieldAddedCount)
+}
+
+// SetUpdatedCount sets the UpdatedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseDocumentDeltas) SetUpdatedCount(updatedCount int64) {
+	k.UpdatedCount = updatedCount
+	k.require(knowledgeBaseDocumentDeltasFieldUpdatedCount)
+}
+
+// SetRemovedCount sets the RemovedCount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseDocumentDeltas) SetRemovedCount(removedCount int64) {
+	k.RemovedCount = removedCount
+	k.require(knowledgeBaseDocumentDeltasFieldRemovedCount)
+}
+
+func (k *KnowledgeBaseDocumentDeltas) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeBaseDocumentDeltas
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeBaseDocumentDeltas(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeBaseDocumentDeltas) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeBaseDocumentDeltas
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeBaseDocumentDeltas) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
+}
+
 type KnowledgeBaseField string
 
 const (
@@ -1905,14 +2024,15 @@ func (k KnowledgeBaseType) Ptr() *KnowledgeBaseType {
 }
 
 var (
-	knowledgeBaseVersionFieldType          = big.NewInt(1 << 0)
-	knowledgeBaseVersionFieldVersionID     = big.NewInt(1 << 1)
-	knowledgeBaseVersionFieldStatus        = big.NewInt(1 << 2)
-	knowledgeBaseVersionFieldErrorMessage  = big.NewInt(1 << 3)
-	knowledgeBaseVersionFieldCreatedAt     = big.NewInt(1 << 4)
-	knowledgeBaseVersionFieldUpdatedAt     = big.NewInt(1 << 5)
-	knowledgeBaseVersionFieldIndexingState = big.NewInt(1 << 6)
-	knowledgeBaseVersionFieldProgress      = big.NewInt(1 << 7)
+	knowledgeBaseVersionFieldType           = big.NewInt(1 << 0)
+	knowledgeBaseVersionFieldVersionID      = big.NewInt(1 << 1)
+	knowledgeBaseVersionFieldStatus         = big.NewInt(1 << 2)
+	knowledgeBaseVersionFieldErrorMessage   = big.NewInt(1 << 3)
+	knowledgeBaseVersionFieldCreatedAt      = big.NewInt(1 << 4)
+	knowledgeBaseVersionFieldUpdatedAt      = big.NewInt(1 << 5)
+	knowledgeBaseVersionFieldIndexingState  = big.NewInt(1 << 6)
+	knowledgeBaseVersionFieldProgress       = big.NewInt(1 << 7)
+	knowledgeBaseVersionFieldDocumentDeltas = big.NewInt(1 << 8)
 )
 
 type KnowledgeBaseVersion struct {
@@ -1933,6 +2053,9 @@ type KnowledgeBaseVersion struct {
 	// Refresh progress most recently reported by the app that owns this knowledge base.
 	// Only populated while the version is in progress - absent once the version has completed.
 	Progress *KnowledgeBaseVersionProgress `json:"progress,omitempty" url:"progress,omitempty"`
+	// How this version changed the knowledge base. Absent for historical versions and for
+	// versions that did not complete successfully.
+	DocumentDeltas *KnowledgeBaseDocumentDeltas `json:"documentDeltas,omitempty" url:"documentDeltas,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1995,6 +2118,13 @@ func (k *KnowledgeBaseVersion) GetProgress() *KnowledgeBaseVersionProgress {
 		return nil
 	}
 	return k.Progress
+}
+
+func (k *KnowledgeBaseVersion) GetDocumentDeltas() *KnowledgeBaseDocumentDeltas {
+	if k == nil {
+		return nil
+	}
+	return k.DocumentDeltas
 }
 
 func (k *KnowledgeBaseVersion) GetExtraProperties() map[string]interface{} {
@@ -2062,6 +2192,13 @@ func (k *KnowledgeBaseVersion) SetIndexingState(indexingState *KnowledgeBaseInde
 func (k *KnowledgeBaseVersion) SetProgress(progress *KnowledgeBaseVersionProgress) {
 	k.Progress = progress
 	k.require(knowledgeBaseVersionFieldProgress)
+}
+
+// SetDocumentDeltas sets the DocumentDeltas field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersion) SetDocumentDeltas(documentDeltas *KnowledgeBaseDocumentDeltas) {
+	k.DocumentDeltas = documentDeltas
+	k.require(knowledgeBaseVersionFieldDocumentDeltas)
 }
 
 func (k *KnowledgeBaseVersion) UnmarshalJSON(data []byte) error {
