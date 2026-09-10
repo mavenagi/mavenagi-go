@@ -1524,19 +1524,20 @@ var (
 	conversationFilterFieldQualityReason          = big.NewInt(1 << 13)
 	conversationFilterFieldResponseLength         = big.NewInt(1 << 14)
 	conversationFilterFieldSentiment              = big.NewInt(1 << 15)
-	conversationFilterFieldTags                   = big.NewInt(1 << 16)
-	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 17)
-	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 18)
-	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 19)
-	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 20)
-	conversationFilterFieldHasAttachment          = big.NewInt(1 << 21)
-	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 22)
-	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 23)
-	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 24)
-	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 25)
-	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 26)
-	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 27)
-	conversationFilterFieldBillable               = big.NewInt(1 << 28)
+	conversationFilterFieldConversationMode       = big.NewInt(1 << 16)
+	conversationFilterFieldTags                   = big.NewInt(1 << 17)
+	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 18)
+	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 19)
+	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 20)
+	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 21)
+	conversationFilterFieldHasAttachment          = big.NewInt(1 << 22)
+	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 23)
+	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 24)
+	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 25)
+	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 26)
+	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 27)
+	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 28)
+	conversationFilterFieldBillable               = big.NewInt(1 << 29)
 )
 
 type ConversationFilter struct {
@@ -1592,6 +1593,9 @@ type ConversationFilter struct {
 	ResponseLength []ResponseLength `json:"responseLength,omitempty" url:"responseLength,omitempty"`
 	// Filter by AI assessed sentiment analysis
 	Sentiment []Sentiment `json:"sentiment,omitempty" url:"sentiment,omitempty"`
+	// Filter by whether the conversation is spoken or written. Platform-assigned, never
+	// customer-writable.
+	ConversationMode []ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
 	// Filter by tags applied to the conversation
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Filter by agent user IDs associated with the conversation
@@ -1755,6 +1759,13 @@ func (c *ConversationFilter) GetSentiment() []Sentiment {
 		return nil
 	}
 	return c.Sentiment
+}
+
+func (c *ConversationFilter) GetConversationMode() []ConversationMode {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMode
 }
 
 func (c *ConversationFilter) GetTags() []string {
@@ -1969,6 +1980,13 @@ func (c *ConversationFilter) SetResponseLength(responseLength []ResponseLength) 
 func (c *ConversationFilter) SetSentiment(sentiment []Sentiment) {
 	c.Sentiment = sentiment
 	c.require(conversationFilterFieldSentiment)
+}
+
+// SetConversationMode sets the ConversationMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetConversationMode(conversationMode []ConversationMode) {
+	c.ConversationMode = conversationMode
+	c.require(conversationFilterFieldConversationMode)
 }
 
 // SetTags sets the Tags field and marks it as non-optional;

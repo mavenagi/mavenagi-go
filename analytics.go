@@ -359,16 +359,20 @@ func (a *AgentUserMetric) validate() error {
 }
 
 var (
-	agentUserRowFieldData       = big.NewInt(1 << 0)
-	agentUserRowFieldIdentifier = big.NewInt(1 << 1)
+	agentUserRowFieldData        = big.NewInt(1 << 0)
+	agentUserRowFieldIdentifier  = big.NewInt(1 << 1)
+	agentUserRowFieldIdentifiers = big.NewInt(1 << 2)
 )
 
 type AgentUserRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
 	Data map[string]*CellData `json:"data" url:"data"`
-	// A unique identifier for each row, consisting of field names mapped to their respective values.
-	// This includes time groupings and any specified field groupings.
+	// Keyed by field, so it cannot represent two groupings that share a key - notably two
+	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
+	// order.
 	Identifier map[AgentUserField]*FieldValue `json:"identifier" url:"identifier"`
+	// One entry per grouping, in the order the groupings were requested.
+	Identifiers []*AgentUserRowIdentifier `json:"identifiers" url:"identifiers"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -389,6 +393,13 @@ func (a *AgentUserRow) GetIdentifier() map[AgentUserField]*FieldValue {
 		return nil
 	}
 	return a.Identifier
+}
+
+func (a *AgentUserRow) GetIdentifiers() []*AgentUserRowIdentifier {
+	if a == nil {
+		return nil
+	}
+	return a.Identifiers
 }
 
 func (a *AgentUserRow) GetExtraProperties() map[string]interface{} {
@@ -414,6 +425,13 @@ func (a *AgentUserRow) SetData(data map[string]*CellData) {
 func (a *AgentUserRow) SetIdentifier(identifier map[AgentUserField]*FieldValue) {
 	a.Identifier = identifier
 	a.require(agentUserRowFieldIdentifier)
+}
+
+// SetIdentifiers sets the Identifiers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserRow) SetIdentifiers(identifiers []*AgentUserRowIdentifier) {
+	a.Identifiers = identifiers
+	a.require(agentUserRowFieldIdentifiers)
 }
 
 func (a *AgentUserRow) UnmarshalJSON(data []byte) error {
@@ -444,6 +462,102 @@ func (a *AgentUserRow) MarshalJSON() ([]byte, error) {
 }
 
 func (a *AgentUserRow) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
+	agentUserRowIdentifierFieldValue = big.NewInt(1 << 0)
+	agentUserRowIdentifierFieldField = big.NewInt(1 << 1)
+)
+
+type AgentUserRowIdentifier struct {
+	// The row's value for this grouping.
+	Value *FieldValue `json:"value" url:"value"`
+	// Field this grouping was on.
+	Field AgentUserField `json:"field" url:"field"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AgentUserRowIdentifier) GetValue() *FieldValue {
+	if a == nil {
+		return nil
+	}
+	return a.Value
+}
+
+func (a *AgentUserRowIdentifier) GetField() AgentUserField {
+	if a == nil {
+		return ""
+	}
+	return a.Field
+}
+
+func (a *AgentUserRowIdentifier) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AgentUserRowIdentifier) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserRowIdentifier) SetValue(value *FieldValue) {
+	a.Value = value
+	a.require(agentUserRowIdentifierFieldValue)
+}
+
+// SetField sets the Field field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserRowIdentifier) SetField(field AgentUserField) {
+	a.Field = field
+	a.require(agentUserRowIdentifierFieldField)
+}
+
+func (a *AgentUserRowIdentifier) UnmarshalJSON(data []byte) error {
+	type unmarshaler AgentUserRowIdentifier
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AgentUserRowIdentifier(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AgentUserRowIdentifier) MarshalJSON() ([]byte, error) {
+	type embed AgentUserRowIdentifier
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AgentUserRowIdentifier) String() string {
 	if len(a.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
 			return value
@@ -3255,16 +3369,20 @@ func (c *ConversationPieChartRequest) String() string {
 }
 
 var (
-	conversationRowFieldData       = big.NewInt(1 << 0)
-	conversationRowFieldIdentifier = big.NewInt(1 << 1)
+	conversationRowFieldData        = big.NewInt(1 << 0)
+	conversationRowFieldIdentifier  = big.NewInt(1 << 1)
+	conversationRowFieldIdentifiers = big.NewInt(1 << 2)
 )
 
 type ConversationRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
 	Data map[string]*CellData `json:"data" url:"data"`
-	// A unique identifier for each row, consisting of field names mapped to their respective values.
-	// This includes time groupings and any specified field groupings.
+	// Keyed by field, so it cannot represent two groupings that share a key - notably two
+	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
+	// order.
 	Identifier map[ConversationField]*FieldValue `json:"identifier" url:"identifier"`
+	// One entry per grouping, in the order the groupings were requested.
+	Identifiers []*ConversationRowIdentifier `json:"identifiers" url:"identifiers"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3285,6 +3403,13 @@ func (c *ConversationRow) GetIdentifier() map[ConversationField]*FieldValue {
 		return nil
 	}
 	return c.Identifier
+}
+
+func (c *ConversationRow) GetIdentifiers() []*ConversationRowIdentifier {
+	if c == nil {
+		return nil
+	}
+	return c.Identifiers
 }
 
 func (c *ConversationRow) GetExtraProperties() map[string]interface{} {
@@ -3310,6 +3435,13 @@ func (c *ConversationRow) SetData(data map[string]*CellData) {
 func (c *ConversationRow) SetIdentifier(identifier map[ConversationField]*FieldValue) {
 	c.Identifier = identifier
 	c.require(conversationRowFieldIdentifier)
+}
+
+// SetIdentifiers sets the Identifiers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRow) SetIdentifiers(identifiers []*ConversationRowIdentifier) {
+	c.Identifiers = identifiers
+	c.require(conversationRowFieldIdentifiers)
 }
 
 func (c *ConversationRow) UnmarshalJSON(data []byte) error {
@@ -3340,6 +3472,119 @@ func (c *ConversationRow) MarshalJSON() ([]byte, error) {
 }
 
 func (c *ConversationRow) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	conversationRowIdentifierFieldValue              = big.NewInt(1 << 0)
+	conversationRowIdentifierFieldField              = big.NewInt(1 << 1)
+	conversationRowIdentifierFieldIntelligentFieldID = big.NewInt(1 << 2)
+)
+
+type ConversationRowIdentifier struct {
+	// The row's value for this grouping.
+	Value *FieldValue `json:"value" url:"value"`
+	// Field this grouping was on.
+	Field ConversationField `json:"field" url:"field"`
+	// Which intelligent field this grouping was on, set when `field` is `IntelligentField`.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationRowIdentifier) GetValue() *FieldValue {
+	if c == nil {
+		return nil
+	}
+	return c.Value
+}
+
+func (c *ConversationRowIdentifier) GetField() ConversationField {
+	if c == nil {
+		return ""
+	}
+	return c.Field
+}
+
+func (c *ConversationRowIdentifier) GetIntelligentFieldID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldID
+}
+
+func (c *ConversationRowIdentifier) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationRowIdentifier) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRowIdentifier) SetValue(value *FieldValue) {
+	c.Value = value
+	c.require(conversationRowIdentifierFieldValue)
+}
+
+// SetField sets the Field field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRowIdentifier) SetField(field ConversationField) {
+	c.Field = field
+	c.require(conversationRowIdentifierFieldField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRowIdentifier) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	c.IntelligentFieldID = intelligentFieldID
+	c.require(conversationRowIdentifierFieldIntelligentFieldID)
+}
+
+func (c *ConversationRowIdentifier) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationRowIdentifier
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationRowIdentifier(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationRowIdentifier) MarshalJSON() ([]byte, error) {
+	type embed ConversationRowIdentifier
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationRowIdentifier) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value
@@ -3470,12 +3715,6 @@ type ConversationTableRequest struct {
 	// If multiple fields are provided, the result is grouped by their unique value combinations.
 	// If empty, all data is aggregated into a single row. |
 	// Note: The field `CreatedAt` should not be used here, all time-based grouping should be done using the `timeGrouping` field.
-	//
-	// Note: A row's `identifier` cannot name an intelligent field, so an `IntelligentField`
-	// grouping is not currently distinguishable here from a second `IntelligentField` grouping,
-	// nor from `timeGrouping`. Row counts are correct in both cases, but the identifier keeps
-	// only one value. Use a single `IntelligentField` grouping with no `timeGrouping`, or a
-	// chart, which is unaffected.
 	FieldGroupings []*ConversationGroupBy `json:"fieldGroupings" url:"fieldGroupings"`
 	// Specifies the metrics to be displayed as columns. Column headers act as keys, with computed metric values as their mapped values. There needs to be at least one column definition in the table request.
 	ColumnDefinitions []*ConversationColumnDefinition `json:"columnDefinitions" url:"columnDefinitions"`
@@ -4908,16 +5147,20 @@ func (e *EventPieChartRequest) String() string {
 }
 
 var (
-	eventRowFieldData       = big.NewInt(1 << 0)
-	eventRowFieldIdentifier = big.NewInt(1 << 1)
+	eventRowFieldData        = big.NewInt(1 << 0)
+	eventRowFieldIdentifier  = big.NewInt(1 << 1)
+	eventRowFieldIdentifiers = big.NewInt(1 << 2)
 )
 
 type EventRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
 	Data map[string]*CellData `json:"data" url:"data"`
-	// A unique identifier for each row, consisting of field names mapped to their respective values.
-	// This includes time groupings and any specified field groupings.
+	// Keyed by field, so it cannot represent two groupings that share a key - notably two
+	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
+	// order.
 	Identifier map[EventField]*FieldValue `json:"identifier" url:"identifier"`
+	// One entry per grouping, in the order the groupings were requested.
+	Identifiers []*EventRowIdentifier `json:"identifiers" url:"identifiers"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4938,6 +5181,13 @@ func (e *EventRow) GetIdentifier() map[EventField]*FieldValue {
 		return nil
 	}
 	return e.Identifier
+}
+
+func (e *EventRow) GetIdentifiers() []*EventRowIdentifier {
+	if e == nil {
+		return nil
+	}
+	return e.Identifiers
 }
 
 func (e *EventRow) GetExtraProperties() map[string]interface{} {
@@ -4963,6 +5213,13 @@ func (e *EventRow) SetData(data map[string]*CellData) {
 func (e *EventRow) SetIdentifier(identifier map[EventField]*FieldValue) {
 	e.Identifier = identifier
 	e.require(eventRowFieldIdentifier)
+}
+
+// SetIdentifiers sets the Identifiers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventRow) SetIdentifiers(identifiers []*EventRowIdentifier) {
+	e.Identifiers = identifiers
+	e.require(eventRowFieldIdentifiers)
 }
 
 func (e *EventRow) UnmarshalJSON(data []byte) error {
@@ -4993,6 +5250,102 @@ func (e *EventRow) MarshalJSON() ([]byte, error) {
 }
 
 func (e *EventRow) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	eventRowIdentifierFieldValue = big.NewInt(1 << 0)
+	eventRowIdentifierFieldField = big.NewInt(1 << 1)
+)
+
+type EventRowIdentifier struct {
+	// The row's value for this grouping.
+	Value *FieldValue `json:"value" url:"value"`
+	// Field this grouping was on.
+	Field EventField `json:"field" url:"field"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventRowIdentifier) GetValue() *FieldValue {
+	if e == nil {
+		return nil
+	}
+	return e.Value
+}
+
+func (e *EventRowIdentifier) GetField() EventField {
+	if e == nil {
+		return ""
+	}
+	return e.Field
+}
+
+func (e *EventRowIdentifier) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventRowIdentifier) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventRowIdentifier) SetValue(value *FieldValue) {
+	e.Value = value
+	e.require(eventRowIdentifierFieldValue)
+}
+
+// SetField sets the Field field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventRowIdentifier) SetField(field EventField) {
+	e.Field = field
+	e.require(eventRowIdentifierFieldField)
+}
+
+func (e *EventRowIdentifier) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventRowIdentifier
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventRowIdentifier(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventRowIdentifier) MarshalJSON() ([]byte, error) {
+	type embed EventRowIdentifier
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventRowIdentifier) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -5808,16 +6161,20 @@ func (f *FeedbackMetric) validate() error {
 }
 
 var (
-	feedbackRowFieldData       = big.NewInt(1 << 0)
-	feedbackRowFieldIdentifier = big.NewInt(1 << 1)
+	feedbackRowFieldData        = big.NewInt(1 << 0)
+	feedbackRowFieldIdentifier  = big.NewInt(1 << 1)
+	feedbackRowFieldIdentifiers = big.NewInt(1 << 2)
 )
 
 type FeedbackRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
 	Data map[string]*CellData `json:"data" url:"data"`
-	// A unique identifier for each row, consisting of field names mapped to their respective values.
-	// This includes time groupings and any specified field groupings.
+	// Keyed by field, so it cannot represent two groupings that share a key - notably two
+	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
+	// order.
 	Identifier map[FeedbackField]*FieldValue `json:"identifier" url:"identifier"`
+	// One entry per grouping, in the order the groupings were requested.
+	Identifiers []*FeedbackRowIdentifier `json:"identifiers" url:"identifiers"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -5838,6 +6195,13 @@ func (f *FeedbackRow) GetIdentifier() map[FeedbackField]*FieldValue {
 		return nil
 	}
 	return f.Identifier
+}
+
+func (f *FeedbackRow) GetIdentifiers() []*FeedbackRowIdentifier {
+	if f == nil {
+		return nil
+	}
+	return f.Identifiers
 }
 
 func (f *FeedbackRow) GetExtraProperties() map[string]interface{} {
@@ -5863,6 +6227,13 @@ func (f *FeedbackRow) SetData(data map[string]*CellData) {
 func (f *FeedbackRow) SetIdentifier(identifier map[FeedbackField]*FieldValue) {
 	f.Identifier = identifier
 	f.require(feedbackRowFieldIdentifier)
+}
+
+// SetIdentifiers sets the Identifiers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeedbackRow) SetIdentifiers(identifiers []*FeedbackRowIdentifier) {
+	f.Identifiers = identifiers
+	f.require(feedbackRowFieldIdentifiers)
 }
 
 func (f *FeedbackRow) UnmarshalJSON(data []byte) error {
@@ -5893,6 +6264,102 @@ func (f *FeedbackRow) MarshalJSON() ([]byte, error) {
 }
 
 func (f *FeedbackRow) String() string {
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	feedbackRowIdentifierFieldValue = big.NewInt(1 << 0)
+	feedbackRowIdentifierFieldField = big.NewInt(1 << 1)
+)
+
+type FeedbackRowIdentifier struct {
+	// The row's value for this grouping.
+	Value *FieldValue `json:"value" url:"value"`
+	// Field this grouping was on.
+	Field FeedbackField `json:"field" url:"field"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FeedbackRowIdentifier) GetValue() *FieldValue {
+	if f == nil {
+		return nil
+	}
+	return f.Value
+}
+
+func (f *FeedbackRowIdentifier) GetField() FeedbackField {
+	if f == nil {
+		return ""
+	}
+	return f.Field
+}
+
+func (f *FeedbackRowIdentifier) GetExtraProperties() map[string]interface{} {
+	return f.extraProperties
+}
+
+func (f *FeedbackRowIdentifier) require(field *big.Int) {
+	if f.explicitFields == nil {
+		f.explicitFields = big.NewInt(0)
+	}
+	f.explicitFields.Or(f.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeedbackRowIdentifier) SetValue(value *FieldValue) {
+	f.Value = value
+	f.require(feedbackRowIdentifierFieldValue)
+}
+
+// SetField sets the Field field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeedbackRowIdentifier) SetField(field FeedbackField) {
+	f.Field = field
+	f.require(feedbackRowIdentifierFieldField)
+}
+
+func (f *FeedbackRowIdentifier) UnmarshalJSON(data []byte) error {
+	type unmarshaler FeedbackRowIdentifier
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FeedbackRowIdentifier(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FeedbackRowIdentifier) MarshalJSON() ([]byte, error) {
+	type embed FeedbackRowIdentifier
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FeedbackRowIdentifier) String() string {
 	if len(f.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
 			return value
@@ -6859,6 +7326,85 @@ func (r *RowBase) MarshalJSON() ([]byte, error) {
 }
 
 func (r *RowBase) String() string {
+	if len(r.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(r.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(r); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", r)
+}
+
+var (
+	rowIdentifierBaseFieldValue = big.NewInt(1 << 0)
+)
+
+type RowIdentifierBase struct {
+	// The row's value for this grouping.
+	Value *FieldValue `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (r *RowIdentifierBase) GetValue() *FieldValue {
+	if r == nil {
+		return nil
+	}
+	return r.Value
+}
+
+func (r *RowIdentifierBase) GetExtraProperties() map[string]interface{} {
+	return r.extraProperties
+}
+
+func (r *RowIdentifierBase) require(field *big.Int) {
+	if r.explicitFields == nil {
+		r.explicitFields = big.NewInt(0)
+	}
+	r.explicitFields.Or(r.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (r *RowIdentifierBase) SetValue(value *FieldValue) {
+	r.Value = value
+	r.require(rowIdentifierBaseFieldValue)
+}
+
+func (r *RowIdentifierBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler RowIdentifierBase
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*r = RowIdentifierBase(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *r)
+	if err != nil {
+		return err
+	}
+	r.extraProperties = extraProperties
+	r.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (r *RowIdentifierBase) MarshalJSON() ([]byte, error) {
+	type embed RowIdentifierBase
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*r),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, r.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (r *RowIdentifierBase) String() string {
 	if len(r.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(r.rawJSON); err == nil {
 			return value

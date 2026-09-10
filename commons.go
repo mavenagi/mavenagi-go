@@ -16,8 +16,9 @@ var (
 	actionBaseFieldPrecondition            = big.NewInt(1 << 2)
 	actionBaseFieldUserFormParameters      = big.NewInt(1 << 3)
 	actionBaseFieldLanguage                = big.NewInt(1 << 4)
-	actionBaseFieldName                    = big.NewInt(1 << 5)
-	actionBaseFieldDescription             = big.NewInt(1 << 6)
+	actionBaseFieldSideEffects             = big.NewInt(1 << 5)
+	actionBaseFieldName                    = big.NewInt(1 << 6)
+	actionBaseFieldDescription             = big.NewInt(1 << 7)
 )
 
 type ActionBase struct {
@@ -31,6 +32,11 @@ type ActionBase struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// Whether executing this action causes side effects. Absent means the action has never
+	// declared either way.
+	//
+	// This value is informational only. It does not yet affect action execution.
+	SideEffects *SideEffects `json:"sideEffects,omitempty" url:"sideEffects,omitempty"`
 	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
 	Name string `json:"name" url:"name"`
 	// The description of the action. Must be no more than 4096 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
@@ -76,6 +82,13 @@ func (a *ActionBase) GetLanguage() *string {
 		return nil
 	}
 	return a.Language
+}
+
+func (a *ActionBase) GetSideEffects() *SideEffects {
+	if a == nil {
+		return nil
+	}
+	return a.SideEffects
 }
 
 func (a *ActionBase) GetName() string {
@@ -136,6 +149,13 @@ func (a *ActionBase) SetUserFormParameters(userFormParameters []*ActionParameter
 func (a *ActionBase) SetLanguage(language *string) {
 	a.Language = language
 	a.require(actionBaseFieldLanguage)
+}
+
+// SetSideEffects sets the SideEffects field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionBase) SetSideEffects(sideEffects *SideEffects) {
+	a.SideEffects = sideEffects
+	a.require(actionBaseFieldSideEffects)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -1066,6 +1086,7 @@ var (
 	actionPropertiesFieldPrecondition            = big.NewInt(1 << 2)
 	actionPropertiesFieldUserFormParameters      = big.NewInt(1 << 3)
 	actionPropertiesFieldLanguage                = big.NewInt(1 << 4)
+	actionPropertiesFieldSideEffects             = big.NewInt(1 << 5)
 )
 
 type ActionProperties struct {
@@ -1079,6 +1100,11 @@ type ActionProperties struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// Whether executing this action causes side effects. Absent means the action has never
+	// declared either way.
+	//
+	// This value is informational only. It does not yet affect action execution.
+	SideEffects *SideEffects `json:"sideEffects,omitempty" url:"sideEffects,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1120,6 +1146,13 @@ func (a *ActionProperties) GetLanguage() *string {
 		return nil
 	}
 	return a.Language
+}
+
+func (a *ActionProperties) GetSideEffects() *SideEffects {
+	if a == nil {
+		return nil
+	}
+	return a.SideEffects
 }
 
 func (a *ActionProperties) GetExtraProperties() map[string]interface{} {
@@ -1168,6 +1201,13 @@ func (a *ActionProperties) SetLanguage(language *string) {
 	a.require(actionPropertiesFieldLanguage)
 }
 
+// SetSideEffects sets the SideEffects field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionProperties) SetSideEffects(sideEffects *SideEffects) {
+	a.SideEffects = sideEffects
+	a.require(actionPropertiesFieldSideEffects)
+}
+
 func (a *ActionProperties) UnmarshalJSON(data []byte) error {
 	type unmarshaler ActionProperties
 	var value unmarshaler
@@ -1213,14 +1253,15 @@ var (
 	actionResponseFieldPrecondition            = big.NewInt(1 << 2)
 	actionResponseFieldUserFormParameters      = big.NewInt(1 << 3)
 	actionResponseFieldLanguage                = big.NewInt(1 << 4)
-	actionResponseFieldName                    = big.NewInt(1 << 5)
-	actionResponseFieldDescription             = big.NewInt(1 << 6)
-	actionResponseFieldActionID                = big.NewInt(1 << 7)
-	actionResponseFieldInstructions            = big.NewInt(1 << 8)
-	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 9)
-	actionResponseFieldSegmentID               = big.NewInt(1 << 10)
-	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 11)
-	actionResponseFieldDeleted                 = big.NewInt(1 << 12)
+	actionResponseFieldSideEffects             = big.NewInt(1 << 5)
+	actionResponseFieldName                    = big.NewInt(1 << 6)
+	actionResponseFieldDescription             = big.NewInt(1 << 7)
+	actionResponseFieldActionID                = big.NewInt(1 << 8)
+	actionResponseFieldInstructions            = big.NewInt(1 << 9)
+	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 10)
+	actionResponseFieldSegmentID               = big.NewInt(1 << 11)
+	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 12)
+	actionResponseFieldDeleted                 = big.NewInt(1 << 13)
 )
 
 type ActionResponse struct {
@@ -1234,6 +1275,11 @@ type ActionResponse struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// Whether executing this action causes side effects. Absent means the action has never
+	// declared either way.
+	//
+	// This value is informational only. It does not yet affect action execution.
+	SideEffects *SideEffects `json:"sideEffects,omitempty" url:"sideEffects,omitempty"`
 	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
 	Name string `json:"name" url:"name"`
 	// The description of the action. Must be no more than 4096 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
@@ -1298,6 +1344,13 @@ func (a *ActionResponse) GetLanguage() *string {
 		return nil
 	}
 	return a.Language
+}
+
+func (a *ActionResponse) GetSideEffects() *SideEffects {
+	if a == nil {
+		return nil
+	}
+	return a.SideEffects
 }
 
 func (a *ActionResponse) GetName() string {
@@ -1400,6 +1453,13 @@ func (a *ActionResponse) SetUserFormParameters(userFormParameters []*ActionParam
 func (a *ActionResponse) SetLanguage(language *string) {
 	a.Language = language
 	a.require(actionResponseFieldLanguage)
+}
+
+// SetSideEffects sets the SideEffects field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionResponse) SetSideEffects(sideEffects *SideEffects) {
+	a.SideEffects = sideEffects
+	a.require(actionResponseFieldSideEffects)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -4250,6 +4310,9 @@ var (
 	botLogicActionExecutedDetailFieldActionParameters = big.NewInt(1 << 2)
 	botLogicActionExecutedDetailFieldExecutionResult  = big.NewInt(1 << 3)
 	botLogicActionExecutedDetailFieldExecutionError   = big.NewInt(1 << 4)
+	botLogicActionExecutedDetailFieldData             = big.NewInt(1 << 5)
+	botLogicActionExecutedDetailFieldStartedAt        = big.NewInt(1 << 6)
+	botLogicActionExecutedDetailFieldDurationMs       = big.NewInt(1 << 7)
 )
 
 type BotLogicActionExecutedDetail struct {
@@ -4258,6 +4321,14 @@ type BotLogicActionExecutedDetail struct {
 	ActionParameters map[string]*ActionExecutionParamValue `json:"actionParameters" url:"actionParameters"`
 	ExecutionResult  *string                               `json:"executionResult,omitempty" url:"executionResult,omitempty"`
 	ExecutionError   *string                               `json:"executionError,omitempty" url:"executionError,omitempty"`
+	// Structured data the action returned alongside its text result. Absent for actions that returned only text.
+	Data map[string]interface{} `json:"data,omitempty" url:"data,omitempty"`
+	// When the action invocation started. Absent for actions executed before per-action timing was recorded, and for an invocation that never returned — see `durationMs`.
+	StartedAt *time.Time `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	// How long the action invocation took, in milliseconds. Measures the invocation itself, not the agent's surrounding reasoning.
+	//
+	// Absent in two cases: actions executed before per-action timing was recorded, and actions whose invocation never returned a result — it timed out, or threw before completing. The second case matters when aggregating: the attempts with no duration are disproportionately the slowest ones, so a percentile computed over this field alone is biased low. Count `executionError` alongside it rather than treating absent as "fast".
+	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4299,6 +4370,27 @@ func (b *BotLogicActionExecutedDetail) GetExecutionError() *string {
 		return nil
 	}
 	return b.ExecutionError
+}
+
+func (b *BotLogicActionExecutedDetail) GetData() map[string]interface{} {
+	if b == nil {
+		return nil
+	}
+	return b.Data
+}
+
+func (b *BotLogicActionExecutedDetail) GetStartedAt() *time.Time {
+	if b == nil {
+		return nil
+	}
+	return b.StartedAt
+}
+
+func (b *BotLogicActionExecutedDetail) GetDurationMs() *int64 {
+	if b == nil {
+		return nil
+	}
+	return b.DurationMs
 }
 
 func (b *BotLogicActionExecutedDetail) GetExtraProperties() map[string]interface{} {
@@ -4347,13 +4439,40 @@ func (b *BotLogicActionExecutedDetail) SetExecutionError(executionError *string)
 	b.require(botLogicActionExecutedDetailFieldExecutionError)
 }
 
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicActionExecutedDetail) SetData(data map[string]interface{}) {
+	b.Data = data
+	b.require(botLogicActionExecutedDetailFieldData)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicActionExecutedDetail) SetStartedAt(startedAt *time.Time) {
+	b.StartedAt = startedAt
+	b.require(botLogicActionExecutedDetailFieldStartedAt)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicActionExecutedDetail) SetDurationMs(durationMs *int64) {
+	b.DurationMs = durationMs
+	b.require(botLogicActionExecutedDetailFieldDurationMs)
+}
+
 func (b *BotLogicActionExecutedDetail) UnmarshalJSON(data []byte) error {
-	type unmarshaler BotLogicActionExecutedDetail
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed BotLogicActionExecutedDetail
+	var unmarshaler = struct {
+		embed
+		StartedAt *internal.DateTime `json:"startedAt,omitempty"`
+	}{
+		embed: embed(*b),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*b = BotLogicActionExecutedDetail(value)
+	*b = BotLogicActionExecutedDetail(unmarshaler.embed)
+	b.StartedAt = unmarshaler.StartedAt.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
@@ -4367,8 +4486,10 @@ func (b *BotLogicActionExecutedDetail) MarshalJSON() ([]byte, error) {
 	type embed BotLogicActionExecutedDetail
 	var marshaler = struct {
 		embed
+		StartedAt *internal.DateTime `json:"startedAt,omitempty"`
 	}{
-		embed: embed(*b),
+		embed:     embed(*b),
+		StartedAt: internal.NewOptionalDateTime(b.StartedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -4808,6 +4929,9 @@ var (
 	botLogicFormSubmissionItemFieldActionParameters = big.NewInt(1 << 2)
 	botLogicFormSubmissionItemFieldExecutionResult  = big.NewInt(1 << 3)
 	botLogicFormSubmissionItemFieldExecutionError   = big.NewInt(1 << 4)
+	botLogicFormSubmissionItemFieldData             = big.NewInt(1 << 5)
+	botLogicFormSubmissionItemFieldStartedAt        = big.NewInt(1 << 6)
+	botLogicFormSubmissionItemFieldDurationMs       = big.NewInt(1 << 7)
 )
 
 type BotLogicFormSubmissionItem struct {
@@ -4816,6 +4940,14 @@ type BotLogicFormSubmissionItem struct {
 	ActionParameters map[string]*ActionExecutionParamValue `json:"actionParameters" url:"actionParameters"`
 	ExecutionResult  *string                               `json:"executionResult,omitempty" url:"executionResult,omitempty"`
 	ExecutionError   *string                               `json:"executionError,omitempty" url:"executionError,omitempty"`
+	// Structured data the action returned alongside its text result. Absent for actions that returned only text.
+	Data map[string]interface{} `json:"data,omitempty" url:"data,omitempty"`
+	// When the action invocation started. Absent for actions executed before per-action timing was recorded, and for an invocation that never returned — see `durationMs`.
+	StartedAt *time.Time `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	// How long the action invocation took, in milliseconds. Measures the invocation itself, not the agent's surrounding reasoning.
+	//
+	// Absent in two cases: actions executed before per-action timing was recorded, and actions whose invocation never returned a result — it timed out, or threw before completing. The second case matters when aggregating: the attempts with no duration are disproportionately the slowest ones, so a percentile computed over this field alone is biased low. Count `executionError` alongside it rather than treating absent as "fast".
+	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4857,6 +4989,27 @@ func (b *BotLogicFormSubmissionItem) GetExecutionError() *string {
 		return nil
 	}
 	return b.ExecutionError
+}
+
+func (b *BotLogicFormSubmissionItem) GetData() map[string]interface{} {
+	if b == nil {
+		return nil
+	}
+	return b.Data
+}
+
+func (b *BotLogicFormSubmissionItem) GetStartedAt() *time.Time {
+	if b == nil {
+		return nil
+	}
+	return b.StartedAt
+}
+
+func (b *BotLogicFormSubmissionItem) GetDurationMs() *int64 {
+	if b == nil {
+		return nil
+	}
+	return b.DurationMs
 }
 
 func (b *BotLogicFormSubmissionItem) GetExtraProperties() map[string]interface{} {
@@ -4905,13 +5058,40 @@ func (b *BotLogicFormSubmissionItem) SetExecutionError(executionError *string) {
 	b.require(botLogicFormSubmissionItemFieldExecutionError)
 }
 
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicFormSubmissionItem) SetData(data map[string]interface{}) {
+	b.Data = data
+	b.require(botLogicFormSubmissionItemFieldData)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicFormSubmissionItem) SetStartedAt(startedAt *time.Time) {
+	b.StartedAt = startedAt
+	b.require(botLogicFormSubmissionItemFieldStartedAt)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicFormSubmissionItem) SetDurationMs(durationMs *int64) {
+	b.DurationMs = durationMs
+	b.require(botLogicFormSubmissionItemFieldDurationMs)
+}
+
 func (b *BotLogicFormSubmissionItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler BotLogicFormSubmissionItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed BotLogicFormSubmissionItem
+	var unmarshaler = struct {
+		embed
+		StartedAt *internal.DateTime `json:"startedAt,omitempty"`
+	}{
+		embed: embed(*b),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*b = BotLogicFormSubmissionItem(value)
+	*b = BotLogicFormSubmissionItem(unmarshaler.embed)
+	b.StartedAt = unmarshaler.StartedAt.TimePtr()
 	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
@@ -4925,8 +5105,10 @@ func (b *BotLogicFormSubmissionItem) MarshalJSON() ([]byte, error) {
 	type embed BotLogicFormSubmissionItem
 	var marshaler = struct {
 		embed
+		StartedAt *internal.DateTime `json:"startedAt,omitempty"`
 	}{
-		embed: embed(*b),
+		embed:     embed(*b),
+		StartedAt: internal.NewOptionalDateTime(b.StartedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -5940,11 +6122,14 @@ func (b *BotLogicSteeringItem) String() string {
 }
 
 var (
-	botLogicUserItemFieldUserData = big.NewInt(1 << 0)
+	botLogicUserItemFieldUserData    = big.NewInt(1 << 0)
+	botLogicUserItemFieldDisplayName = big.NewInt(1 << 1)
 )
 
 type BotLogicUserItem struct {
 	UserData map[string]string `json:"userData" url:"userData"`
+	// The user's name, when one can be determined from their user data. Absent otherwise — how a name is derived may broaden over time, so treat this as a display convenience rather than an identifier.
+	DisplayName *string `json:"displayName,omitempty" url:"displayName,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -5958,6 +6143,13 @@ func (b *BotLogicUserItem) GetUserData() map[string]string {
 		return nil
 	}
 	return b.UserData
+}
+
+func (b *BotLogicUserItem) GetDisplayName() *string {
+	if b == nil {
+		return nil
+	}
+	return b.DisplayName
 }
 
 func (b *BotLogicUserItem) GetExtraProperties() map[string]interface{} {
@@ -5976,6 +6168,13 @@ func (b *BotLogicUserItem) require(field *big.Int) {
 func (b *BotLogicUserItem) SetUserData(userData map[string]string) {
 	b.UserData = userData
 	b.require(botLogicUserItemFieldUserData)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BotLogicUserItem) SetDisplayName(displayName *string) {
+	b.DisplayName = displayName
+	b.require(botLogicUserItemFieldDisplayName)
 }
 
 func (b *BotLogicUserItem) UnmarshalJSON(data []byte) error {
@@ -23103,6 +23302,31 @@ func (s *SettingsSchemaValidation) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", s)
+}
+
+// An action's declaration about whether executing it causes side effects.
+type SideEffects string
+
+const (
+	// Read-only. Executing it changes nothing.
+	SideEffectsNone SideEffects = "NONE"
+	// Writes something, whether inside Maven or in another system.
+	SideEffectsPresent SideEffects = "PRESENT"
+)
+
+func NewSideEffectsFromString(s string) (SideEffects, error) {
+	switch s {
+	case "NONE":
+		return SideEffectsNone, nil
+	case "PRESENT":
+		return SideEffectsPresent, nil
+	}
+	var t SideEffects
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SideEffects) Ptr() *SideEffects {
+	return &s
 }
 
 var (

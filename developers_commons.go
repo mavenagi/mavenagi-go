@@ -77,6 +77,28 @@ func (a AppCategory) Ptr() *AppCategory {
 	return &a
 }
 
+type AppInstalled string
+
+const (
+	AppInstalledInstalled    AppInstalled = "INSTALLED"
+	AppInstalledNotInstalled AppInstalled = "NOT_INSTALLED"
+)
+
+func NewAppInstalledFromString(s string) (AppInstalled, error) {
+	switch s {
+	case "INSTALLED":
+		return AppInstalledInstalled, nil
+	case "NOT_INSTALLED":
+		return AppInstalledNotInstalled, nil
+	}
+	var t AppInstalled
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a AppInstalled) Ptr() *AppInstalled {
+	return &a
+}
+
 type AppVisibility string
 
 const (
@@ -100,6 +122,1195 @@ func NewAppVisibilityFromString(s string) (AppVisibility, error) {
 
 func (a AppVisibility) Ptr() *AppVisibility {
 	return &a
+}
+
+// Narrows the apps returned by a directory search. Every field is optional; omitting all of them
+// returns every app visible to the agent. Fields combine with AND, and list fields match any of
+// their values.
+var (
+	appsFilterFieldSearch             = big.NewInt(1 << 0)
+	appsFilterFieldVisibility         = big.NewInt(1 << 1)
+	appsFilterFieldInstalled          = big.NewInt(1 << 2)
+	appsFilterFieldCategory           = big.NewInt(1 << 3)
+	appsFilterFieldCapability         = big.NewInt(1 << 4)
+	appsFilterFieldFilterCountEnabled = big.NewInt(1 << 5)
+)
+
+type AppsFilter struct {
+	// Case-insensitive substring match against an app's id, name, or description.
+	Search *string `json:"search,omitempty" url:"search,omitempty"`
+	// Only return apps with one of these visibilities.
+	Visibility []AppVisibility `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Only return apps that are installed on this agent, or only those that are not. Omit to
+	// return both.
+	Installed *AppInstalled `json:"installed,omitempty" url:"installed,omitempty"`
+	// Only return apps tagged with one of these categories.
+	Category []AppCategory `json:"category,omitempty" url:"category,omitempty"`
+	// Only return apps offering one of these capabilities.
+	Capability []AppCapability `json:"capability,omitempty" url:"capability,omitempty"`
+	// Also compute `allAppsCountByFilter` and `installedAppsCountByFilter` on the response.
+	// These are the counts a filter sidebar needs, and computing them costs extra queries, so
+	// they are off by default.
+	FilterCountEnabled *bool `json:"filterCountEnabled,omitempty" url:"filterCountEnabled,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AppsFilter) GetSearch() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Search
+}
+
+func (a *AppsFilter) GetVisibility() []AppVisibility {
+	if a == nil {
+		return nil
+	}
+	return a.Visibility
+}
+
+func (a *AppsFilter) GetInstalled() *AppInstalled {
+	if a == nil {
+		return nil
+	}
+	return a.Installed
+}
+
+func (a *AppsFilter) GetCategory() []AppCategory {
+	if a == nil {
+		return nil
+	}
+	return a.Category
+}
+
+func (a *AppsFilter) GetCapability() []AppCapability {
+	if a == nil {
+		return nil
+	}
+	return a.Capability
+}
+
+func (a *AppsFilter) GetFilterCountEnabled() *bool {
+	if a == nil {
+		return nil
+	}
+	return a.FilterCountEnabled
+}
+
+func (a *AppsFilter) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AppsFilter) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetSearch sets the Search field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsFilter) SetSearch(search *string) {
+	a.Search = search
+	a.require(appsFilterFieldSearch)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsFilter) SetVisibility(visibility []AppVisibility) {
+	a.Visibility = visibility
+	a.require(appsFilterFieldVisibility)
+}
+
+// SetInstalled sets the Installed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsFilter) SetInstalled(installed *AppInstalled) {
+	a.Installed = installed
+	a.require(appsFilterFieldInstalled)
+}
+
+// SetCategory sets the Category field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsFilter) SetCategory(category []AppCategory) {
+	a.Category = category
+	a.require(appsFilterFieldCategory)
+}
+
+// SetCapability sets the Capability field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsFilter) SetCapability(capability []AppCapability) {
+	a.Capability = capability
+	a.require(appsFilterFieldCapability)
+}
+
+// SetFilterCountEnabled sets the FilterCountEnabled field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsFilter) SetFilterCountEnabled(filterCountEnabled *bool) {
+	a.FilterCountEnabled = filterCountEnabled
+	a.require(appsFilterFieldFilterCountEnabled)
+}
+
+func (a *AppsFilter) UnmarshalJSON(data []byte) error {
+	type unmarshaler AppsFilter
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AppsFilter(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AppsFilter) MarshalJSON() ([]byte, error) {
+	type embed AppsFilter
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AppsFilter) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
+	appsResponseFieldNumber                     = big.NewInt(1 << 0)
+	appsResponseFieldSize                       = big.NewInt(1 << 1)
+	appsResponseFieldTotalElements              = big.NewInt(1 << 2)
+	appsResponseFieldTotalPages                 = big.NewInt(1 << 3)
+	appsResponseFieldApps                       = big.NewInt(1 << 4)
+	appsResponseFieldAllAppsCountByFilter       = big.NewInt(1 << 5)
+	appsResponseFieldInstalledAppsCountByFilter = big.NewInt(1 << 6)
+)
+
+type AppsResponse struct {
+	// The page being returned, starts at 0
+	Number int `json:"number" url:"number"`
+	// The number of elements in this page
+	Size int `json:"size" url:"size"`
+	// The total number of elements in the collection
+	TotalElements int64 `json:"totalElements" url:"totalElements"`
+	// The total number of pages in the collection
+	TotalPages int `json:"totalPages" url:"totalPages"`
+	// The page of apps matching the filter.
+	Apps []*MarketplaceApp `json:"apps" url:"apps"`
+	// How many apps fall into each visibility and category, across everything visible to the
+	// agent rather than just this page. Present only when `filterCountEnabled` was set.
+	AllAppsCountByFilter *CountByFilterResult `json:"allAppsCountByFilter,omitempty" url:"allAppsCountByFilter,omitempty"`
+	// The same breakdown restricted to apps installed on this agent. Present only when
+	// `filterCountEnabled` was set.
+	InstalledAppsCountByFilter *CountByFilterResult `json:"installedAppsCountByFilter,omitempty" url:"installedAppsCountByFilter,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AppsResponse) GetNumber() int {
+	if a == nil {
+		return 0
+	}
+	return a.Number
+}
+
+func (a *AppsResponse) GetSize() int {
+	if a == nil {
+		return 0
+	}
+	return a.Size
+}
+
+func (a *AppsResponse) GetTotalElements() int64 {
+	if a == nil {
+		return 0
+	}
+	return a.TotalElements
+}
+
+func (a *AppsResponse) GetTotalPages() int {
+	if a == nil {
+		return 0
+	}
+	return a.TotalPages
+}
+
+func (a *AppsResponse) GetApps() []*MarketplaceApp {
+	if a == nil {
+		return nil
+	}
+	return a.Apps
+}
+
+func (a *AppsResponse) GetAllAppsCountByFilter() *CountByFilterResult {
+	if a == nil {
+		return nil
+	}
+	return a.AllAppsCountByFilter
+}
+
+func (a *AppsResponse) GetInstalledAppsCountByFilter() *CountByFilterResult {
+	if a == nil {
+		return nil
+	}
+	return a.InstalledAppsCountByFilter
+}
+
+func (a *AppsResponse) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AppsResponse) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetNumber sets the Number field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetNumber(number int) {
+	a.Number = number
+	a.require(appsResponseFieldNumber)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetSize(size int) {
+	a.Size = size
+	a.require(appsResponseFieldSize)
+}
+
+// SetTotalElements sets the TotalElements field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetTotalElements(totalElements int64) {
+	a.TotalElements = totalElements
+	a.require(appsResponseFieldTotalElements)
+}
+
+// SetTotalPages sets the TotalPages field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetTotalPages(totalPages int) {
+	a.TotalPages = totalPages
+	a.require(appsResponseFieldTotalPages)
+}
+
+// SetApps sets the Apps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetApps(apps []*MarketplaceApp) {
+	a.Apps = apps
+	a.require(appsResponseFieldApps)
+}
+
+// SetAllAppsCountByFilter sets the AllAppsCountByFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetAllAppsCountByFilter(allAppsCountByFilter *CountByFilterResult) {
+	a.AllAppsCountByFilter = allAppsCountByFilter
+	a.require(appsResponseFieldAllAppsCountByFilter)
+}
+
+// SetInstalledAppsCountByFilter sets the InstalledAppsCountByFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AppsResponse) SetInstalledAppsCountByFilter(installedAppsCountByFilter *CountByFilterResult) {
+	a.InstalledAppsCountByFilter = installedAppsCountByFilter
+	a.require(appsResponseFieldInstalledAppsCountByFilter)
+}
+
+func (a *AppsResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler AppsResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AppsResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AppsResponse) MarshalJSON() ([]byte, error) {
+	type embed AppsResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AppsResponse) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+// The fields every app exposes, whatever the surface it is returned from.
+var (
+	baseAppFieldID                      = big.NewInt(1 << 0)
+	baseAppFieldName                    = big.NewInt(1 << 1)
+	baseAppFieldDeveloperOrganizationID = big.NewInt(1 << 2)
+	baseAppFieldCreator                 = big.NewInt(1 << 3)
+	baseAppFieldVisibility              = big.NewInt(1 << 4)
+	baseAppFieldDescription             = big.NewInt(1 << 5)
+	baseAppFieldShortDescription        = big.NewInt(1 << 6)
+	baseAppFieldLogoURL                 = big.NewInt(1 << 7)
+	baseAppFieldCategories              = big.NewInt(1 << 8)
+	baseAppFieldCapabilities            = big.NewInt(1 << 9)
+	baseAppFieldIsAgentApp              = big.NewInt(1 << 10)
+)
+
+type BaseApp struct {
+	// Unique, immutable identifier for the app, used as `appId` everywhere in the API.
+	ID string `json:"id" url:"id"`
+	// Display name shown in the app directory.
+	Name string `json:"name" url:"name"`
+	// Id of the organization that authored the app, which is not the organization it is installed in.
+	DeveloperOrganizationID string `json:"developerOrganizationId" url:"developerOrganizationId"`
+	// Public profile of the authoring organization, for attribution in the directory.
+	Creator *DeveloperOrganization `json:"creator,omitempty" url:"creator,omitempty"`
+	// Who can discover the app. PUBLIC is listed for every organization; PRIVATE is limited to the
+	// authoring organization and any organization it has been shared with; IN_DEVELOPMENT is not
+	// yet listed.
+	Visibility AppVisibility `json:"visibility" url:"visibility"`
+	// Full description shown on the app's detail page.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// One-line summary shown on the app's card in the directory listing.
+	ShortDescription *string `json:"shortDescription,omitempty" url:"shortDescription,omitempty"`
+	// URL of the app's logo. Presigned and short-lived when the logo is stored by Maven.
+	LogoURL *string `json:"logoUrl,omitempty" url:"logoUrl,omitempty"`
+	// Categories the app is filed under in the directory.
+	Categories []AppCategory `json:"categories" url:"categories"`
+	// The kinds of functionality the app provides, such as actions, triggers, or knowledge bases.
+	Capabilities []AppCapability `json:"capabilities" url:"capabilities"`
+	// Whether this app is an auto-provisioned agent app created for a specific agent.
+	IsAgentApp *bool `json:"isAgentApp,omitempty" url:"isAgentApp,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BaseApp) GetID() string {
+	if b == nil {
+		return ""
+	}
+	return b.ID
+}
+
+func (b *BaseApp) GetName() string {
+	if b == nil {
+		return ""
+	}
+	return b.Name
+}
+
+func (b *BaseApp) GetDeveloperOrganizationID() string {
+	if b == nil {
+		return ""
+	}
+	return b.DeveloperOrganizationID
+}
+
+func (b *BaseApp) GetCreator() *DeveloperOrganization {
+	if b == nil {
+		return nil
+	}
+	return b.Creator
+}
+
+func (b *BaseApp) GetVisibility() AppVisibility {
+	if b == nil {
+		return ""
+	}
+	return b.Visibility
+}
+
+func (b *BaseApp) GetDescription() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Description
+}
+
+func (b *BaseApp) GetShortDescription() *string {
+	if b == nil {
+		return nil
+	}
+	return b.ShortDescription
+}
+
+func (b *BaseApp) GetLogoURL() *string {
+	if b == nil {
+		return nil
+	}
+	return b.LogoURL
+}
+
+func (b *BaseApp) GetCategories() []AppCategory {
+	if b == nil {
+		return nil
+	}
+	return b.Categories
+}
+
+func (b *BaseApp) GetCapabilities() []AppCapability {
+	if b == nil {
+		return nil
+	}
+	return b.Capabilities
+}
+
+func (b *BaseApp) GetIsAgentApp() *bool {
+	if b == nil {
+		return nil
+	}
+	return b.IsAgentApp
+}
+
+func (b *BaseApp) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BaseApp) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetID(id string) {
+	b.ID = id
+	b.require(baseAppFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetName(name string) {
+	b.Name = name
+	b.require(baseAppFieldName)
+}
+
+// SetDeveloperOrganizationID sets the DeveloperOrganizationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetDeveloperOrganizationID(developerOrganizationID string) {
+	b.DeveloperOrganizationID = developerOrganizationID
+	b.require(baseAppFieldDeveloperOrganizationID)
+}
+
+// SetCreator sets the Creator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetCreator(creator *DeveloperOrganization) {
+	b.Creator = creator
+	b.require(baseAppFieldCreator)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetVisibility(visibility AppVisibility) {
+	b.Visibility = visibility
+	b.require(baseAppFieldVisibility)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetDescription(description *string) {
+	b.Description = description
+	b.require(baseAppFieldDescription)
+}
+
+// SetShortDescription sets the ShortDescription field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetShortDescription(shortDescription *string) {
+	b.ShortDescription = shortDescription
+	b.require(baseAppFieldShortDescription)
+}
+
+// SetLogoURL sets the LogoURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetLogoURL(logoURL *string) {
+	b.LogoURL = logoURL
+	b.require(baseAppFieldLogoURL)
+}
+
+// SetCategories sets the Categories field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetCategories(categories []AppCategory) {
+	b.Categories = categories
+	b.require(baseAppFieldCategories)
+}
+
+// SetCapabilities sets the Capabilities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetCapabilities(capabilities []AppCapability) {
+	b.Capabilities = capabilities
+	b.require(baseAppFieldCapabilities)
+}
+
+// SetIsAgentApp sets the IsAgentApp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseApp) SetIsAgentApp(isAgentApp *bool) {
+	b.IsAgentApp = isAgentApp
+	b.require(baseAppFieldIsAgentApp)
+}
+
+func (b *BaseApp) UnmarshalJSON(data []byte) error {
+	type unmarshaler BaseApp
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BaseApp(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BaseApp) MarshalJSON() ([]byte, error) {
+	type embed BaseApp
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BaseApp) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+// An app with the extra detail needed to render its page and drive installation.
+var (
+	baseDetailAppFieldID                       = big.NewInt(1 << 0)
+	baseDetailAppFieldName                     = big.NewInt(1 << 1)
+	baseDetailAppFieldDeveloperOrganizationID  = big.NewInt(1 << 2)
+	baseDetailAppFieldCreator                  = big.NewInt(1 << 3)
+	baseDetailAppFieldVisibility               = big.NewInt(1 << 4)
+	baseDetailAppFieldDescription              = big.NewInt(1 << 5)
+	baseDetailAppFieldShortDescription         = big.NewInt(1 << 6)
+	baseDetailAppFieldLogoURL                  = big.NewInt(1 << 7)
+	baseDetailAppFieldCategories               = big.NewInt(1 << 8)
+	baseDetailAppFieldCapabilities             = big.NewInt(1 << 9)
+	baseDetailAppFieldIsAgentApp               = big.NewInt(1 << 10)
+	baseDetailAppFieldInstallationInstructions = big.NewInt(1 << 11)
+	baseDetailAppFieldInstructions             = big.NewInt(1 << 12)
+	baseDetailAppFieldPreviewURL               = big.NewInt(1 << 13)
+	baseDetailAppFieldLinks                    = big.NewInt(1 << 14)
+	baseDetailAppFieldSettingsSchema           = big.NewInt(1 << 15)
+)
+
+type BaseDetailApp struct {
+	// Unique, immutable identifier for the app, used as `appId` everywhere in the API.
+	ID string `json:"id" url:"id"`
+	// Display name shown in the app directory.
+	Name string `json:"name" url:"name"`
+	// Id of the organization that authored the app, which is not the organization it is installed in.
+	DeveloperOrganizationID string `json:"developerOrganizationId" url:"developerOrganizationId"`
+	// Public profile of the authoring organization, for attribution in the directory.
+	Creator *DeveloperOrganization `json:"creator,omitempty" url:"creator,omitempty"`
+	// Who can discover the app. PUBLIC is listed for every organization; PRIVATE is limited to the
+	// authoring organization and any organization it has been shared with; IN_DEVELOPMENT is not
+	// yet listed.
+	Visibility AppVisibility `json:"visibility" url:"visibility"`
+	// Full description shown on the app's detail page.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// One-line summary shown on the app's card in the directory listing.
+	ShortDescription *string `json:"shortDescription,omitempty" url:"shortDescription,omitempty"`
+	// URL of the app's logo. Presigned and short-lived when the logo is stored by Maven.
+	LogoURL *string `json:"logoUrl,omitempty" url:"logoUrl,omitempty"`
+	// Categories the app is filed under in the directory.
+	Categories []AppCategory `json:"categories" url:"categories"`
+	// The kinds of functionality the app provides, such as actions, triggers, or knowledge bases.
+	Capabilities []AppCapability `json:"capabilities" url:"capabilities"`
+	// Whether this app is an auto-provisioned agent app created for a specific agent.
+	IsAgentApp *bool `json:"isAgentApp,omitempty" url:"isAgentApp,omitempty"`
+	// Guidance shown while installing the app, for example how to obtain the credentials it asks for.
+	InstallationInstructions *string `json:"installationInstructions,omitempty" url:"installationInstructions,omitempty"`
+	// Guidance shown once the app is installed.
+	Instructions *string `json:"instructions,omitempty" url:"instructions,omitempty"`
+	// URL of a preview image or demo for the app's detail page.
+	PreviewURL *string `json:"previewUrl,omitempty" url:"previewUrl,omitempty"`
+	// Supporting links published by the author, such as documentation or a privacy policy.
+	Links []*Link `json:"links" url:"links"`
+	// The settings the app accepts. Drives the install form, and describes which values are files
+	// rather than plain values.
+	SettingsSchema SettingsSchema `json:"settingsSchema" url:"settingsSchema"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BaseDetailApp) GetID() string {
+	if b == nil {
+		return ""
+	}
+	return b.ID
+}
+
+func (b *BaseDetailApp) GetName() string {
+	if b == nil {
+		return ""
+	}
+	return b.Name
+}
+
+func (b *BaseDetailApp) GetDeveloperOrganizationID() string {
+	if b == nil {
+		return ""
+	}
+	return b.DeveloperOrganizationID
+}
+
+func (b *BaseDetailApp) GetCreator() *DeveloperOrganization {
+	if b == nil {
+		return nil
+	}
+	return b.Creator
+}
+
+func (b *BaseDetailApp) GetVisibility() AppVisibility {
+	if b == nil {
+		return ""
+	}
+	return b.Visibility
+}
+
+func (b *BaseDetailApp) GetDescription() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Description
+}
+
+func (b *BaseDetailApp) GetShortDescription() *string {
+	if b == nil {
+		return nil
+	}
+	return b.ShortDescription
+}
+
+func (b *BaseDetailApp) GetLogoURL() *string {
+	if b == nil {
+		return nil
+	}
+	return b.LogoURL
+}
+
+func (b *BaseDetailApp) GetCategories() []AppCategory {
+	if b == nil {
+		return nil
+	}
+	return b.Categories
+}
+
+func (b *BaseDetailApp) GetCapabilities() []AppCapability {
+	if b == nil {
+		return nil
+	}
+	return b.Capabilities
+}
+
+func (b *BaseDetailApp) GetIsAgentApp() *bool {
+	if b == nil {
+		return nil
+	}
+	return b.IsAgentApp
+}
+
+func (b *BaseDetailApp) GetInstallationInstructions() *string {
+	if b == nil {
+		return nil
+	}
+	return b.InstallationInstructions
+}
+
+func (b *BaseDetailApp) GetInstructions() *string {
+	if b == nil {
+		return nil
+	}
+	return b.Instructions
+}
+
+func (b *BaseDetailApp) GetPreviewURL() *string {
+	if b == nil {
+		return nil
+	}
+	return b.PreviewURL
+}
+
+func (b *BaseDetailApp) GetLinks() []*Link {
+	if b == nil {
+		return nil
+	}
+	return b.Links
+}
+
+func (b *BaseDetailApp) GetSettingsSchema() SettingsSchema {
+	if b == nil {
+		return nil
+	}
+	return b.SettingsSchema
+}
+
+func (b *BaseDetailApp) GetExtraProperties() map[string]interface{} {
+	return b.extraProperties
+}
+
+func (b *BaseDetailApp) require(field *big.Int) {
+	if b.explicitFields == nil {
+		b.explicitFields = big.NewInt(0)
+	}
+	b.explicitFields.Or(b.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetID(id string) {
+	b.ID = id
+	b.require(baseDetailAppFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetName(name string) {
+	b.Name = name
+	b.require(baseDetailAppFieldName)
+}
+
+// SetDeveloperOrganizationID sets the DeveloperOrganizationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetDeveloperOrganizationID(developerOrganizationID string) {
+	b.DeveloperOrganizationID = developerOrganizationID
+	b.require(baseDetailAppFieldDeveloperOrganizationID)
+}
+
+// SetCreator sets the Creator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetCreator(creator *DeveloperOrganization) {
+	b.Creator = creator
+	b.require(baseDetailAppFieldCreator)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetVisibility(visibility AppVisibility) {
+	b.Visibility = visibility
+	b.require(baseDetailAppFieldVisibility)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetDescription(description *string) {
+	b.Description = description
+	b.require(baseDetailAppFieldDescription)
+}
+
+// SetShortDescription sets the ShortDescription field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetShortDescription(shortDescription *string) {
+	b.ShortDescription = shortDescription
+	b.require(baseDetailAppFieldShortDescription)
+}
+
+// SetLogoURL sets the LogoURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetLogoURL(logoURL *string) {
+	b.LogoURL = logoURL
+	b.require(baseDetailAppFieldLogoURL)
+}
+
+// SetCategories sets the Categories field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetCategories(categories []AppCategory) {
+	b.Categories = categories
+	b.require(baseDetailAppFieldCategories)
+}
+
+// SetCapabilities sets the Capabilities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetCapabilities(capabilities []AppCapability) {
+	b.Capabilities = capabilities
+	b.require(baseDetailAppFieldCapabilities)
+}
+
+// SetIsAgentApp sets the IsAgentApp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetIsAgentApp(isAgentApp *bool) {
+	b.IsAgentApp = isAgentApp
+	b.require(baseDetailAppFieldIsAgentApp)
+}
+
+// SetInstallationInstructions sets the InstallationInstructions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetInstallationInstructions(installationInstructions *string) {
+	b.InstallationInstructions = installationInstructions
+	b.require(baseDetailAppFieldInstallationInstructions)
+}
+
+// SetInstructions sets the Instructions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetInstructions(instructions *string) {
+	b.Instructions = instructions
+	b.require(baseDetailAppFieldInstructions)
+}
+
+// SetPreviewURL sets the PreviewURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetPreviewURL(previewURL *string) {
+	b.PreviewURL = previewURL
+	b.require(baseDetailAppFieldPreviewURL)
+}
+
+// SetLinks sets the Links field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetLinks(links []*Link) {
+	b.Links = links
+	b.require(baseDetailAppFieldLinks)
+}
+
+// SetSettingsSchema sets the SettingsSchema field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseDetailApp) SetSettingsSchema(settingsSchema SettingsSchema) {
+	b.SettingsSchema = settingsSchema
+	b.require(baseDetailAppFieldSettingsSchema)
+}
+
+func (b *BaseDetailApp) UnmarshalJSON(data []byte) error {
+	type unmarshaler BaseDetailApp
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BaseDetailApp(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BaseDetailApp) MarshalJSON() ([]byte, error) {
+	type embed BaseDetailApp
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BaseDetailApp) String() string {
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+// Facet counts for the app directory's filter controls — how many apps would remain under each
+// individual filter value. Counts span every matching app, not only the current page.
+var (
+	countByFilterResultFieldCountByVisibility = big.NewInt(1 << 0)
+	countByFilterResultFieldCountByCategory   = big.NewInt(1 << 1)
+)
+
+type CountByFilterResult struct {
+	// Number of apps with each visibility.
+	CountByVisibility map[AppVisibility]int `json:"countByVisibility" url:"countByVisibility"`
+	// Number of apps in each category.
+	CountByCategory map[AppCategory]int `json:"countByCategory" url:"countByCategory"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CountByFilterResult) GetCountByVisibility() map[AppVisibility]int {
+	if c == nil {
+		return nil
+	}
+	return c.CountByVisibility
+}
+
+func (c *CountByFilterResult) GetCountByCategory() map[AppCategory]int {
+	if c == nil {
+		return nil
+	}
+	return c.CountByCategory
+}
+
+func (c *CountByFilterResult) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CountByFilterResult) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetCountByVisibility sets the CountByVisibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CountByFilterResult) SetCountByVisibility(countByVisibility map[AppVisibility]int) {
+	c.CountByVisibility = countByVisibility
+	c.require(countByFilterResultFieldCountByVisibility)
+}
+
+// SetCountByCategory sets the CountByCategory field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CountByFilterResult) SetCountByCategory(countByCategory map[AppCategory]int) {
+	c.CountByCategory = countByCategory
+	c.require(countByFilterResultFieldCountByCategory)
+}
+
+func (c *CountByFilterResult) UnmarshalJSON(data []byte) error {
+	type unmarshaler CountByFilterResult
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CountByFilterResult(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CountByFilterResult) MarshalJSON() ([]byte, error) {
+	type embed CountByFilterResult
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CountByFilterResult) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// The public profile of an organization that authors apps, shown for attribution and support.
+var (
+	developerOrganizationFieldOrganizationID = big.NewInt(1 << 0)
+	developerOrganizationFieldName           = big.NewInt(1 << 1)
+	developerOrganizationFieldWebsite        = big.NewInt(1 << 2)
+	developerOrganizationFieldEmail          = big.NewInt(1 << 3)
+	developerOrganizationFieldPhone          = big.NewInt(1 << 4)
+)
+
+type DeveloperOrganization struct {
+	// Id of the authoring organization.
+	OrganizationID string `json:"organizationId" url:"organizationId"`
+	// Display name of the authoring organization.
+	Name string `json:"name" url:"name"`
+	// Public website for the organization.
+	Website *string `json:"website,omitempty" url:"website,omitempty"`
+	// Contact email published by the organization.
+	Email *string `json:"email,omitempty" url:"email,omitempty"`
+	// Contact phone number published by the organization.
+	Phone *string `json:"phone,omitempty" url:"phone,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (d *DeveloperOrganization) GetOrganizationID() string {
+	if d == nil {
+		return ""
+	}
+	return d.OrganizationID
+}
+
+func (d *DeveloperOrganization) GetName() string {
+	if d == nil {
+		return ""
+	}
+	return d.Name
+}
+
+func (d *DeveloperOrganization) GetWebsite() *string {
+	if d == nil {
+		return nil
+	}
+	return d.Website
+}
+
+func (d *DeveloperOrganization) GetEmail() *string {
+	if d == nil {
+		return nil
+	}
+	return d.Email
+}
+
+func (d *DeveloperOrganization) GetPhone() *string {
+	if d == nil {
+		return nil
+	}
+	return d.Phone
+}
+
+func (d *DeveloperOrganization) GetExtraProperties() map[string]interface{} {
+	return d.extraProperties
+}
+
+func (d *DeveloperOrganization) require(field *big.Int) {
+	if d.explicitFields == nil {
+		d.explicitFields = big.NewInt(0)
+	}
+	d.explicitFields.Or(d.explicitFields, field)
+}
+
+// SetOrganizationID sets the OrganizationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeveloperOrganization) SetOrganizationID(organizationID string) {
+	d.OrganizationID = organizationID
+	d.require(developerOrganizationFieldOrganizationID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeveloperOrganization) SetName(name string) {
+	d.Name = name
+	d.require(developerOrganizationFieldName)
+}
+
+// SetWebsite sets the Website field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeveloperOrganization) SetWebsite(website *string) {
+	d.Website = website
+	d.require(developerOrganizationFieldWebsite)
+}
+
+// SetEmail sets the Email field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeveloperOrganization) SetEmail(email *string) {
+	d.Email = email
+	d.require(developerOrganizationFieldEmail)
+}
+
+// SetPhone sets the Phone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeveloperOrganization) SetPhone(phone *string) {
+	d.Phone = phone
+	d.require(developerOrganizationFieldPhone)
+}
+
+func (d *DeveloperOrganization) UnmarshalJSON(data []byte) error {
+	type unmarshaler DeveloperOrganization
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*d = DeveloperOrganization(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
+	if err != nil {
+		return err
+	}
+	d.extraProperties = extraProperties
+	d.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (d *DeveloperOrganization) MarshalJSON() ([]byte, error) {
+	type embed DeveloperOrganization
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*d),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (d *DeveloperOrganization) String() string {
+	if len(d.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(d); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", d)
 }
 
 var (
@@ -196,6 +1407,7 @@ func (g *GithubRepository) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
+// A supporting link published by an app's author.
 var (
 	linkFieldTitle       = big.NewInt(1 << 0)
 	linkFieldDescription = big.NewInt(1 << 1)
@@ -203,9 +1415,12 @@ var (
 )
 
 type Link struct {
-	Title       string  `json:"title" url:"title"`
+	// Link text.
+	Title string `json:"title" url:"title"`
+	// Optional longer explanation of where the link goes.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	URL         string  `json:"url" url:"url"`
+	// Destination URL.
+	URL string `json:"url" url:"url"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -304,4 +1519,668 @@ func (l *Link) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", l)
+}
+
+// A minimal app definition used when rendering the main app directory page
+var (
+	marketplaceAppFieldID                      = big.NewInt(1 << 0)
+	marketplaceAppFieldName                    = big.NewInt(1 << 1)
+	marketplaceAppFieldDeveloperOrganizationID = big.NewInt(1 << 2)
+	marketplaceAppFieldCreator                 = big.NewInt(1 << 3)
+	marketplaceAppFieldVisibility              = big.NewInt(1 << 4)
+	marketplaceAppFieldDescription             = big.NewInt(1 << 5)
+	marketplaceAppFieldShortDescription        = big.NewInt(1 << 6)
+	marketplaceAppFieldLogoURL                 = big.NewInt(1 << 7)
+	marketplaceAppFieldCategories              = big.NewInt(1 << 8)
+	marketplaceAppFieldCapabilities            = big.NewInt(1 << 9)
+	marketplaceAppFieldIsAgentApp              = big.NewInt(1 << 10)
+	marketplaceAppFieldInstalled               = big.NewInt(1 << 11)
+)
+
+type MarketplaceApp struct {
+	// Unique, immutable identifier for the app, used as `appId` everywhere in the API.
+	ID string `json:"id" url:"id"`
+	// Display name shown in the app directory.
+	Name string `json:"name" url:"name"`
+	// Id of the organization that authored the app, which is not the organization it is installed in.
+	DeveloperOrganizationID string `json:"developerOrganizationId" url:"developerOrganizationId"`
+	// Public profile of the authoring organization, for attribution in the directory.
+	Creator *DeveloperOrganization `json:"creator,omitempty" url:"creator,omitempty"`
+	// Who can discover the app. PUBLIC is listed for every organization; PRIVATE is limited to the
+	// authoring organization and any organization it has been shared with; IN_DEVELOPMENT is not
+	// yet listed.
+	Visibility AppVisibility `json:"visibility" url:"visibility"`
+	// Full description shown on the app's detail page.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// One-line summary shown on the app's card in the directory listing.
+	ShortDescription *string `json:"shortDescription,omitempty" url:"shortDescription,omitempty"`
+	// URL of the app's logo. Presigned and short-lived when the logo is stored by Maven.
+	LogoURL *string `json:"logoUrl,omitempty" url:"logoUrl,omitempty"`
+	// Categories the app is filed under in the directory.
+	Categories []AppCategory `json:"categories" url:"categories"`
+	// The kinds of functionality the app provides, such as actions, triggers, or knowledge bases.
+	Capabilities []AppCapability `json:"capabilities" url:"capabilities"`
+	// Whether this app is an auto-provisioned agent app created for a specific agent.
+	IsAgentApp *bool `json:"isAgentApp,omitempty" url:"isAgentApp,omitempty"`
+	// Whether this app is currently installed on the agent the request was scoped to.
+	Installed AppInstalled `json:"installed" url:"installed"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *MarketplaceApp) GetID() string {
+	if m == nil {
+		return ""
+	}
+	return m.ID
+}
+
+func (m *MarketplaceApp) GetName() string {
+	if m == nil {
+		return ""
+	}
+	return m.Name
+}
+
+func (m *MarketplaceApp) GetDeveloperOrganizationID() string {
+	if m == nil {
+		return ""
+	}
+	return m.DeveloperOrganizationID
+}
+
+func (m *MarketplaceApp) GetCreator() *DeveloperOrganization {
+	if m == nil {
+		return nil
+	}
+	return m.Creator
+}
+
+func (m *MarketplaceApp) GetVisibility() AppVisibility {
+	if m == nil {
+		return ""
+	}
+	return m.Visibility
+}
+
+func (m *MarketplaceApp) GetDescription() *string {
+	if m == nil {
+		return nil
+	}
+	return m.Description
+}
+
+func (m *MarketplaceApp) GetShortDescription() *string {
+	if m == nil {
+		return nil
+	}
+	return m.ShortDescription
+}
+
+func (m *MarketplaceApp) GetLogoURL() *string {
+	if m == nil {
+		return nil
+	}
+	return m.LogoURL
+}
+
+func (m *MarketplaceApp) GetCategories() []AppCategory {
+	if m == nil {
+		return nil
+	}
+	return m.Categories
+}
+
+func (m *MarketplaceApp) GetCapabilities() []AppCapability {
+	if m == nil {
+		return nil
+	}
+	return m.Capabilities
+}
+
+func (m *MarketplaceApp) GetIsAgentApp() *bool {
+	if m == nil {
+		return nil
+	}
+	return m.IsAgentApp
+}
+
+func (m *MarketplaceApp) GetInstalled() AppInstalled {
+	if m == nil {
+		return ""
+	}
+	return m.Installed
+}
+
+func (m *MarketplaceApp) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *MarketplaceApp) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetID(id string) {
+	m.ID = id
+	m.require(marketplaceAppFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetName(name string) {
+	m.Name = name
+	m.require(marketplaceAppFieldName)
+}
+
+// SetDeveloperOrganizationID sets the DeveloperOrganizationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetDeveloperOrganizationID(developerOrganizationID string) {
+	m.DeveloperOrganizationID = developerOrganizationID
+	m.require(marketplaceAppFieldDeveloperOrganizationID)
+}
+
+// SetCreator sets the Creator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetCreator(creator *DeveloperOrganization) {
+	m.Creator = creator
+	m.require(marketplaceAppFieldCreator)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetVisibility(visibility AppVisibility) {
+	m.Visibility = visibility
+	m.require(marketplaceAppFieldVisibility)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetDescription(description *string) {
+	m.Description = description
+	m.require(marketplaceAppFieldDescription)
+}
+
+// SetShortDescription sets the ShortDescription field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetShortDescription(shortDescription *string) {
+	m.ShortDescription = shortDescription
+	m.require(marketplaceAppFieldShortDescription)
+}
+
+// SetLogoURL sets the LogoURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetLogoURL(logoURL *string) {
+	m.LogoURL = logoURL
+	m.require(marketplaceAppFieldLogoURL)
+}
+
+// SetCategories sets the Categories field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetCategories(categories []AppCategory) {
+	m.Categories = categories
+	m.require(marketplaceAppFieldCategories)
+}
+
+// SetCapabilities sets the Capabilities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetCapabilities(capabilities []AppCapability) {
+	m.Capabilities = capabilities
+	m.require(marketplaceAppFieldCapabilities)
+}
+
+// SetIsAgentApp sets the IsAgentApp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetIsAgentApp(isAgentApp *bool) {
+	m.IsAgentApp = isAgentApp
+	m.require(marketplaceAppFieldIsAgentApp)
+}
+
+// SetInstalled sets the Installed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceApp) SetInstalled(installed AppInstalled) {
+	m.Installed = installed
+	m.require(marketplaceAppFieldInstalled)
+}
+
+func (m *MarketplaceApp) UnmarshalJSON(data []byte) error {
+	type unmarshaler MarketplaceApp
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*m = MarketplaceApp(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *MarketplaceApp) MarshalJSON() ([]byte, error) {
+	type embed MarketplaceApp
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*m),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *MarketplaceApp) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
+}
+
+// A detailed app definition used when rendering an app detail page within the app directory.
+// The instructions, installationInstructions, previewUrl have their templated values substituted with appropriate values.
+var (
+	marketplaceAppDetailFieldID                       = big.NewInt(1 << 0)
+	marketplaceAppDetailFieldName                     = big.NewInt(1 << 1)
+	marketplaceAppDetailFieldDeveloperOrganizationID  = big.NewInt(1 << 2)
+	marketplaceAppDetailFieldCreator                  = big.NewInt(1 << 3)
+	marketplaceAppDetailFieldVisibility               = big.NewInt(1 << 4)
+	marketplaceAppDetailFieldDescription              = big.NewInt(1 << 5)
+	marketplaceAppDetailFieldShortDescription         = big.NewInt(1 << 6)
+	marketplaceAppDetailFieldLogoURL                  = big.NewInt(1 << 7)
+	marketplaceAppDetailFieldCategories               = big.NewInt(1 << 8)
+	marketplaceAppDetailFieldCapabilities             = big.NewInt(1 << 9)
+	marketplaceAppDetailFieldIsAgentApp               = big.NewInt(1 << 10)
+	marketplaceAppDetailFieldInstallationInstructions = big.NewInt(1 << 11)
+	marketplaceAppDetailFieldInstructions             = big.NewInt(1 << 12)
+	marketplaceAppDetailFieldPreviewURL               = big.NewInt(1 << 13)
+	marketplaceAppDetailFieldLinks                    = big.NewInt(1 << 14)
+	marketplaceAppDetailFieldSettingsSchema           = big.NewInt(1 << 15)
+	marketplaceAppDetailFieldInstalled                = big.NewInt(1 << 16)
+	marketplaceAppDetailFieldSettings                 = big.NewInt(1 << 17)
+)
+
+type MarketplaceAppDetail struct {
+	// Unique, immutable identifier for the app, used as `appId` everywhere in the API.
+	ID string `json:"id" url:"id"`
+	// Display name shown in the app directory.
+	Name string `json:"name" url:"name"`
+	// Id of the organization that authored the app, which is not the organization it is installed in.
+	DeveloperOrganizationID string `json:"developerOrganizationId" url:"developerOrganizationId"`
+	// Public profile of the authoring organization, for attribution in the directory.
+	Creator *DeveloperOrganization `json:"creator,omitempty" url:"creator,omitempty"`
+	// Who can discover the app. PUBLIC is listed for every organization; PRIVATE is limited to the
+	// authoring organization and any organization it has been shared with; IN_DEVELOPMENT is not
+	// yet listed.
+	Visibility AppVisibility `json:"visibility" url:"visibility"`
+	// Full description shown on the app's detail page.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// One-line summary shown on the app's card in the directory listing.
+	ShortDescription *string `json:"shortDescription,omitempty" url:"shortDescription,omitempty"`
+	// URL of the app's logo. Presigned and short-lived when the logo is stored by Maven.
+	LogoURL *string `json:"logoUrl,omitempty" url:"logoUrl,omitempty"`
+	// Categories the app is filed under in the directory.
+	Categories []AppCategory `json:"categories" url:"categories"`
+	// The kinds of functionality the app provides, such as actions, triggers, or knowledge bases.
+	Capabilities []AppCapability `json:"capabilities" url:"capabilities"`
+	// Whether this app is an auto-provisioned agent app created for a specific agent.
+	IsAgentApp *bool `json:"isAgentApp,omitempty" url:"isAgentApp,omitempty"`
+	// Guidance shown while installing the app, for example how to obtain the credentials it asks for.
+	InstallationInstructions *string `json:"installationInstructions,omitempty" url:"installationInstructions,omitempty"`
+	// Guidance shown once the app is installed.
+	Instructions *string `json:"instructions,omitempty" url:"instructions,omitempty"`
+	// URL of a preview image or demo for the app's detail page.
+	PreviewURL *string `json:"previewUrl,omitempty" url:"previewUrl,omitempty"`
+	// Supporting links published by the author, such as documentation or a privacy policy.
+	Links []*Link `json:"links" url:"links"`
+	// The settings the app accepts. Drives the install form, and describes which values are files
+	// rather than plain values.
+	SettingsSchema SettingsSchema `json:"settingsSchema" url:"settingsSchema"`
+	// Whether this app is currently installed on the agent the request was scoped to.
+	Installed AppInstalled `json:"installed" url:"installed"`
+	// The installation's stored configuration, as an object keyed by setting key. Present only
+	// when the app is installed on this agent. The keys mirror the app's `settingsSchema`, and a
+	// key is absent when it has never been set.
+	//
+	// Values nest the way the schema does: a `section` entry holds an object of its fields, a
+	// `oneOf` entry an object of the selected option's fields alongside its `type` discriminator,
+	// and a `complexarray` entry a list of such objects.
+	//
+	// Two entry types do not return what is stored:
+	//
+	//   - `image` entries return a short-lived presigned download URL, never the file's bytes.
+	//   - `oauth` entries return `accessToken` redacted, with `scopes` and `status` intact, so the
+	//     connection still reads as connected without exposing the token.
+	//
+	// Entries the app's schema marks as sensitive are redacted: `HIDDEN` becomes `********`, and
+	// `PARTIALLY_VISIBLE` keeps only the last three characters (`sk-live-abc` returns as
+	// `********abc`). Values of three characters or fewer are left alone. OAuth access tokens are
+	// redacted whatever the schema says.
+	//
+	// Redacted values are safe to send back. Install compares each incoming value against the
+	// stored one and skips it when it is that value's redaction, so this object can be read,
+	// edited and written back whole without stripping anything — an untouched credential keeps
+	// its stored value rather than being overwritten with asterisks.
+	Settings interface{} `json:"settings,omitempty" url:"settings,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *MarketplaceAppDetail) GetID() string {
+	if m == nil {
+		return ""
+	}
+	return m.ID
+}
+
+func (m *MarketplaceAppDetail) GetName() string {
+	if m == nil {
+		return ""
+	}
+	return m.Name
+}
+
+func (m *MarketplaceAppDetail) GetDeveloperOrganizationID() string {
+	if m == nil {
+		return ""
+	}
+	return m.DeveloperOrganizationID
+}
+
+func (m *MarketplaceAppDetail) GetCreator() *DeveloperOrganization {
+	if m == nil {
+		return nil
+	}
+	return m.Creator
+}
+
+func (m *MarketplaceAppDetail) GetVisibility() AppVisibility {
+	if m == nil {
+		return ""
+	}
+	return m.Visibility
+}
+
+func (m *MarketplaceAppDetail) GetDescription() *string {
+	if m == nil {
+		return nil
+	}
+	return m.Description
+}
+
+func (m *MarketplaceAppDetail) GetShortDescription() *string {
+	if m == nil {
+		return nil
+	}
+	return m.ShortDescription
+}
+
+func (m *MarketplaceAppDetail) GetLogoURL() *string {
+	if m == nil {
+		return nil
+	}
+	return m.LogoURL
+}
+
+func (m *MarketplaceAppDetail) GetCategories() []AppCategory {
+	if m == nil {
+		return nil
+	}
+	return m.Categories
+}
+
+func (m *MarketplaceAppDetail) GetCapabilities() []AppCapability {
+	if m == nil {
+		return nil
+	}
+	return m.Capabilities
+}
+
+func (m *MarketplaceAppDetail) GetIsAgentApp() *bool {
+	if m == nil {
+		return nil
+	}
+	return m.IsAgentApp
+}
+
+func (m *MarketplaceAppDetail) GetInstallationInstructions() *string {
+	if m == nil {
+		return nil
+	}
+	return m.InstallationInstructions
+}
+
+func (m *MarketplaceAppDetail) GetInstructions() *string {
+	if m == nil {
+		return nil
+	}
+	return m.Instructions
+}
+
+func (m *MarketplaceAppDetail) GetPreviewURL() *string {
+	if m == nil {
+		return nil
+	}
+	return m.PreviewURL
+}
+
+func (m *MarketplaceAppDetail) GetLinks() []*Link {
+	if m == nil {
+		return nil
+	}
+	return m.Links
+}
+
+func (m *MarketplaceAppDetail) GetSettingsSchema() SettingsSchema {
+	if m == nil {
+		return nil
+	}
+	return m.SettingsSchema
+}
+
+func (m *MarketplaceAppDetail) GetInstalled() AppInstalled {
+	if m == nil {
+		return ""
+	}
+	return m.Installed
+}
+
+func (m *MarketplaceAppDetail) GetSettings() interface{} {
+	if m == nil {
+		return nil
+	}
+	return m.Settings
+}
+
+func (m *MarketplaceAppDetail) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *MarketplaceAppDetail) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetID(id string) {
+	m.ID = id
+	m.require(marketplaceAppDetailFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetName(name string) {
+	m.Name = name
+	m.require(marketplaceAppDetailFieldName)
+}
+
+// SetDeveloperOrganizationID sets the DeveloperOrganizationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetDeveloperOrganizationID(developerOrganizationID string) {
+	m.DeveloperOrganizationID = developerOrganizationID
+	m.require(marketplaceAppDetailFieldDeveloperOrganizationID)
+}
+
+// SetCreator sets the Creator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetCreator(creator *DeveloperOrganization) {
+	m.Creator = creator
+	m.require(marketplaceAppDetailFieldCreator)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetVisibility(visibility AppVisibility) {
+	m.Visibility = visibility
+	m.require(marketplaceAppDetailFieldVisibility)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetDescription(description *string) {
+	m.Description = description
+	m.require(marketplaceAppDetailFieldDescription)
+}
+
+// SetShortDescription sets the ShortDescription field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetShortDescription(shortDescription *string) {
+	m.ShortDescription = shortDescription
+	m.require(marketplaceAppDetailFieldShortDescription)
+}
+
+// SetLogoURL sets the LogoURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetLogoURL(logoURL *string) {
+	m.LogoURL = logoURL
+	m.require(marketplaceAppDetailFieldLogoURL)
+}
+
+// SetCategories sets the Categories field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetCategories(categories []AppCategory) {
+	m.Categories = categories
+	m.require(marketplaceAppDetailFieldCategories)
+}
+
+// SetCapabilities sets the Capabilities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetCapabilities(capabilities []AppCapability) {
+	m.Capabilities = capabilities
+	m.require(marketplaceAppDetailFieldCapabilities)
+}
+
+// SetIsAgentApp sets the IsAgentApp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetIsAgentApp(isAgentApp *bool) {
+	m.IsAgentApp = isAgentApp
+	m.require(marketplaceAppDetailFieldIsAgentApp)
+}
+
+// SetInstallationInstructions sets the InstallationInstructions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetInstallationInstructions(installationInstructions *string) {
+	m.InstallationInstructions = installationInstructions
+	m.require(marketplaceAppDetailFieldInstallationInstructions)
+}
+
+// SetInstructions sets the Instructions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetInstructions(instructions *string) {
+	m.Instructions = instructions
+	m.require(marketplaceAppDetailFieldInstructions)
+}
+
+// SetPreviewURL sets the PreviewURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetPreviewURL(previewURL *string) {
+	m.PreviewURL = previewURL
+	m.require(marketplaceAppDetailFieldPreviewURL)
+}
+
+// SetLinks sets the Links field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetLinks(links []*Link) {
+	m.Links = links
+	m.require(marketplaceAppDetailFieldLinks)
+}
+
+// SetSettingsSchema sets the SettingsSchema field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetSettingsSchema(settingsSchema SettingsSchema) {
+	m.SettingsSchema = settingsSchema
+	m.require(marketplaceAppDetailFieldSettingsSchema)
+}
+
+// SetInstalled sets the Installed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetInstalled(installed AppInstalled) {
+	m.Installed = installed
+	m.require(marketplaceAppDetailFieldInstalled)
+}
+
+// SetSettings sets the Settings field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketplaceAppDetail) SetSettings(settings interface{}) {
+	m.Settings = settings
+	m.require(marketplaceAppDetailFieldSettings)
+}
+
+func (m *MarketplaceAppDetail) UnmarshalJSON(data []byte) error {
+	type unmarshaler MarketplaceAppDetail
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*m = MarketplaceAppDetail(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *MarketplaceAppDetail) MarshalJSON() ([]byte, error) {
+	type embed MarketplaceAppDetail
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*m),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *MarketplaceAppDetail) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
 }

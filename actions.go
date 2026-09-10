@@ -40,6 +40,7 @@ var (
 	actionPatchRequestFieldInstructions       = big.NewInt(1 << 1)
 	actionPatchRequestFieldLlmInclusionStatus = big.NewInt(1 << 2)
 	actionPatchRequestFieldSegmentID          = big.NewInt(1 << 3)
+	actionPatchRequestFieldSideEffects        = big.NewInt(1 << 4)
 )
 
 type ActionPatchRequest struct {
@@ -55,6 +56,9 @@ type ActionPatchRequest struct {
 	// Segments are replacing inline preconditions - an action may not have both an inline precondition and a segment.
 	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"-"`
+	// Whether executing this action causes side effects.
+	// A null value clears it back to undeclared.
+	SideEffects *SideEffects `json:"sideEffects,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -93,6 +97,13 @@ func (a *ActionPatchRequest) SetLlmInclusionStatus(llmInclusionStatus *LlmInclus
 func (a *ActionPatchRequest) SetSegmentID(segmentID *EntityID) {
 	a.SegmentID = segmentID
 	a.require(actionPatchRequestFieldSegmentID)
+}
+
+// SetSideEffects sets the SideEffects field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionPatchRequest) SetSideEffects(sideEffects *SideEffects) {
+	a.SideEffects = sideEffects
+	a.require(actionPatchRequestFieldSideEffects)
 }
 
 type ActionField string
@@ -279,9 +290,10 @@ var (
 	actionRequestFieldPrecondition            = big.NewInt(1 << 2)
 	actionRequestFieldUserFormParameters      = big.NewInt(1 << 3)
 	actionRequestFieldLanguage                = big.NewInt(1 << 4)
-	actionRequestFieldName                    = big.NewInt(1 << 5)
-	actionRequestFieldDescription             = big.NewInt(1 << 6)
-	actionRequestFieldActionID                = big.NewInt(1 << 7)
+	actionRequestFieldSideEffects             = big.NewInt(1 << 5)
+	actionRequestFieldName                    = big.NewInt(1 << 6)
+	actionRequestFieldDescription             = big.NewInt(1 << 7)
+	actionRequestFieldActionID                = big.NewInt(1 << 8)
 )
 
 type ActionRequest struct {
@@ -295,6 +307,11 @@ type ActionRequest struct {
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
 	// The ISO 639-1 code for the language used in all fields of this action. Will be derived using the description's text if not specified.
 	Language *string `json:"language,omitempty" url:"language,omitempty"`
+	// Whether executing this action causes side effects. Absent means the action has never
+	// declared either way.
+	//
+	// This value is informational only. It does not yet affect action execution.
+	SideEffects *SideEffects `json:"sideEffects,omitempty" url:"sideEffects,omitempty"`
 	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
 	Name string `json:"name" url:"name"`
 	// The description of the action. Must be no more than 4096 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
@@ -342,6 +359,13 @@ func (a *ActionRequest) GetLanguage() *string {
 		return nil
 	}
 	return a.Language
+}
+
+func (a *ActionRequest) GetSideEffects() *SideEffects {
+	if a == nil {
+		return nil
+	}
+	return a.SideEffects
 }
 
 func (a *ActionRequest) GetName() string {
@@ -409,6 +433,13 @@ func (a *ActionRequest) SetUserFormParameters(userFormParameters []*ActionParame
 func (a *ActionRequest) SetLanguage(language *string) {
 	a.Language = language
 	a.require(actionRequestFieldLanguage)
+}
+
+// SetSideEffects sets the SideEffects field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionRequest) SetSideEffects(sideEffects *SideEffects) {
+	a.SideEffects = sideEffects
+	a.require(actionRequestFieldSideEffects)
 }
 
 // SetName sets the Name field and marks it as non-optional;

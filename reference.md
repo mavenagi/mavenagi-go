@@ -297,11 +297,22 @@ client.Actions.Patch(
 
 **segmentID:** `*mavenagigo.EntityID` 
 
-The ID of the segment that must be matched for the action to be relevant to a conversation. 
+The ID of the segment that must be matched for the action to be relevant to a conversation.
 A null value will remove the segment from the action, it will be available on all conversations.
 
 Segments are replacing inline preconditions - an action may not have both an inline precondition and a segment.
 Inline precondition support will be removed in a future release.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**sideEffects:** `*mavenagigo.SideEffects` 
+
+Whether executing this action causes side effects.
+A null value clears it back to undeclared.
     
 </dd>
 </dl>
@@ -1417,6 +1428,409 @@ client.Analytics.GetEventChart(
 <dd>
 
 **request:** `*mavenagigo.EventChartRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## AppDirectory
+<details><summary><code>client.AppDirectory.Search(request) -> *mavenagigo.AppsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Lists apps available to install on the agent, with filtering and pagination.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.DirectoryAppsSearchRequest{}
+client.AppDirectory.Search(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.DirectoryAppsSearchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.AppDirectory.Get(AppID) -> *mavenagigo.MarketplaceAppDetail</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Gets an app and its installation status for the agent.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+client.AppDirectory.Get(
+        context.TODO(),
+        "appId",
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**appID:** `string` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.AppDirectory.Install(AppID, request) -> error</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Installs the app on the agent, or updates settings for an existing installation. Re-runs the postInstall lifecycle hook on each call.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.InstallDirectoryAppRequest{
+        Settings: map[string]any{
+            "key": "value",
+        },
+    }
+client.AppDirectory.Install(
+        context.TODO(),
+        "appId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**appID:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.InstallDirectoryAppRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.AppDirectory.Uninstall(AppID) -> error</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Uninstalls the app from the agent.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+client.AppDirectory.Uninstall(
+        context.TODO(),
+        "appId",
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**appID:** `string` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.AppDirectory.GetSettingDownloadURL(AppID, SettingsKey) -> *mavenagigo.GetDirectoryAppSettingDownloadURLResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Gets a url for downloading a file app setting.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+client.AppDirectory.GetSettingDownloadURL(
+        context.TODO(),
+        "appId",
+        "settingsKey",
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**appID:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**settingsKey:** `string` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.AppDirectory.GetSettingUploadURL(AppID, SettingsKey, request) -> *mavenagigo.GetDirectoryAppSettingUploadURLResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Gets a presigned url for uploading a file app setting before installation.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.GetAppSettingUploadURLRequest{
+        ContentLength: 1,
+        ContentType: "contentType",
+    }
+client.AppDirectory.GetSettingUploadURL(
+        context.TODO(),
+        "appId",
+        "settingsKey",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**appID:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**settingsKey:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**contentLength:** `int` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**contentType:** `string` 
     
 </dd>
 </dl>
