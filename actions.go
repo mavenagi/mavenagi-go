@@ -50,11 +50,10 @@ type ActionPatchRequest struct {
 	Instructions *string `json:"instructions,omitempty" url:"-"`
 	// Determines whether the action is sent to the LLM as part of a conversation.
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"-"`
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
 	// The ID of the segment that must be matched for the action to be relevant to a conversation.
 	// A null value will remove the segment from the action, it will be available on all conversations.
-	//
-	// Segments are replacing inline preconditions - an action may not have both an inline precondition and a segment.
-	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"-"`
 	// Whether executing this action causes side effects.
 	// A null value clears it back to undeclared.
@@ -301,7 +300,9 @@ type ActionRequest struct {
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
 	ButtonName *string `json:"buttonName,omitempty" url:"buttonName,omitempty"`
-	// The preconditions that must be met for an action to be relevant to a conversation. Can be used to restrict actions to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for an action to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The parameters that the action uses as input. An action will only be executed when all of the required parameters are provided. During execution, actions all have access to the full Conversation and User objects. Parameter values may be inferred from the user's conversation by the LLM.
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`

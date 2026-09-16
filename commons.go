@@ -26,7 +26,9 @@ type ActionBase struct {
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
 	ButtonName *string `json:"buttonName,omitempty" url:"buttonName,omitempty"`
-	// The preconditions that must be met for an action to be relevant to a conversation. Can be used to restrict actions to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for an action to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The parameters that the action uses as input. An action will only be executed when all of the required parameters are provided. During execution, actions all have access to the full Conversation and User objects. Parameter values may be inferred from the user's conversation by the LLM.
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
@@ -1094,7 +1096,9 @@ type ActionProperties struct {
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
 	ButtonName *string `json:"buttonName,omitempty" url:"buttonName,omitempty"`
-	// The preconditions that must be met for an action to be relevant to a conversation. Can be used to restrict actions to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for an action to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The parameters that the action uses as input. An action will only be executed when all of the required parameters are provided. During execution, actions all have access to the full Conversation and User objects. Parameter values may be inferred from the user's conversation by the LLM.
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
@@ -1269,7 +1273,9 @@ type ActionResponse struct {
 	UserInteractionRequired bool `json:"userInteractionRequired" url:"userInteractionRequired"`
 	// When user interaction is required, the name of the button that is shown to the end user to confirm execution of the action. Defaults to "Submit" if not supplied.
 	ButtonName *string `json:"buttonName,omitempty" url:"buttonName,omitempty"`
-	// The preconditions that must be met for an action to be relevant to a conversation. Can be used to restrict actions to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for an action to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The parameters that the action uses as input. An action will only be executed when all of the required parameters are provided. During execution, actions all have access to the full Conversation and User objects. Parameter values may be inferred from the user's conversation by the LLM.
 	UserFormParameters []*ActionParameter `json:"userFormParameters" url:"userFormParameters"`
@@ -1295,9 +1301,9 @@ type ActionResponse struct {
 	// - `WHEN_RELEVANT`: The action is available only in conversations where the action is determined to be relevant to the user's question.
 	// - `NEVER`: The action is not available for use in conversations.
 	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
-	// The IDs of the segment that must be matched for the action to be relevant to a conversation.
-	// Segments are replacing inline preconditions - an Action may not have both an inline precondition and a segment.
-	// Inline precondition support will be removed in a future release.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The ID of the segment that must be matched for the action to be relevant to a conversation.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
 	// No longer populated. This field is always absent and will be removed in a future release.
 	PreconditionExplanation *string `json:"preconditionExplanation,omitempty" url:"preconditionExplanation,omitempty"`
@@ -12387,16 +12393,19 @@ var (
 )
 
 type EventFilter struct {
-	Search              *string           `json:"search,omitempty" url:"search,omitempty"`
-	CreatedAfter        *time.Time        `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
-	CreatedBefore       *time.Time        `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
-	References          []*ScopedEntity   `json:"references,omitempty" url:"references,omitempty"`
-	EventTypes          []EventType       `json:"eventTypes,omitempty" url:"eventTypes,omitempty"`
-	UserEventNames      []UserEventName   `json:"userEventNames,omitempty" url:"userEventNames,omitempty"`
-	SystemEventNames    []SystemEventName `json:"systemEventNames,omitempty" url:"systemEventNames,omitempty"`
-	AgentUserIDs        []string          `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
-	LegacyFeedbackTypes []FeedbackType    `json:"legacyFeedbackTypes,omitempty" url:"legacyFeedbackTypes,omitempty"`
-	HasEventText        *bool             `json:"hasEventText,omitempty" url:"hasEventText,omitempty"`
+	Search           *string           `json:"search,omitempty" url:"search,omitempty"`
+	CreatedAfter     *time.Time        `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
+	CreatedBefore    *time.Time        `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
+	References       []*ScopedEntity   `json:"references,omitempty" url:"references,omitempty"`
+	EventTypes       []EventType       `json:"eventTypes,omitempty" url:"eventTypes,omitempty"`
+	UserEventNames   []UserEventName   `json:"userEventNames,omitempty" url:"userEventNames,omitempty"`
+	SystemEventNames []SystemEventName `json:"systemEventNames,omitempty" url:"systemEventNames,omitempty"`
+	AgentUserIDs     []string          `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
+	// Narrow to the events that carry a rating. `ThumbsUp` and `ThumbsDown` match `BUTTON_CLICKED`
+	// events by their `feedbackInfo.thumbUp` value, and `Insert` matches `TEXT_INSERTED` events.
+	// `Handoff` is no longer supported.
+	LegacyFeedbackTypes []FeedbackType `json:"legacyFeedbackTypes,omitempty" url:"legacyFeedbackTypes,omitempty"`
+	HasEventText        *bool          `json:"hasEventText,omitempty" url:"hasEventText,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12845,9 +12854,10 @@ type EventTriggerType string
 
 const (
 	EventTriggerTypeConversationCreated EventTriggerType = "CONVERSATION_CREATED"
-	EventTriggerTypeFeedbackCreated     EventTriggerType = "FEEDBACK_CREATED"
-	EventTriggerTypeInboxItemCreated    EventTriggerType = "INBOX_ITEM_CREATED"
-	EventTriggerTypeEventCreated        EventTriggerType = "EVENT_CREATED"
+	// Deprecated. Use `EVENT_CREATED` instead.
+	EventTriggerTypeFeedbackCreated  EventTriggerType = "FEEDBACK_CREATED"
+	EventTriggerTypeInboxItemCreated EventTriggerType = "INBOX_ITEM_CREATED"
+	EventTriggerTypeEventCreated     EventTriggerType = "EVENT_CREATED"
 )
 
 func NewEventTriggerTypeFromString(s string) (EventTriggerType, error) {
@@ -17215,6 +17225,15 @@ var (
 )
 
 type KnowledgeContextByEntities struct {
+	// The entities whose documents should be retrievable, in addition to the agent's own
+	// knowledge. Each `entityId` must be fully specified and must belong to the organization
+	// and agent the request is made against; one that does not is rejected. Entities are never
+	// silently dropped, which would omit exactly the documents the caller asked to bring into
+	// scope.
+	//
+	// `AGENT` and `FEEDBACK` are rejected: neither has an internal form to resolve to, and
+	// `AGENT` in particular is redundant here because the agent's own knowledge is always in
+	// scope. Every other `EntityType` is accepted.
 	Entities []*ScopedEntity `json:"entities" url:"entities"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -17288,6 +17307,7 @@ func (k *KnowledgeContextByEntities) String() string {
 	return fmt.Sprintf("%#v", k)
 }
 
+// Not yet supported - see the `byEntityTypes` variant of `KnowledgeContextFilter`.
 var (
 	knowledgeContextByEntityTypesFieldEntityTypes = big.NewInt(1 << 0)
 )
@@ -17367,8 +17387,11 @@ func (k *KnowledgeContextByEntityTypes) String() string {
 }
 
 type KnowledgeContextFilter struct {
-	ScopeType     string
-	ByEntities    *KnowledgeContextByEntities
+	ScopeType  string
+	ByEntities *KnowledgeContextByEntities
+	// Not yet supported. This variant is accepted but has no effect on retrieval - a
+	// conversation supplying it behaves as though no `contextFilter` were provided at all.
+	// Use `byEntities` to scope retrieval today.
 	ByEntityTypes *KnowledgeContextByEntityTypes
 }
 
@@ -17586,6 +17609,7 @@ func (l LlmInclusionStatus) Ptr() *LlmInclusionStatus {
 	return &l
 }
 
+// Deprecated. Superseded by charters, which determine agent behavior per turn.
 type LlmPersona string
 
 const (
@@ -18349,7 +18373,8 @@ type NovelUserEvent struct {
 	UserInfo *EventUserInfoBase `json:"userInfo" url:"userInfo"`
 	// Information about any CSAT associated with the event
 	CsatInfo *CsatInfo `json:"csatInfo,omitempty" url:"csatInfo,omitempty"`
-	// Information about any feedback associated with the event
+	// Any rating carried by the event. A `BUTTON_CLICKED` thumbs up or down sets a single entry
+	// with `thumbUp` true or false.
 	FeedbackInfo []*FeedbackInfo `json:"feedbackInfo,omitempty" url:"feedbackInfo,omitempty"`
 	// Information about the page on which the event occurred
 	PageInfo *PageInfo `json:"pageInfo,omitempty" url:"pageInfo,omitempty"`
@@ -21301,9 +21326,15 @@ type ResponseConfig struct {
 	IsCopilot bool `json:"isCopilot" url:"isCopilot"`
 	// The desired response length. Defaults to ResponseLength.MEDIUM.
 	ResponseLength ResponseLength `json:"responseLength" url:"responseLength"`
-	// Filters that restrict the knowledge retrieval candidate pool.
-	// - entities: specific entities to scope by
-	// - entityTypes: entity types to scope by (e.g., AGENT, CUSTOMER)
+	// Widens the knowledge retrieval candidate pool to include documents scoped to the given
+	// entities, in addition to the agent's own knowledge.
+	//
+	// Knowledge documents are scoped by setting `relevantEntities` on the document. A document
+	// with no `relevantEntities` belongs to the agent and is always a retrieval candidate;
+	// naming entities here additionally makes documents scoped to those entities retrievable.
+	// Omitting this field restricts retrieval to the agent's own knowledge.
+	//
+	// Only the `byEntities` variant is supported today - see `byEntityTypes`.
 	ContextFilter *KnowledgeContextFilter `json:"contextFilter,omitempty" url:"contextFilter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -23336,11 +23367,11 @@ var (
 )
 
 type SimulationContext struct {
+	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	//
 	// If provided, overrides the agent's default additional prompt text during the simulation.
-	// Note that this field is provided for backwards compatibility and will be removed in a future release.
-	// Instead please use the `availableKnowledgeBases` field to include a knowledge base with a document `llmInclusionStatus` set to `ALWAYS`.
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"additionalPromptText,omitempty"`
-	// The persona to use during the simulation. If not provided, the agent's default persona will be used.
+	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
 	Persona *LlmPersona `json:"persona,omitempty" url:"persona,omitempty"`
 	// If provided, knowledge search will be restricted to the provided list of knowledge bases. Otherwise, all active knowledge bases will be used. An empty list means no knowledge bases will be used.
 	AvailableKnowledgeBases []*EntityID `json:"availableKnowledgeBases,omitempty" url:"availableKnowledgeBases,omitempty"`
@@ -24553,6 +24584,22 @@ const (
 	SystemEventNameAppUninstalled SystemEventName = "APP_UNINSTALLED"
 	// An app was updated
 	SystemEventNameAppUpdated SystemEventName = "APP_UPDATED"
+	// An outbound notification was sent to a user
+	SystemEventNameNotificationSent SystemEventName = "NOTIFICATION_SENT"
+	// An outbound notification reached the user
+	SystemEventNameNotificationDelivered SystemEventName = "NOTIFICATION_DELIVERED"
+	// An outbound notification could not be delivered
+	SystemEventNameNotificationFailed SystemEventName = "NOTIFICATION_FAILED"
+	// An external system was connected
+	SystemEventNameIntegrationConnected SystemEventName = "INTEGRATION_CONNECTED"
+	// An external system was disconnected
+	SystemEventNameIntegrationDisconnected SystemEventName = "INTEGRATION_DISCONNECTED"
+	// A data sync with an external system began
+	SystemEventNameSyncStarted SystemEventName = "SYNC_STARTED"
+	// A data sync with an external system finished
+	SystemEventNameSyncCompleted SystemEventName = "SYNC_COMPLETED"
+	// A data sync with an external system failed
+	SystemEventNameSyncFailed SystemEventName = "SYNC_FAILED"
 )
 
 func NewSystemEventNameFromString(s string) (SystemEventName, error) {
@@ -24563,6 +24610,22 @@ func NewSystemEventNameFromString(s string) (SystemEventName, error) {
 		return SystemEventNameAppUninstalled, nil
 	case "APP_UPDATED":
 		return SystemEventNameAppUpdated, nil
+	case "NOTIFICATION_SENT":
+		return SystemEventNameNotificationSent, nil
+	case "NOTIFICATION_DELIVERED":
+		return SystemEventNameNotificationDelivered, nil
+	case "NOTIFICATION_FAILED":
+		return SystemEventNameNotificationFailed, nil
+	case "INTEGRATION_CONNECTED":
+		return SystemEventNameIntegrationConnected, nil
+	case "INTEGRATION_DISCONNECTED":
+		return SystemEventNameIntegrationDisconnected, nil
+	case "SYNC_STARTED":
+		return SystemEventNameSyncStarted, nil
+	case "SYNC_COMPLETED":
+		return SystemEventNameSyncCompleted, nil
+	case "SYNC_FAILED":
+		return SystemEventNameSyncFailed, nil
 	}
 	var t SystemEventName
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -25501,7 +25564,8 @@ type UserEvent struct {
 	EventName UserEventName `json:"eventName" url:"eventName"`
 	// Information about the user who triggered the event
 	UserInfo *EventUserInfo `json:"userInfo" url:"userInfo"`
-	// Information about any feedback associated with the event
+	// Any rating carried by the event. A `BUTTON_CLICKED` thumbs up or down sets a single entry
+	// with `thumbUp` true or false.
 	FeedbackInfo []*FeedbackInfo `json:"feedbackInfo,omitempty" url:"feedbackInfo,omitempty"`
 	// Information about any CSAT survey associated with the event
 	CsatInfo *CsatInfo `json:"csatInfo,omitempty" url:"csatInfo,omitempty"`
@@ -25760,6 +25824,62 @@ const (
 	UserEventNameTextInserted UserEventName = "TEXT_INSERTED"
 	// A CSAT rating was submitted
 	UserEventNameCsatSubmitted UserEventName = "CSAT_SUBMITTED"
+	// A page or screen was viewed. Record which one in `pageInfo`.
+	UserEventNamePageViewed UserEventName = "PAGE_VIEWED"
+	// A suggested or popular question was clicked instead of being typed
+	UserEventNameSuggestionClicked UserEventName = "SUGGESTION_CLICKED"
+	// The user ended the conversation
+	UserEventNameConversationEnded UserEventName = "CONVERSATION_ENDED"
+	// The user asked to be transferred to a human agent
+	UserEventNameHandoffRequested UserEventName = "HANDOFF_REQUESTED"
+	// The user opened a support ticket or case
+	UserEventNameTicketCreated UserEventName = "TICKET_CREATED"
+	// Text from a response was copied
+	UserEventNameTextCopied UserEventName = "TEXT_COPIED"
+	// Content was translated into another language
+	UserEventNameContentTranslated UserEventName = "CONTENT_TRANSLATED"
+	// A search query was submitted
+	UserEventNameSearchSubmitted UserEventName = "SEARCH_SUBMITTED"
+	// A search result was opened
+	UserEventNameSearchResultClicked UserEventName = "SEARCH_RESULT_CLICKED"
+	// A help article or knowledge document was read
+	UserEventNameArticleViewed UserEventName = "ARTICLE_VIEWED"
+	// The user uploaded a file or attachment
+	UserEventNameFileUploaded UserEventName = "FILE_UPLOADED"
+	// The user downloaded a file or attachment
+	UserEventNameFileDownloaded UserEventName = "FILE_DOWNLOADED"
+	// The user began filling out a form
+	UserEventNameFormStarted UserEventName = "FORM_STARTED"
+	// A form was submitted
+	UserEventNameFormSubmitted UserEventName = "FORM_SUBMITTED"
+	// The user left a form without submitting it
+	UserEventNameFormAbandoned UserEventName = "FORM_ABANDONED"
+	// The user entered a multi-step flow, such as onboarding or checkout
+	UserEventNameFlowStarted UserEventName = "FLOW_STARTED"
+	// The user finished one step of a multi-step flow
+	UserEventNameFlowStepCompleted UserEventName = "FLOW_STEP_COMPLETED"
+	// The user finished a multi-step flow
+	UserEventNameFlowCompleted UserEventName = "FLOW_COMPLETED"
+	// The user left a multi-step flow partway through. Pair with an `EVENT_CREATED` trigger to follow up on an onboarding or checkout that was never finished. Name the flow and the step it stopped on in `contextInfo.additionalData`.
+	UserEventNameFlowAbandoned UserEventName = "FLOW_ABANDONED"
+	// The user created an account
+	UserEventNameAccountCreated UserEventName = "ACCOUNT_CREATED"
+	// The user signed in
+	UserEventNameSignedIn UserEventName = "SIGNED_IN"
+	// The user signed out
+	UserEventNameSignedOut UserEventName = "SIGNED_OUT"
+	// The user started a subscription or plan
+	UserEventNameSubscriptionStarted UserEventName = "SUBSCRIPTION_STARTED"
+	// The user cancelled a subscription or plan
+	UserEventNameSubscriptionCancelled UserEventName = "SUBSCRIPTION_CANCELLED"
+	// The user placed an order
+	UserEventNameOrderPlaced UserEventName = "ORDER_PLACED"
+	// The user cancelled an order
+	UserEventNameOrderCancelled UserEventName = "ORDER_CANCELLED"
+	// A payment the user attempted did not go through
+	UserEventNamePaymentFailed UserEventName = "PAYMENT_FAILED"
+	// The user was shown an error
+	UserEventNameErrorDisplayed UserEventName = "ERROR_DISPLAYED"
 )
 
 func NewUserEventNameFromString(s string) (UserEventName, error) {
@@ -25776,6 +25896,62 @@ func NewUserEventNameFromString(s string) (UserEventName, error) {
 		return UserEventNameTextInserted, nil
 	case "CSAT_SUBMITTED":
 		return UserEventNameCsatSubmitted, nil
+	case "PAGE_VIEWED":
+		return UserEventNamePageViewed, nil
+	case "SUGGESTION_CLICKED":
+		return UserEventNameSuggestionClicked, nil
+	case "CONVERSATION_ENDED":
+		return UserEventNameConversationEnded, nil
+	case "HANDOFF_REQUESTED":
+		return UserEventNameHandoffRequested, nil
+	case "TICKET_CREATED":
+		return UserEventNameTicketCreated, nil
+	case "TEXT_COPIED":
+		return UserEventNameTextCopied, nil
+	case "CONTENT_TRANSLATED":
+		return UserEventNameContentTranslated, nil
+	case "SEARCH_SUBMITTED":
+		return UserEventNameSearchSubmitted, nil
+	case "SEARCH_RESULT_CLICKED":
+		return UserEventNameSearchResultClicked, nil
+	case "ARTICLE_VIEWED":
+		return UserEventNameArticleViewed, nil
+	case "FILE_UPLOADED":
+		return UserEventNameFileUploaded, nil
+	case "FILE_DOWNLOADED":
+		return UserEventNameFileDownloaded, nil
+	case "FORM_STARTED":
+		return UserEventNameFormStarted, nil
+	case "FORM_SUBMITTED":
+		return UserEventNameFormSubmitted, nil
+	case "FORM_ABANDONED":
+		return UserEventNameFormAbandoned, nil
+	case "FLOW_STARTED":
+		return UserEventNameFlowStarted, nil
+	case "FLOW_STEP_COMPLETED":
+		return UserEventNameFlowStepCompleted, nil
+	case "FLOW_COMPLETED":
+		return UserEventNameFlowCompleted, nil
+	case "FLOW_ABANDONED":
+		return UserEventNameFlowAbandoned, nil
+	case "ACCOUNT_CREATED":
+		return UserEventNameAccountCreated, nil
+	case "SIGNED_IN":
+		return UserEventNameSignedIn, nil
+	case "SIGNED_OUT":
+		return UserEventNameSignedOut, nil
+	case "SUBSCRIPTION_STARTED":
+		return UserEventNameSubscriptionStarted, nil
+	case "SUBSCRIPTION_CANCELLED":
+		return UserEventNameSubscriptionCancelled, nil
+	case "ORDER_PLACED":
+		return UserEventNameOrderPlaced, nil
+	case "ORDER_CANCELLED":
+		return UserEventNameOrderCancelled, nil
+	case "PAYMENT_FAILED":
+		return UserEventNamePaymentFailed, nil
+	case "ERROR_DISPLAYED":
+		return UserEventNameErrorDisplayed, nil
 	}
 	var t UserEventName
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -25799,6 +25975,7 @@ var (
 	userMessageFieldUserDisplayName       = big.NewInt(1 << 10)
 	userMessageFieldStatus                = big.NewInt(1 << 11)
 	userMessageFieldResponseState         = big.NewInt(1 << 12)
+	userMessageFieldTimezone              = big.NewInt(1 << 13)
 )
 
 type UserMessage struct {
@@ -25842,6 +26019,11 @@ type UserMessage struct {
 	// - `LLM_ENABLED`: An answer was requested for this user message and the LLM was enabled.
 	// - `LLM_DISABLED`: An answer was requested for this user message and the LLM was disabled.
 	ResponseState *UserMessageResponseState `json:"responseState,omitempty" url:"responseState,omitempty"`
+	// The timezone supplied with the creating request and used for the message's time-based
+	// operations, normally an IANA identifier (e.g. "America/New_York", "Europe/London").
+	// Absent when the request did not supply one, in which case the agent's default timezone
+	// applied.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -25939,6 +26121,13 @@ func (u *UserMessage) GetResponseState() *UserMessageResponseState {
 		return nil
 	}
 	return u.ResponseState
+}
+
+func (u *UserMessage) GetTimezone() *string {
+	if u == nil {
+		return nil
+	}
+	return u.Timezone
 }
 
 func (u *UserMessage) GetExtraProperties() map[string]interface{} {
@@ -26041,6 +26230,13 @@ func (u *UserMessage) SetStatus(status MessageStatus) {
 func (u *UserMessage) SetResponseState(responseState *UserMessageResponseState) {
 	u.ResponseState = responseState
 	u.require(userMessageFieldResponseState)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserMessage) SetTimezone(timezone *string) {
+	u.Timezone = timezone
+	u.require(userMessageFieldTimezone)
 }
 
 func (u *UserMessage) UnmarshalJSON(data []byte) error {

@@ -1575,9 +1575,10 @@ type ConversationFilter struct {
 	IncompleteActions []*EntityIDFilter `json:"incompleteActions,omitempty" url:"incompleteActions,omitempty"`
 	// Filter by actions that returned an error when executed in the conversation
 	ErroredActions []*EntityIDFilter `json:"erroredActions,omitempty" url:"erroredActions,omitempty"`
-	// Filter by feedback types received in the conversation.
-	// This is a legacy field that maps to Events saved in the system for `ThumbsUp`, `ThumbsDown`, and `Insert`.
-	// The `Handoff` filter will pass if any bot responses on the conversation returned the system fallback message; there are no corresponding handoff events.
+	// Filter by the user events recorded on the conversation. `ThumbsUp` and `ThumbsDown` match
+	// `BUTTON_CLICKED` events by their `feedbackInfo.thumbUp` value, and `Insert` matches
+	// `TEXT_INSERTED` events. `Handoff` matches bot responses that returned the system fallback
+	// message.
 	Feedback []FeedbackType `json:"feedback,omitempty" url:"feedback,omitempty"`
 	// Filter by human agents who participated in the conversation
 	HumanAgents []string `json:"humanAgents,omitempty" url:"humanAgents,omitempty"`

@@ -258,7 +258,9 @@ func (c *Client) Categorize(
 	return response.Body, nil
 }
 
-// Replaced by the Create events API, which records feedback as a user event.
+// Deprecated. Use the Create events API instead, which records feedback as a user event:
+// emit a `USER` event with an `eventName` of `BUTTON_CLICKED` for thumbs up/down or
+// `TEXT_INSERTED` for inserts.
 //
 // Update feedback or create it if it doesn't exist.
 func (c *Client) CreateFeedback(

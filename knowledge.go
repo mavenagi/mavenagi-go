@@ -104,23 +104,27 @@ type KnowledgeBasePatchRequest struct {
 	AppID *string `json:"appId,omitempty" url:"-"`
 	// The name of the knowledge base.
 	Name *string `json:"name,omitempty" url:"-"`
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
 	// The tags of the knowledge base.
 	Tags []string `json:"tags,omitempty" url:"-"`
 	// Determines whether documents in the knowledge base are sent to the LLM as part of a conversation. Note that at this time knowledge bases can not be set to `ALWAYS`.
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"-"`
-	// The preconditions that must be met for a knowledge base to be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users. A null value will remove the precondition from the knowledge base, it will be available on all conversations.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for a knowledge base to be relevant to a conversation.
+	// A null value will remove the precondition from the knowledge base, it will be available on all conversations.
 	Precondition *Precondition `json:"precondition,omitempty" url:"-"`
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
 	// The ID of a segment that must be matched for the knowledge base to be relevant to a conversation.
 	// A null value will remove the segment from the knowledge base, it will be available on all conversations.
-	//
-	// Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
-	// Inline precondition support will be removed in a future release.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"-"`
-	// The IDs of segment that should be matched (under an OR clause) for the knowledge base to be relevant to a
-	// conversation. An empty list will remove segments from the knowledge base, it will be available on all
-	// conversations.
-	// Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
-	// Inline precondition support will be removed in a future release.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The IDs of segments that should be matched (under an OR clause) for the knowledge base to be relevant
+	// to a conversation. An empty list will remove segments from the knowledge base, it will be available on
+	// all conversations.
 	SegmentIDs []*EntityID `json:"segmentIds,omitempty" url:"-"`
 	// How often the knowledge base should be refreshed.
 	RefreshFrequency *KnowledgeBaseRefreshFrequency `json:"refreshFrequency,omitempty" url:"-"`
@@ -737,7 +741,10 @@ type KnowledgeBaseFilter struct {
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
 	// Filter knowledge bases by the segment they are assigned to.
 	SegmentID *string `json:"segmentId,omitempty" url:"segmentId,omitempty"`
-	// Filter knowledge bases by the segments they are assigned to. Uses OR semantics — returns knowledge bases assigned to any of the provided segments.
+	// Deprecated. Segment assignment on knowledge bases is superseded by charters.
+	//
+	// Filter knowledge bases by the segments they are assigned to. Uses OR semantics — returns knowledge bases
+	// assigned to any of the provided segments.
 	SegmentIDs []*EntityID `json:"segmentIds,omitempty" url:"segmentIds,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1145,7 +1152,9 @@ var (
 type KnowledgeBaseProperties struct {
 	// The name of the knowledge base
 	Name string `json:"name" url:"name"`
-	// The preconditions that must be met for knowledge base be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for a knowledge base to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1350,7 +1359,9 @@ var (
 type KnowledgeBaseRequest struct {
 	// The name of the knowledge base
 	Name string `json:"name" url:"name"`
-	// The preconditions that must be met for knowledge base be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for a knowledge base to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// ID that uniquely identifies this knowledge base
 	KnowledgeBaseID *EntityIDBase `json:"knowledgeBaseId" url:"knowledgeBaseId"`
@@ -1498,7 +1509,9 @@ var (
 type KnowledgeBaseResponse struct {
 	// The name of the knowledge base
 	Name string `json:"name" url:"name"`
-	// The preconditions that must be met for knowledge base be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The preconditions that must be met for a knowledge base to be relevant to a conversation.
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The date and time when the knowledge base was created.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
@@ -1516,19 +1529,21 @@ type KnowledgeBaseResponse struct {
 	Type KnowledgeBaseType `json:"type" url:"type"`
 	// Metadata for the knowledge base.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
 	// The tags of the knowledge base.
 	Tags []string `json:"tags" url:"tags"`
 	// Determines whether documents in the knowledge base are sent to the LLM as part of a conversation.
 	LlmInclusionStatus LlmInclusionStatus `json:"llmInclusionStatus" url:"llmInclusionStatus"`
 	// How often the knowledge base should be refreshed.
 	RefreshFrequency KnowledgeBaseRefreshFrequency `json:"refreshFrequency" url:"refreshFrequency"`
-	// The IDs of the segment that must be matched for the knowledge base to be relevant to a conversation.
-	// Segments are replacing inline preconditions - a Knowledge Base may not have both an inline precondition and a segment.
-	// Inline precondition support will be removed in a future release.
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
+	// The ID of the segment that must be matched for the knowledge base to be relevant to a conversation.
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
+	// Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+	//
 	// The IDs of the segments that should be matched for the knowledge base to be relevant to a conversation.
-	// Segments are replacing inline preconditions - a Knowledge Base may not have both an inline precondition and a segment.
-	// Inline precondition support will be removed in a future release.
 	SegmentIDs []*EntityID `json:"segmentIds" url:"segmentIds"`
 	// The source URL of URL and RSS knowledge bases that was used for crawl.
 	URL *string `json:"url,omitempty" url:"url,omitempty"`
@@ -3283,7 +3298,18 @@ type KnowledgeDocumentRequest struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The time at which this document was last modified.
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
-	// Scoped entities this document is associated with for context-based filtering. By default, the document is associated with the agent.
+	// Narrows this document to the given entities. Omit it - the default - to make the document
+	// part of the agent's general knowledge, retrievable on every conversation.
+	//
+	// A document narrowed to entities is only retrieved on conversations whose
+	// `responseConfig.contextFilter` names one of them, so it never surfaces on unrelated
+	// conversations. Each `entityId` must be fully specified and must belong to the
+	// organization and agent the request is made against; one that does not, or that names an
+	// entity type with no internal form, is rejected rather than dropped - dropping the last
+	// entity would widen the document back to the whole agent.
+	//
+	// Changing the entities on an existing document is not supported yet: re-sending a
+	// document with different `relevantEntities` but unchanged content is a no-op.
 	RelevantEntities []*ScopedEntity `json:"relevantEntities,omitempty" url:"relevantEntities,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

@@ -297,11 +297,10 @@ client.Actions.Patch(
 
 **segmentID:** `*mavenagigo.EntityID` 
 
+Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+
 The ID of the segment that must be matched for the action to be relevant to a conversation.
 A null value will remove the segment from the action, it will be available on all conversations.
-
-Segments are replacing inline preconditions - an action may not have both an inline precondition and a segment.
-Inline precondition support will be removed in a future release.
     
 </dd>
 </dl>
@@ -765,7 +764,7 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**persona:** `*mavenagigo.LlmPersona` — The overall persona of the agent.
+**persona:** `*mavenagigo.LlmPersona` — Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
     
 </dd>
 </dl>
@@ -773,7 +772,7 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**additionalPromptText:** `*string` — Additional text directly appended to the prompt.
+**additionalPromptText:** `*string` — Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
     
 </dd>
 </dl>
@@ -797,7 +796,11 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**rejectQuestionsWithoutKnowledge:** `*bool` — Return the system fallback message on all questions that have no relevant knowledge bases or actions.
+**rejectQuestionsWithoutKnowledge:** `*bool` 
+
+Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+
+Return the system fallback message on all questions that have no relevant knowledge bases or actions.
     
 </dd>
 </dl>
@@ -1148,7 +1151,11 @@ client.Analytics.ExportConversationTable(
 <dl>
 <dd>
 
-Retrieves structured feedback data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+Deprecated. Use `getEventTable` instead, which reports the same thumbs up/down and insert
+activity as user events.
+
+Retrieves structured feedback data formatted as a table, allowing users to group, filter,
+and define specific metrics to display as columns.
 </dd>
 </dl>
 </dd>
@@ -2843,7 +2850,9 @@ client.Conversation.Categorize(
 <dl>
 <dd>
 
-Replaced by the Create events API, which records feedback as a user event.
+Deprecated. Use the Create events API instead, which records feedback as a user event:
+emit a `USER` event with an `eventName` of `BUTTON_CLICKED` for thumbs up/down or
+`TEXT_INSERTED` for inserts.
 
 Update feedback or create it if it doesn't exist.
 </dd>
@@ -5574,7 +5583,11 @@ client.Knowledge.PatchKnowledgeBase(
 <dl>
 <dd>
 
-**tags:** `[]string` — The tags of the knowledge base.
+**tags:** `[]string` 
+
+Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+
+The tags of the knowledge base.
     
 </dd>
 </dl>
@@ -5590,7 +5603,12 @@ client.Knowledge.PatchKnowledgeBase(
 <dl>
 <dd>
 
-**precondition:** `*mavenagigo.Precondition` — The preconditions that must be met for a knowledge base to be relevant to a conversation. Can be used to restrict knowledge bases to certain types of users. A null value will remove the precondition from the knowledge base, it will be available on all conversations.
+**precondition:** `*mavenagigo.Precondition` 
+
+Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+
+The preconditions that must be met for a knowledge base to be relevant to a conversation.
+A null value will remove the precondition from the knowledge base, it will be available on all conversations.
     
 </dd>
 </dl>
@@ -5600,11 +5618,10 @@ client.Knowledge.PatchKnowledgeBase(
 
 **segmentID:** `*mavenagigo.EntityID` 
 
+Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+
 The ID of a segment that must be matched for the knowledge base to be relevant to a conversation.
 A null value will remove the segment from the knowledge base, it will be available on all conversations.
-
-Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
-Inline precondition support will be removed in a future release.
     
 </dd>
 </dl>
@@ -5614,11 +5631,11 @@ Inline precondition support will be removed in a future release.
 
 **segmentIDs:** `[]*mavenagigo.EntityID` 
 
-The IDs of segment that should be matched (under an OR clause) for the knowledge base to be relevant to a 
-conversation. An empty list will remove segments from the knowledge base, it will be available on all 
-conversations.
-Segments are replacing inline preconditions - a knowledge base may not have both an inline precondition and a segment.
-Inline precondition support will be removed in a future release.
+Deprecated. Superseded by charters, which determine when knowledge bases and actions apply. Has no effect for agents using charters.
+
+The IDs of segments that should be matched (under an OR clause) for the knowledge base to be relevant
+to a conversation. An empty list will remove segments from the knowledge base, it will be available on
+all conversations.
     
 </dd>
 </dl>

@@ -93,7 +93,11 @@ func (c *Client) ExportConversationTable(
 	return response.Body, nil
 }
 
-// Retrieves structured feedback data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+// Deprecated. Use `getEventTable` instead, which reports the same thumbs up/down and insert
+// activity as user events.
+//
+// Retrieves structured feedback data formatted as a table, allowing users to group, filter,
+// and define specific metrics to display as columns.
 func (c *Client) GetFeedbackTable(
 	ctx context.Context,
 	request *mavenagigo.FeedbackTableRequest,

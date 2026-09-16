@@ -81,12 +81,13 @@ var (
 	charterSummaryFieldCharterID               = big.NewInt(1 << 0)
 	charterSummaryFieldName                    = big.NewInt(1 << 1)
 	charterSummaryFieldSegmentSummary          = big.NewInt(1 << 2)
-	charterSummaryFieldParentCharterID         = big.NewInt(1 << 3)
-	charterSummaryFieldStatus                  = big.NewInt(1 << 4)
-	charterSummaryFieldType                    = big.NewInt(1 << 5)
-	charterSummaryFieldChildrenExclusionPolicy = big.NewInt(1 << 6)
-	charterSummaryFieldCreatedAt               = big.NewInt(1 << 7)
-	charterSummaryFieldUpdatedAt               = big.NewInt(1 << 8)
+	charterSummaryFieldPrecondition            = big.NewInt(1 << 3)
+	charterSummaryFieldParentCharterID         = big.NewInt(1 << 4)
+	charterSummaryFieldStatus                  = big.NewInt(1 << 5)
+	charterSummaryFieldType                    = big.NewInt(1 << 6)
+	charterSummaryFieldChildrenExclusionPolicy = big.NewInt(1 << 7)
+	charterSummaryFieldCreatedAt               = big.NewInt(1 << 8)
+	charterSummaryFieldUpdatedAt               = big.NewInt(1 << 9)
 )
 
 type CharterSummary struct {
@@ -94,9 +95,12 @@ type CharterSummary struct {
 	CharterID *EntityID `json:"charterId" url:"charterId"`
 	// The display name of the charter.
 	Name string `json:"name" url:"name"`
-	// The segment controlling when this charter applies. Null means wildcard
-	// (always matches).
+	// The segment backing this charter's rule. An implementation detail of `precondition`;
+	// read that instead.
 	SegmentSummary *SegmentSummary `json:"segmentSummary,omitempty" url:"segmentSummary,omitempty"`
+	// The rule controlling when this charter applies, read from the charter's backing
+	// segment. Null means wildcard (always matches).
+	Precondition *PreconditionResponse `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The ID of the parent charter. Null for root-level charters.
 	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"parentCharterId,omitempty"`
 	// The lifecycle status of this charter.
@@ -136,6 +140,13 @@ func (c *CharterSummary) GetSegmentSummary() *SegmentSummary {
 		return nil
 	}
 	return c.SegmentSummary
+}
+
+func (c *CharterSummary) GetPrecondition() *PreconditionResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Precondition
 }
 
 func (c *CharterSummary) GetParentCharterID() *EntityID {
@@ -210,6 +221,13 @@ func (c *CharterSummary) SetName(name string) {
 func (c *CharterSummary) SetSegmentSummary(segmentSummary *SegmentSummary) {
 	c.SegmentSummary = segmentSummary
 	c.require(charterSummaryFieldSegmentSummary)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSummary) SetPrecondition(precondition *PreconditionResponse) {
+	c.Precondition = precondition
+	c.require(charterSummaryFieldPrecondition)
 }
 
 // SetParentCharterID sets the ParentCharterID field and marks it as non-optional;

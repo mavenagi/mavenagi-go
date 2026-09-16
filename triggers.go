@@ -65,7 +65,9 @@ type EventTriggerBase struct {
 	// Conversation triggers fire when a conversation is created, after each additional message, and upon deletion events.
 	// There is a small delay before trigger execution to allow time for conversation analysis to complete.
 	//
-	// Feedback can not be modified, so the feedback trigger fires immediately after feedback is created.
+	// Events are immutable, so an event trigger fires immediately after the event is created.
+	//
+	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -184,7 +186,9 @@ type EventTriggerRequest struct {
 	// Conversation triggers fire when a conversation is created, after each additional message, and upon deletion events.
 	// There is a small delay before trigger execution to allow time for conversation analysis to complete.
 	//
-	// Feedback can not be modified, so the feedback trigger fires immediately after feedback is created.
+	// Events are immutable, so an event trigger fires immediately after the event is created.
+	//
+	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
 	// ID that uniquely identifies this event trigger
 	TriggerID *EntityIDBase `json:"triggerId" url:"triggerId"`
@@ -320,7 +324,9 @@ type EventTriggerResponse struct {
 	// Conversation triggers fire when a conversation is created, after each additional message, and upon deletion events.
 	// There is a small delay before trigger execution to allow time for conversation analysis to complete.
 	//
-	// Feedback can not be modified, so the feedback trigger fires immediately after feedback is created.
+	// Events are immutable, so an event trigger fires immediately after the event is created.
+	//
+	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
 	// ID that uniquely identifies this event trigger
 	TriggerID *EntityID `json:"triggerId" url:"triggerId"`
