@@ -764,7 +764,7 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**persona:** `*mavenagigo.LlmPersona` — Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+**persona:** `*mavenagigo.LlmPersona` — Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
     
 </dd>
 </dl>
@@ -772,7 +772,7 @@ client.Agents.Patch(
 <dl>
 <dd>
 
-**additionalPromptText:** `*string` — Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+**additionalPromptText:** `*string` — Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
     
 </dd>
 </dl>
@@ -798,7 +798,7 @@ client.Agents.Patch(
 
 **rejectQuestionsWithoutKnowledge:** `*bool` 
 
-Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 
 Return the system fallback message on all questions that have no relevant knowledge bases or actions.
     
@@ -2147,6 +2147,678 @@ client.Assets.CommitUpload(
 <dd>
 
 **request:** `*mavenagigo.CommitAssetUploadRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Charters
+<details><summary><code>client.Charters.CreateOrUpdate(request) -> *mavenagigo.CharterResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Create a new charter or update an existing one. Charters are governing
+documents that combine a precondition (when the charter applies), a manual
+(what the LLM should do), and the knowledge bases and actions the charter
+makes available.
+
+All charters in an agent form a tree (forest / multi-roots). When a
+charter is matched on a round, all its ancestor charters will be
+incorporated. Non-leaf charters are referred to as a charter group.
+
+Charters may specify a 0-indexed custom `userRank` that indicates
+preferences among its siblings. The rank is currently only meaningful
+for leaf charters as we enforce mutual exclusion among the leafs and
+pick only the highest ranked (lowest numerical value) leaf to include in
+the round. userRank may have gaps.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterRequest{
+        CharterID: &mavenagigo.EntityIDBase{
+            ReferenceID: "cancellation-flow",
+        },
+        Name: "Cancellation Flow",
+        Manual: mavenagigo.String(
+            "Guide the user through the cancellation process with empathy. Always confirm their intent before proceeding.",
+        ),
+        Precondition: &mavenagigo.Precondition{},
+        Status: mavenagigo.CharterStatusActive,
+        Type: mavenagigo.CharterTypeStandard.Ptr(),
+        References: &mavenagigo.CharterReferences{
+            KnowledgeBases: []*mavenagigo.CharterKnowledgeBaseReference{},
+            ActionIDs: []*mavenagigo.EntityID{},
+        },
+    }
+client.Charters.CreateOrUpdate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CharterRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Charters.Get(CharterReferenceID) -> *mavenagigo.CharterResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Get a charter by its reference ID.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterGetRequest{}
+client.Charters.Get(
+        context.TODO(),
+        "cancellation-flow",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**charterReferenceID:** `string` — The reference ID of the charter to get. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the charter to get. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Charters.Patch(CharterReferenceID, request) -> *mavenagigo.CharterResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Update mutable fields on a charter. Only provided fields are modified.
+
+To move a charter within the tree, set `parentCharterId`.
+To promote to root level, set `parentCharterId` explicitly to null.
+
+**Status behavior**:
+  - Setting `status` to `INACTIVE` applies only to the targeted charter;
+    it does not cascade to descendants. However, its descendants will no
+    longer be incorporated at runtime.
+  - Setting `status` to `ACTIVE` applies only to the targeted charter.
+    The caller is responsible for ensuring ancestor charters are also `ACTIVE`
+    if the full subtree should be reachable at runtime.
+
+**userRank conflict resolution**: When `userRank` is set to a value already held by a
+sibling, siblings at that rank and above are shifted up by 1 (like linked list semantics).
+The caller does not need to manage uniqueness explicitly.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterPatchRequest{
+        Precondition: &mavenagigo.Precondition{},
+        Status: mavenagigo.CharterStatusActive.Ptr(),
+    }
+client.Charters.Patch(
+        context.TODO(),
+        "cancellation-flow",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**charterReferenceID:** `string` — The reference ID of the charter to patch.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the charter to update. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**name:** `*string` — The display name of the charter.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**description:** `*string` — A plain text description. Omit to leave unchanged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**manual:** `*string` — The instruction text. Omit to leave unchanged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**parentCharterID:** `*mavenagigo.EntityID` 
+
+Move this charter to a new parent. Omit to leave the current parent unchanged.
+To promote this charter to root level instead, set the field explicitly to null.
+
+The resulting tree must remain acyclic. A move that would make this charter its own
+ancestor is rejected with a 400 and leaves the tree unchanged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**precondition:** `*mavenagigo.Precondition` 
+
+The rule controlling when this charter applies. Replaces the charter's existing
+rule outright -- this is not a merge. Set to null to make this charter a
+wildcard, removing the rule. Omit to leave unchanged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*mavenagigo.CharterStatus` — The lifecycle status of this charter.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**childrenExclusionPolicy:** `*mavenagigo.CharterChildrenExclusionPolicy` 
+
+Whether this charter's children mutually exclude each other.
+Omit to leave unchanged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**userRank:** `*int` 
+
+User-defined rank among siblings. When combined with `parentCharterId`,
+the rank is interpreted relative to the **new** sibling group, not the
+current one. Siblings in the destination at or above the target rank are
+shifted up by 1. Omit to keep the current rank value (which will still
+be applied to the new sibling group if `parentCharterId` is also changing).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**references:** `*mavenagigo.CharterPatchReferences` 
+
+Context items (knowledge bases and actions) this charter makes available.
+Each sub-field is independently optional — omit to leave unchanged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantID:** `*mavenagigo.EntityIDWithoutAgent` 
+
+The agent variant this patch is scoped to. When set, the patch is staged in that
+variant's working set instead of being applied to the agent's live configuration.
+
+Omit this field to patch the agent directly. Variant scoping is not active yet:
+a variant supplied today is accepted and ignored, and the patch applies to the
+agent.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Charters.Delete(CharterReferenceID) -> *mavenagigo.CharterResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Delete a charter and all of its descendants recursively.
+
+The charter must be set to `INACTIVE` before it can be deleted. This prevents accidental
+deletion of active charters. Descendant charters may be in any status — they will be
+soft-deleted regardless.
+
+Deleted charters are excluded from list results but can be retrieved by ID for archival purposes.
+
+Deleted charters cannot be modified.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterDeleteRequest{}
+client.Charters.Delete(
+        context.TODO(),
+        "cancellation-flow",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**charterReferenceID:** `string` — The reference ID of the charter to delete.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the charter to delete. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` 
+
+The reference ID of the agent variant this delete is scoped to. When set, the
+deletion is staged in that variant's working set instead of being applied to the
+agent's live configuration.
+
+Omit this parameter to delete directly from the agent. Variant scoping is not
+active yet: a variant supplied today is accepted and ignored, and the delete applies
+to the agent.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The App ID of the agent variant named by `variantReferenceId`. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Charters.Search(request) -> *mavenagigo.CharterSearchResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Search for charters matching the provided filters. Supports filtering by
+referenced action IDs and knowledge base IDs to find charters that make
+specific context items available.
+
+Returns both ACTIVE and INACTIVE charters (DELETED charters are excluded).
+
+Results are ordered by the `sort` field (defaults to CreatedAt). Use `sortDesc`
+to control direction (defaults to descending). An empty filter list is
+equivalent to omitting the field (no filter applied).
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterSearchRequest{
+        Page: mavenagigo.Int(
+            0,
+        ),
+        Size: mavenagigo.Int(
+            20,
+        ),
+    }
+client.Charters.Search(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CharterSearchRequest` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Charters.GetAncestors(CharterReferenceID) -> *mavenagigo.CharterAncestorsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Return a flat list containing the specified charter and all of its ancestors
+up to the root. Useful for rendering tree context around search results.
+
+Each entry is a full charter, so an ancestor's references and precondition are
+readable without a follow-up request per level.
+
+The list is always finite: charter hierarchies are acyclic, so a charter is never its own
+ancestor and the walk to the root terminates.
+
+Returns 404 if the charter does not exist or is deleted.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterGetAncestorsRequest{}
+client.Charters.GetAncestors(
+        context.TODO(),
+        "cancellation-step-1",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**charterReferenceID:** `string` — The reference ID of the charter. All other entity ID fields are inferred from the request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The App ID of the charter. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Charters.ListChildren(request) -> *mavenagigo.CharterListChildrenResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Batch fetch direct children of the specified parent charters. Returns one
+group per requested parent in the same order as parentIds, with grandchild
+IDs populated on each child for expandability signals.
+
+Pass an empty parentIds list to fetch all root-level charters for the agent.
+Intended to be used for easy BFS traversal, though calling with parents
+at mixed levels are allowed. Roots and specific parents cannot be mixed
+in one request.
+
+DELETED charters are never returned.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CharterListChildrenRequest{
+        ParentIDs: []*mavenagigo.EntityID{},
+    }
+client.Charters.ListChildren(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `*mavenagigo.CharterListChildrenRequest` 
     
 </dd>
 </dl>
@@ -4653,7 +5325,12 @@ client.Integrations.Update(
 <dl>
 <dd>
 
-Create a new intelligent field. Intelligent fields are used to store custom LLM-generated values on entities like conversations or events.
+Create a new intelligent field, or replace it if one already exists with the same
+`fieldId.referenceId`. Intelligent fields hold LLM-generated values computed for
+entities such as conversations.
+
+New fields are created with `status: INACTIVE` and are not evaluated until activated
+with the patch endpoint. `definition` is limited to 5,000 characters.
 </dd>
 </dl>
 </dd>
@@ -4791,6 +5468,22 @@ client.IntelligentFields.Get(
     
 </dd>
 </dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` — The agent variant reference ID to resolve the intelligent field's version through. If not provided, defaults to the agent's production variant.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
+    
+</dd>
+</dl>
 </dd>
 </dl>
 
@@ -4811,7 +5504,12 @@ client.IntelligentFields.Get(
 <dl>
 <dd>
 
-Patch an intelligent field. Can be used to update the definition, status, or other mutable properties.
+Update the mutable properties of an intelligent field. Only the properties present in
+the request body are changed.
+
+This is also how a field is activated and deactivated: set `status` to `ACTIVE` to
+start evaluating it, or `INACTIVE` to stop. `name`, `entityType`, and `validationType`
+cannot be changed after creation.
 </dd>
 </dl>
 </dd>
@@ -4867,7 +5565,7 @@ client.IntelligentFields.Patch(
 <dl>
 <dd>
 
-**definition:** `*string` — The definition of the intelligent field. This text will be influential in guiding the LLM to produce the desired results.
+**definition:** `*string` — The definition of the intelligent field. This text will be influential in guiding the LLM to produce the desired results. Limited to 5,000 characters.
     
 </dd>
 </dl>
@@ -4875,7 +5573,14 @@ client.IntelligentFields.Patch(
 <dl>
 <dd>
 
-**status:** `*mavenagigo.IntelligentFieldStatus` — The lifecycle state for whether this field is evaluated by workflows. Use INACTIVE to deactivate.
+**status:** `*mavenagigo.IntelligentFieldStatus` 
+
+The lifecycle state for whether this field is evaluated. Use ACTIVE to start
+evaluating the field and INACTIVE to stop.
+
+Each agent has a limit on how many fields may be ACTIVE at once; activating a
+field beyond that limit is rejected. A field referenced by an active precondition
+cannot be deactivated.
     
 </dd>
 </dl>
@@ -4891,7 +5596,7 @@ client.IntelligentFields.Patch(
 <dl>
 <dd>
 
-**enumOptions:** `[]*mavenagigo.EnumOption` — Updated enum options for select/multi-select fields. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
+**enumOptions:** `[]*mavenagigo.EnumOption` — Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
     
 </dd>
 </dl>
@@ -4899,7 +5604,15 @@ client.IntelligentFields.Patch(
 <dl>
 <dd>
 
-**variantID:** `*mavenagigo.EntityIDBase` — ID of the agent variant that this field belongs to, if applicable
+**variantID:** `*mavenagigo.EntityIDBase` — The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The App ID of the agent variant named by `variantId`. If not provided, the ID of the calling app will be used — name the owning app to patch in a variant the caller does not own, as the platform's own seeded variants are.
     
 </dd>
 </dl>
@@ -5013,7 +5726,12 @@ client.IntelligentFields.Delete(
 <dl>
 <dd>
 
-Search computed values for intelligent fields across entities. Supports filtering by field properties and target entity.
+Search the values that have been computed for intelligent fields, across entities.
+Supports filtering by properties of the field, by target entity, and by when the
+value was computed.
+
+Values only exist for fields that were ACTIVE when the entity was evaluated, so a
+newly activated field returns nothing until evaluation has run.
 </dd>
 </dl>
 </dd>

@@ -3026,6 +3026,7 @@ var (
 	knowledgeDocumentFilterFieldAppIDs                 = big.NewInt(1 << 5)
 	knowledgeDocumentFilterFieldKnowledgeBaseVersionID = big.NewInt(1 << 6)
 	knowledgeDocumentFilterFieldLlmInclusionStatus     = big.NewInt(1 << 7)
+	knowledgeDocumentFilterFieldRelevantEntities       = big.NewInt(1 << 8)
 )
 
 type KnowledgeDocumentFilter struct {
@@ -3057,6 +3058,17 @@ type KnowledgeDocumentFilter struct {
 	KnowledgeBaseVersionID *EntityIDWithoutAgent `json:"knowledgeBaseVersionId,omitempty" url:"knowledgeBaseVersionId,omitempty"`
 	// Filter by the LLM inclusion status
 	LlmInclusionStatus []LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
+	// Return only documents narrowed to one of these entities. Uses OR semantics - a document
+	// matching any of them is returned.
+	//
+	// This is an exact match on the document's `relevantEntities`, not the widening a
+	// conversation's `contextFilter` performs: filtering by a customer returns that customer's
+	// documents and not the agent's general knowledge. Omit the field to search every
+	// document regardless of what it is narrowed to; an empty list does the same.
+	//
+	// Each `entityId` must be fully specified and belong to the organization and agent the
+	// request is made against.
+	RelevantEntities []*ScopedEntity `json:"relevantEntities,omitempty" url:"relevantEntities,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3119,6 +3131,13 @@ func (k *KnowledgeDocumentFilter) GetLlmInclusionStatus() []LlmInclusionStatus {
 		return nil
 	}
 	return k.LlmInclusionStatus
+}
+
+func (k *KnowledgeDocumentFilter) GetRelevantEntities() []*ScopedEntity {
+	if k == nil {
+		return nil
+	}
+	return k.RelevantEntities
 }
 
 func (k *KnowledgeDocumentFilter) GetExtraProperties() map[string]interface{} {
@@ -3186,6 +3205,13 @@ func (k *KnowledgeDocumentFilter) SetKnowledgeBaseVersionID(knowledgeBaseVersion
 func (k *KnowledgeDocumentFilter) SetLlmInclusionStatus(llmInclusionStatus []LlmInclusionStatus) {
 	k.LlmInclusionStatus = llmInclusionStatus
 	k.require(knowledgeDocumentFilterFieldLlmInclusionStatus)
+}
+
+// SetRelevantEntities sets the RelevantEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentFilter) SetRelevantEntities(relevantEntities []*ScopedEntity) {
+	k.RelevantEntities = relevantEntities
+	k.require(knowledgeDocumentFilterFieldRelevantEntities)
 }
 
 func (k *KnowledgeDocumentFilter) UnmarshalJSON(data []byte) error {
@@ -3308,8 +3334,10 @@ type KnowledgeDocumentRequest struct {
 	// entity type with no internal form, is rejected rather than dropped - dropping the last
 	// entity would widen the document back to the whole agent.
 	//
-	// Changing the entities on an existing document is not supported yet: re-sending a
-	// document with different `relevantEntities` but unchanged content is a no-op.
+	// Changing the entities on an existing document is not supported yet: document reuse is
+	// decided by a checksum over `title`, `text`, `metadata`, `sourceUrl` and the attached
+	// asset, so re-sending a document with different `relevantEntities` but none of those
+	// changed returns the stored document and discards the new entities.
 	RelevantEntities []*ScopedEntity `json:"relevantEntities,omitempty" url:"relevantEntities,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -3575,11 +3603,11 @@ var (
 	knowledgeDocumentResponseFieldKnowledgeBaseLlmInclusionStatus = big.NewInt(1 << 8)
 	knowledgeDocumentResponseFieldCreatedAt                       = big.NewInt(1 << 9)
 	knowledgeDocumentResponseFieldUpdatedAt                       = big.NewInt(1 << 10)
-	knowledgeDocumentResponseFieldProcessingStatus                = big.NewInt(1 << 11)
-	knowledgeDocumentResponseFieldContent                         = big.NewInt(1 << 12)
-	knowledgeDocumentResponseFieldAsset                           = big.NewInt(1 << 13)
-	knowledgeDocumentResponseFieldMetadata                        = big.NewInt(1 << 14)
-	knowledgeDocumentResponseFieldRelevantEntities                = big.NewInt(1 << 15)
+	knowledgeDocumentResponseFieldRelevantEntities                = big.NewInt(1 << 11)
+	knowledgeDocumentResponseFieldProcessingStatus                = big.NewInt(1 << 12)
+	knowledgeDocumentResponseFieldContent                         = big.NewInt(1 << 13)
+	knowledgeDocumentResponseFieldAsset                           = big.NewInt(1 << 14)
+	knowledgeDocumentResponseFieldMetadata                        = big.NewInt(1 << 15)
 )
 
 type KnowledgeDocumentResponse struct {
@@ -3606,6 +3634,9 @@ type KnowledgeDocumentResponse struct {
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The time at which this document was last modified.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// The entities this document is narrowed to. Empty for a document that is part of the
+	// agent's general knowledge.
+	RelevantEntities []*ScopedEntity `json:"relevantEntities" url:"relevantEntities"`
 	// The current processing status of the knowledge document
 	ProcessingStatus *KnowledgeDocumentStatus `json:"processingStatus,omitempty" url:"processingStatus,omitempty"`
 	// The content of the document in markdown format. Not shown directly to users. May be absent for asset-backed documents that have not yet been processed.
@@ -3614,8 +3645,6 @@ type KnowledgeDocumentResponse struct {
 	Asset *AttachmentResponse `json:"asset,omitempty" url:"asset,omitempty"`
 	// Metadata for the knowledge document.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
-	// Scoped entities this document is associated with for context-based filtering.
-	RelevantEntities []*ScopedEntity `json:"relevantEntities" url:"relevantEntities"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3701,6 +3730,13 @@ func (k *KnowledgeDocumentResponse) GetUpdatedAt() time.Time {
 	return k.UpdatedAt
 }
 
+func (k *KnowledgeDocumentResponse) GetRelevantEntities() []*ScopedEntity {
+	if k == nil {
+		return nil
+	}
+	return k.RelevantEntities
+}
+
 func (k *KnowledgeDocumentResponse) GetProcessingStatus() *KnowledgeDocumentStatus {
 	if k == nil {
 		return nil
@@ -3727,13 +3763,6 @@ func (k *KnowledgeDocumentResponse) GetMetadata() map[string]string {
 		return nil
 	}
 	return k.Metadata
-}
-
-func (k *KnowledgeDocumentResponse) GetRelevantEntities() []*ScopedEntity {
-	if k == nil {
-		return nil
-	}
-	return k.RelevantEntities
 }
 
 func (k *KnowledgeDocumentResponse) GetExtraProperties() map[string]interface{} {
@@ -3824,6 +3853,13 @@ func (k *KnowledgeDocumentResponse) SetUpdatedAt(updatedAt time.Time) {
 	k.require(knowledgeDocumentResponseFieldUpdatedAt)
 }
 
+// SetRelevantEntities sets the RelevantEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentResponse) SetRelevantEntities(relevantEntities []*ScopedEntity) {
+	k.RelevantEntities = relevantEntities
+	k.require(knowledgeDocumentResponseFieldRelevantEntities)
+}
+
 // SetProcessingStatus sets the ProcessingStatus field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (k *KnowledgeDocumentResponse) SetProcessingStatus(processingStatus *KnowledgeDocumentStatus) {
@@ -3850,13 +3886,6 @@ func (k *KnowledgeDocumentResponse) SetAsset(asset *AttachmentResponse) {
 func (k *KnowledgeDocumentResponse) SetMetadata(metadata map[string]string) {
 	k.Metadata = metadata
 	k.require(knowledgeDocumentResponseFieldMetadata)
-}
-
-// SetRelevantEntities sets the RelevantEntities field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetRelevantEntities(relevantEntities []*ScopedEntity) {
-	k.RelevantEntities = relevantEntities
-	k.require(knowledgeDocumentResponseFieldRelevantEntities)
 }
 
 func (k *KnowledgeDocumentResponse) UnmarshalJSON(data []byte) error {
@@ -4067,6 +4096,7 @@ var (
 	knowledgeDocumentSearchResponseFieldKnowledgeBaseLlmInclusionStatus = big.NewInt(1 << 8)
 	knowledgeDocumentSearchResponseFieldCreatedAt                       = big.NewInt(1 << 9)
 	knowledgeDocumentSearchResponseFieldUpdatedAt                       = big.NewInt(1 << 10)
+	knowledgeDocumentSearchResponseFieldRelevantEntities                = big.NewInt(1 << 11)
 )
 
 type KnowledgeDocumentSearchResponse struct {
@@ -4093,6 +4123,9 @@ type KnowledgeDocumentSearchResponse struct {
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The time at which this document was last modified.
 	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// The entities this document is narrowed to. Empty for a document that is part of the
+	// agent's general knowledge.
+	RelevantEntities []*ScopedEntity `json:"relevantEntities" url:"relevantEntities"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4176,6 +4209,13 @@ func (k *KnowledgeDocumentSearchResponse) GetUpdatedAt() time.Time {
 		return time.Time{}
 	}
 	return k.UpdatedAt
+}
+
+func (k *KnowledgeDocumentSearchResponse) GetRelevantEntities() []*ScopedEntity {
+	if k == nil {
+		return nil
+	}
+	return k.RelevantEntities
 }
 
 func (k *KnowledgeDocumentSearchResponse) GetExtraProperties() map[string]interface{} {
@@ -4264,6 +4304,13 @@ func (k *KnowledgeDocumentSearchResponse) SetCreatedAt(createdAt time.Time) {
 func (k *KnowledgeDocumentSearchResponse) SetUpdatedAt(updatedAt time.Time) {
 	k.UpdatedAt = updatedAt
 	k.require(knowledgeDocumentSearchResponseFieldUpdatedAt)
+}
+
+// SetRelevantEntities sets the RelevantEntities field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeDocumentSearchResponse) SetRelevantEntities(relevantEntities []*ScopedEntity) {
+	k.RelevantEntities = relevantEntities
+	k.require(knowledgeDocumentSearchResponseFieldRelevantEntities)
 }
 
 func (k *KnowledgeDocumentSearchResponse) UnmarshalJSON(data []byte) error {

@@ -39,7 +39,12 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// Create a new intelligent field. Intelligent fields are used to store custom LLM-generated values on entities like conversations or events.
+// Create a new intelligent field, or replace it if one already exists with the same
+// `fieldId.referenceId`. Intelligent fields hold LLM-generated values computed for
+// entities such as conversations.
+//
+// New fields are created with `status: INACTIVE` and are not evaluated until activated
+// with the patch endpoint. `definition` is limited to 5,000 characters.
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
 	request *mavenagigo.IntelligentFieldRequest,
@@ -76,7 +81,12 @@ func (c *Client) Get(
 	return response.Body, nil
 }
 
-// Patch an intelligent field. Can be used to update the definition, status, or other mutable properties.
+// Update the mutable properties of an intelligent field. Only the properties present in
+// the request body are changed.
+//
+// This is also how a field is activated and deactivated: set `status` to `ACTIVE` to
+// start evaluating it, or `INACTIVE` to stop. `name`, `entityType`, and `validationType`
+// cannot be changed after creation.
 func (c *Client) Patch(
 	ctx context.Context,
 	// The reference ID of the intelligent field to patch.
@@ -122,7 +132,12 @@ func (c *Client) Delete(
 	return response.Body, nil
 }
 
-// Search computed values for intelligent fields across entities. Supports filtering by field properties and target entity.
+// Search the values that have been computed for intelligent fields, across entities.
+// Supports filtering by properties of the field, by target entity, and by when the
+// value was computed.
+//
+// Values only exist for fields that were ACTIVE when the entity was evaluated, so a
+// newly activated field returns nothing until evaluation has run.
 func (c *Client) SearchValues(
 	ctx context.Context,
 	request *mavenagigo.IntelligentFieldValueSearchRequest,

@@ -34,15 +34,15 @@ type AgentPatchRequest struct {
 	EnabledPiiCategories []PiiCategory `json:"enabledPiiCategories,omitempty" url:"-"`
 	// The system fallback message.
 	SystemFallbackMessage *string `json:"systemFallbackMessage,omitempty" url:"-"`
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	Persona *LlmPersona `json:"persona,omitempty" url:"-"`
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"-"`
 	// LLM prompt for category generation.
 	CategoryGenerationPromptText *string `json:"categoryGenerationPromptText,omitempty" url:"-"`
 	// LLM prompt for generating a response when the user's question has been detected as unsafe.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"-"`
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	//
 	// Return the system fallback message on all questions that have no relevant knowledge bases or actions.
 	RejectQuestionsWithoutKnowledge *bool `json:"rejectQuestionsWithoutKnowledge,omitempty" url:"-"`
@@ -477,9 +477,9 @@ var (
 )
 
 type AgentPrompting struct {
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	Persona LlmPersona `json:"persona" url:"persona"`
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"additionalPromptText,omitempty"`
 	// LLM prompt for category generation.
 	//
@@ -491,7 +491,7 @@ type AgentPrompting struct {
 	// Use this to provide custom LLM generated replies when dealing with content safety violations.
 	// When not set, the system fallback message will be used and replies will not be personalized by the LLM as it will not be involved.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"contentSafetyViolationResponsePromptText,omitempty"`
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	//
 	// Return the system fallback message on all questions that have no relevant knowledge bases or actions.
 	RejectQuestionsWithoutKnowledge bool `json:"rejectQuestionsWithoutKnowledge" url:"rejectQuestionsWithoutKnowledge"`

@@ -2502,13 +2502,13 @@ func (a *ArraySettingsSchemaEntry) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
-// What prompts the assistant turn produced by an ask. Defaults to USER_MESSAGE when omitted.
+// What prompts the assistant response produced by an ask. Defaults to USER_MESSAGE when omitted.
 type AskType string
 
 const (
 	// The default. Respond to a message the user sent; the user's words are in `text` (required).
 	AskTypeUserMessage AskType = "USER_MESSAGE"
-	// The agent opens the conversation with its own greeting, with no user input. `text` is optional here; when provided it steers the greeting. Intended as the first turn of a conversation.
+	// The agent opens the conversation with its own greeting, with no user input. `text` is optional here; when provided it steers the greeting. Intended as the first round of a conversation.
 	AskTypeWelcome AskType = "WELCOME"
 	// The agent proactively sends a message the user did not prompt. `text` is optional here; when provided it steers what the agent says (e.g. "tell the user to restart their machine") and is a directive to the agent, not the user's own words.
 	AskTypeProactive AskType = "PROACTIVE"
@@ -6547,7 +6547,7 @@ func (b *BotOAuthButtonResponse) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
-// The structured answer for an ask whose `textFormat` was `jsonSchema`. Accompanies the `BotTextResponse` rather than replacing it — the same turn produces both, so the conversation still reads as prose.
+// The structured answer for an ask whose `textFormat` was `jsonSchema`. Accompanies the `BotTextResponse` rather than replacing it — the same round produces both, so the conversation still reads as prose.
 var (
 	botObjectResponseFieldObject = big.NewInt(1 << 0)
 )
@@ -10179,7 +10179,7 @@ func (c *ConversationResponse) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// Which round of the conversation an action must have executed in for a ConversationExecutedActionPrecondition to be met. A round is a single bot response to the user; the current round is the bot response being generated now.
+// Which round of the conversation an action must have executed in for a ConversationExecutedActionPrecondition to be met. A round is one user-visible bot response, which may span several model calls as actions run. The current round is the response being generated now, so CURRENT matches an action that ran earlier in this same response.
 type ConversationRound string
 
 const (
@@ -16463,10 +16463,6 @@ func (i *InitializeConversationResponse) String() string {
 // the ID of the intelligent field (<referenceId, appId>).  Available
 // operators and the corresponding types of the RHS depends on the
 // validationType of the intelligent field.
-//
-// Note: in early beta, only opt-in apps and organizations/agents can
-// specify intelligent field preconditions.  Otherwise, the request will be
-// rejected.
 var (
 	intelligentFieldPreconditionFieldFieldIDWithoutAgent = big.NewInt(1 << 0)
 	intelligentFieldPreconditionFieldFieldCondition      = big.NewInt(1 << 1)
@@ -17609,7 +17605,7 @@ func (l LlmInclusionStatus) Ptr() *LlmInclusionStatus {
 	return &l
 }
 
-// Deprecated. Superseded by charters, which determine agent behavior per turn.
+// Deprecated. Superseded by charters, which determine agent behavior per round.
 type LlmPersona string
 
 const (
@@ -17687,6 +17683,606 @@ func NewMessageStatusFromString(s string) (MessageStatus, error) {
 
 func (m MessageStatus) Ptr() *MessageStatus {
 	return &m
+}
+
+// Condition comparing a metadata value against a single string.
+var (
+	metadataComparisonConditionFieldOperator = big.NewInt(1 << 0)
+	metadataComparisonConditionFieldValue    = big.NewInt(1 << 1)
+)
+
+type MetadataComparisonCondition struct {
+	// The comparison operator to apply
+	Operator MetadataComparisonOperator `json:"operator" url:"operator"`
+	// The string value to compare against
+	Value string `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *MetadataComparisonCondition) GetOperator() MetadataComparisonOperator {
+	if m == nil {
+		return ""
+	}
+	return m.Operator
+}
+
+func (m *MetadataComparisonCondition) GetValue() string {
+	if m == nil {
+		return ""
+	}
+	return m.Value
+}
+
+func (m *MetadataComparisonCondition) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *MetadataComparisonCondition) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataComparisonCondition) SetOperator(operator MetadataComparisonOperator) {
+	m.Operator = operator
+	m.require(metadataComparisonConditionFieldOperator)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataComparisonCondition) SetValue(value string) {
+	m.Value = value
+	m.require(metadataComparisonConditionFieldValue)
+}
+
+func (m *MetadataComparisonCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler MetadataComparisonCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*m = MetadataComparisonCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *MetadataComparisonCondition) MarshalJSON() ([]byte, error) {
+	type embed MetadataComparisonCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*m),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *MetadataComparisonCondition) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
+}
+
+// Operators comparing a metadata value against a single string.
+//
+// Narrower than `StringComparisonOperator` by design. Its substring and suffix
+// operators need an unanchored scan of every value, which a metadata filter cannot
+// afford; equality and prefix are answerable straight from an index.
+type MetadataComparisonOperator string
+
+const (
+	// Equals (=)
+	MetadataComparisonOperatorEq MetadataComparisonOperator = "EQ"
+	// Not equals (!=)
+	MetadataComparisonOperatorNeq MetadataComparisonOperator = "NEQ"
+	// Value starts with the specified prefix
+	MetadataComparisonOperatorStartsWith MetadataComparisonOperator = "STARTS_WITH"
+	// Value does not start with the specified prefix
+	MetadataComparisonOperatorNotStartsWith MetadataComparisonOperator = "NOT_STARTS_WITH"
+)
+
+func NewMetadataComparisonOperatorFromString(s string) (MetadataComparisonOperator, error) {
+	switch s {
+	case "EQ":
+		return MetadataComparisonOperatorEq, nil
+	case "NEQ":
+		return MetadataComparisonOperatorNeq, nil
+	case "STARTS_WITH":
+		return MetadataComparisonOperatorStartsWith, nil
+	case "NOT_STARTS_WITH":
+		return MetadataComparisonOperatorNotStartsWith, nil
+	}
+	var t MetadataComparisonOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MetadataComparisonOperator) Ptr() *MetadataComparisonOperator {
+	return &m
+}
+
+// A condition on a single metadata value.
+//
+// Unlike `FieldCondition` this has no type discriminant. `FieldCondition` coerces a
+// value to a declared type before comparing it because the values it tests may be
+// numbers, booleans or sets; metadata values are always strings, so there is nothing
+// to declare.
+type MetadataCondition struct {
+	OpType     string
+	Comparison *MetadataComparisonCondition
+	Membership *StringMembershipCondition
+	Presence   *PresenceCondition
+}
+
+func (m *MetadataCondition) GetOpType() string {
+	if m == nil {
+		return ""
+	}
+	return m.OpType
+}
+
+func (m *MetadataCondition) GetComparison() *MetadataComparisonCondition {
+	if m == nil {
+		return nil
+	}
+	return m.Comparison
+}
+
+func (m *MetadataCondition) GetMembership() *StringMembershipCondition {
+	if m == nil {
+		return nil
+	}
+	return m.Membership
+}
+
+func (m *MetadataCondition) GetPresence() *PresenceCondition {
+	if m == nil {
+		return nil
+	}
+	return m.Presence
+}
+
+func (m *MetadataCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		OpType string `json:"opType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	m.OpType = unmarshaler.OpType
+	if unmarshaler.OpType == "" {
+		return fmt.Errorf("%T did not include discriminant opType", m)
+	}
+	switch unmarshaler.OpType {
+	case "comparison":
+		value := new(MetadataComparisonCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		m.Comparison = value
+	case "membership":
+		value := new(StringMembershipCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		m.Membership = value
+	case "presence":
+		value := new(PresenceCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		m.Presence = value
+	}
+	return nil
+}
+
+func (m MetadataCondition) MarshalJSON() ([]byte, error) {
+	if err := m.validate(); err != nil {
+		return nil, err
+	}
+	if m.Comparison != nil {
+		return internal.MarshalJSONWithExtraProperty(m.Comparison, "opType", "comparison")
+	}
+	if m.Membership != nil {
+		return internal.MarshalJSONWithExtraProperty(m.Membership, "opType", "membership")
+	}
+	if m.Presence != nil {
+		return internal.MarshalJSONWithExtraProperty(m.Presence, "opType", "presence")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", m)
+}
+
+type MetadataConditionVisitor interface {
+	VisitComparison(*MetadataComparisonCondition) error
+	VisitMembership(*StringMembershipCondition) error
+	VisitPresence(*PresenceCondition) error
+}
+
+func (m *MetadataCondition) Accept(visitor MetadataConditionVisitor) error {
+	if m.Comparison != nil {
+		return visitor.VisitComparison(m.Comparison)
+	}
+	if m.Membership != nil {
+		return visitor.VisitMembership(m.Membership)
+	}
+	if m.Presence != nil {
+		return visitor.VisitPresence(m.Presence)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", m)
+}
+
+func (m *MetadataCondition) validate() error {
+	if m == nil {
+		return fmt.Errorf("type %T is nil", m)
+	}
+	var fields []string
+	if m.Comparison != nil {
+		fields = append(fields, "comparison")
+	}
+	if m.Membership != nil {
+		fields = append(fields, "membership")
+	}
+	if m.Presence != nil {
+		fields = append(fields, "presence")
+	}
+	if len(fields) == 0 {
+		if m.OpType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", m, m.OpType)
+		}
+		return fmt.Errorf("type %T is empty", m)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", m, fields)
+	}
+	if m.OpType != "" {
+		field := fields[0]
+		if m.OpType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				m,
+				m.OpType,
+				m,
+			)
+		}
+	}
+	return nil
+}
+
+// A condition on the value stored under one metadata key.
+var (
+	metadataEntryConditionFieldKey       = big.NewInt(1 << 0)
+	metadataEntryConditionFieldCondition = big.NewInt(1 << 1)
+)
+
+type MetadataEntryCondition struct {
+	// The metadata key to test. A plain key, not a path: metadata is a flat string-to-string map, so there is no nesting to address.
+	Key string `json:"key" url:"key"`
+	// The condition to evaluate against the value stored under `key`.
+	Condition *MetadataCondition `json:"condition" url:"condition"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *MetadataEntryCondition) GetKey() string {
+	if m == nil {
+		return ""
+	}
+	return m.Key
+}
+
+func (m *MetadataEntryCondition) GetCondition() *MetadataCondition {
+	if m == nil {
+		return nil
+	}
+	return m.Condition
+}
+
+func (m *MetadataEntryCondition) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *MetadataEntryCondition) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataEntryCondition) SetKey(key string) {
+	m.Key = key
+	m.require(metadataEntryConditionFieldKey)
+}
+
+// SetCondition sets the Condition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataEntryCondition) SetCondition(condition *MetadataCondition) {
+	m.Condition = condition
+	m.require(metadataEntryConditionFieldCondition)
+}
+
+func (m *MetadataEntryCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler MetadataEntryCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*m = MetadataEntryCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *MetadataEntryCondition) MarshalJSON() ([]byte, error) {
+	type embed MetadataEntryCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*m),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *MetadataEntryCondition) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
+}
+
+// A predicate over a string-to-string metadata map: either a condition on the value
+// under one key, or a group of predicates combined with a logical operator.
+//
+// Kept small on purpose: at most 3 levels of nesting and 10 nodes in total, counting
+// groups as well as entries. A filter is meant to narrow a knowledge base to a
+// recognisable slice, not to encode a query language. Exceeding either is a 400.
+type MetadataFilter struct {
+	MetadataFilterType string
+	Entry              *MetadataEntryCondition
+	Group              *MetadataFilterGroup
+}
+
+func (m *MetadataFilter) GetMetadataFilterType() string {
+	if m == nil {
+		return ""
+	}
+	return m.MetadataFilterType
+}
+
+func (m *MetadataFilter) GetEntry() *MetadataEntryCondition {
+	if m == nil {
+		return nil
+	}
+	return m.Entry
+}
+
+func (m *MetadataFilter) GetGroup() *MetadataFilterGroup {
+	if m == nil {
+		return nil
+	}
+	return m.Group
+}
+
+func (m *MetadataFilter) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		MetadataFilterType string `json:"metadataFilterType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	m.MetadataFilterType = unmarshaler.MetadataFilterType
+	if unmarshaler.MetadataFilterType == "" {
+		return fmt.Errorf("%T did not include discriminant metadataFilterType", m)
+	}
+	switch unmarshaler.MetadataFilterType {
+	case "entry":
+		value := new(MetadataEntryCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		m.Entry = value
+	case "group":
+		value := new(MetadataFilterGroup)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		m.Group = value
+	}
+	return nil
+}
+
+func (m MetadataFilter) MarshalJSON() ([]byte, error) {
+	if err := m.validate(); err != nil {
+		return nil, err
+	}
+	if m.Entry != nil {
+		return internal.MarshalJSONWithExtraProperty(m.Entry, "metadataFilterType", "entry")
+	}
+	if m.Group != nil {
+		return internal.MarshalJSONWithExtraProperty(m.Group, "metadataFilterType", "group")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", m)
+}
+
+type MetadataFilterVisitor interface {
+	VisitEntry(*MetadataEntryCondition) error
+	VisitGroup(*MetadataFilterGroup) error
+}
+
+func (m *MetadataFilter) Accept(visitor MetadataFilterVisitor) error {
+	if m.Entry != nil {
+		return visitor.VisitEntry(m.Entry)
+	}
+	if m.Group != nil {
+		return visitor.VisitGroup(m.Group)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", m)
+}
+
+func (m *MetadataFilter) validate() error {
+	if m == nil {
+		return fmt.Errorf("type %T is nil", m)
+	}
+	var fields []string
+	if m.Entry != nil {
+		fields = append(fields, "entry")
+	}
+	if m.Group != nil {
+		fields = append(fields, "group")
+	}
+	if len(fields) == 0 {
+		if m.MetadataFilterType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", m, m.MetadataFilterType)
+		}
+		return fmt.Errorf("type %T is empty", m)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", m, fields)
+	}
+	if m.MetadataFilterType != "" {
+		field := fields[0]
+		if m.MetadataFilterType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				m,
+				m.MetadataFilterType,
+				m,
+			)
+		}
+	}
+	return nil
+}
+
+// Combines metadata filters with a logical operator. Groups nest, so `(a AND b) OR c`
+// is a group whose filters are a group and an entry.
+var (
+	metadataFilterGroupFieldOperator = big.NewInt(1 << 0)
+	metadataFilterGroupFieldFilters  = big.NewInt(1 << 1)
+)
+
+type MetadataFilterGroup struct {
+	// How to combine `filters`.
+	Operator PreconditionGroupOperator `json:"operator" url:"operator"`
+	// The filters to combine. At least one is required -- a group with no filters constrains
+	// nothing, and omitting the filter altogether already means every document.
+	Filters []*MetadataFilter `json:"filters" url:"filters"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *MetadataFilterGroup) GetOperator() PreconditionGroupOperator {
+	if m == nil {
+		return ""
+	}
+	return m.Operator
+}
+
+func (m *MetadataFilterGroup) GetFilters() []*MetadataFilter {
+	if m == nil {
+		return nil
+	}
+	return m.Filters
+}
+
+func (m *MetadataFilterGroup) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *MetadataFilterGroup) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataFilterGroup) SetOperator(operator PreconditionGroupOperator) {
+	m.Operator = operator
+	m.require(metadataFilterGroupFieldOperator)
+}
+
+// SetFilters sets the Filters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataFilterGroup) SetFilters(filters []*MetadataFilter) {
+	m.Filters = filters
+	m.require(metadataFilterGroupFieldFilters)
+}
+
+func (m *MetadataFilterGroup) UnmarshalJSON(data []byte) error {
+	type unmarshaler MetadataFilterGroup
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*m = MetadataFilterGroup(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *MetadataFilterGroup) MarshalJSON() ([]byte, error) {
+	type embed MetadataFilterGroup
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*m),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *MetadataFilterGroup) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
 }
 
 var (
@@ -23367,11 +23963,11 @@ var (
 )
 
 type SimulationContext struct {
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	//
 	// If provided, overrides the agent's default additional prompt text during the simulation.
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"additionalPromptText,omitempty"`
-	// Deprecated. Superseded by charters, which determine agent behavior per turn. Has no effect for agents using charters.
+	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	Persona *LlmPersona `json:"persona,omitempty" url:"persona,omitempty"`
 	// If provided, knowledge search will be restricted to the provided list of knowledge bases. Otherwise, all active knowledge bases will be used. An empty list means no knowledge bases will be used.
 	AvailableKnowledgeBases []*EntityID `json:"availableKnowledgeBases,omitempty" url:"availableKnowledgeBases,omitempty"`
@@ -24600,6 +25196,8 @@ const (
 	SystemEventNameSyncCompleted SystemEventName = "SYNC_COMPLETED"
 	// A data sync with an external system failed
 	SystemEventNameSyncFailed SystemEventName = "SYNC_FAILED"
+	// An intelligent field's value on a conversation was set or changed. `references` carries the conversation and the field; `contextInfo.additionalData` carries `fieldReferenceId`, `fieldAppId`, the new `value` and the `previousValue`, both as JSON strings. An undetermined value is the JSON string `null` on either key. `previousValue` is absent only when the field was set for the first time and had no previous value at all.
+	SystemEventNameIntelligentFieldValueChanged SystemEventName = "INTELLIGENT_FIELD_VALUE_CHANGED"
 )
 
 func NewSystemEventNameFromString(s string) (SystemEventName, error) {
@@ -24626,6 +25224,8 @@ func NewSystemEventNameFromString(s string) (SystemEventName, error) {
 		return SystemEventNameSyncCompleted, nil
 	case "SYNC_FAILED":
 		return SystemEventNameSyncFailed, nil
+	case "INTELLIGENT_FIELD_VALUE_CHANGED":
+		return SystemEventNameIntelligentFieldValueChanged, nil
 	}
 	var t SystemEventName
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

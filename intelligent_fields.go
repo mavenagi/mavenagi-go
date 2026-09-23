@@ -57,12 +57,18 @@ func (i *IntelligentFieldDeleteRequest) SetVariantAppID(variantAppID *string) {
 }
 
 var (
-	intelligentFieldGetRequestFieldAppID = big.NewInt(1 << 0)
+	intelligentFieldGetRequestFieldAppID              = big.NewInt(1 << 0)
+	intelligentFieldGetRequestFieldVariantReferenceID = big.NewInt(1 << 1)
+	intelligentFieldGetRequestFieldVariantAppID       = big.NewInt(1 << 2)
 )
 
 type IntelligentFieldGetRequest struct {
 	// The App ID of the intelligent field to get. If not provided the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
+	// The agent variant reference ID to resolve the intelligent field's version through. If not provided, defaults to the agent's production variant.
+	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
+	// The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
+	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -82,28 +88,50 @@ func (i *IntelligentFieldGetRequest) SetAppID(appID *string) {
 	i.require(intelligentFieldGetRequestFieldAppID)
 }
 
+// SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldGetRequest) SetVariantReferenceID(variantReferenceID *string) {
+	i.VariantReferenceID = variantReferenceID
+	i.require(intelligentFieldGetRequestFieldVariantReferenceID)
+}
+
+// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldGetRequest) SetVariantAppID(variantAppID *string) {
+	i.VariantAppID = variantAppID
+	i.require(intelligentFieldGetRequestFieldVariantAppID)
+}
+
 var (
-	intelligentFieldPatchRequestFieldAppID       = big.NewInt(1 << 0)
-	intelligentFieldPatchRequestFieldDefinition  = big.NewInt(1 << 1)
-	intelligentFieldPatchRequestFieldStatus      = big.NewInt(1 << 2)
-	intelligentFieldPatchRequestFieldDescription = big.NewInt(1 << 3)
-	intelligentFieldPatchRequestFieldEnumOptions = big.NewInt(1 << 4)
-	intelligentFieldPatchRequestFieldVariantID   = big.NewInt(1 << 5)
+	intelligentFieldPatchRequestFieldAppID        = big.NewInt(1 << 0)
+	intelligentFieldPatchRequestFieldDefinition   = big.NewInt(1 << 1)
+	intelligentFieldPatchRequestFieldStatus       = big.NewInt(1 << 2)
+	intelligentFieldPatchRequestFieldDescription  = big.NewInt(1 << 3)
+	intelligentFieldPatchRequestFieldEnumOptions  = big.NewInt(1 << 4)
+	intelligentFieldPatchRequestFieldVariantID    = big.NewInt(1 << 5)
+	intelligentFieldPatchRequestFieldVariantAppID = big.NewInt(1 << 6)
 )
 
 type IntelligentFieldPatchRequest struct {
 	// The App ID of the intelligent field to update. If not provided the ID of the calling app will be used.
 	AppID *string `json:"appId,omitempty" url:"-"`
-	// The definition of the intelligent field. This text will be influential in guiding the LLM to produce the desired results.
+	// The definition of the intelligent field. This text will be influential in guiding the LLM to produce the desired results. Limited to 5,000 characters.
 	Definition *string `json:"definition,omitempty" url:"-"`
-	// The lifecycle state for whether this field is evaluated by workflows. Use INACTIVE to deactivate.
+	// The lifecycle state for whether this field is evaluated. Use ACTIVE to start
+	// evaluating the field and INACTIVE to stop.
+	//
+	// Each agent has a limit on how many fields may be ACTIVE at once; activating a
+	// field beyond that limit is rejected. A field referenced by an active precondition
+	// cannot be deactivated.
 	Status *IntelligentFieldStatus `json:"status,omitempty" url:"-"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"-"`
-	// Updated enum options for select/multi-select fields. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
+	// Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"-"`
-	// ID of the agent variant that this field belongs to, if applicable
+	// The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`.
 	VariantID *EntityIDBase `json:"variantId,omitempty" url:"-"`
+	// The App ID of the agent variant named by `variantId`. If not provided, the ID of the calling app will be used — name the owning app to patch in a variant the caller does not own, as the platform's own seeded variants are.
+	VariantAppID *string `json:"variantAppId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -158,7 +186,16 @@ func (i *IntelligentFieldPatchRequest) SetVariantID(variantID *EntityIDBase) {
 	i.require(intelligentFieldPatchRequestFieldVariantID)
 }
 
-// Option for STRING/MULTILINE/NUMBER fields when a finite set is desired
+// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldPatchRequest) SetVariantAppID(variantAppID *string) {
+	i.VariantAppID = variantAppID
+	i.require(intelligentFieldPatchRequestFieldVariantAppID)
+}
+
+// One allowed choice for a field whose value should come from a finite set. Use with
+// MULTI_SELECT to constrain a list of choices, or with STRING/MULTILINE/NUMBER to make
+// the field a single select.
 var (
 	enumOptionFieldValue = big.NewInt(1 << 0)
 	enumOptionFieldLabel = big.NewInt(1 << 1)
@@ -270,22 +307,24 @@ type IntelligentFieldBase struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// Result type hint used for schema generation, UI, and validation.
+	// The type of value this field holds. It constrains the schema the LLM is asked to fill
+	// and the JSON type of the computed `value`.
 	//
-	// - STRING / MULTILINE: single string value
-	// - MULTI_SELECT: multiple values
-	// - BOOLEAN: boolean value
-	// - NUMBER: numeric value
+	// - STRING / MULTILINE: a single string
+	// - MULTI_SELECT: a list of strings
+	// - BOOLEAN: `true` or `false`
+	// - NUMBER: a number
 	//
-	// Note: for single select, use STRING/NUMBER with a list of enumOptions.
+	// For a single select, use STRING or NUMBER together with `enumOptions`.
 	ValidationType IntelligentFieldType `json:"validationType" url:"validationType"`
 	// Definition used by the LLM when generating this field's value
 	Definition string `json:"definition" url:"definition"`
-	// Optional enum options for STRING/MULTILINE/NUMBER when a finite set is desired
+	// The finite set of values this field may take. Omit to let the LLM produce any value of
+	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
 	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant that created this field, if applicable
+	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -443,10 +482,7 @@ func (i *IntelligentFieldBase) String() string {
 	return fmt.Sprintf("%#v", i)
 }
 
-// The minimal set of fields describing an intelligent field's content, shared by both the
-// field's own resource representation (IntelligentFieldBase) and a single staged edit's
-// payload (IntelligentFieldPayload) -- kept as one type so the two don't drift out of sync on
-// what "the same" field content looks like.
+// The content of an intelligent field -- what it is called, and what the LLM should produce for it.
 var (
 	intelligentFieldCoreFieldName           = big.NewInt(1 << 0)
 	intelligentFieldCoreFieldDescription    = big.NewInt(1 << 1)
@@ -460,18 +496,20 @@ type IntelligentFieldCore struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// Result type hint used for schema generation, UI, and validation.
+	// The type of value this field holds. It constrains the schema the LLM is asked to fill
+	// and the JSON type of the computed `value`.
 	//
-	// - STRING / MULTILINE: single string value
-	// - MULTI_SELECT: multiple values
-	// - BOOLEAN: boolean value
-	// - NUMBER: numeric value
+	// - STRING / MULTILINE: a single string
+	// - MULTI_SELECT: a list of strings
+	// - BOOLEAN: `true` or `false`
+	// - NUMBER: a number
 	//
-	// Note: for single select, use STRING/NUMBER with a list of enumOptions.
+	// For a single select, use STRING or NUMBER together with `enumOptions`.
 	ValidationType IntelligentFieldType `json:"validationType" url:"validationType"`
 	// Definition used by the LLM when generating this field's value
 	Definition string `json:"definition" url:"definition"`
-	// Optional enum options for STRING/MULTILINE/NUMBER when a finite set is desired
+	// The finite set of values this field may take. Omit to let the LLM produce any value of
+	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -621,22 +659,24 @@ type IntelligentFieldDetailResponse struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// Result type hint used for schema generation, UI, and validation.
+	// The type of value this field holds. It constrains the schema the LLM is asked to fill
+	// and the JSON type of the computed `value`.
 	//
-	// - STRING / MULTILINE: single string value
-	// - MULTI_SELECT: multiple values
-	// - BOOLEAN: boolean value
-	// - NUMBER: numeric value
+	// - STRING / MULTILINE: a single string
+	// - MULTI_SELECT: a list of strings
+	// - BOOLEAN: `true` or `false`
+	// - NUMBER: a number
 	//
-	// Note: for single select, use STRING/NUMBER with a list of enumOptions.
+	// For a single select, use STRING or NUMBER together with `enumOptions`.
 	ValidationType IntelligentFieldType `json:"validationType" url:"validationType"`
 	// Definition used by the LLM when generating this field's value
 	Definition string `json:"definition" url:"definition"`
-	// Optional enum options for STRING/MULTILINE/NUMBER when a finite set is desired
+	// The finite set of values this field may take. Omit to let the LLM produce any value of
+	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
 	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant that created this field, if applicable
+	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// ID that uniquely identifies this intelligent field
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
@@ -646,7 +686,8 @@ type IntelligentFieldDetailResponse struct {
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The date and time the intelligent field was last updated
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
-	// Charters whose attached segment precondition references this intelligent field.
+	// Charters whose precondition references this intelligent field. A field referenced by
+	// an active precondition cannot be deactivated.
 	ReferencingCharters []*CharterSummary `json:"referencingCharters,omitempty" url:"referencingCharters,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -902,24 +943,27 @@ type IntelligentFieldRequest struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// Result type hint used for schema generation, UI, and validation.
+	// The type of value this field holds. It constrains the schema the LLM is asked to fill
+	// and the JSON type of the computed `value`.
 	//
-	// - STRING / MULTILINE: single string value
-	// - MULTI_SELECT: multiple values
-	// - BOOLEAN: boolean value
-	// - NUMBER: numeric value
+	// - STRING / MULTILINE: a single string
+	// - MULTI_SELECT: a list of strings
+	// - BOOLEAN: `true` or `false`
+	// - NUMBER: a number
 	//
-	// Note: for single select, use STRING/NUMBER with a list of enumOptions.
+	// For a single select, use STRING or NUMBER together with `enumOptions`.
 	ValidationType IntelligentFieldType `json:"validationType" url:"validationType"`
 	// Definition used by the LLM when generating this field's value
 	Definition string `json:"definition" url:"definition"`
-	// Optional enum options for STRING/MULTILINE/NUMBER when a finite set is desired
+	// The finite set of values this field may take. Omit to let the LLM produce any value of
+	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
 	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant that created this field, if applicable
+	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
-	// ID that uniquely identifies this intelligent field
+	// ID that uniquely identifies this intelligent field. `referenceId` is supplied by the
+	// caller and is how the field is addressed on every other endpoint.
 	FieldID *EntityIDBase `json:"fieldId" url:"fieldId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1110,22 +1154,24 @@ type IntelligentFieldResponse struct {
 	Name string `json:"name" url:"name"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// Result type hint used for schema generation, UI, and validation.
+	// The type of value this field holds. It constrains the schema the LLM is asked to fill
+	// and the JSON type of the computed `value`.
 	//
-	// - STRING / MULTILINE: single string value
-	// - MULTI_SELECT: multiple values
-	// - BOOLEAN: boolean value
-	// - NUMBER: numeric value
+	// - STRING / MULTILINE: a single string
+	// - MULTI_SELECT: a list of strings
+	// - BOOLEAN: `true` or `false`
+	// - NUMBER: a number
 	//
-	// Note: for single select, use STRING/NUMBER with a list of enumOptions.
+	// For a single select, use STRING or NUMBER together with `enumOptions`.
 	ValidationType IntelligentFieldType `json:"validationType" url:"validationType"`
 	// Definition used by the LLM when generating this field's value
 	Definition string `json:"definition" url:"definition"`
-	// Optional enum options for STRING/MULTILINE/NUMBER when a finite set is desired
+	// The finite set of values this field may take. Omit to let the LLM produce any value of
+	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
 	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant that created this field, if applicable
+	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// ID that uniquely identifies this intelligent field
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
@@ -1359,13 +1405,17 @@ func (i *IntelligentFieldResponse) String() string {
 	return fmt.Sprintf("%#v", i)
 }
 
-// Lifecycle state for whether this field is evaluated by workflows
+// Lifecycle state for whether this field is evaluated
 type IntelligentFieldStatus string
 
 const (
-	IntelligentFieldStatusActive   IntelligentFieldStatus = "ACTIVE"
+	// The field is evaluated, and values are computed for matching entities.
+	IntelligentFieldStatusActive IntelligentFieldStatus = "ACTIVE"
+	// The field exists but is not evaluated. This is the state a new field is created in.
 	IntelligentFieldStatusInactive IntelligentFieldStatus = "INACTIVE"
-	IntelligentFieldStatusDeleted  IntelligentFieldStatus = "DELETED"
+	// The field has been soft deleted and cannot be modified. Set by the delete endpoint
+	// rather than by a patch.
+	IntelligentFieldStatusDeleted IntelligentFieldStatus = "DELETED"
 )
 
 func NewIntelligentFieldStatusFromString(s string) (IntelligentFieldStatus, error) {
@@ -1389,11 +1439,16 @@ func (i IntelligentFieldStatus) Ptr() *IntelligentFieldStatus {
 type IntelligentFieldType string
 
 const (
-	IntelligentFieldTypeString      IntelligentFieldType = "STRING"
-	IntelligentFieldTypeMultiline   IntelligentFieldType = "MULTILINE"
+	// A single short string value.
+	IntelligentFieldTypeString IntelligentFieldType = "STRING"
+	// A single string value expected to run to several lines, such as a summary.
+	IntelligentFieldTypeMultiline IntelligentFieldType = "MULTILINE"
+	// A list of string values, normally paired with `enumOptions` to constrain the choices.
 	IntelligentFieldTypeMultiSelect IntelligentFieldType = "MULTI_SELECT"
-	IntelligentFieldTypeBoolean     IntelligentFieldType = "BOOLEAN"
-	IntelligentFieldTypeNumber      IntelligentFieldType = "NUMBER"
+	// A true/false value.
+	IntelligentFieldTypeBoolean IntelligentFieldType = "BOOLEAN"
+	// A numeric value.
+	IntelligentFieldTypeNumber IntelligentFieldType = "NUMBER"
 )
 
 func NewIntelligentFieldTypeFromString(s string) (IntelligentFieldType, error) {

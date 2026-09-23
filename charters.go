@@ -10,8 +10,452 @@ import (
 	time "time"
 )
 
+var (
+	charterDeleteRequestFieldAppID              = big.NewInt(1 << 0)
+	charterDeleteRequestFieldVariantReferenceID = big.NewInt(1 << 1)
+	charterDeleteRequestFieldVariantAppID       = big.NewInt(1 << 2)
+)
+
+type CharterDeleteRequest struct {
+	// The App ID of the charter to delete. If not provided, the ID of the calling app will be used.
+	AppID *string `json:"-" url:"appId,omitempty"`
+	// The reference ID of the agent variant this delete is scoped to. When set, the
+	// deletion is staged in that variant's working set instead of being applied to the
+	// agent's live configuration.
+	//
+	// Omit this parameter to delete directly from the agent. Variant scoping is not
+	// active yet: a variant supplied today is accepted and ignored, and the delete applies
+	// to the agent.
+	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
+	// The App ID of the agent variant named by `variantReferenceId`. If not provided, the ID of the calling app will be used.
+	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (c *CharterDeleteRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterDeleteRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(charterDeleteRequestFieldAppID)
+}
+
+// SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterDeleteRequest) SetVariantReferenceID(variantReferenceID *string) {
+	c.VariantReferenceID = variantReferenceID
+	c.require(charterDeleteRequestFieldVariantReferenceID)
+}
+
+// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterDeleteRequest) SetVariantAppID(variantAppID *string) {
+	c.VariantAppID = variantAppID
+	c.require(charterDeleteRequestFieldVariantAppID)
+}
+
+var (
+	charterGetRequestFieldAppID = big.NewInt(1 << 0)
+)
+
+type CharterGetRequest struct {
+	// The App ID of the charter to get. If not provided, the ID of the calling app will be used.
+	AppID *string `json:"-" url:"appId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (c *CharterGetRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterGetRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(charterGetRequestFieldAppID)
+}
+
+var (
+	charterGetAncestorsRequestFieldAppID = big.NewInt(1 << 0)
+)
+
+type CharterGetAncestorsRequest struct {
+	// The App ID of the charter. If not provided, the ID of the calling app will be used.
+	AppID *string `json:"-" url:"appId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (c *CharterGetAncestorsRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterGetAncestorsRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(charterGetAncestorsRequestFieldAppID)
+}
+
+var (
+	charterPatchRequestFieldAppID                   = big.NewInt(1 << 0)
+	charterPatchRequestFieldName                    = big.NewInt(1 << 1)
+	charterPatchRequestFieldDescription             = big.NewInt(1 << 2)
+	charterPatchRequestFieldManual                  = big.NewInt(1 << 3)
+	charterPatchRequestFieldParentCharterID         = big.NewInt(1 << 4)
+	charterPatchRequestFieldPrecondition            = big.NewInt(1 << 5)
+	charterPatchRequestFieldStatus                  = big.NewInt(1 << 6)
+	charterPatchRequestFieldChildrenExclusionPolicy = big.NewInt(1 << 7)
+	charterPatchRequestFieldUserRank                = big.NewInt(1 << 8)
+	charterPatchRequestFieldReferences              = big.NewInt(1 << 9)
+	charterPatchRequestFieldVariantID               = big.NewInt(1 << 10)
+)
+
+type CharterPatchRequest struct {
+	// The App ID of the charter to update. If not provided, the ID of the calling app will be used.
+	AppID *string `json:"appId,omitempty" url:"-"`
+	// The display name of the charter.
+	Name *string `json:"name,omitempty" url:"-"`
+	// A plain text description. Omit to leave unchanged.
+	Description *string `json:"description,omitempty" url:"-"`
+	// The instruction text. Omit to leave unchanged.
+	Manual *string `json:"manual,omitempty" url:"-"`
+	// Move this charter to a new parent. Omit to leave the current parent unchanged.
+	// To promote this charter to root level instead, set the field explicitly to null.
+	//
+	// The resulting tree must remain acyclic. A move that would make this charter its own
+	// ancestor is rejected with a 400 and leaves the tree unchanged.
+	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"-"`
+	// The rule controlling when this charter applies. Replaces the charter's existing
+	// rule outright -- this is not a merge. Set to null to make this charter a
+	// wildcard, removing the rule. Omit to leave unchanged.
+	Precondition *Precondition `json:"precondition,omitempty" url:"-"`
+	// The lifecycle status of this charter.
+	Status *CharterStatus `json:"status,omitempty" url:"-"`
+	// Whether this charter's children mutually exclude each other.
+	// Omit to leave unchanged.
+	ChildrenExclusionPolicy *CharterChildrenExclusionPolicy `json:"childrenExclusionPolicy,omitempty" url:"-"`
+	// User-defined rank among siblings. When combined with `parentCharterId`,
+	// the rank is interpreted relative to the **new** sibling group, not the
+	// current one. Siblings in the destination at or above the target rank are
+	// shifted up by 1. Omit to keep the current rank value (which will still
+	// be applied to the new sibling group if `parentCharterId` is also changing).
+	UserRank *int `json:"userRank,omitempty" url:"-"`
+	// Context items (knowledge bases and actions) this charter makes available.
+	// Each sub-field is independently optional — omit to leave unchanged.
+	References *CharterPatchReferences `json:"references,omitempty" url:"-"`
+	// The agent variant this patch is scoped to. When set, the patch is staged in that
+	// variant's working set instead of being applied to the agent's live configuration.
+	//
+	// Omit this field to patch the agent directly. Variant scoping is not active yet:
+	// a variant supplied today is accepted and ignored, and the patch applies to the
+	// agent.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (c *CharterPatchRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetAppID(appID *string) {
+	c.AppID = appID
+	c.require(charterPatchRequestFieldAppID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetName(name *string) {
+	c.Name = name
+	c.require(charterPatchRequestFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetDescription(description *string) {
+	c.Description = description
+	c.require(charterPatchRequestFieldDescription)
+}
+
+// SetManual sets the Manual field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetManual(manual *string) {
+	c.Manual = manual
+	c.require(charterPatchRequestFieldManual)
+}
+
+// SetParentCharterID sets the ParentCharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetParentCharterID(parentCharterID *EntityID) {
+	c.ParentCharterID = parentCharterID
+	c.require(charterPatchRequestFieldParentCharterID)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetPrecondition(precondition *Precondition) {
+	c.Precondition = precondition
+	c.require(charterPatchRequestFieldPrecondition)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetStatus(status *CharterStatus) {
+	c.Status = status
+	c.require(charterPatchRequestFieldStatus)
+}
+
+// SetChildrenExclusionPolicy sets the ChildrenExclusionPolicy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetChildrenExclusionPolicy(childrenExclusionPolicy *CharterChildrenExclusionPolicy) {
+	c.ChildrenExclusionPolicy = childrenExclusionPolicy
+	c.require(charterPatchRequestFieldChildrenExclusionPolicy)
+}
+
+// SetUserRank sets the UserRank field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetUserRank(userRank *int) {
+	c.UserRank = userRank
+	c.require(charterPatchRequestFieldUserRank)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetReferences(references *CharterPatchReferences) {
+	c.References = references
+	c.require(charterPatchRequestFieldReferences)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterPatchRequestFieldVariantID)
+}
+
+var (
+	charterAncestorsResponseFieldCharters = big.NewInt(1 << 0)
+)
+
+type CharterAncestorsResponse struct {
+	// The requested charter and all of its ancestors up to the root,
+	// ordered from root to leaf. The last element is the requested charter.
+	Charters []*CharterResponse `json:"charters" url:"charters"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterAncestorsResponse) GetCharters() []*CharterResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Charters
+}
+
+func (c *CharterAncestorsResponse) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterAncestorsResponse) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetCharters sets the Charters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterAncestorsResponse) SetCharters(charters []*CharterResponse) {
+	c.Charters = charters
+	c.require(charterAncestorsResponseFieldCharters)
+}
+
+func (c *CharterAncestorsResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterAncestorsResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterAncestorsResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterAncestorsResponse) MarshalJSON() ([]byte, error) {
+	type embed CharterAncestorsResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterAncestorsResponse) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	charterBaseFieldName        = big.NewInt(1 << 0)
+	charterBaseFieldDescription = big.NewInt(1 << 1)
+	charterBaseFieldManual      = big.NewInt(1 << 2)
+)
+
+type CharterBase struct {
+	// Display name for this charter or group.
+	Name string `json:"name" url:"name"`
+	// A plain text description of this charter. If not set, existing description is preserved if present.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// Optional additional natural language instruction text when this
+	// charter matches. Manuals concatenate with ancestor charter manuals
+	// before delivery.
+	//
+	// If not set, existing manual is preserved if present.
+	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterBase) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *CharterBase) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *CharterBase) GetManual() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Manual
+}
+
+func (c *CharterBase) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterBase) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterBase) SetName(name string) {
+	c.Name = name
+	c.require(charterBaseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterBase) SetDescription(description *string) {
+	c.Description = description
+	c.require(charterBaseFieldDescription)
+}
+
+// SetManual sets the Manual field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterBase) SetManual(manual *string) {
+	c.Manual = manual
+	c.require(charterBaseFieldManual)
+}
+
+func (c *CharterBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterBase
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterBase(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterBase) MarshalJSON() ([]byte, error) {
+	type embed CharterBase
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterBase) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
 // Controls whether this charter's direct children mutually exclude each other when more than
-// one of them matches a turn. Set on the parent (group) charter; it has no effect on a charter
+// one of them matches a round. Set on the parent (group) charter; it has no effect on a charter
 // with no children.
 //
 //   - DEFAULT: Standard behavior. A parent's children are mutually exclusive only when all of that
@@ -42,12 +486,1996 @@ func (c CharterChildrenExclusionPolicy) Ptr() *CharterChildrenExclusionPolicy {
 	return &c
 }
 
+var (
+	charterChildrenGroupFieldParentID = big.NewInt(1 << 0)
+	charterChildrenGroupFieldChildren = big.NewInt(1 << 1)
+	charterChildrenGroupFieldHasMore  = big.NewInt(1 << 2)
+)
+
+type CharterChildrenGroup struct {
+	// The parent whose children are listed. Null for root charters (when parentIds was empty).
+	ParentID *EntityID `json:"parentId,omitempty" url:"parentId,omitempty"`
+	// Direct children ordered by userRank ASC, updatedAt DESC.
+	// childCharterIds on each child is fully populated — use childCharterIds.length > 0
+	// to determine whether the node has children to expand.
+	Children []*CharterResponse `json:"children" url:"children"`
+	// True if this group's children were truncated by the page limit. Only
+	// one group (the last non-empty group) in a response can have
+	// hasMore=true; all preceding groups are guaranteed complete. Fetch the
+	// next page with the same parentIds to retrieve remaining children.
+	HasMore bool `json:"hasMore" url:"hasMore"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterChildrenGroup) GetParentID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ParentID
+}
+
+func (c *CharterChildrenGroup) GetChildren() []*CharterResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Children
+}
+
+func (c *CharterChildrenGroup) GetHasMore() bool {
+	if c == nil {
+		return false
+	}
+	return c.HasMore
+}
+
+func (c *CharterChildrenGroup) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterChildrenGroup) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetParentID sets the ParentID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterChildrenGroup) SetParentID(parentID *EntityID) {
+	c.ParentID = parentID
+	c.require(charterChildrenGroupFieldParentID)
+}
+
+// SetChildren sets the Children field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterChildrenGroup) SetChildren(children []*CharterResponse) {
+	c.Children = children
+	c.require(charterChildrenGroupFieldChildren)
+}
+
+// SetHasMore sets the HasMore field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterChildrenGroup) SetHasMore(hasMore bool) {
+	c.HasMore = hasMore
+	c.require(charterChildrenGroupFieldHasMore)
+}
+
+func (c *CharterChildrenGroup) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterChildrenGroup
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterChildrenGroup(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterChildrenGroup) MarshalJSON() ([]byte, error) {
+	type embed CharterChildrenGroup
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterChildrenGroup) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// A charter's full content: its text fields, its position in the tree, the rule controlling
+// when it applies, its lifecycle status and its references.
+//
+// `parentCharterId` is `nullable`, not `optional`: null is meaningful -- root level -- and
+// distinct from absent.
+var (
+	charterContentFieldName            = big.NewInt(1 << 0)
+	charterContentFieldDescription     = big.NewInt(1 << 1)
+	charterContentFieldManual          = big.NewInt(1 << 2)
+	charterContentFieldParentCharterID = big.NewInt(1 << 3)
+	charterContentFieldPrecondition    = big.NewInt(1 << 4)
+	charterContentFieldStatus          = big.NewInt(1 << 5)
+	charterContentFieldType            = big.NewInt(1 << 6)
+	charterContentFieldUserRank        = big.NewInt(1 << 7)
+	charterContentFieldReferences      = big.NewInt(1 << 8)
+)
+
+type CharterContent struct {
+	// Display name for this charter or group.
+	Name string `json:"name" url:"name"`
+	// A plain text description of this charter. If not set, existing description is preserved if present.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// Optional additional natural language instruction text when this
+	// charter matches. Manuals concatenate with ancestor charter manuals
+	// before delivery.
+	//
+	// If not set, existing manual is preserved if present.
+	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
+	// The fully-qualified ID of the parent charter. Send null to place this charter at the
+	// root level -- the field is nullable rather than optional, so null is meaningful and
+	// distinct from absent.
+	//
+	// The resulting tree must remain acyclic. A write that would make this charter its own
+	// ancestor is rejected with a 400 and leaves the tree unchanged.
+	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"parentCharterId,omitempty"`
+	// The rule controlling when this charter applies. Preconditions on
+	// ancestor charters are AND'd together with this charter's own
+	// precondition to determine whether there is a match. When null, the
+	// charter is a wildcard and always matches (subject to ancestor
+	// preconditions still combining with AND logic).
+	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
+	// Desired lifecycle status.
+	Status CharterStatus `json:"status" url:"status"`
+	// The behavioral mode for this charter. Defaults to STANDARD when omitted.
+	//
+	// Set at creation and immutable afterward. When updating an existing charter (via
+	// createOrUpdate), this field must either be omitted or repeat the charter's current
+	// type — a differing value is rejected. There is no way to change a charter's type once
+	// created. (Recreating a deleted charter is a create, so it may pick any type.)
+	//
+	// STRICT_RETURN charters cannot have children, and reference neither knowledge bases nor
+	// actions: no charter may name a STRICT_RETURN charter as its parent.
+	Type *CharterType `json:"type,omitempty" url:"type,omitempty"`
+	// User-defined 0-indexed rank among siblings.
+	//
+	// The rank is currently only meaningful for leaf charters as we enforce
+	// mutual exclusion among the leafs and pick only the highest ranked
+	// (lowest numerical value) leaf to include in the round. userRank may have
+	// gaps.
+	//
+	// Lower rank = higher priority. When provided and conflicts with an
+	// existing sibling, siblings at that rank and above are shifted up by 1
+	// (like linked list semantics). When omitted on create, auto-assigned as
+	// `max(siblings.userRank) + 1` (0 if no siblings).
+	UserRank *int `json:"userRank,omitempty" url:"userRank,omitempty"`
+	// Context items (knowledge bases and actions) this charter makes available.
+	// Maximum 50 knowledge bases and 50 actions per charter.
+	References *CharterReferences `json:"references" url:"references"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterContent) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *CharterContent) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *CharterContent) GetManual() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Manual
+}
+
+func (c *CharterContent) GetParentCharterID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ParentCharterID
+}
+
+func (c *CharterContent) GetPrecondition() *Precondition {
+	if c == nil {
+		return nil
+	}
+	return c.Precondition
+}
+
+func (c *CharterContent) GetStatus() CharterStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *CharterContent) GetType() *CharterType {
+	if c == nil {
+		return nil
+	}
+	return c.Type
+}
+
+func (c *CharterContent) GetUserRank() *int {
+	if c == nil {
+		return nil
+	}
+	return c.UserRank
+}
+
+func (c *CharterContent) GetReferences() *CharterReferences {
+	if c == nil {
+		return nil
+	}
+	return c.References
+}
+
+func (c *CharterContent) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterContent) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetName(name string) {
+	c.Name = name
+	c.require(charterContentFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetDescription(description *string) {
+	c.Description = description
+	c.require(charterContentFieldDescription)
+}
+
+// SetManual sets the Manual field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetManual(manual *string) {
+	c.Manual = manual
+	c.require(charterContentFieldManual)
+}
+
+// SetParentCharterID sets the ParentCharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetParentCharterID(parentCharterID *EntityID) {
+	c.ParentCharterID = parentCharterID
+	c.require(charterContentFieldParentCharterID)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetPrecondition(precondition *Precondition) {
+	c.Precondition = precondition
+	c.require(charterContentFieldPrecondition)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetStatus(status CharterStatus) {
+	c.Status = status
+	c.require(charterContentFieldStatus)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetType(type_ *CharterType) {
+	c.Type = type_
+	c.require(charterContentFieldType)
+}
+
+// SetUserRank sets the UserRank field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetUserRank(userRank *int) {
+	c.UserRank = userRank
+	c.require(charterContentFieldUserRank)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetReferences(references *CharterReferences) {
+	c.References = references
+	c.require(charterContentFieldReferences)
+}
+
+func (c *CharterContent) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterContent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterContent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterContent) MarshalJSON() ([]byte, error) {
+	type embed CharterContent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterContent) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// A knowledge base a charter makes available, and optionally which of its documents.
+var (
+	charterKnowledgeBaseReferenceFieldKnowledgeBaseID = big.NewInt(1 << 0)
+	charterKnowledgeBaseReferenceFieldDocumentFilter  = big.NewInt(1 << 1)
+)
+
+type CharterKnowledgeBaseReference struct {
+	// The knowledge base this charter makes available.
+	KnowledgeBaseID *EntityID `json:"knowledgeBaseId" url:"knowledgeBaseId"`
+	// Narrows this reference to the documents in the knowledge base whose `metadata`
+	// satisfies this filter. Omit to reference every document in the knowledge base.
+	//
+	// An entry's `key` is a metadata key on the document. A document carrying no such
+	// key matches only `presence` `IS_UNDETERMINED`.
+	DocumentFilter *MetadataFilter `json:"documentFilter,omitempty" url:"documentFilter,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterKnowledgeBaseReference) GetKnowledgeBaseID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.KnowledgeBaseID
+}
+
+func (c *CharterKnowledgeBaseReference) GetDocumentFilter() *MetadataFilter {
+	if c == nil {
+		return nil
+	}
+	return c.DocumentFilter
+}
+
+func (c *CharterKnowledgeBaseReference) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterKnowledgeBaseReference) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetKnowledgeBaseID sets the KnowledgeBaseID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterKnowledgeBaseReference) SetKnowledgeBaseID(knowledgeBaseID *EntityID) {
+	c.KnowledgeBaseID = knowledgeBaseID
+	c.require(charterKnowledgeBaseReferenceFieldKnowledgeBaseID)
+}
+
+// SetDocumentFilter sets the DocumentFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterKnowledgeBaseReference) SetDocumentFilter(documentFilter *MetadataFilter) {
+	c.DocumentFilter = documentFilter
+	c.require(charterKnowledgeBaseReferenceFieldDocumentFilter)
+}
+
+func (c *CharterKnowledgeBaseReference) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterKnowledgeBaseReference
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterKnowledgeBaseReference(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterKnowledgeBaseReference) MarshalJSON() ([]byte, error) {
+	type embed CharterKnowledgeBaseReference
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterKnowledgeBaseReference) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Note: sortDesc is ignored — results are always ordered by userRank ASC,
+// updatedAt DESC within each group.
+var (
+	charterListChildrenRequestFieldPage      = big.NewInt(1 << 0)
+	charterListChildrenRequestFieldSize      = big.NewInt(1 << 1)
+	charterListChildrenRequestFieldSortDesc  = big.NewInt(1 << 2)
+	charterListChildrenRequestFieldParentIDs = big.NewInt(1 << 3)
+)
+
+type CharterListChildrenRequest struct {
+	// Page number to return, defaults to 0
+	Page *int `json:"page,omitempty" url:"page,omitempty"`
+	// The size of the page to return, defaults to 20. Max 1000.
+	Size *int `json:"size,omitempty" url:"size,omitempty"`
+	// Whether to sort descending, defaults to true
+	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+	// Parents whose direct children to return. Pass an empty list to fetch root
+	// charters for the agent. Roots and specific parents cannot be mixed in one request.
+	// Maximum 50 parent IDs per request.
+	ParentIDs []*EntityID `json:"parentIds" url:"parentIds"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterListChildrenRequest) GetPage() *int {
+	if c == nil {
+		return nil
+	}
+	return c.Page
+}
+
+func (c *CharterListChildrenRequest) GetSize() *int {
+	if c == nil {
+		return nil
+	}
+	return c.Size
+}
+
+func (c *CharterListChildrenRequest) GetSortDesc() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.SortDesc
+}
+
+func (c *CharterListChildrenRequest) GetParentIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ParentIDs
+}
+
+func (c *CharterListChildrenRequest) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterListChildrenRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetPage sets the Page field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenRequest) SetPage(page *int) {
+	c.Page = page
+	c.require(charterListChildrenRequestFieldPage)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenRequest) SetSize(size *int) {
+	c.Size = size
+	c.require(charterListChildrenRequestFieldSize)
+}
+
+// SetSortDesc sets the SortDesc field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenRequest) SetSortDesc(sortDesc *bool) {
+	c.SortDesc = sortDesc
+	c.require(charterListChildrenRequestFieldSortDesc)
+}
+
+// SetParentIDs sets the ParentIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenRequest) SetParentIDs(parentIDs []*EntityID) {
+	c.ParentIDs = parentIDs
+	c.require(charterListChildrenRequestFieldParentIDs)
+}
+
+func (c *CharterListChildrenRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterListChildrenRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterListChildrenRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterListChildrenRequest) MarshalJSON() ([]byte, error) {
+	type embed CharterListChildrenRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterListChildrenRequest) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	charterListChildrenResponseFieldNumber        = big.NewInt(1 << 0)
+	charterListChildrenResponseFieldSize          = big.NewInt(1 << 1)
+	charterListChildrenResponseFieldTotalElements = big.NewInt(1 << 2)
+	charterListChildrenResponseFieldTotalPages    = big.NewInt(1 << 3)
+	charterListChildrenResponseFieldResults       = big.NewInt(1 << 4)
+)
+
+type CharterListChildrenResponse struct {
+	// The page being returned, starts at 0
+	Number int `json:"number" url:"number"`
+	// The number of elements in this page
+	Size int `json:"size" url:"size"`
+	// The total number of elements in the collection
+	TotalElements int64 `json:"totalElements" url:"totalElements"`
+	// The total number of pages in the collection
+	TotalPages int `json:"totalPages" url:"totalPages"`
+	// One group per requested parent, in parentIds order. For an empty parentIds
+	// request, will return a single group with null parentId. Groups may be partially populated
+	// at page boundaries; merge by parentId across pages.
+	Results []*CharterChildrenGroup `json:"results" url:"results"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterListChildrenResponse) GetNumber() int {
+	if c == nil {
+		return 0
+	}
+	return c.Number
+}
+
+func (c *CharterListChildrenResponse) GetSize() int {
+	if c == nil {
+		return 0
+	}
+	return c.Size
+}
+
+func (c *CharterListChildrenResponse) GetTotalElements() int64 {
+	if c == nil {
+		return 0
+	}
+	return c.TotalElements
+}
+
+func (c *CharterListChildrenResponse) GetTotalPages() int {
+	if c == nil {
+		return 0
+	}
+	return c.TotalPages
+}
+
+func (c *CharterListChildrenResponse) GetResults() []*CharterChildrenGroup {
+	if c == nil {
+		return nil
+	}
+	return c.Results
+}
+
+func (c *CharterListChildrenResponse) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterListChildrenResponse) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetNumber sets the Number field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenResponse) SetNumber(number int) {
+	c.Number = number
+	c.require(charterListChildrenResponseFieldNumber)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenResponse) SetSize(size int) {
+	c.Size = size
+	c.require(charterListChildrenResponseFieldSize)
+}
+
+// SetTotalElements sets the TotalElements field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenResponse) SetTotalElements(totalElements int64) {
+	c.TotalElements = totalElements
+	c.require(charterListChildrenResponseFieldTotalElements)
+}
+
+// SetTotalPages sets the TotalPages field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenResponse) SetTotalPages(totalPages int) {
+	c.TotalPages = totalPages
+	c.require(charterListChildrenResponseFieldTotalPages)
+}
+
+// SetResults sets the Results field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenResponse) SetResults(results []*CharterChildrenGroup) {
+	c.Results = results
+	c.require(charterListChildrenResponseFieldResults)
+}
+
+func (c *CharterListChildrenResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterListChildrenResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterListChildrenResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterListChildrenResponse) MarshalJSON() ([]byte, error) {
+	type embed CharterListChildrenResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterListChildrenResponse) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// References to context items (knowledge bases and actions) a charter makes available.
+// Each field is independently optional — omit a field to leave that set unchanged.
+var (
+	charterPatchReferencesFieldKnowledgeBases = big.NewInt(1 << 0)
+	charterPatchReferencesFieldActionIDs      = big.NewInt(1 << 1)
+)
+
+type CharterPatchReferences struct {
+	// The knowledge bases this charter makes available, each optionally narrowed to a
+	// subset of that knowledge base's documents.
+	// Replaces the entire list when provided. Omit to leave unchanged.
+	// An empty list removes all knowledge base associations.
+	// At most one entry per knowledge base. Maximum 50 knowledge bases per charter.
+	KnowledgeBases []*CharterKnowledgeBaseReference `json:"knowledgeBases,omitempty" url:"knowledgeBases,omitempty"`
+	// The IDs of actions this charter makes available.
+	// Replaces the entire set when provided. Omit to leave unchanged.
+	// An empty set removes all action associations.
+	// Maximum 50 actions per charter.
+	ActionIDs []*EntityID `json:"actionIds,omitempty" url:"actionIds,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterPatchReferences) GetKnowledgeBases() []*CharterKnowledgeBaseReference {
+	if c == nil {
+		return nil
+	}
+	return c.KnowledgeBases
+}
+
+func (c *CharterPatchReferences) GetActionIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ActionIDs
+}
+
+func (c *CharterPatchReferences) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterPatchReferences) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetKnowledgeBases sets the KnowledgeBases field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchReferences) SetKnowledgeBases(knowledgeBases []*CharterKnowledgeBaseReference) {
+	c.KnowledgeBases = knowledgeBases
+	c.require(charterPatchReferencesFieldKnowledgeBases)
+}
+
+// SetActionIDs sets the ActionIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterPatchReferences) SetActionIDs(actionIDs []*EntityID) {
+	c.ActionIDs = actionIDs
+	c.require(charterPatchReferencesFieldActionIDs)
+}
+
+func (c *CharterPatchReferences) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterPatchReferences
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterPatchReferences(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterPatchReferences) MarshalJSON() ([]byte, error) {
+	type embed CharterPatchReferences
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterPatchReferences) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Context items (knowledge bases and actions) a charter makes available.
+var (
+	charterReferencesFieldKnowledgeBases = big.NewInt(1 << 0)
+	charterReferencesFieldActionIDs      = big.NewInt(1 << 1)
+)
+
+type CharterReferences struct {
+	// The knowledge bases this charter makes available, each optionally narrowed to a
+	// subset of that knowledge base's documents.
+	//
+	// At most one entry per knowledge base. Maximum 50 knowledge bases per charter.
+	//
+	// On a write, supplying this replaces the charter's whole knowledge base set. A response
+	// always populates it.
+	KnowledgeBases []*CharterKnowledgeBaseReference `json:"knowledgeBases,omitempty" url:"knowledgeBases,omitempty"`
+	// The IDs of actions this charter makes available.
+	// Maximum 50 actions per charter.
+	ActionIDs []*EntityID `json:"actionIds" url:"actionIds"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterReferences) GetKnowledgeBases() []*CharterKnowledgeBaseReference {
+	if c == nil {
+		return nil
+	}
+	return c.KnowledgeBases
+}
+
+func (c *CharterReferences) GetActionIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ActionIDs
+}
+
+func (c *CharterReferences) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterReferences) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetKnowledgeBases sets the KnowledgeBases field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterReferences) SetKnowledgeBases(knowledgeBases []*CharterKnowledgeBaseReference) {
+	c.KnowledgeBases = knowledgeBases
+	c.require(charterReferencesFieldKnowledgeBases)
+}
+
+// SetActionIDs sets the ActionIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterReferences) SetActionIDs(actionIDs []*EntityID) {
+	c.ActionIDs = actionIDs
+	c.require(charterReferencesFieldActionIDs)
+}
+
+func (c *CharterReferences) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterReferences
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterReferences(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterReferences) MarshalJSON() ([]byte, error) {
+	type embed CharterReferences
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterReferences) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	charterRequestFieldName            = big.NewInt(1 << 0)
+	charterRequestFieldDescription     = big.NewInt(1 << 1)
+	charterRequestFieldManual          = big.NewInt(1 << 2)
+	charterRequestFieldParentCharterID = big.NewInt(1 << 3)
+	charterRequestFieldPrecondition    = big.NewInt(1 << 4)
+	charterRequestFieldStatus          = big.NewInt(1 << 5)
+	charterRequestFieldType            = big.NewInt(1 << 6)
+	charterRequestFieldUserRank        = big.NewInt(1 << 7)
+	charterRequestFieldReferences      = big.NewInt(1 << 8)
+	charterRequestFieldCharterID       = big.NewInt(1 << 9)
+	charterRequestFieldVariantID       = big.NewInt(1 << 10)
+)
+
+type CharterRequest struct {
+	// Display name for this charter or group.
+	Name string `json:"name" url:"name"`
+	// A plain text description of this charter. If not set, existing description is preserved if present.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// Optional additional natural language instruction text when this
+	// charter matches. Manuals concatenate with ancestor charter manuals
+	// before delivery.
+	//
+	// If not set, existing manual is preserved if present.
+	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
+	// The fully-qualified ID of the parent charter. Send null to place this charter at the
+	// root level -- the field is nullable rather than optional, so null is meaningful and
+	// distinct from absent.
+	//
+	// The resulting tree must remain acyclic. A write that would make this charter its own
+	// ancestor is rejected with a 400 and leaves the tree unchanged.
+	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"parentCharterId,omitempty"`
+	// The rule controlling when this charter applies. Preconditions on
+	// ancestor charters are AND'd together with this charter's own
+	// precondition to determine whether there is a match. When null, the
+	// charter is a wildcard and always matches (subject to ancestor
+	// preconditions still combining with AND logic).
+	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
+	// Desired lifecycle status.
+	Status CharterStatus `json:"status" url:"status"`
+	// The behavioral mode for this charter. Defaults to STANDARD when omitted.
+	//
+	// Set at creation and immutable afterward. When updating an existing charter (via
+	// createOrUpdate), this field must either be omitted or repeat the charter's current
+	// type — a differing value is rejected. There is no way to change a charter's type once
+	// created. (Recreating a deleted charter is a create, so it may pick any type.)
+	//
+	// STRICT_RETURN charters cannot have children, and reference neither knowledge bases nor
+	// actions: no charter may name a STRICT_RETURN charter as its parent.
+	Type *CharterType `json:"type,omitempty" url:"type,omitempty"`
+	// User-defined 0-indexed rank among siblings.
+	//
+	// The rank is currently only meaningful for leaf charters as we enforce
+	// mutual exclusion among the leafs and pick only the highest ranked
+	// (lowest numerical value) leaf to include in the round. userRank may have
+	// gaps.
+	//
+	// Lower rank = higher priority. When provided and conflicts with an
+	// existing sibling, siblings at that rank and above are shifted up by 1
+	// (like linked list semantics). When omitted on create, auto-assigned as
+	// `max(siblings.userRank) + 1` (0 if no siblings).
+	UserRank *int `json:"userRank,omitempty" url:"userRank,omitempty"`
+	// Context items (knowledge bases and actions) this charter makes available.
+	// Maximum 50 knowledge bases and 50 actions per charter.
+	References *CharterReferences `json:"references" url:"references"`
+	// ID that uniquely identifies this charter.
+	CharterID *EntityIDBase `json:"charterId" url:"charterId"`
+	// The agent variant this write is scoped to. When set, the charter content is staged in
+	// that variant's working set instead of being applied to the agent's live configuration.
+	//
+	// Omit this field to write directly to the agent. Variant scoping is not active yet: a
+	// variant supplied today is accepted and ignored, and the write applies to the agent.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterRequest) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *CharterRequest) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *CharterRequest) GetManual() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Manual
+}
+
+func (c *CharterRequest) GetParentCharterID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ParentCharterID
+}
+
+func (c *CharterRequest) GetPrecondition() *Precondition {
+	if c == nil {
+		return nil
+	}
+	return c.Precondition
+}
+
+func (c *CharterRequest) GetStatus() CharterStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *CharterRequest) GetType() *CharterType {
+	if c == nil {
+		return nil
+	}
+	return c.Type
+}
+
+func (c *CharterRequest) GetUserRank() *int {
+	if c == nil {
+		return nil
+	}
+	return c.UserRank
+}
+
+func (c *CharterRequest) GetReferences() *CharterReferences {
+	if c == nil {
+		return nil
+	}
+	return c.References
+}
+
+func (c *CharterRequest) GetCharterID() *EntityIDBase {
+	if c == nil {
+		return nil
+	}
+	return c.CharterID
+}
+
+func (c *CharterRequest) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
+}
+
+func (c *CharterRequest) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetName(name string) {
+	c.Name = name
+	c.require(charterRequestFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetDescription(description *string) {
+	c.Description = description
+	c.require(charterRequestFieldDescription)
+}
+
+// SetManual sets the Manual field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetManual(manual *string) {
+	c.Manual = manual
+	c.require(charterRequestFieldManual)
+}
+
+// SetParentCharterID sets the ParentCharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetParentCharterID(parentCharterID *EntityID) {
+	c.ParentCharterID = parentCharterID
+	c.require(charterRequestFieldParentCharterID)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetPrecondition(precondition *Precondition) {
+	c.Precondition = precondition
+	c.require(charterRequestFieldPrecondition)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetStatus(status CharterStatus) {
+	c.Status = status
+	c.require(charterRequestFieldStatus)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetType(type_ *CharterType) {
+	c.Type = type_
+	c.require(charterRequestFieldType)
+}
+
+// SetUserRank sets the UserRank field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetUserRank(userRank *int) {
+	c.UserRank = userRank
+	c.require(charterRequestFieldUserRank)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetReferences(references *CharterReferences) {
+	c.References = references
+	c.require(charterRequestFieldReferences)
+}
+
+// SetCharterID sets the CharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetCharterID(charterID *EntityIDBase) {
+	c.CharterID = charterID
+	c.require(charterRequestFieldCharterID)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterRequestFieldVariantID)
+}
+
+func (c *CharterRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterRequest) MarshalJSON() ([]byte, error) {
+	type embed CharterRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterRequest) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	charterResponseFieldName                    = big.NewInt(1 << 0)
+	charterResponseFieldDescription             = big.NewInt(1 << 1)
+	charterResponseFieldManual                  = big.NewInt(1 << 2)
+	charterResponseFieldCharterID               = big.NewInt(1 << 3)
+	charterResponseFieldParentCharterID         = big.NewInt(1 << 4)
+	charterResponseFieldChildCharterIDs         = big.NewInt(1 << 5)
+	charterResponseFieldPrecondition            = big.NewInt(1 << 6)
+	charterResponseFieldStatus                  = big.NewInt(1 << 7)
+	charterResponseFieldType                    = big.NewInt(1 << 8)
+	charterResponseFieldChildrenExclusionPolicy = big.NewInt(1 << 9)
+	charterResponseFieldUserRank                = big.NewInt(1 << 10)
+	charterResponseFieldReferences              = big.NewInt(1 << 11)
+	charterResponseFieldCreatedAt               = big.NewInt(1 << 12)
+	charterResponseFieldUpdatedAt               = big.NewInt(1 << 13)
+)
+
+type CharterResponse struct {
+	// Display name for this charter or group.
+	Name string `json:"name" url:"name"`
+	// A plain text description of this charter. If not set, existing description is preserved if present.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// Optional additional natural language instruction text when this
+	// charter matches. Manuals concatenate with ancestor charter manuals
+	// before delivery.
+	//
+	// If not set, existing manual is preserved if present.
+	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
+	// ID that uniquely identifies this charter.
+	CharterID *EntityID `json:"charterId" url:"charterId"`
+	// The ID of the parent charter. Empty for root-level charters.
+	//
+	// Charter hierarchies are acyclic, so following this field repeatedly always reaches a
+	// root-level charter in a finite number of steps. A charter is never its own ancestor, and
+	// callers walking the chain do not need their own cycle guard.
+	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"parentCharterId,omitempty"`
+	// The IDs of direct child charters, in their userRank order.
+	ChildCharterIDs []*EntityID `json:"childCharterIds" url:"childCharterIds"`
+	// The rule controlling when this charter applies. Empty means wildcard (always matches).
+	Precondition *PreconditionResponse `json:"precondition,omitempty" url:"precondition,omitempty"`
+	// The lifecycle status of this charter.
+	Status CharterStatus `json:"status" url:"status"`
+	// The behavioral mode for this charter. Defaults to STANDARD.
+	Type *CharterType `json:"type,omitempty" url:"type,omitempty"`
+	// Whether this charter's children mutually exclude each other. Defaults to DEFAULT.
+	ChildrenExclusionPolicy *CharterChildrenExclusionPolicy `json:"childrenExclusionPolicy,omitempty" url:"childrenExclusionPolicy,omitempty"`
+	// User-defined rank among siblings. Lower rank = higher priority. When multiple charters
+	// in the same leaf group match, the lowest-rank ACTIVE charter is applied.
+	// Auto-assigned as `max(siblings.userRank) + 1` (0 if no siblings) when not explicitly set.
+	UserRank int `json:"userRank" url:"userRank"`
+	// Context items (knowledge bases and actions) this charter makes available.
+	References *CharterReferences `json:"references" url:"references"`
+	// The date and time this charter was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// The date and time this charter was last updated.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterResponse) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *CharterResponse) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *CharterResponse) GetManual() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Manual
+}
+
+func (c *CharterResponse) GetCharterID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.CharterID
+}
+
+func (c *CharterResponse) GetParentCharterID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ParentCharterID
+}
+
+func (c *CharterResponse) GetChildCharterIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ChildCharterIDs
+}
+
+func (c *CharterResponse) GetPrecondition() *PreconditionResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Precondition
+}
+
+func (c *CharterResponse) GetStatus() CharterStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *CharterResponse) GetType() *CharterType {
+	if c == nil {
+		return nil
+	}
+	return c.Type
+}
+
+func (c *CharterResponse) GetChildrenExclusionPolicy() *CharterChildrenExclusionPolicy {
+	if c == nil {
+		return nil
+	}
+	return c.ChildrenExclusionPolicy
+}
+
+func (c *CharterResponse) GetUserRank() int {
+	if c == nil {
+		return 0
+	}
+	return c.UserRank
+}
+
+func (c *CharterResponse) GetReferences() *CharterReferences {
+	if c == nil {
+		return nil
+	}
+	return c.References
+}
+
+func (c *CharterResponse) GetCreatedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.CreatedAt
+}
+
+func (c *CharterResponse) GetUpdatedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.UpdatedAt
+}
+
+func (c *CharterResponse) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterResponse) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetName(name string) {
+	c.Name = name
+	c.require(charterResponseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetDescription(description *string) {
+	c.Description = description
+	c.require(charterResponseFieldDescription)
+}
+
+// SetManual sets the Manual field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetManual(manual *string) {
+	c.Manual = manual
+	c.require(charterResponseFieldManual)
+}
+
+// SetCharterID sets the CharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetCharterID(charterID *EntityID) {
+	c.CharterID = charterID
+	c.require(charterResponseFieldCharterID)
+}
+
+// SetParentCharterID sets the ParentCharterID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetParentCharterID(parentCharterID *EntityID) {
+	c.ParentCharterID = parentCharterID
+	c.require(charterResponseFieldParentCharterID)
+}
+
+// SetChildCharterIDs sets the ChildCharterIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetChildCharterIDs(childCharterIDs []*EntityID) {
+	c.ChildCharterIDs = childCharterIDs
+	c.require(charterResponseFieldChildCharterIDs)
+}
+
+// SetPrecondition sets the Precondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetPrecondition(precondition *PreconditionResponse) {
+	c.Precondition = precondition
+	c.require(charterResponseFieldPrecondition)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetStatus(status CharterStatus) {
+	c.Status = status
+	c.require(charterResponseFieldStatus)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetType(type_ *CharterType) {
+	c.Type = type_
+	c.require(charterResponseFieldType)
+}
+
+// SetChildrenExclusionPolicy sets the ChildrenExclusionPolicy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetChildrenExclusionPolicy(childrenExclusionPolicy *CharterChildrenExclusionPolicy) {
+	c.ChildrenExclusionPolicy = childrenExclusionPolicy
+	c.require(charterResponseFieldChildrenExclusionPolicy)
+}
+
+// SetUserRank sets the UserRank field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetUserRank(userRank int) {
+	c.UserRank = userRank
+	c.require(charterResponseFieldUserRank)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetReferences(references *CharterReferences) {
+	c.References = references
+	c.require(charterResponseFieldReferences)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetCreatedAt(createdAt time.Time) {
+	c.CreatedAt = createdAt
+	c.require(charterResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetUpdatedAt(updatedAt time.Time) {
+	c.UpdatedAt = updatedAt
+	c.require(charterResponseFieldUpdatedAt)
+}
+
+func (c *CharterResponse) UnmarshalJSON(data []byte) error {
+	type embed CharterResponse
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*c),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*c = CharterResponse(unmarshaler.embed)
+	c.CreatedAt = unmarshaler.CreatedAt.Time()
+	c.UpdatedAt = unmarshaler.UpdatedAt.Time()
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterResponse) MarshalJSON() ([]byte, error) {
+	type embed CharterResponse
+	var marshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed:     embed(*c),
+		CreatedAt: internal.NewDateTime(c.CreatedAt),
+		UpdatedAt: internal.NewDateTime(c.UpdatedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterResponse) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+type CharterSearchField string
+
+const (
+	CharterSearchFieldCreatedAt CharterSearchField = "CreatedAt"
+	CharterSearchFieldUpdatedAt CharterSearchField = "UpdatedAt"
+)
+
+func NewCharterSearchFieldFromString(s string) (CharterSearchField, error) {
+	switch s {
+	case "CreatedAt":
+		return CharterSearchFieldCreatedAt, nil
+	case "UpdatedAt":
+		return CharterSearchFieldUpdatedAt, nil
+	}
+	var t CharterSearchField
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CharterSearchField) Ptr() *CharterSearchField {
+	return &c
+}
+
+var (
+	charterSearchFilterFieldActionIDs        = big.NewInt(1 << 0)
+	charterSearchFilterFieldKnowledgeBaseIDs = big.NewInt(1 << 1)
+)
+
+type CharterSearchFilter struct {
+	// Filter to charters that reference any of the specified actions (OR within this field).
+	// When combined with knowledgeBaseIds, both filters must match (AND across fields).
+	// An empty list is equivalent to omitting the field. Maximum 50 IDs.
+	ActionIDs []*EntityID `json:"actionIds,omitempty" url:"actionIds,omitempty"`
+	// Filter to charters that reference any of the specified knowledge bases (OR within this field).
+	// When combined with actionIds, both filters must match (AND across fields).
+	// An empty list is equivalent to omitting the field. Maximum 50 IDs.
+	KnowledgeBaseIDs []*EntityID `json:"knowledgeBaseIds,omitempty" url:"knowledgeBaseIds,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterSearchFilter) GetActionIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.ActionIDs
+}
+
+func (c *CharterSearchFilter) GetKnowledgeBaseIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.KnowledgeBaseIDs
+}
+
+func (c *CharterSearchFilter) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterSearchFilter) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetActionIDs sets the ActionIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchFilter) SetActionIDs(actionIDs []*EntityID) {
+	c.ActionIDs = actionIDs
+	c.require(charterSearchFilterFieldActionIDs)
+}
+
+// SetKnowledgeBaseIDs sets the KnowledgeBaseIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchFilter) SetKnowledgeBaseIDs(knowledgeBaseIDs []*EntityID) {
+	c.KnowledgeBaseIDs = knowledgeBaseIDs
+	c.require(charterSearchFilterFieldKnowledgeBaseIDs)
+}
+
+func (c *CharterSearchFilter) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterSearchFilter
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterSearchFilter(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterSearchFilter) MarshalJSON() ([]byte, error) {
+	type embed CharterSearchFilter
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterSearchFilter) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	charterSearchRequestFieldPage     = big.NewInt(1 << 0)
+	charterSearchRequestFieldSize     = big.NewInt(1 << 1)
+	charterSearchRequestFieldSortDesc = big.NewInt(1 << 2)
+	charterSearchRequestFieldSort     = big.NewInt(1 << 3)
+	charterSearchRequestFieldFilter   = big.NewInt(1 << 4)
+)
+
+type CharterSearchRequest struct {
+	// Page number to return, defaults to 0
+	Page *int `json:"page,omitempty" url:"page,omitempty"`
+	// The size of the page to return, defaults to 20. Max 1000.
+	Size *int `json:"size,omitempty" url:"size,omitempty"`
+	// Whether to sort descending, defaults to true
+	SortDesc *bool                `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+	Sort     *CharterSearchField  `json:"sort,omitempty" url:"sort,omitempty"`
+	Filter   *CharterSearchFilter `json:"filter,omitempty" url:"filter,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterSearchRequest) GetPage() *int {
+	if c == nil {
+		return nil
+	}
+	return c.Page
+}
+
+func (c *CharterSearchRequest) GetSize() *int {
+	if c == nil {
+		return nil
+	}
+	return c.Size
+}
+
+func (c *CharterSearchRequest) GetSortDesc() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.SortDesc
+}
+
+func (c *CharterSearchRequest) GetSort() *CharterSearchField {
+	if c == nil {
+		return nil
+	}
+	return c.Sort
+}
+
+func (c *CharterSearchRequest) GetFilter() *CharterSearchFilter {
+	if c == nil {
+		return nil
+	}
+	return c.Filter
+}
+
+func (c *CharterSearchRequest) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterSearchRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetPage sets the Page field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchRequest) SetPage(page *int) {
+	c.Page = page
+	c.require(charterSearchRequestFieldPage)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchRequest) SetSize(size *int) {
+	c.Size = size
+	c.require(charterSearchRequestFieldSize)
+}
+
+// SetSortDesc sets the SortDesc field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchRequest) SetSortDesc(sortDesc *bool) {
+	c.SortDesc = sortDesc
+	c.require(charterSearchRequestFieldSortDesc)
+}
+
+// SetSort sets the Sort field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchRequest) SetSort(sort *CharterSearchField) {
+	c.Sort = sort
+	c.require(charterSearchRequestFieldSort)
+}
+
+// SetFilter sets the Filter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchRequest) SetFilter(filter *CharterSearchFilter) {
+	c.Filter = filter
+	c.require(charterSearchRequestFieldFilter)
+}
+
+func (c *CharterSearchRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterSearchRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterSearchRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterSearchRequest) MarshalJSON() ([]byte, error) {
+	type embed CharterSearchRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterSearchRequest) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+var (
+	charterSearchResponseFieldNumber        = big.NewInt(1 << 0)
+	charterSearchResponseFieldSize          = big.NewInt(1 << 1)
+	charterSearchResponseFieldTotalElements = big.NewInt(1 << 2)
+	charterSearchResponseFieldTotalPages    = big.NewInt(1 << 3)
+	charterSearchResponseFieldCharters      = big.NewInt(1 << 4)
+)
+
+type CharterSearchResponse struct {
+	// The page being returned, starts at 0
+	Number int `json:"number" url:"number"`
+	// The number of elements in this page
+	Size int `json:"size" url:"size"`
+	// The total number of elements in the collection
+	TotalElements int64 `json:"totalElements" url:"totalElements"`
+	// The total number of pages in the collection
+	TotalPages int `json:"totalPages" url:"totalPages"`
+	// Charters matching the search criteria.
+	Charters []*CharterSummary `json:"charters" url:"charters"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CharterSearchResponse) GetNumber() int {
+	if c == nil {
+		return 0
+	}
+	return c.Number
+}
+
+func (c *CharterSearchResponse) GetSize() int {
+	if c == nil {
+		return 0
+	}
+	return c.Size
+}
+
+func (c *CharterSearchResponse) GetTotalElements() int64 {
+	if c == nil {
+		return 0
+	}
+	return c.TotalElements
+}
+
+func (c *CharterSearchResponse) GetTotalPages() int {
+	if c == nil {
+		return 0
+	}
+	return c.TotalPages
+}
+
+func (c *CharterSearchResponse) GetCharters() []*CharterSummary {
+	if c == nil {
+		return nil
+	}
+	return c.Charters
+}
+
+func (c *CharterSearchResponse) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CharterSearchResponse) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetNumber sets the Number field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchResponse) SetNumber(number int) {
+	c.Number = number
+	c.require(charterSearchResponseFieldNumber)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchResponse) SetSize(size int) {
+	c.Size = size
+	c.require(charterSearchResponseFieldSize)
+}
+
+// SetTotalElements sets the TotalElements field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchResponse) SetTotalElements(totalElements int64) {
+	c.TotalElements = totalElements
+	c.require(charterSearchResponseFieldTotalElements)
+}
+
+// SetTotalPages sets the TotalPages field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchResponse) SetTotalPages(totalPages int) {
+	c.TotalPages = totalPages
+	c.require(charterSearchResponseFieldTotalPages)
+}
+
+// SetCharters sets the Charters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchResponse) SetCharters(charters []*CharterSummary) {
+	c.Charters = charters
+	c.require(charterSearchResponseFieldCharters)
+}
+
+func (c *CharterSearchResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler CharterSearchResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CharterSearchResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CharterSearchResponse) MarshalJSON() ([]byte, error) {
+	type embed CharterSearchResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CharterSearchResponse) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
 // The lifecycle status of a charter.
 //
-//   - ACTIVE: The charter is active and will be evaluated during Q&A. The caller is responsible
+//   - ACTIVE: The charter is active and will be evaluated on every round. The caller is responsible
 //     for ensuring ancestor charters are also ACTIVE if the full subtree should be reachable.
 //   - INACTIVE: The charter is inactive. It retains its rank among siblings and its descendants retain their statuses.
-//     However, it and its descendants are skipped during runtime Q&A evaluation.
+//     However, it and its descendants are skipped during runtime evaluation.
 //   - DELETED: The charter has been soft deleted. Excluded from searches and cannot be modified.
 //     Deleting a charter cascades to all descendants (they are also soft-deleted).
 type CharterStatus string
@@ -80,14 +2508,13 @@ func (c CharterStatus) Ptr() *CharterStatus {
 var (
 	charterSummaryFieldCharterID               = big.NewInt(1 << 0)
 	charterSummaryFieldName                    = big.NewInt(1 << 1)
-	charterSummaryFieldSegmentSummary          = big.NewInt(1 << 2)
-	charterSummaryFieldPrecondition            = big.NewInt(1 << 3)
-	charterSummaryFieldParentCharterID         = big.NewInt(1 << 4)
-	charterSummaryFieldStatus                  = big.NewInt(1 << 5)
-	charterSummaryFieldType                    = big.NewInt(1 << 6)
-	charterSummaryFieldChildrenExclusionPolicy = big.NewInt(1 << 7)
-	charterSummaryFieldCreatedAt               = big.NewInt(1 << 8)
-	charterSummaryFieldUpdatedAt               = big.NewInt(1 << 9)
+	charterSummaryFieldPrecondition            = big.NewInt(1 << 2)
+	charterSummaryFieldParentCharterID         = big.NewInt(1 << 3)
+	charterSummaryFieldStatus                  = big.NewInt(1 << 4)
+	charterSummaryFieldType                    = big.NewInt(1 << 5)
+	charterSummaryFieldChildrenExclusionPolicy = big.NewInt(1 << 6)
+	charterSummaryFieldCreatedAt               = big.NewInt(1 << 7)
+	charterSummaryFieldUpdatedAt               = big.NewInt(1 << 8)
 )
 
 type CharterSummary struct {
@@ -95,11 +2522,7 @@ type CharterSummary struct {
 	CharterID *EntityID `json:"charterId" url:"charterId"`
 	// The display name of the charter.
 	Name string `json:"name" url:"name"`
-	// The segment backing this charter's rule. An implementation detail of `precondition`;
-	// read that instead.
-	SegmentSummary *SegmentSummary `json:"segmentSummary,omitempty" url:"segmentSummary,omitempty"`
-	// The rule controlling when this charter applies, read from the charter's backing
-	// segment. Null means wildcard (always matches).
+	// The rule controlling when this charter applies. Null means wildcard (always matches).
 	Precondition *PreconditionResponse `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The ID of the parent charter. Null for root-level charters.
 	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"parentCharterId,omitempty"`
@@ -133,13 +2556,6 @@ func (c *CharterSummary) GetName() string {
 		return ""
 	}
 	return c.Name
-}
-
-func (c *CharterSummary) GetSegmentSummary() *SegmentSummary {
-	if c == nil {
-		return nil
-	}
-	return c.SegmentSummary
 }
 
 func (c *CharterSummary) GetPrecondition() *PreconditionResponse {
@@ -214,13 +2630,6 @@ func (c *CharterSummary) SetCharterID(charterID *EntityID) {
 func (c *CharterSummary) SetName(name string) {
 	c.Name = name
 	c.require(charterSummaryFieldName)
-}
-
-// SetSegmentSummary sets the SegmentSummary field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CharterSummary) SetSegmentSummary(segmentSummary *SegmentSummary) {
-	c.SegmentSummary = segmentSummary
-	c.require(charterSummaryFieldSegmentSummary)
 }
 
 // SetPrecondition sets the Precondition field and marks it as non-optional;
@@ -332,16 +2741,16 @@ func (c *CharterSummary) String() string {
 //     verbatim, without invoking the LLM. The charter cannot have children, and
 //     its manual must be non-blank — the manual is the response.
 //
-//     A STRICT_RETURN charter references nothing: both `knowledgeBaseIds` and
+//     A STRICT_RETURN charter references nothing: both `knowledgeBases` and
 //     `actionIds` must be empty, and a create or update supplying either is
-//     rejected. With no LLM in the turn there is nothing to consult a knowledge
+//     rejected. With no LLM in the round there is nothing to consult a knowledge
 //     base or to choose an action.
 //
 //     A STRICT_RETURN charter is matched exactly like any other charter — same
 //     ordering and mutual-exclusion rules. The only difference is what a match
-//     does: the first matched STRICT_RETURN charter takes over the turn, so its
+//     does: the first matched STRICT_RETURN charter takes over the round, so its
 //     manual is the whole response and every other matched charter is ignored.
-//     (At most one applies per turn.)
+//     (At most one applies per round.)
 type CharterType string
 
 const (

@@ -366,6 +366,8 @@ var (
 
 type AgentUserRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
+	// A column the metric could not measure is absent from the map, so a row can carry fewer
+	// entries than there are headers.
 	Data map[string]*CellData `json:"data" url:"data"`
 	// Keyed by field, so it cannot represent two groupings that share a key - notably two
 	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
@@ -2555,6 +2557,10 @@ func (c *ConversationMax) String() string {
 }
 
 // Computes the median value of the specified field.
+//
+// A group with no conversations in it has no median. Those results are omitted rather than
+// reported as a value: the chart series has no point for that interval or bucket, and the
+// table row has no entry for that column.
 var (
 	conversationMedianFieldTargetField        = big.NewInt(1 << 0)
 	conversationMedianFieldIntelligentFieldID = big.NewInt(1 << 1)
@@ -3111,6 +3117,10 @@ func (c *ConversationNumericMetric) String() string {
 }
 
 // Calculates specified percentile for a numeric field.
+//
+// A group with no conversations in it has no percentile. Those results are omitted rather than
+// reported as a value: the chart series has no point for that interval or bucket, and the
+// table row has no entry for that column.
 var (
 	conversationPercentileFieldTargetField        = big.NewInt(1 << 0)
 	conversationPercentileFieldIntelligentFieldID = big.NewInt(1 << 1)
@@ -3376,6 +3386,8 @@ var (
 
 type ConversationRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
+	// A column the metric could not measure is absent from the map, so a row can carry fewer
+	// entries than there are headers.
 	Data map[string]*CellData `json:"data" url:"data"`
 	// Keyed by field, so it cannot represent two groupings that share a key - notably two
 	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
@@ -5154,6 +5166,8 @@ var (
 
 type EventRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
+	// A column the metric could not measure is absent from the map, so a row can carry fewer
+	// entries than there are headers.
 	Data map[string]*CellData `json:"data" url:"data"`
 	// Keyed by field, so it cannot represent two groupings that share a key - notably two
 	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
@@ -6168,6 +6182,8 @@ var (
 
 type FeedbackRow struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
+	// A column the metric could not measure is absent from the map, so a row can carry fewer
+	// entries than there are headers.
 	Data map[string]*CellData `json:"data" url:"data"`
 	// Keyed by field, so it cannot represent two groupings that share a key - notably two
 	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
@@ -7264,6 +7280,8 @@ var (
 
 type RowBase struct {
 	// The actual row data, where keys represent column headers and values contain the respective metric results.
+	// A column the metric could not measure is absent from the map, so a row can carry fewer
+	// entries than there are headers.
 	Data map[string]*CellData `json:"data" url:"data"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -7426,6 +7444,7 @@ type Series struct {
 	// If the metric is a percentile, the name represents the percentile value.
 	Name string `json:"name" url:"name"`
 	// List of labeled data points for the series.
+	// A bucket the metric could not measure has no point here.
 	Data []*LabeledPoint `json:"data" url:"data"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -7728,6 +7747,8 @@ type TimeSeries struct {
 	// Name of the series, derived from the grouping field or percentile metric.
 	Name string `json:"name" url:"name"`
 	// List of time-based data points for the series.
+	// An interval the metric could not measure has no point here, so a series can be shorter
+	// than the number of intervals in the requested range.
 	Data []*TimeDataPoint `json:"data" url:"data"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

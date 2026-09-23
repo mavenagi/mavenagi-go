@@ -73,7 +73,8 @@ func WithBasicAuth(appID, appSecret string) *core.BasicAuthOption {
 
 // WithOrganizationID sets the organizationID request header.
 //
-// The organization id
+// The organization this request applies to -- the top-level tenant everything else belongs to.
+// See [Concepts](/docs/api-reference/overview/concepts).
 func WithOrganizationID(organizationID string) *core.OrganizationIDOption {
 	return &core.OrganizationIDOption{
 		OrganizationID: organizationID,
@@ -82,7 +83,8 @@ func WithOrganizationID(organizationID string) *core.OrganizationIDOption {
 
 // WithAgentID sets the agentID request header.
 //
-// The agent id
+// The agent within that organization -- the assistant whose charters, knowledge and actions
+// this request applies to. See [Concepts](/docs/api-reference/overview/concepts).
 func WithAgentID(agentID string) *core.AgentIDOption {
 	return &core.AgentIDOption{
 		AgentID: agentID,

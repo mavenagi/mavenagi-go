@@ -1,8 +1,9 @@
 {
-  "cliVersion": "3.11.0",
+  "cliVersion": "5.125.1",
   "generatorName": "fernapi/fern-go-sdk",
   "generatorVersion": "1.14.2",
   "generatorConfig": {
     "clientName": "MavenAGI"
-  }
+  },
+  "originGitCommit": "870e6af0782c1ba21747f3f44bf493278b12c260"
 }
