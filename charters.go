@@ -2078,20 +2078,24 @@ func (c CharterSearchField) Ptr() *CharterSearchField {
 	return &c
 }
 
+// Filters combine with AND: a charter must match every filter given. Within one filter, a
+// charter matches if it references any of the listed IDs. An empty list is the same as
+// omitting the filter.
 var (
-	charterSearchFilterFieldActionIDs        = big.NewInt(1 << 0)
-	charterSearchFilterFieldKnowledgeBaseIDs = big.NewInt(1 << 1)
+	charterSearchFilterFieldActionIDs           = big.NewInt(1 << 0)
+	charterSearchFilterFieldKnowledgeBaseIDs    = big.NewInt(1 << 1)
+	charterSearchFilterFieldIntelligentFieldIDs = big.NewInt(1 << 2)
 )
 
 type CharterSearchFilter struct {
-	// Filter to charters that reference any of the specified actions (OR within this field).
-	// When combined with knowledgeBaseIds, both filters must match (AND across fields).
-	// An empty list is equivalent to omitting the field. Maximum 50 IDs.
+	// Only return charters referencing these actions. At most 50.
 	ActionIDs []*EntityID `json:"actionIds,omitempty" url:"actionIds,omitempty"`
-	// Filter to charters that reference any of the specified knowledge bases (OR within this field).
-	// When combined with actionIds, both filters must match (AND across fields).
-	// An empty list is equivalent to omitting the field. Maximum 50 IDs.
+	// Only return charters referencing these knowledge bases. At most 50.
 	KnowledgeBaseIDs []*EntityID `json:"knowledgeBaseIds,omitempty" url:"knowledgeBaseIds,omitempty"`
+	// Only return charters whose precondition references these intelligent fields. At most 50.
+	// A charter reaches an intelligent field through its precondition, not by referencing it
+	// directly the way it does an action or a knowledge base.
+	IntelligentFieldIDs []*EntityID `json:"intelligentFieldIds,omitempty" url:"intelligentFieldIds,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2112,6 +2116,13 @@ func (c *CharterSearchFilter) GetKnowledgeBaseIDs() []*EntityID {
 		return nil
 	}
 	return c.KnowledgeBaseIDs
+}
+
+func (c *CharterSearchFilter) GetIntelligentFieldIDs() []*EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.IntelligentFieldIDs
 }
 
 func (c *CharterSearchFilter) GetExtraProperties() map[string]interface{} {
@@ -2137,6 +2148,13 @@ func (c *CharterSearchFilter) SetActionIDs(actionIDs []*EntityID) {
 func (c *CharterSearchFilter) SetKnowledgeBaseIDs(knowledgeBaseIDs []*EntityID) {
 	c.KnowledgeBaseIDs = knowledgeBaseIDs
 	c.require(charterSearchFilterFieldKnowledgeBaseIDs)
+}
+
+// SetIntelligentFieldIDs sets the IntelligentFieldIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchFilter) SetIntelligentFieldIDs(intelligentFieldIDs []*EntityID) {
+	c.IntelligentFieldIDs = intelligentFieldIDs
+	c.require(charterSearchFilterFieldIntelligentFieldIDs)
 }
 
 func (c *CharterSearchFilter) UnmarshalJSON(data []byte) error {

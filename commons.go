@@ -1260,12 +1260,15 @@ var (
 	actionResponseFieldSideEffects             = big.NewInt(1 << 5)
 	actionResponseFieldName                    = big.NewInt(1 << 6)
 	actionResponseFieldDescription             = big.NewInt(1 << 7)
-	actionResponseFieldActionID                = big.NewInt(1 << 8)
-	actionResponseFieldInstructions            = big.NewInt(1 << 9)
-	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 10)
-	actionResponseFieldSegmentID               = big.NewInt(1 << 11)
-	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 12)
-	actionResponseFieldDeleted                 = big.NewInt(1 << 13)
+	actionResponseFieldCreatedAt               = big.NewInt(1 << 8)
+	actionResponseFieldUpdatedAt               = big.NewInt(1 << 9)
+	actionResponseFieldStatus                  = big.NewInt(1 << 10)
+	actionResponseFieldActionID                = big.NewInt(1 << 11)
+	actionResponseFieldInstructions            = big.NewInt(1 << 12)
+	actionResponseFieldLlmInclusionStatus      = big.NewInt(1 << 13)
+	actionResponseFieldSegmentID               = big.NewInt(1 << 14)
+	actionResponseFieldPreconditionExplanation = big.NewInt(1 << 15)
+	actionResponseFieldDeleted                 = big.NewInt(1 << 16)
 )
 
 type ActionResponse struct {
@@ -1286,15 +1289,25 @@ type ActionResponse struct {
 	//
 	// This value is informational only. It does not yet affect action execution.
 	SideEffects *SideEffects `json:"sideEffects,omitempty" url:"sideEffects,omitempty"`
-	// The name of the action. This is displayed to the end user as part of forms when user interaction is required. It is also used to help Maven decide if the action is relevant to a conversation.
+	// The capability's display name, shown to whoever manages the agent. A trigger registered
+	// without one is named after the app that registered it and the event it fires on.
 	Name string `json:"name" url:"name"`
-	// The description of the action. Must be no more than 4096 characters. This helps Maven decide if the action is relevant to a conversation and is not displayed directly to the end user. Descriptions are used by the LLM.
-	Description string `json:"description" url:"description"`
+	// What the capability does. Shown to whoever manages the agent, and for the types the LLM
+	// can choose between, used to decide when the capability applies.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// When the capability was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// When the capability was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// Whether the agent uses this capability, and whether it still exists.
+	Status CapabilityStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this action
 	ActionID *EntityID `json:"actionId" url:"actionId"`
 	// The instructions given to the LLM when determining whether to execute the action.
 	// This field defaults to the `description` field if not provided. Use the `patch` API to update.
 	Instructions *string `json:"instructions,omitempty" url:"instructions,omitempty"`
+	// Deprecated. Superseded by `status`, which says the same thing for every capability type.
+	//
 	// Determines whether the action is sent to the LLM as part of a conversation.
 	//
 	// - `ALWAYS`: The action is always available for use in conversations, textual relevance is not considered.
@@ -1307,6 +1320,8 @@ type ActionResponse struct {
 	SegmentID *EntityID `json:"segmentId,omitempty" url:"segmentId,omitempty"`
 	// No longer populated. This field is always absent and will be removed in a future release.
 	PreconditionExplanation *string `json:"preconditionExplanation,omitempty" url:"preconditionExplanation,omitempty"`
+	// Deprecated. Superseded by `status`, where a deleted action is `DELETED`.
+	//
 	// Whether the action has been deleted. Deleted actions will not sent to the LLM nor returned in search results.
 	Deleted bool `json:"deleted" url:"deleted"`
 
@@ -1366,11 +1381,32 @@ func (a *ActionResponse) GetName() string {
 	return a.Name
 }
 
-func (a *ActionResponse) GetDescription() string {
+func (a *ActionResponse) GetDescription() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Description
+}
+
+func (a *ActionResponse) GetCreatedAt() time.Time {
+	if a == nil {
+		return time.Time{}
+	}
+	return a.CreatedAt
+}
+
+func (a *ActionResponse) GetUpdatedAt() time.Time {
+	if a == nil {
+		return time.Time{}
+	}
+	return a.UpdatedAt
+}
+
+func (a *ActionResponse) GetStatus() CapabilityStatus {
 	if a == nil {
 		return ""
 	}
-	return a.Description
+	return a.Status
 }
 
 func (a *ActionResponse) GetActionID() *EntityID {
@@ -1477,9 +1513,30 @@ func (a *ActionResponse) SetName(name string) {
 
 // SetDescription sets the Description field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ActionResponse) SetDescription(description string) {
+func (a *ActionResponse) SetDescription(description *string) {
 	a.Description = description
 	a.require(actionResponseFieldDescription)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionResponse) SetCreatedAt(createdAt time.Time) {
+	a.CreatedAt = createdAt
+	a.require(actionResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionResponse) SetUpdatedAt(updatedAt time.Time) {
+	a.UpdatedAt = updatedAt
+	a.require(actionResponseFieldUpdatedAt)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionResponse) SetStatus(status CapabilityStatus) {
+	a.Status = status
+	a.require(actionResponseFieldStatus)
 }
 
 // SetActionID sets the ActionID field and marks it as non-optional;
@@ -1525,12 +1582,20 @@ func (a *ActionResponse) SetDeleted(deleted bool) {
 }
 
 func (a *ActionResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler ActionResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed ActionResponse
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*a),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*a = ActionResponse(value)
+	*a = ActionResponse(unmarshaler.embed)
+	a.CreatedAt = unmarshaler.CreatedAt.Time()
+	a.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *a)
 	if err != nil {
 		return err
@@ -1544,8 +1609,12 @@ func (a *ActionResponse) MarshalJSON() ([]byte, error) {
 	type embed ActionResponse
 	var marshaler = struct {
 		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
-		embed: embed(*a),
+		embed:     embed(*a),
+		CreatedAt: internal.NewDateTime(a.CreatedAt),
+		UpdatedAt: internal.NewDateTime(a.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -3151,6 +3220,7 @@ var (
 	baseConversationResponseFieldSimulationContext = big.NewInt(1 << 14)
 	baseConversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
 	baseConversationResponseFieldConversationMode  = big.NewInt(1 << 16)
+	baseConversationResponseFieldVariantID         = big.NewInt(1 << 17)
 )
 
 type BaseConversationResponse struct {
@@ -3196,6 +3266,10 @@ type BaseConversationResponse struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
+	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
+	// the conversation is created and fixed for its lifetime. Absent when the conversation was
+	// not routed to a variant, for example one created before the agent had variants.
+	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3321,6 +3395,13 @@ func (b *BaseConversationResponse) GetConversationMode() *ConversationMode {
 		return nil
 	}
 	return b.ConversationMode
+}
+
+func (b *BaseConversationResponse) GetVariantID() *EntityID {
+	if b == nil {
+		return nil
+	}
+	return b.VariantID
 }
 
 func (b *BaseConversationResponse) GetExtraProperties() map[string]interface{} {
@@ -3451,6 +3532,13 @@ func (b *BaseConversationResponse) SetRelatedEntities(relatedEntities map[Relati
 func (b *BaseConversationResponse) SetConversationMode(conversationMode *ConversationMode) {
 	b.ConversationMode = conversationMode
 	b.require(baseConversationResponseFieldConversationMode)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseConversationResponse) SetVariantID(variantID *EntityID) {
+	b.VariantID = variantID
+	b.require(baseConversationResponseFieldVariantID)
 }
 
 func (b *BaseConversationResponse) UnmarshalJSON(data []byte) error {
@@ -7200,6 +7288,229 @@ func (c Capability) Ptr() *Capability {
 	return &c
 }
 
+// The fields every capability has, whatever kind it is: Actions, Event Triggers, Intelligent
+// Fields and Conversation Kickoffs all carry these.
+var (
+	capabilityBaseFieldName        = big.NewInt(1 << 0)
+	capabilityBaseFieldDescription = big.NewInt(1 << 1)
+	capabilityBaseFieldCreatedAt   = big.NewInt(1 << 2)
+	capabilityBaseFieldUpdatedAt   = big.NewInt(1 << 3)
+	capabilityBaseFieldStatus      = big.NewInt(1 << 4)
+)
+
+type CapabilityBase struct {
+	// The capability's display name, shown to whoever manages the agent. A trigger registered
+	// without one is named after the app that registered it and the event it fires on.
+	Name string `json:"name" url:"name"`
+	// What the capability does. Shown to whoever manages the agent, and for the types the LLM
+	// can choose between, used to decide when the capability applies.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// When the capability was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// When the capability was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// Whether the agent uses this capability, and whether it still exists.
+	Status CapabilityStatus `json:"status" url:"status"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CapabilityBase) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *CapabilityBase) GetDescription() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Description
+}
+
+func (c *CapabilityBase) GetCreatedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.CreatedAt
+}
+
+func (c *CapabilityBase) GetUpdatedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.UpdatedAt
+}
+
+func (c *CapabilityBase) GetStatus() CapabilityStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *CapabilityBase) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CapabilityBase) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityBase) SetName(name string) {
+	c.Name = name
+	c.require(capabilityBaseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityBase) SetDescription(description *string) {
+	c.Description = description
+	c.require(capabilityBaseFieldDescription)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityBase) SetCreatedAt(createdAt time.Time) {
+	c.CreatedAt = createdAt
+	c.require(capabilityBaseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityBase) SetUpdatedAt(updatedAt time.Time) {
+	c.UpdatedAt = updatedAt
+	c.require(capabilityBaseFieldUpdatedAt)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityBase) SetStatus(status CapabilityStatus) {
+	c.Status = status
+	c.require(capabilityBaseFieldStatus)
+}
+
+func (c *CapabilityBase) UnmarshalJSON(data []byte) error {
+	type embed CapabilityBase
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*c),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*c = CapabilityBase(unmarshaler.embed)
+	c.CreatedAt = unmarshaler.CreatedAt.Time()
+	c.UpdatedAt = unmarshaler.UpdatedAt.Time()
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CapabilityBase) MarshalJSON() ([]byte, error) {
+	type embed CapabilityBase
+	var marshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed:     embed(*c),
+		CreatedAt: internal.NewDateTime(c.CreatedAt),
+		UpdatedAt: internal.NewDateTime(c.UpdatedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CapabilityBase) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Whether an agent uses a capability, and whether it still exists. Applies to every capability
+// type.
+type CapabilityStatus string
+
+const (
+	// The field is evaluated, and values are computed for matching entities.
+	CapabilityStatusActive CapabilityStatus = "ACTIVE"
+	// The field exists but is not evaluated. This is the state a new field is created in.
+	CapabilityStatusInactive CapabilityStatus = "INACTIVE"
+	// The field has been soft deleted and cannot be modified. Set by the delete endpoint
+	// rather than by a patch.
+	CapabilityStatusDeleted CapabilityStatus = "DELETED"
+)
+
+func NewCapabilityStatusFromString(s string) (CapabilityStatus, error) {
+	switch s {
+	case "ACTIVE":
+		return CapabilityStatusActive, nil
+	case "INACTIVE":
+		return CapabilityStatusInactive, nil
+	case "DELETED":
+		return CapabilityStatusDeleted, nil
+	}
+	var t CapabilityStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CapabilityStatus) Ptr() *CapabilityStatus {
+	return &c
+}
+
+// Which kind of capability an entity is, and the path segment that addresses it.
+type CapabilityType string
+
+const (
+	CapabilityTypeAction              CapabilityType = "ACTION"
+	CapabilityTypeTrigger             CapabilityType = "TRIGGER"
+	CapabilityTypeIntelligentField    CapabilityType = "INTELLIGENT_FIELD"
+	CapabilityTypeConversationKickoff CapabilityType = "CONVERSATION_KICKOFF"
+)
+
+func NewCapabilityTypeFromString(s string) (CapabilityType, error) {
+	switch s {
+	case "ACTION":
+		return CapabilityTypeAction, nil
+	case "TRIGGER":
+		return CapabilityTypeTrigger, nil
+	case "INTELLIGENT_FIELD":
+		return CapabilityTypeIntelligentField, nil
+	case "CONVERSATION_KICKOFF":
+		return CapabilityTypeConversationKickoff, nil
+	}
+	var t CapabilityType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CapabilityType) Ptr() *CapabilityType {
+	return &c
+}
+
 type ChartSpecSchema string
 
 const (
@@ -9419,6 +9730,7 @@ var (
 	conversationPreviewFieldSimulationContext = big.NewInt(1 << 14)
 	conversationPreviewFieldRelatedEntities   = big.NewInt(1 << 15)
 	conversationPreviewFieldConversationMode  = big.NewInt(1 << 16)
+	conversationPreviewFieldVariantID         = big.NewInt(1 << 17)
 )
 
 type ConversationPreview struct {
@@ -9464,6 +9776,10 @@ type ConversationPreview struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
+	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
+	// the conversation is created and fixed for its lifetime. Absent when the conversation was
+	// not routed to a variant, for example one created before the agent had variants.
+	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -9589,6 +9905,13 @@ func (c *ConversationPreview) GetConversationMode() *ConversationMode {
 		return nil
 	}
 	return c.ConversationMode
+}
+
+func (c *ConversationPreview) GetVariantID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *ConversationPreview) GetExtraProperties() map[string]interface{} {
@@ -9721,6 +10044,13 @@ func (c *ConversationPreview) SetConversationMode(conversationMode *Conversation
 	c.require(conversationPreviewFieldConversationMode)
 }
 
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationPreview) SetVariantID(variantID *EntityID) {
+	c.VariantID = variantID
+	c.require(conversationPreviewFieldVariantID)
+}
+
 func (c *ConversationPreview) UnmarshalJSON(data []byte) error {
 	type embed ConversationPreview
 	var unmarshaler = struct {
@@ -9790,8 +10120,9 @@ var (
 	conversationResponseFieldSimulationContext = big.NewInt(1 << 14)
 	conversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
 	conversationResponseFieldConversationMode  = big.NewInt(1 << 16)
-	conversationResponseFieldMessages          = big.NewInt(1 << 17)
-	conversationResponseFieldAttachments       = big.NewInt(1 << 18)
+	conversationResponseFieldVariantID         = big.NewInt(1 << 17)
+	conversationResponseFieldMessages          = big.NewInt(1 << 18)
+	conversationResponseFieldAttachments       = big.NewInt(1 << 19)
 )
 
 type ConversationResponse struct {
@@ -9837,6 +10168,10 @@ type ConversationResponse struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
+	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
+	// the conversation is created and fixed for its lifetime. Absent when the conversation was
+	// not routed to a variant, for example one created before the agent had variants.
+	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
 	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
@@ -9968,6 +10303,13 @@ func (c *ConversationResponse) GetConversationMode() *ConversationMode {
 		return nil
 	}
 	return c.ConversationMode
+}
+
+func (c *ConversationResponse) GetVariantID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *ConversationResponse) GetMessages() []*ConversationMessageResponse {
@@ -10112,6 +10454,13 @@ func (c *ConversationResponse) SetRelatedEntities(relatedEntities map[Relationsh
 func (c *ConversationResponse) SetConversationMode(conversationMode *ConversationMode) {
 	c.ConversationMode = conversationMode
 	c.require(conversationResponseFieldConversationMode)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationResponse) SetVariantID(variantID *EntityID) {
+	c.VariantID = variantID
+	c.require(conversationResponseFieldVariantID)
 }
 
 // SetMessages sets the Messages field and marks it as non-optional;
@@ -11977,19 +12326,21 @@ const (
 	EntityTypeUser                 EntityType = "USER"
 	EntityTypeEvent                EntityType = "EVENT"
 	EntityTypeEventTrigger         EntityType = "EVENT_TRIGGER"
-	EntityTypeUserProfile          EntityType = "USER_PROFILE"
-	EntityTypeFeedback             EntityType = "FEEDBACK"
-	EntityTypeInboxItem            EntityType = "INBOX_ITEM"
-	EntityTypeInboxItemFix         EntityType = "INBOX_ITEM_FIX"
-	EntityTypeSegment              EntityType = "SEGMENT"
-	EntityTypeCustomer             EntityType = "CUSTOMER"
-	EntityTypeIntelligentField     EntityType = "INTELLIGENT_FIELD"
-	EntityTypeCharter              EntityType = "CHARTER"
-	EntityTypeConversationKickoff  EntityType = "CONVERSATION_KICKOFF"
-	EntityTypeAgentVariant         EntityType = "AGENT_VARIANT"
-	EntityTypeConfigSnapshot       EntityType = "CONFIG_SNAPSHOT"
-	EntityTypeAsset                EntityType = "ASSET"
-	EntityTypeTrafficConfig        EntityType = "TRAFFIC_CONFIG"
+	// Deprecated. Use `USER` instead.
+	EntityTypeUserProfile EntityType = "USER_PROFILE"
+	// A user merged across apps. `referenceId` is the agent user id (`AgentUser.id`).
+	EntityTypeAgentUser           EntityType = "AGENT_USER"
+	EntityTypeFeedback            EntityType = "FEEDBACK"
+	EntityTypeInboxItem           EntityType = "INBOX_ITEM"
+	EntityTypeInboxItemFix        EntityType = "INBOX_ITEM_FIX"
+	EntityTypeSegment             EntityType = "SEGMENT"
+	EntityTypeCustomer            EntityType = "CUSTOMER"
+	EntityTypeIntelligentField    EntityType = "INTELLIGENT_FIELD"
+	EntityTypeCharter             EntityType = "CHARTER"
+	EntityTypeConversationKickoff EntityType = "CONVERSATION_KICKOFF"
+	EntityTypeAgentVariant        EntityType = "AGENT_VARIANT"
+	EntityTypeAsset               EntityType = "ASSET"
+	EntityTypeTrafficConfig       EntityType = "TRAFFIC_CONFIG"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -12016,6 +12367,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeEventTrigger, nil
 	case "USER_PROFILE":
 		return EntityTypeUserProfile, nil
+	case "AGENT_USER":
+		return EntityTypeAgentUser, nil
 	case "FEEDBACK":
 		return EntityTypeFeedback, nil
 	case "INBOX_ITEM":
@@ -12034,8 +12387,6 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeConversationKickoff, nil
 	case "AGENT_VARIANT":
 		return EntityTypeAgentVariant, nil
-	case "CONFIG_SNAPSHOT":
-		return EntityTypeConfigSnapshot, nil
 	case "ASSET":
 		return EntityTypeAsset, nil
 	case "TRAFFIC_CONFIG":
@@ -12053,6 +12404,7 @@ var (
 	errorMessageFieldStatus  = big.NewInt(1 << 0)
 	errorMessageFieldError   = big.NewInt(1 << 1)
 	errorMessageFieldMessage = big.NewInt(1 << 2)
+	errorMessageFieldReason  = big.NewInt(1 << 3)
 )
 
 type ErrorMessage struct {
@@ -12062,6 +12414,8 @@ type ErrorMessage struct {
 	Error *string `json:"error,omitempty" url:"error,omitempty"`
 	// Human-readable error details.
 	Message *string `json:"message,omitempty" url:"message,omitempty"`
+	// Machine-readable reason for the failure, when the API defines one. Match on this rather than on `message`, whose wording may change.
+	Reason *ErrorReason `json:"reason,omitempty" url:"reason,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12089,6 +12443,13 @@ func (e *ErrorMessage) GetMessage() *string {
 		return nil
 	}
 	return e.Message
+}
+
+func (e *ErrorMessage) GetReason() *ErrorReason {
+	if e == nil {
+		return nil
+	}
+	return e.Reason
 }
 
 func (e *ErrorMessage) GetExtraProperties() map[string]interface{} {
@@ -12121,6 +12482,13 @@ func (e *ErrorMessage) SetError(error_ *string) {
 func (e *ErrorMessage) SetMessage(message *string) {
 	e.Message = message
 	e.require(errorMessageFieldMessage)
+}
+
+// SetReason sets the Reason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *ErrorMessage) SetReason(reason *ErrorReason) {
+	e.Reason = reason
+	e.require(errorMessageFieldReason)
 }
 
 func (e *ErrorMessage) UnmarshalJSON(data []byte) error {
@@ -12160,6 +12528,59 @@ func (e *ErrorMessage) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", e)
+}
+
+// Why a request was rejected. Values are UPPER_SNAKE_CASE, at most 63 characters. New values may be added, so treat an unrecognized one as a generic error. All current values come from agent-variant operations.
+type ErrorReason string
+
+const (
+	// The variant is receiving live traffic, so it can't be edited. Fork a working variant and edit that instead.
+	ErrorReasonVariantLive ErrorReason = "VARIANT_LIVE"
+	// The variant is archived or deleted.
+	ErrorReasonVariantNotActive ErrorReason = "VARIANT_NOT_ACTIVE"
+	// The traffic config changed since it was last read. Re-read it and retry.
+	ErrorReasonStaleTrafficRevision ErrorReason = "STALE_TRAFFIC_REVISION"
+	// The variant's working set changed since it was last read (its `workingSetRevision` moved). Re-read it and retry.
+	ErrorReasonStaleWorkingSet ErrorReason = "STALE_WORKING_SET"
+	// The variant's staged edits don't change its configuration, so there is nothing to commit.
+	ErrorReasonNothingToCommit ErrorReason = "NOTHING_TO_COMMIT"
+	// The ID requested for a new variant is already taken.
+	ErrorReasonVariantAlreadyExists ErrorReason = "VARIANT_ALREADY_EXISTS"
+	// The variant is receiving live traffic, so it can't be archived or deleted. Move its traffic elsewhere first.
+	ErrorReasonCannotArchiveLiveVariant ErrorReason = "CANNOT_ARCHIVE_LIVE_VARIANT"
+	// A traffic rule names a variant with staged edits. Publish or discard them first.
+	ErrorReasonVariantHasStagedEdits ErrorReason = "VARIANT_HAS_STAGED_EDITS"
+	// The entity type is versioned on this agent, so the request must name the agent variant to read or write. Pass the variant's reference ID, and its owning app where the endpoint takes one; a request that names none is rejected.
+	ErrorReasonVariantRequired ErrorReason = "VARIANT_REQUIRED"
+)
+
+func NewErrorReasonFromString(s string) (ErrorReason, error) {
+	switch s {
+	case "VARIANT_LIVE":
+		return ErrorReasonVariantLive, nil
+	case "VARIANT_NOT_ACTIVE":
+		return ErrorReasonVariantNotActive, nil
+	case "STALE_TRAFFIC_REVISION":
+		return ErrorReasonStaleTrafficRevision, nil
+	case "STALE_WORKING_SET":
+		return ErrorReasonStaleWorkingSet, nil
+	case "NOTHING_TO_COMMIT":
+		return ErrorReasonNothingToCommit, nil
+	case "VARIANT_ALREADY_EXISTS":
+		return ErrorReasonVariantAlreadyExists, nil
+	case "CANNOT_ARCHIVE_LIVE_VARIANT":
+		return ErrorReasonCannotArchiveLiveVariant, nil
+	case "VARIANT_HAS_STAGED_EDITS":
+		return ErrorReasonVariantHasStagedEdits, nil
+	case "VARIANT_REQUIRED":
+		return ErrorReasonVariantRequired, nil
+	}
+	var t ErrorReason
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (e ErrorReason) Ptr() *ErrorReason {
+	return &e
 }
 
 var (
@@ -16048,9 +16469,10 @@ var (
 	initializeConversationResponseFieldSimulationContext          = big.NewInt(1 << 14)
 	initializeConversationResponseFieldRelatedEntities            = big.NewInt(1 << 15)
 	initializeConversationResponseFieldConversationMode           = big.NewInt(1 << 16)
-	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 17)
-	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 18)
-	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 19)
+	initializeConversationResponseFieldVariantID                  = big.NewInt(1 << 17)
+	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 18)
+	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 19)
+	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 20)
 )
 
 type InitializeConversationResponse struct {
@@ -16096,6 +16518,10 @@ type InitializeConversationResponse struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
+	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
+	// the conversation is created and fixed for its lifetime. Absent when the conversation was
+	// not routed to a variant, for example one created before the agent had variants.
+	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
 	// The attachments associated with this conversation. Additional attachments may be associated to individual messages.
@@ -16232,6 +16658,13 @@ func (i *InitializeConversationResponse) GetConversationMode() *ConversationMode
 		return nil
 	}
 	return i.ConversationMode
+}
+
+func (i *InitializeConversationResponse) GetVariantID() *EntityID {
+	if i == nil {
+		return nil
+	}
+	return i.VariantID
 }
 
 func (i *InitializeConversationResponse) GetMessages() []*ConversationMessageResponse {
@@ -16383,6 +16816,13 @@ func (i *InitializeConversationResponse) SetRelatedEntities(relatedEntities map[
 func (i *InitializeConversationResponse) SetConversationMode(conversationMode *ConversationMode) {
 	i.ConversationMode = conversationMode
 	i.require(initializeConversationResponseFieldConversationMode)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetVariantID(variantID *EntityID) {
+	i.VariantID = variantID
+	i.require(initializeConversationResponseFieldVariantID)
 }
 
 // SetMessages sets the Messages field and marks it as non-optional;

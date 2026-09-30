@@ -87,6 +87,9 @@ func TestIntelligentFieldsCreateOrUpdateWithWireMock(
 				Label: mavenagigo.String(
 					"High Priority",
 				),
+				Description: mavenagigo.String(
+					"The customer is blocked or reports an outage.",
+				),
 			},
 			&mavenagigo.EnumOption{
 				Value: "MEDIUM",

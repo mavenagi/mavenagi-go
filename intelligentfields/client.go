@@ -61,6 +61,10 @@ func (c *Client) CreateOrUpdate(
 	return response.Body, nil
 }
 
+// Deprecated. Use `GET /v1/capabilities/INTELLIGENT_FIELD/{referenceId}`, which reads any
+// kind of capability the same way. It does not carry `referencingCharters`; search
+// charters to find the ones that reference a capability.
+//
 // Get an intelligent field by its supplied ID
 func (c *Client) Get(
 	ctx context.Context,
@@ -106,6 +110,9 @@ func (c *Client) Patch(
 	return response.Body, nil
 }
 
+// Deprecated. Use `DELETE /v1/capabilities/INTELLIGENT_FIELD/{referenceId}`, which
+// deletes any kind of capability the same way. That endpoint returns no body.
+//
 // Soft delete an intelligent field. Only INACTIVE fields can be deleted.
 //
 // Deleted fields are excluded from search results but can still be retrieved by ID.

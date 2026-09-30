@@ -9,8 +9,10 @@ import (
 	appdirectory "github.com/mavenagi/mavenagi-go/appdirectory"
 	appsettings "github.com/mavenagi/mavenagi-go/appsettings"
 	assets "github.com/mavenagi/mavenagi-go/assets"
+	capabilities "github.com/mavenagi/mavenagi-go/capabilities"
 	charters "github.com/mavenagi/mavenagi-go/charters"
 	conversation "github.com/mavenagi/mavenagi-go/conversation"
+	conversationkickoffs "github.com/mavenagi/mavenagi-go/conversationkickoffs"
 	core "github.com/mavenagi/mavenagi-go/core"
 	customers "github.com/mavenagi/mavenagi-go/customers"
 	events "github.com/mavenagi/mavenagi-go/events"
@@ -30,26 +32,28 @@ import (
 )
 
 type MavenAGI struct {
-	Actions           *actions.Client
-	Agents            *agents.Client
-	Analytics         *analytics.Client
-	AppDirectory      *appdirectory.Client
-	AppSettings       *appsettings.Client
-	Assets            *assets.Client
-	Charters          *charters.Client
-	Conversation      *conversation.Client
-	Customers         *customers.Client
-	Events            *events.Client
-	Inbox             *inbox.Client
-	Integrations      *integrations.Client
-	IntelligentFields *intelligentfields.Client
-	Knowledge         *knowledge.Client
-	Organizations     *organizations.Client
-	Segments          *segments.Client
-	Translations      *translations.Client
-	Triggers          *triggers.Client
-	Users             *users.Client
-	Voice             *voice.Client
+	Actions              *actions.Client
+	Agents               *agents.Client
+	Analytics            *analytics.Client
+	AppDirectory         *appdirectory.Client
+	AppSettings          *appsettings.Client
+	Assets               *assets.Client
+	Capabilities         *capabilities.Client
+	Charters             *charters.Client
+	ConversationKickoffs *conversationkickoffs.Client
+	Conversation         *conversation.Client
+	Customers            *customers.Client
+	Events               *events.Client
+	Inbox                *inbox.Client
+	Integrations         *integrations.Client
+	IntelligentFields    *intelligentfields.Client
+	Knowledge            *knowledge.Client
+	Organizations        *organizations.Client
+	Segments             *segments.Client
+	Translations         *translations.Client
+	Triggers             *triggers.Client
+	Users                *users.Client
+	Voice                *voice.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -65,28 +69,30 @@ func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 		options.AppSecret = os.Getenv("MAVENAGI_APP_SECRET")
 	}
 	return &MavenAGI{
-		Actions:           actions.NewClient(options),
-		Agents:            agents.NewClient(options),
-		Analytics:         analytics.NewClient(options),
-		AppDirectory:      appdirectory.NewClient(options),
-		AppSettings:       appsettings.NewClient(options),
-		Assets:            assets.NewClient(options),
-		Charters:          charters.NewClient(options),
-		Conversation:      conversation.NewClient(options),
-		Customers:         customers.NewClient(options),
-		Events:            events.NewClient(options),
-		Inbox:             inbox.NewClient(options),
-		Integrations:      integrations.NewClient(options),
-		IntelligentFields: intelligentfields.NewClient(options),
-		Knowledge:         knowledge.NewClient(options),
-		Organizations:     organizations.NewClient(options),
-		Segments:          segments.NewClient(options),
-		Translations:      translations.NewClient(options),
-		Triggers:          triggers.NewClient(options),
-		Users:             users.NewClient(options),
-		Voice:             voice.NewClient(options),
-		options:           options,
-		baseURL:           options.BaseURL,
+		Actions:              actions.NewClient(options),
+		Agents:               agents.NewClient(options),
+		Analytics:            analytics.NewClient(options),
+		AppDirectory:         appdirectory.NewClient(options),
+		AppSettings:          appsettings.NewClient(options),
+		Assets:               assets.NewClient(options),
+		Capabilities:         capabilities.NewClient(options),
+		Charters:             charters.NewClient(options),
+		ConversationKickoffs: conversationkickoffs.NewClient(options),
+		Conversation:         conversation.NewClient(options),
+		Customers:            customers.NewClient(options),
+		Events:               events.NewClient(options),
+		Inbox:                inbox.NewClient(options),
+		Integrations:         integrations.NewClient(options),
+		IntelligentFields:    intelligentfields.NewClient(options),
+		Knowledge:            knowledge.NewClient(options),
+		Organizations:        organizations.NewClient(options),
+		Segments:             segments.NewClient(options),
+		Translations:         translations.NewClient(options),
+		Triggers:             triggers.NewClient(options),
+		Users:                users.NewClient(options),
+		Voice:                voice.NewClient(options),
+		options:              options,
+		baseURL:              options.BaseURL,
 		caller: internal.NewCaller(
 			&internal.CallerParams{
 				Client:      options.HTTPClient,

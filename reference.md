@@ -4,6 +4,22 @@
 <dl>
 <dd>
 
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
+at once. It returns the fields every capability shares rather than the whole Action;
+fetch one by its kind and reference ID for the rest.
+</dd>
+</dl>
+</dd>
+</dl>
+
 #### 🔌 Usage
 
 <dl>
@@ -143,6 +159,9 @@ client.Actions.CreateOrUpdate(
 
 <dl>
 <dd>
+
+Deprecated. Use `GET /v1/capabilities/ACTION/{referenceId}`, which returns this same
+object for an action and the equivalent for every other kind of capability.
 
 Get an action by its supplied ID
 </dd>
@@ -334,6 +353,9 @@ A null value clears it back to undeclared.
 
 <dl>
 <dd>
+
+Deprecated. Use `DELETE /v1/capabilities/ACTION/{referenceId}`, which deletes any kind of
+capability the same way.
 
 Delete an action
 </dd>
@@ -2158,6 +2180,476 @@ client.Assets.CommitUpload(
 </dl>
 </details>
 
+## Capabilities
+<details><summary><code>client.Capabilities.GetCapability(CapabilityType, ReferenceID) -> *mavenagigo.CapabilityResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Fetch one of an agent's capabilities by its type and reference ID.
+
+The response carries the same fields the capability's own API returns, so an Action read
+here and an Action read from the Actions API are the same object. Intelligent Fields are the
+one exception: their own API also returns the charters referencing the field, which this
+endpoint leaves out.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.GetCapabilityByTypeRequest{}
+client.Capabilities.GetCapability(
+        context.TODO(),
+        mavenagigo.CapabilityTypeAction.Ptr(),
+        "referenceId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**capabilityType:** `*mavenagigo.CapabilityType` — Which kind of capability to fetch.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**referenceID:** `string` — The capability's reference ID, unique within its type and app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` 
+
+The app that owns the capability. Defaults to the calling app, which is what an app
+managing its own capabilities wants.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` 
+
+The agent variant to read an intelligent field through, by reference ID.
+Required for an intelligent field on an agent with versioned intelligent fields; a
+request that omits it there is rejected with reason `VARIANT_REQUIRED`. Otherwise,
+if omitted, the agent's only variant is used.
+The other capability types aren't versioned and are the same in every variant,
+though a named variant must still exist.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The app that owns the agent variant. Defaults to the calling app.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Capabilities.PatchCapability(CapabilityType, ReferenceID, request) -> *mavenagigo.CapabilityResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Set whether the agent uses a capability, whatever kind it is. This is the publish and
+unpublish operation, and it works the same way for every capability type.
+
+Everything else about a capability -- its name, its description, and any settings
+particular to its kind -- is changed through that capability's own API.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.PatchCapabilityByTypeRequest{}
+client.Capabilities.PatchCapability(
+        context.TODO(),
+        mavenagigo.CapabilityTypeAction.Ptr(),
+        "referenceId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**capabilityType:** `*mavenagigo.CapabilityType` — Which kind of capability to update.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**referenceID:** `string` — The capability's reference ID, unique within its type and app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The app that owns the capability. Defaults to the calling app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` 
+
+The agent variant to stage an intelligent field's status change in, by reference ID.
+Required for an intelligent field on an agent with versioned intelligent fields; a
+request that omits it there is rejected with reason `VARIANT_REQUIRED`.
+The other capability types aren't versioned and are the same in every variant,
+though a named variant must still exist.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The app that owns the agent variant. Defaults to the calling app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*mavenagigo.CapabilityStatus` 
+
+Whether the agent uses this capability. Use ACTIVE to start and INACTIVE to stop;
+deleting is done through the delete endpoint, so DELETED is rejected here.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Capabilities.DeleteCapability(CapabilityType, ReferenceID) -> error</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Delete one of an agent's capabilities. The agent stops using it, and it stops being
+addressable: a later get, patch or delete of the same capability is a 404, and it no longer
+appears in search.
+
+With `variantReferenceId`, an intelligent field's delete is staged in that variant instead,
+and takes effect when the variant is committed. Until then the agent keeps using the field,
+and only a later patch or delete through the same variant is a 404.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.DeleteCapabilityByTypeRequest{}
+client.Capabilities.DeleteCapability(
+        context.TODO(),
+        mavenagigo.CapabilityTypeAction.Ptr(),
+        "referenceId",
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**capabilityType:** `*mavenagigo.CapabilityType` — Which kind of capability to delete.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**referenceID:** `string` — The capability's reference ID, unique within its type and app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appID:** `*string` — The app that owns the capability. Defaults to the calling app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` 
+
+The agent variant to stage an intelligent field's delete in, by reference ID.
+Required for an intelligent field on an agent with versioned intelligent fields; a
+request that omits it there is rejected with reason `VARIANT_REQUIRED`.
+The other capability types aren't versioned and are the same in every variant,
+though a named variant must still exist.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The app that owns the agent variant. Defaults to the calling app.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Capabilities.SearchCapabilities(request) -> *mavenagigo.CapabilitiesSearchResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Search an agent's capabilities of every kind at once, newest first by default.
+
+Returns the fields every capability shares. Fetch one by its type and reference ID for the
+settings particular to its kind.
+
+Sorting by `NAME` or `TYPE` instead orders ascending unless `sortDesc` says otherwise;
+`sortDesc` overrides the default either way.
+
+Deleted capabilities are never returned.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CapabilitiesSearchRequest{}
+client.Capabilities.SearchCapabilities(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**capabilityTypes:** `[]*mavenagigo.CapabilityType` — Only return capabilities of these kinds. Omit for every kind.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**statuses:** `[]*mavenagigo.CapabilityStatus` 
+
+Only return capabilities the agent does or does not use. Deleted capabilities are
+never searchable, so `DELETED` is rejected here rather than matching nothing.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**appIDs:** `[]string` — Only return capabilities owned by these apps.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**name:** `*string` — Only return capabilities whose name matches this text.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**description:** `*string` — Only return capabilities whose description matches this text.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**userInteractionRequired:** `*bool` 
+
+Only return capabilities that do or do not require user interaction. Only Actions
+can require it, so filtering on true returns Actions alone.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**sortID:** `*mavenagigo.CapabilitySortField` — The field to sort by. Defaults to when the capability was created.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantReferenceID:** `*string` 
+
+The agent variant to read intelligent field versions through. Required on an agent
+with versioned intelligent fields unless `capabilityTypes` excludes them; a
+request that omits it there is rejected with reason `VARIANT_REQUIRED`. Otherwise,
+if omitted, the agent's only variant is used.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**variantAppID:** `*string` — The app that owns the agent variant. Defaults to the calling app.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Charters
 <details><summary><code>client.Charters.CreateOrUpdate(request) -> *mavenagigo.CharterResponse</code></summary>
 <dl>
@@ -2830,6 +3322,100 @@ client.Charters.ListChildren(
 </dl>
 </details>
 
+## ConversationKickoffs
+<details><summary><code>client.ConversationKickoffs.CreateOrUpdate(request) -> *mavenagigo.ConversationKickoff</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Register or update one of the calling app's Conversation Kickoffs for this agent. An app may
+hold multiple independent installs, and any number of an agent's kickoffs may run at once.
+
+A newly installed kickoff starts inactive, so installing one never changes an agent's
+behaviour on its own. Updating an existing one rewrites its name and description and leaves
+its status alone, so re-registering on every install refresh never deactivates a kickoff
+that is already live. Use the capability APIs to activate it, and to read, search or delete
+it afterwards.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &mavenagigo.CreateConversationKickoffRequest{
+        KickoffID: &mavenagigo.EntityIDBase{
+            ReferenceID: "greet-returning-customer",
+        },
+        Name: "Greet returning customer",
+        Description: mavenagigo.String(
+            "Looks up the customer's open orders before the agent's first reply",
+        ),
+    }
+client.ConversationKickoffs.CreateOrUpdate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**kickoffID:** `*mavenagigo.EntityIDBase` 
+
+ID that uniquely identifies this Conversation Kickoff. Must be unique within the
+calling app.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**name:** `string` — The kickoff's display name, shown to whoever manages the agent.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**description:** `*string` — What the kickoff does, shown to whoever manages the agent.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Conversation
 <details><summary><code>client.Conversation.Initialize(request) -> *mavenagigo.InitializeConversationResponse</code></summary>
 <dl>
@@ -3089,6 +3675,7 @@ client.Conversation.Get(
 Wipes a conversation of all user data.
 The conversation ID will still exist and non-user specific data will still be retained.
 Attempts to modify or add messages to the conversation will throw an error.
+The conversation is sealed against further writes as soon as this call returns. A `202 Accepted` response means the wipe is still completing and will finish on its own.
 
 Simulation conversations will no longer be visible in search results nor metrics.
 Non-simulation conversations will remain visible - they can not be fully removed from the system.
@@ -5361,6 +5948,9 @@ request := &mavenagigo.IntelligentFieldRequest{
                 Label: mavenagigo.String(
                     "High Priority",
                 ),
+                Description: mavenagigo.String(
+                    "The customer is blocked or reports an outage.",
+                ),
             },
             &mavenagigo.EnumOption{
                 Value: "MEDIUM",
@@ -5420,6 +6010,10 @@ client.IntelligentFields.CreateOrUpdate(
 <dl>
 <dd>
 
+Deprecated. Use `GET /v1/capabilities/INTELLIGENT_FIELD/{referenceId}`, which reads any
+kind of capability the same way. It does not carry `referencingCharters`; search
+charters to find the ones that reference a capability.
+
 Get an intelligent field by its supplied ID
 </dd>
 </dl>
@@ -5472,7 +6066,7 @@ client.IntelligentFields.Get(
 <dl>
 <dd>
 
-**variantReferenceID:** `*string` — The agent variant reference ID to resolve the intelligent field's version through. If not provided, defaults to the agent's production variant.
+**variantReferenceID:** `*string` — The agent variant reference ID to resolve the intelligent field's version through. Required on an agent with versioned intelligent fields; a request that omits it there is rejected with reason `VARIANT_REQUIRED`. Otherwise, if omitted, the agent's only variant is used.
     
 </dd>
 </dl>
@@ -5573,7 +6167,7 @@ client.IntelligentFields.Patch(
 <dl>
 <dd>
 
-**status:** `*mavenagigo.IntelligentFieldStatus` 
+**status:** `*mavenagigo.CapabilityStatus` 
 
 The lifecycle state for whether this field is evaluated. Use ACTIVE to start
 evaluating the field and INACTIVE to stop.
@@ -5604,7 +6198,7 @@ cannot be deactivated.
 <dl>
 <dd>
 
-**variantID:** `*mavenagigo.EntityIDBase` — The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`.
+**variantID:** `*mavenagigo.EntityIDBase` — The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`. Required on an agent with versioned intelligent fields; a patch that omits it there is rejected with reason `VARIANT_REQUIRED`.
     
 </dd>
 </dl>
@@ -5635,6 +6229,9 @@ cannot be deactivated.
 
 <dl>
 <dd>
+
+Deprecated. Use `DELETE /v1/capabilities/INTELLIGENT_FIELD/{referenceId}`, which
+deletes any kind of capability the same way. That endpoint returns no body.
 
 Soft delete an intelligent field. Only INACTIVE fields can be deleted.
 
@@ -5694,7 +6291,7 @@ client.IntelligentFields.Delete(
 <dl>
 <dd>
 
-**variantReferenceID:** `*string` — The agent variant reference ID of the intelligent field to delete.
+**variantReferenceID:** `*string` — The agent variant to stage the delete in, by reference ID. Required on an agent with versioned intelligent fields; a delete that omits it there is rejected with reason `VARIANT_REQUIRED`.
     
 </dd>
 </dl>
@@ -6388,6 +6985,9 @@ all conversations.
 Create a new knowledge base version.
 
 If an existing version is in progress, then that version will be finalized in an error state.
+
+If another version create for the same knowledge base is still in progress, this request may
+return 503 with a `Retry-After` header. Nothing is changed in that case, so it is safe to retry.
 </dd>
 </dl>
 </dd>
@@ -7960,6 +8560,22 @@ client.Translations.Translate(
 <dl>
 <dd>
 
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
+at once. It returns the fields every capability shares rather than the whole Event
+Trigger; fetch one by its kind and reference ID for the rest.
+</dd>
+</dl>
+</dd>
+</dl>
+
 #### 🔌 Usage
 
 <dl>
@@ -8078,6 +8694,9 @@ client.Triggers.CreateOrUpdate(
 <dl>
 <dd>
 
+Deprecated. Use `GET /v1/capabilities/TRIGGER/{referenceId}`, which returns this same
+object for a trigger and the equivalent for every other kind of capability.
+
 Get an event trigger by its supplied ID
 </dd>
 </dl>
@@ -8136,6 +8755,9 @@ client.Triggers.Get(
 <dl>
 <dd>
 
+Deprecated. Use `DELETE /v1/capabilities/TRIGGER/{referenceId}`, which deletes any kind
+of capability the same way.
+
 Delete an event trigger
 </dd>
 </dl>
@@ -8193,6 +8815,9 @@ client.Triggers.Delete(
 
 <dl>
 <dd>
+
+Deprecated. Use `PATCH /v1/capabilities/TRIGGER/{referenceId}` with a `status`, which
+publishes and unpublishes any kind of capability the same way.
 
 Updates an event trigger. Only the enabled field is editable.
 </dd>

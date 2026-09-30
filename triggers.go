@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	big "math/big"
+	time "time"
 )
 
 var (
@@ -50,16 +51,10 @@ func (p *PartialUpdateRequest) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	eventTriggerBaseFieldName        = big.NewInt(1 << 0)
-	eventTriggerBaseFieldDescription = big.NewInt(1 << 1)
-	eventTriggerBaseFieldType        = big.NewInt(1 << 2)
+	eventTriggerBaseFieldType = big.NewInt(1 << 0)
 )
 
 type EventTriggerBase struct {
-	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
-	Name *string `json:"name,omitempty" url:"name,omitempty"`
-	// The description of what the event trigger does, shown in the Maven Dashboard
-	Description string `json:"description" url:"description"`
 	// The type of event trigger this app wishes to handle.
 	//
 	// Conversation triggers fire when a conversation is created, after each additional message, and upon deletion events.
@@ -75,20 +70,6 @@ type EventTriggerBase struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (e *EventTriggerBase) GetName() *string {
-	if e == nil {
-		return nil
-	}
-	return e.Name
-}
-
-func (e *EventTriggerBase) GetDescription() string {
-	if e == nil {
-		return ""
-	}
-	return e.Description
 }
 
 func (e *EventTriggerBase) GetType() EventTriggerType {
@@ -107,20 +88,6 @@ func (e *EventTriggerBase) require(field *big.Int) {
 		e.explicitFields = big.NewInt(0)
 	}
 	e.explicitFields.Or(e.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerBase) SetName(name *string) {
-	e.Name = name
-	e.require(eventTriggerBaseFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerBase) SetDescription(description string) {
-	e.Description = description
-	e.require(eventTriggerBaseFieldDescription)
 }
 
 // SetType sets the Type field and marks it as non-optional;
@@ -170,17 +137,13 @@ func (e *EventTriggerBase) String() string {
 }
 
 var (
-	eventTriggerRequestFieldName        = big.NewInt(1 << 0)
-	eventTriggerRequestFieldDescription = big.NewInt(1 << 1)
-	eventTriggerRequestFieldType        = big.NewInt(1 << 2)
+	eventTriggerRequestFieldType        = big.NewInt(1 << 0)
+	eventTriggerRequestFieldName        = big.NewInt(1 << 1)
+	eventTriggerRequestFieldDescription = big.NewInt(1 << 2)
 	eventTriggerRequestFieldTriggerID   = big.NewInt(1 << 3)
 )
 
 type EventTriggerRequest struct {
-	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
-	Name *string `json:"name,omitempty" url:"name,omitempty"`
-	// The description of what the event trigger does, shown in the Maven Dashboard
-	Description string `json:"description" url:"description"`
 	// The type of event trigger this app wishes to handle.
 	//
 	// Conversation triggers fire when a conversation is created, after each additional message, and upon deletion events.
@@ -190,6 +153,10 @@ type EventTriggerRequest struct {
 	//
 	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
+	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// The description of what the event trigger does, shown in the Maven Dashboard
+	Description string `json:"description" url:"description"`
 	// ID that uniquely identifies this event trigger
 	TriggerID *EntityIDBase `json:"triggerId" url:"triggerId"`
 
@@ -198,6 +165,13 @@ type EventTriggerRequest struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (e *EventTriggerRequest) GetType() EventTriggerType {
+	if e == nil {
+		return ""
+	}
+	return e.Type
 }
 
 func (e *EventTriggerRequest) GetName() *string {
@@ -212,13 +186,6 @@ func (e *EventTriggerRequest) GetDescription() string {
 		return ""
 	}
 	return e.Description
-}
-
-func (e *EventTriggerRequest) GetType() EventTriggerType {
-	if e == nil {
-		return ""
-	}
-	return e.Type
 }
 
 func (e *EventTriggerRequest) GetTriggerID() *EntityIDBase {
@@ -239,6 +206,13 @@ func (e *EventTriggerRequest) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerRequest) SetType(type_ EventTriggerType) {
+	e.Type = type_
+	e.require(eventTriggerRequestFieldType)
+}
+
 // SetName sets the Name field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (e *EventTriggerRequest) SetName(name *string) {
@@ -251,13 +225,6 @@ func (e *EventTriggerRequest) SetName(name *string) {
 func (e *EventTriggerRequest) SetDescription(description string) {
 	e.Description = description
 	e.require(eventTriggerRequestFieldDescription)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerRequest) SetType(type_ EventTriggerType) {
-	e.Type = type_
-	e.require(eventTriggerRequestFieldType)
 }
 
 // SetTriggerID sets the TriggerID field and marks it as non-optional;
@@ -307,18 +274,17 @@ func (e *EventTriggerRequest) String() string {
 }
 
 var (
-	eventTriggerResponseFieldName        = big.NewInt(1 << 0)
-	eventTriggerResponseFieldDescription = big.NewInt(1 << 1)
-	eventTriggerResponseFieldType        = big.NewInt(1 << 2)
-	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 3)
-	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 4)
+	eventTriggerResponseFieldType        = big.NewInt(1 << 0)
+	eventTriggerResponseFieldName        = big.NewInt(1 << 1)
+	eventTriggerResponseFieldDescription = big.NewInt(1 << 2)
+	eventTriggerResponseFieldCreatedAt   = big.NewInt(1 << 3)
+	eventTriggerResponseFieldUpdatedAt   = big.NewInt(1 << 4)
+	eventTriggerResponseFieldStatus      = big.NewInt(1 << 5)
+	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 6)
+	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 7)
 )
 
 type EventTriggerResponse struct {
-	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
-	Name *string `json:"name,omitempty" url:"name,omitempty"`
-	// The description of what the event trigger does, shown in the Maven Dashboard
-	Description string `json:"description" url:"description"`
 	// The type of event trigger this app wishes to handle.
 	//
 	// Conversation triggers fire when a conversation is created, after each additional message, and upon deletion events.
@@ -328,8 +294,22 @@ type EventTriggerResponse struct {
 	//
 	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
+	// The capability's display name, shown to whoever manages the agent. A trigger registered
+	// without one is named after the app that registered it and the event it fires on.
+	Name string `json:"name" url:"name"`
+	// What the capability does. Shown to whoever manages the agent, and for the types the LLM
+	// can choose between, used to decide when the capability applies.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// When the capability was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// When the capability was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// Whether the agent uses this capability, and whether it still exists.
+	Status CapabilityStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this event trigger
 	TriggerID *EntityID `json:"triggerId" url:"triggerId"`
+	// Deprecated. Superseded by `status`, which says the same thing for every capability type.
+	//
 	// Whether this trigger will be called by Maven.
 	Enabled bool `json:"enabled" url:"enabled"`
 
@@ -340,25 +320,46 @@ type EventTriggerResponse struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *EventTriggerResponse) GetName() *string {
-	if e == nil {
-		return nil
-	}
-	return e.Name
-}
-
-func (e *EventTriggerResponse) GetDescription() string {
-	if e == nil {
-		return ""
-	}
-	return e.Description
-}
-
 func (e *EventTriggerResponse) GetType() EventTriggerType {
 	if e == nil {
 		return ""
 	}
 	return e.Type
+}
+
+func (e *EventTriggerResponse) GetName() string {
+	if e == nil {
+		return ""
+	}
+	return e.Name
+}
+
+func (e *EventTriggerResponse) GetDescription() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Description
+}
+
+func (e *EventTriggerResponse) GetCreatedAt() time.Time {
+	if e == nil {
+		return time.Time{}
+	}
+	return e.CreatedAt
+}
+
+func (e *EventTriggerResponse) GetUpdatedAt() time.Time {
+	if e == nil {
+		return time.Time{}
+	}
+	return e.UpdatedAt
+}
+
+func (e *EventTriggerResponse) GetStatus() CapabilityStatus {
+	if e == nil {
+		return ""
+	}
+	return e.Status
 }
 
 func (e *EventTriggerResponse) GetTriggerID() *EntityID {
@@ -386,25 +387,46 @@ func (e *EventTriggerResponse) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerResponse) SetType(type_ EventTriggerType) {
+	e.Type = type_
+	e.require(eventTriggerResponseFieldType)
+}
+
 // SetName sets the Name field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerResponse) SetName(name *string) {
+func (e *EventTriggerResponse) SetName(name string) {
 	e.Name = name
 	e.require(eventTriggerResponseFieldName)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerResponse) SetDescription(description string) {
+func (e *EventTriggerResponse) SetDescription(description *string) {
 	e.Description = description
 	e.require(eventTriggerResponseFieldDescription)
 }
 
-// SetType sets the Type field and marks it as non-optional;
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *EventTriggerResponse) SetType(type_ EventTriggerType) {
-	e.Type = type_
-	e.require(eventTriggerResponseFieldType)
+func (e *EventTriggerResponse) SetCreatedAt(createdAt time.Time) {
+	e.CreatedAt = createdAt
+	e.require(eventTriggerResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerResponse) SetUpdatedAt(updatedAt time.Time) {
+	e.UpdatedAt = updatedAt
+	e.require(eventTriggerResponseFieldUpdatedAt)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerResponse) SetStatus(status CapabilityStatus) {
+	e.Status = status
+	e.require(eventTriggerResponseFieldStatus)
 }
 
 // SetTriggerID sets the TriggerID field and marks it as non-optional;
@@ -422,12 +444,20 @@ func (e *EventTriggerResponse) SetEnabled(enabled bool) {
 }
 
 func (e *EventTriggerResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler EventTriggerResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed EventTriggerResponse
+	var unmarshaler = struct {
+		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
+	}{
+		embed: embed(*e),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*e = EventTriggerResponse(value)
+	*e = EventTriggerResponse(unmarshaler.embed)
+	e.CreatedAt = unmarshaler.CreatedAt.Time()
+	e.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *e)
 	if err != nil {
 		return err
@@ -441,8 +471,12 @@ func (e *EventTriggerResponse) MarshalJSON() ([]byte, error) {
 	type embed EventTriggerResponse
 	var marshaler = struct {
 		embed
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
-		embed: embed(*e),
+		embed:     embed(*e),
+		CreatedAt: internal.NewDateTime(e.CreatedAt),
+		UpdatedAt: internal.NewDateTime(e.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
 	return json.Marshal(explicitMarshaler)

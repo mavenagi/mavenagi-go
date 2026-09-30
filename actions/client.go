@@ -39,6 +39,9 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
+// Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
+// at once. It returns the fields every capability shares rather than the whole Action;
+// fetch one by its kind and reference ID for the rest.
 func (c *Client) Search(
 	ctx context.Context,
 	request *mavenagigo.ActionsSearchRequest,
@@ -72,6 +75,9 @@ func (c *Client) CreateOrUpdate(
 	return response.Body, nil
 }
 
+// Deprecated. Use `GET /v1/capabilities/ACTION/{referenceId}`, which returns this same
+// object for an action and the equivalent for every other kind of capability.
+//
 // Get an action by its supplied ID
 func (c *Client) Get(
 	ctx context.Context,
@@ -115,6 +121,9 @@ func (c *Client) Patch(
 	return response.Body, nil
 }
 
+// Deprecated. Use `DELETE /v1/capabilities/ACTION/{referenceId}`, which deletes any kind of
+// capability the same way.
+//
 // Delete an action
 func (c *Client) Delete(
 	ctx context.Context,

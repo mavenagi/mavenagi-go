@@ -19,7 +19,7 @@ var (
 type IntelligentFieldDeleteRequest struct {
 	// The App ID of the intelligent field to delete. If not provided, the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
-	// The agent variant reference ID of the intelligent field to delete.
+	// The agent variant to stage the delete in, by reference ID. Required on an agent with versioned intelligent fields; a delete that omits it there is rejected with reason `VARIANT_REQUIRED`.
 	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
 	// The App ID of the agent variant reference for the intelligent field to delete. If not provided, the ID of the calling app will be used.
 	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
@@ -65,7 +65,7 @@ var (
 type IntelligentFieldGetRequest struct {
 	// The App ID of the intelligent field to get. If not provided the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
-	// The agent variant reference ID to resolve the intelligent field's version through. If not provided, defaults to the agent's production variant.
+	// The agent variant reference ID to resolve the intelligent field's version through. Required on an agent with versioned intelligent fields; a request that omits it there is rejected with reason `VARIANT_REQUIRED`. Otherwise, if omitted, the agent's only variant is used.
 	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
 	// The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
 	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
@@ -123,12 +123,12 @@ type IntelligentFieldPatchRequest struct {
 	// Each agent has a limit on how many fields may be ACTIVE at once; activating a
 	// field beyond that limit is rejected. A field referenced by an active precondition
 	// cannot be deactivated.
-	Status *IntelligentFieldStatus `json:"status,omitempty" url:"-"`
+	Status *CapabilityStatus `json:"status,omitempty" url:"-"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"-"`
 	// Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"-"`
-	// The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`.
+	// The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`. Required on an agent with versioned intelligent fields; a patch that omits it there is rejected with reason `VARIANT_REQUIRED`.
 	VariantID *EntityIDBase `json:"variantId,omitempty" url:"-"`
 	// The App ID of the agent variant named by `variantId`. If not provided, the ID of the calling app will be used — name the owning app to patch in a variant the caller does not own, as the platform's own seeded variants are.
 	VariantAppID *string `json:"variantAppId,omitempty" url:"-"`
@@ -160,7 +160,7 @@ func (i *IntelligentFieldPatchRequest) SetDefinition(definition *string) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldPatchRequest) SetStatus(status *IntelligentFieldStatus) {
+func (i *IntelligentFieldPatchRequest) SetStatus(status *CapabilityStatus) {
 	i.Status = status
 	i.require(intelligentFieldPatchRequestFieldStatus)
 }
@@ -197,8 +197,9 @@ func (i *IntelligentFieldPatchRequest) SetVariantAppID(variantAppID *string) {
 // MULTI_SELECT to constrain a list of choices, or with STRING/MULTILINE/NUMBER to make
 // the field a single select.
 var (
-	enumOptionFieldValue = big.NewInt(1 << 0)
-	enumOptionFieldLabel = big.NewInt(1 << 1)
+	enumOptionFieldValue       = big.NewInt(1 << 0)
+	enumOptionFieldLabel       = big.NewInt(1 << 1)
+	enumOptionFieldDescription = big.NewInt(1 << 2)
 )
 
 type EnumOption struct {
@@ -206,6 +207,9 @@ type EnumOption struct {
 	Value string `json:"value" url:"value"`
 	// Display label for the option
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
+	// Instructions that tell the LLM when to pick this option. Up to 1200 characters. On a
+	// patch, an option sent without a description has its description cleared.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -226,6 +230,13 @@ func (e *EnumOption) GetLabel() *string {
 		return nil
 	}
 	return e.Label
+}
+
+func (e *EnumOption) GetDescription() *string {
+	if e == nil {
+		return nil
+	}
+	return e.Description
 }
 
 func (e *EnumOption) GetExtraProperties() map[string]interface{} {
@@ -251,6 +262,13 @@ func (e *EnumOption) SetValue(value string) {
 func (e *EnumOption) SetLabel(label *string) {
 	e.Label = label
 	e.require(enumOptionFieldLabel)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EnumOption) SetDescription(description *string) {
+	e.Description = description
+	e.require(enumOptionFieldDescription)
 }
 
 func (e *EnumOption) UnmarshalJSON(data []byte) error {
@@ -293,20 +311,14 @@ func (e *EnumOption) String() string {
 }
 
 var (
-	intelligentFieldBaseFieldName           = big.NewInt(1 << 0)
-	intelligentFieldBaseFieldDescription    = big.NewInt(1 << 1)
-	intelligentFieldBaseFieldValidationType = big.NewInt(1 << 2)
-	intelligentFieldBaseFieldDefinition     = big.NewInt(1 << 3)
-	intelligentFieldBaseFieldEnumOptions    = big.NewInt(1 << 4)
-	intelligentFieldBaseFieldEntityType     = big.NewInt(1 << 5)
-	intelligentFieldBaseFieldVariantID      = big.NewInt(1 << 6)
+	intelligentFieldBaseFieldValidationType = big.NewInt(1 << 0)
+	intelligentFieldBaseFieldDefinition     = big.NewInt(1 << 1)
+	intelligentFieldBaseFieldEnumOptions    = big.NewInt(1 << 2)
+	intelligentFieldBaseFieldEntityType     = big.NewInt(1 << 3)
+	intelligentFieldBaseFieldVariantID      = big.NewInt(1 << 4)
 )
 
 type IntelligentFieldBase struct {
-	// Display name for the intelligent field
-	Name string `json:"name" url:"name"`
-	// A plain text description of the intelligent field.
-	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The type of value this field holds. It constrains the schema the LLM is asked to fill
 	// and the JSON type of the computed `value`.
 	//
@@ -332,20 +344,6 @@ type IntelligentFieldBase struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldBase) GetName() string {
-	if i == nil {
-		return ""
-	}
-	return i.Name
-}
-
-func (i *IntelligentFieldBase) GetDescription() *string {
-	if i == nil {
-		return nil
-	}
-	return i.Description
 }
 
 func (i *IntelligentFieldBase) GetValidationType() IntelligentFieldType {
@@ -392,20 +390,6 @@ func (i *IntelligentFieldBase) require(field *big.Int) {
 		i.explicitFields = big.NewInt(0)
 	}
 	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldBase) SetName(name string) {
-	i.Name = name
-	i.require(intelligentFieldBaseFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldBase) SetDescription(description *string) {
-	i.Description = description
-	i.require(intelligentFieldBaseFieldDescription)
 }
 
 // SetValidationType sets the ValidationType field and marks it as non-optional;
@@ -484,18 +468,12 @@ func (i *IntelligentFieldBase) String() string {
 
 // The content of an intelligent field -- what it is called, and what the LLM should produce for it.
 var (
-	intelligentFieldCoreFieldName           = big.NewInt(1 << 0)
-	intelligentFieldCoreFieldDescription    = big.NewInt(1 << 1)
-	intelligentFieldCoreFieldValidationType = big.NewInt(1 << 2)
-	intelligentFieldCoreFieldDefinition     = big.NewInt(1 << 3)
-	intelligentFieldCoreFieldEnumOptions    = big.NewInt(1 << 4)
+	intelligentFieldCoreFieldValidationType = big.NewInt(1 << 0)
+	intelligentFieldCoreFieldDefinition     = big.NewInt(1 << 1)
+	intelligentFieldCoreFieldEnumOptions    = big.NewInt(1 << 2)
 )
 
 type IntelligentFieldCore struct {
-	// Display name for the intelligent field
-	Name string `json:"name" url:"name"`
-	// A plain text description of the intelligent field.
-	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The type of value this field holds. It constrains the schema the LLM is asked to fill
 	// and the JSON type of the computed `value`.
 	//
@@ -517,20 +495,6 @@ type IntelligentFieldCore struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldCore) GetName() string {
-	if i == nil {
-		return ""
-	}
-	return i.Name
-}
-
-func (i *IntelligentFieldCore) GetDescription() *string {
-	if i == nil {
-		return nil
-	}
-	return i.Description
 }
 
 func (i *IntelligentFieldCore) GetValidationType() IntelligentFieldType {
@@ -563,20 +527,6 @@ func (i *IntelligentFieldCore) require(field *big.Int) {
 		i.explicitFields = big.NewInt(0)
 	}
 	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldCore) SetName(name string) {
-	i.Name = name
-	i.require(intelligentFieldCoreFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldCore) SetDescription(description *string) {
-	i.Description = description
-	i.require(intelligentFieldCoreFieldDescription)
 }
 
 // SetValidationType sets the ValidationType field and marks it as non-optional;
@@ -640,25 +590,21 @@ func (i *IntelligentFieldCore) String() string {
 }
 
 var (
-	intelligentFieldDetailResponseFieldName                = big.NewInt(1 << 0)
-	intelligentFieldDetailResponseFieldDescription         = big.NewInt(1 << 1)
-	intelligentFieldDetailResponseFieldValidationType      = big.NewInt(1 << 2)
-	intelligentFieldDetailResponseFieldDefinition          = big.NewInt(1 << 3)
-	intelligentFieldDetailResponseFieldEnumOptions         = big.NewInt(1 << 4)
-	intelligentFieldDetailResponseFieldEntityType          = big.NewInt(1 << 5)
-	intelligentFieldDetailResponseFieldVariantID           = big.NewInt(1 << 6)
-	intelligentFieldDetailResponseFieldFieldID             = big.NewInt(1 << 7)
-	intelligentFieldDetailResponseFieldStatus              = big.NewInt(1 << 8)
-	intelligentFieldDetailResponseFieldCreatedAt           = big.NewInt(1 << 9)
-	intelligentFieldDetailResponseFieldUpdatedAt           = big.NewInt(1 << 10)
+	intelligentFieldDetailResponseFieldValidationType      = big.NewInt(1 << 0)
+	intelligentFieldDetailResponseFieldDefinition          = big.NewInt(1 << 1)
+	intelligentFieldDetailResponseFieldEnumOptions         = big.NewInt(1 << 2)
+	intelligentFieldDetailResponseFieldEntityType          = big.NewInt(1 << 3)
+	intelligentFieldDetailResponseFieldVariantID           = big.NewInt(1 << 4)
+	intelligentFieldDetailResponseFieldName                = big.NewInt(1 << 5)
+	intelligentFieldDetailResponseFieldDescription         = big.NewInt(1 << 6)
+	intelligentFieldDetailResponseFieldCreatedAt           = big.NewInt(1 << 7)
+	intelligentFieldDetailResponseFieldUpdatedAt           = big.NewInt(1 << 8)
+	intelligentFieldDetailResponseFieldStatus              = big.NewInt(1 << 9)
+	intelligentFieldDetailResponseFieldFieldID             = big.NewInt(1 << 10)
 	intelligentFieldDetailResponseFieldReferencingCharters = big.NewInt(1 << 11)
 )
 
 type IntelligentFieldDetailResponse struct {
-	// Display name for the intelligent field
-	Name string `json:"name" url:"name"`
-	// A plain text description of the intelligent field.
-	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The type of value this field holds. It constrains the schema the LLM is asked to fill
 	// and the JSON type of the computed `value`.
 	//
@@ -678,14 +624,20 @@ type IntelligentFieldDetailResponse struct {
 	EntityType EntityType `json:"entityType" url:"entityType"`
 	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
+	// The capability's display name, shown to whoever manages the agent. A trigger registered
+	// without one is named after the app that registered it and the event it fires on.
+	Name string `json:"name" url:"name"`
+	// What the capability does. Shown to whoever manages the agent, and for the types the LLM
+	// can choose between, used to decide when the capability applies.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// When the capability was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// When the capability was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// Whether the agent uses this capability, and whether it still exists.
+	Status CapabilityStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this intelligent field
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
-	// Lifecycle state for whether this field is evaluated by workflows. Defaults to INACTIVE on creation. Use PATCH to activate.
-	Status IntelligentFieldStatus `json:"status" url:"status"`
-	// The date and time the intelligent field was created
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The date and time the intelligent field was last updated
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// Charters whose precondition references this intelligent field. A field referenced by
 	// an active precondition cannot be deactivated.
 	ReferencingCharters []*CharterSummary `json:"referencingCharters,omitempty" url:"referencingCharters,omitempty"`
@@ -695,20 +647,6 @@ type IntelligentFieldDetailResponse struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldDetailResponse) GetName() string {
-	if i == nil {
-		return ""
-	}
-	return i.Name
-}
-
-func (i *IntelligentFieldDetailResponse) GetDescription() *string {
-	if i == nil {
-		return nil
-	}
-	return i.Description
 }
 
 func (i *IntelligentFieldDetailResponse) GetValidationType() IntelligentFieldType {
@@ -746,32 +684,46 @@ func (i *IntelligentFieldDetailResponse) GetVariantID() *EntityIDWithoutAgent {
 	return i.VariantID
 }
 
-func (i *IntelligentFieldDetailResponse) GetFieldID() *EntityID {
+func (i *IntelligentFieldDetailResponse) GetName() string {
+	if i == nil {
+		return ""
+	}
+	return i.Name
+}
+
+func (i *IntelligentFieldDetailResponse) GetDescription() *string {
 	if i == nil {
 		return nil
 	}
-	return i.FieldID
+	return i.Description
 }
 
-func (i *IntelligentFieldDetailResponse) GetStatus() IntelligentFieldStatus {
+func (i *IntelligentFieldDetailResponse) GetCreatedAt() time.Time {
+	if i == nil {
+		return time.Time{}
+	}
+	return i.CreatedAt
+}
+
+func (i *IntelligentFieldDetailResponse) GetUpdatedAt() time.Time {
+	if i == nil {
+		return time.Time{}
+	}
+	return i.UpdatedAt
+}
+
+func (i *IntelligentFieldDetailResponse) GetStatus() CapabilityStatus {
 	if i == nil {
 		return ""
 	}
 	return i.Status
 }
 
-func (i *IntelligentFieldDetailResponse) GetCreatedAt() *time.Time {
+func (i *IntelligentFieldDetailResponse) GetFieldID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.CreatedAt
-}
-
-func (i *IntelligentFieldDetailResponse) GetUpdatedAt() *time.Time {
-	if i == nil {
-		return nil
-	}
-	return i.UpdatedAt
+	return i.FieldID
 }
 
 func (i *IntelligentFieldDetailResponse) GetReferencingCharters() []*CharterSummary {
@@ -790,20 +742,6 @@ func (i *IntelligentFieldDetailResponse) require(field *big.Int) {
 		i.explicitFields = big.NewInt(0)
 	}
 	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldDetailResponse) SetName(name string) {
-	i.Name = name
-	i.require(intelligentFieldDetailResponseFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldDetailResponse) SetDescription(description *string) {
-	i.Description = description
-	i.require(intelligentFieldDetailResponseFieldDescription)
 }
 
 // SetValidationType sets the ValidationType field and marks it as non-optional;
@@ -841,32 +779,46 @@ func (i *IntelligentFieldDetailResponse) SetVariantID(variantID *EntityIDWithout
 	i.require(intelligentFieldDetailResponseFieldVariantID)
 }
 
-// SetFieldID sets the FieldID field and marks it as non-optional;
+// SetName sets the Name field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldDetailResponse) SetFieldID(fieldID *EntityID) {
-	i.FieldID = fieldID
-	i.require(intelligentFieldDetailResponseFieldFieldID)
+func (i *IntelligentFieldDetailResponse) SetName(name string) {
+	i.Name = name
+	i.require(intelligentFieldDetailResponseFieldName)
 }
 
-// SetStatus sets the Status field and marks it as non-optional;
+// SetDescription sets the Description field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldDetailResponse) SetStatus(status IntelligentFieldStatus) {
-	i.Status = status
-	i.require(intelligentFieldDetailResponseFieldStatus)
+func (i *IntelligentFieldDetailResponse) SetDescription(description *string) {
+	i.Description = description
+	i.require(intelligentFieldDetailResponseFieldDescription)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldDetailResponse) SetCreatedAt(createdAt *time.Time) {
+func (i *IntelligentFieldDetailResponse) SetCreatedAt(createdAt time.Time) {
 	i.CreatedAt = createdAt
 	i.require(intelligentFieldDetailResponseFieldCreatedAt)
 }
 
 // SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldDetailResponse) SetUpdatedAt(updatedAt *time.Time) {
+func (i *IntelligentFieldDetailResponse) SetUpdatedAt(updatedAt time.Time) {
 	i.UpdatedAt = updatedAt
 	i.require(intelligentFieldDetailResponseFieldUpdatedAt)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldDetailResponse) SetStatus(status CapabilityStatus) {
+	i.Status = status
+	i.require(intelligentFieldDetailResponseFieldStatus)
+}
+
+// SetFieldID sets the FieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldDetailResponse) SetFieldID(fieldID *EntityID) {
+	i.FieldID = fieldID
+	i.require(intelligentFieldDetailResponseFieldFieldID)
 }
 
 // SetReferencingCharters sets the ReferencingCharters field and marks it as non-optional;
@@ -880,8 +832,8 @@ func (i *IntelligentFieldDetailResponse) UnmarshalJSON(data []byte) error {
 	type embed IntelligentFieldDetailResponse
 	var unmarshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed: embed(*i),
 	}
@@ -889,8 +841,8 @@ func (i *IntelligentFieldDetailResponse) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*i = IntelligentFieldDetailResponse(unmarshaler.embed)
-	i.CreatedAt = unmarshaler.CreatedAt.TimePtr()
-	i.UpdatedAt = unmarshaler.UpdatedAt.TimePtr()
+	i.CreatedAt = unmarshaler.CreatedAt.Time()
+	i.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *i)
 	if err != nil {
 		return err
@@ -904,12 +856,12 @@ func (i *IntelligentFieldDetailResponse) MarshalJSON() ([]byte, error) {
 	type embed IntelligentFieldDetailResponse
 	var marshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed:     embed(*i),
-		CreatedAt: internal.NewOptionalDateTime(i.CreatedAt),
-		UpdatedAt: internal.NewOptionalDateTime(i.UpdatedAt),
+		CreatedAt: internal.NewDateTime(i.CreatedAt),
+		UpdatedAt: internal.NewDateTime(i.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -928,21 +880,17 @@ func (i *IntelligentFieldDetailResponse) String() string {
 }
 
 var (
-	intelligentFieldRequestFieldName           = big.NewInt(1 << 0)
-	intelligentFieldRequestFieldDescription    = big.NewInt(1 << 1)
-	intelligentFieldRequestFieldValidationType = big.NewInt(1 << 2)
-	intelligentFieldRequestFieldDefinition     = big.NewInt(1 << 3)
-	intelligentFieldRequestFieldEnumOptions    = big.NewInt(1 << 4)
-	intelligentFieldRequestFieldEntityType     = big.NewInt(1 << 5)
-	intelligentFieldRequestFieldVariantID      = big.NewInt(1 << 6)
+	intelligentFieldRequestFieldValidationType = big.NewInt(1 << 0)
+	intelligentFieldRequestFieldDefinition     = big.NewInt(1 << 1)
+	intelligentFieldRequestFieldEnumOptions    = big.NewInt(1 << 2)
+	intelligentFieldRequestFieldEntityType     = big.NewInt(1 << 3)
+	intelligentFieldRequestFieldVariantID      = big.NewInt(1 << 4)
+	intelligentFieldRequestFieldName           = big.NewInt(1 << 5)
+	intelligentFieldRequestFieldDescription    = big.NewInt(1 << 6)
 	intelligentFieldRequestFieldFieldID        = big.NewInt(1 << 7)
 )
 
 type IntelligentFieldRequest struct {
-	// Display name for the intelligent field
-	Name string `json:"name" url:"name"`
-	// A plain text description of the intelligent field.
-	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The type of value this field holds. It constrains the schema the LLM is asked to fill
 	// and the JSON type of the computed `value`.
 	//
@@ -962,6 +910,10 @@ type IntelligentFieldRequest struct {
 	EntityType EntityType `json:"entityType" url:"entityType"`
 	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
+	// Display name for the intelligent field
+	Name string `json:"name" url:"name"`
+	// A plain text description of the intelligent field.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// ID that uniquely identifies this intelligent field. `referenceId` is supplied by the
 	// caller and is how the field is addressed on every other endpoint.
 	FieldID *EntityIDBase `json:"fieldId" url:"fieldId"`
@@ -971,20 +923,6 @@ type IntelligentFieldRequest struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldRequest) GetName() string {
-	if i == nil {
-		return ""
-	}
-	return i.Name
-}
-
-func (i *IntelligentFieldRequest) GetDescription() *string {
-	if i == nil {
-		return nil
-	}
-	return i.Description
 }
 
 func (i *IntelligentFieldRequest) GetValidationType() IntelligentFieldType {
@@ -1022,6 +960,20 @@ func (i *IntelligentFieldRequest) GetVariantID() *EntityIDWithoutAgent {
 	return i.VariantID
 }
 
+func (i *IntelligentFieldRequest) GetName() string {
+	if i == nil {
+		return ""
+	}
+	return i.Name
+}
+
+func (i *IntelligentFieldRequest) GetDescription() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Description
+}
+
 func (i *IntelligentFieldRequest) GetFieldID() *EntityIDBase {
 	if i == nil {
 		return nil
@@ -1038,20 +990,6 @@ func (i *IntelligentFieldRequest) require(field *big.Int) {
 		i.explicitFields = big.NewInt(0)
 	}
 	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldRequest) SetName(name string) {
-	i.Name = name
-	i.require(intelligentFieldRequestFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldRequest) SetDescription(description *string) {
-	i.Description = description
-	i.require(intelligentFieldRequestFieldDescription)
 }
 
 // SetValidationType sets the ValidationType field and marks it as non-optional;
@@ -1087,6 +1025,20 @@ func (i *IntelligentFieldRequest) SetEntityType(entityType EntityType) {
 func (i *IntelligentFieldRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
 	i.VariantID = variantID
 	i.require(intelligentFieldRequestFieldVariantID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldRequest) SetName(name string) {
+	i.Name = name
+	i.require(intelligentFieldRequestFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldRequest) SetDescription(description *string) {
+	i.Description = description
+	i.require(intelligentFieldRequestFieldDescription)
 }
 
 // SetFieldID sets the FieldID field and marks it as non-optional;
@@ -1136,24 +1088,20 @@ func (i *IntelligentFieldRequest) String() string {
 }
 
 var (
-	intelligentFieldResponseFieldName           = big.NewInt(1 << 0)
-	intelligentFieldResponseFieldDescription    = big.NewInt(1 << 1)
-	intelligentFieldResponseFieldValidationType = big.NewInt(1 << 2)
-	intelligentFieldResponseFieldDefinition     = big.NewInt(1 << 3)
-	intelligentFieldResponseFieldEnumOptions    = big.NewInt(1 << 4)
-	intelligentFieldResponseFieldEntityType     = big.NewInt(1 << 5)
-	intelligentFieldResponseFieldVariantID      = big.NewInt(1 << 6)
-	intelligentFieldResponseFieldFieldID        = big.NewInt(1 << 7)
-	intelligentFieldResponseFieldStatus         = big.NewInt(1 << 8)
-	intelligentFieldResponseFieldCreatedAt      = big.NewInt(1 << 9)
-	intelligentFieldResponseFieldUpdatedAt      = big.NewInt(1 << 10)
+	intelligentFieldResponseFieldValidationType = big.NewInt(1 << 0)
+	intelligentFieldResponseFieldDefinition     = big.NewInt(1 << 1)
+	intelligentFieldResponseFieldEnumOptions    = big.NewInt(1 << 2)
+	intelligentFieldResponseFieldEntityType     = big.NewInt(1 << 3)
+	intelligentFieldResponseFieldVariantID      = big.NewInt(1 << 4)
+	intelligentFieldResponseFieldName           = big.NewInt(1 << 5)
+	intelligentFieldResponseFieldDescription    = big.NewInt(1 << 6)
+	intelligentFieldResponseFieldCreatedAt      = big.NewInt(1 << 7)
+	intelligentFieldResponseFieldUpdatedAt      = big.NewInt(1 << 8)
+	intelligentFieldResponseFieldStatus         = big.NewInt(1 << 9)
+	intelligentFieldResponseFieldFieldID        = big.NewInt(1 << 10)
 )
 
 type IntelligentFieldResponse struct {
-	// Display name for the intelligent field
-	Name string `json:"name" url:"name"`
-	// A plain text description of the intelligent field.
-	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// The type of value this field holds. It constrains the schema the LLM is asked to fill
 	// and the JSON type of the computed `value`.
 	//
@@ -1173,34 +1121,26 @@ type IntelligentFieldResponse struct {
 	EntityType EntityType `json:"entityType" url:"entityType"`
 	// ID of the agent variant this field belongs to, if applicable
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
+	// The capability's display name, shown to whoever manages the agent. A trigger registered
+	// without one is named after the app that registered it and the event it fires on.
+	Name string `json:"name" url:"name"`
+	// What the capability does. Shown to whoever manages the agent, and for the types the LLM
+	// can choose between, used to decide when the capability applies.
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
+	// When the capability was created.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// When the capability was last modified.
+	UpdatedAt time.Time `json:"updatedAt" url:"updatedAt"`
+	// Whether the agent uses this capability, and whether it still exists.
+	Status CapabilityStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this intelligent field
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
-	// Lifecycle state for whether this field is evaluated by workflows. Defaults to INACTIVE on creation. Use PATCH to activate.
-	Status IntelligentFieldStatus `json:"status" url:"status"`
-	// The date and time the intelligent field was created
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The date and time the intelligent field was last updated
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldResponse) GetName() string {
-	if i == nil {
-		return ""
-	}
-	return i.Name
-}
-
-func (i *IntelligentFieldResponse) GetDescription() *string {
-	if i == nil {
-		return nil
-	}
-	return i.Description
 }
 
 func (i *IntelligentFieldResponse) GetValidationType() IntelligentFieldType {
@@ -1238,32 +1178,46 @@ func (i *IntelligentFieldResponse) GetVariantID() *EntityIDWithoutAgent {
 	return i.VariantID
 }
 
-func (i *IntelligentFieldResponse) GetFieldID() *EntityID {
+func (i *IntelligentFieldResponse) GetName() string {
+	if i == nil {
+		return ""
+	}
+	return i.Name
+}
+
+func (i *IntelligentFieldResponse) GetDescription() *string {
 	if i == nil {
 		return nil
 	}
-	return i.FieldID
+	return i.Description
 }
 
-func (i *IntelligentFieldResponse) GetStatus() IntelligentFieldStatus {
+func (i *IntelligentFieldResponse) GetCreatedAt() time.Time {
+	if i == nil {
+		return time.Time{}
+	}
+	return i.CreatedAt
+}
+
+func (i *IntelligentFieldResponse) GetUpdatedAt() time.Time {
+	if i == nil {
+		return time.Time{}
+	}
+	return i.UpdatedAt
+}
+
+func (i *IntelligentFieldResponse) GetStatus() CapabilityStatus {
 	if i == nil {
 		return ""
 	}
 	return i.Status
 }
 
-func (i *IntelligentFieldResponse) GetCreatedAt() *time.Time {
+func (i *IntelligentFieldResponse) GetFieldID() *EntityID {
 	if i == nil {
 		return nil
 	}
-	return i.CreatedAt
-}
-
-func (i *IntelligentFieldResponse) GetUpdatedAt() *time.Time {
-	if i == nil {
-		return nil
-	}
-	return i.UpdatedAt
+	return i.FieldID
 }
 
 func (i *IntelligentFieldResponse) GetExtraProperties() map[string]interface{} {
@@ -1275,20 +1229,6 @@ func (i *IntelligentFieldResponse) require(field *big.Int) {
 		i.explicitFields = big.NewInt(0)
 	}
 	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldResponse) SetName(name string) {
-	i.Name = name
-	i.require(intelligentFieldResponseFieldName)
-}
-
-// SetDescription sets the Description field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldResponse) SetDescription(description *string) {
-	i.Description = description
-	i.require(intelligentFieldResponseFieldDescription)
 }
 
 // SetValidationType sets the ValidationType field and marks it as non-optional;
@@ -1326,6 +1266,41 @@ func (i *IntelligentFieldResponse) SetVariantID(variantID *EntityIDWithoutAgent)
 	i.require(intelligentFieldResponseFieldVariantID)
 }
 
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetName(name string) {
+	i.Name = name
+	i.require(intelligentFieldResponseFieldName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetDescription(description *string) {
+	i.Description = description
+	i.require(intelligentFieldResponseFieldDescription)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetCreatedAt(createdAt time.Time) {
+	i.CreatedAt = createdAt
+	i.require(intelligentFieldResponseFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetUpdatedAt(updatedAt time.Time) {
+	i.UpdatedAt = updatedAt
+	i.require(intelligentFieldResponseFieldUpdatedAt)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetStatus(status CapabilityStatus) {
+	i.Status = status
+	i.require(intelligentFieldResponseFieldStatus)
+}
+
 // SetFieldID sets the FieldID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (i *IntelligentFieldResponse) SetFieldID(fieldID *EntityID) {
@@ -1333,33 +1308,12 @@ func (i *IntelligentFieldResponse) SetFieldID(fieldID *EntityID) {
 	i.require(intelligentFieldResponseFieldFieldID)
 }
 
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldResponse) SetStatus(status IntelligentFieldStatus) {
-	i.Status = status
-	i.require(intelligentFieldResponseFieldStatus)
-}
-
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldResponse) SetCreatedAt(createdAt *time.Time) {
-	i.CreatedAt = createdAt
-	i.require(intelligentFieldResponseFieldCreatedAt)
-}
-
-// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldResponse) SetUpdatedAt(updatedAt *time.Time) {
-	i.UpdatedAt = updatedAt
-	i.require(intelligentFieldResponseFieldUpdatedAt)
-}
-
 func (i *IntelligentFieldResponse) UnmarshalJSON(data []byte) error {
 	type embed IntelligentFieldResponse
 	var unmarshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed: embed(*i),
 	}
@@ -1367,8 +1321,8 @@ func (i *IntelligentFieldResponse) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*i = IntelligentFieldResponse(unmarshaler.embed)
-	i.CreatedAt = unmarshaler.CreatedAt.TimePtr()
-	i.UpdatedAt = unmarshaler.UpdatedAt.TimePtr()
+	i.CreatedAt = unmarshaler.CreatedAt.Time()
+	i.UpdatedAt = unmarshaler.UpdatedAt.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *i)
 	if err != nil {
 		return err
@@ -1382,12 +1336,12 @@ func (i *IntelligentFieldResponse) MarshalJSON() ([]byte, error) {
 	type embed IntelligentFieldResponse
 	var marshaler = struct {
 		embed
-		CreatedAt *internal.DateTime `json:"createdAt,omitempty"`
-		UpdatedAt *internal.DateTime `json:"updatedAt,omitempty"`
+		CreatedAt *internal.DateTime `json:"createdAt"`
+		UpdatedAt *internal.DateTime `json:"updatedAt"`
 	}{
 		embed:     embed(*i),
-		CreatedAt: internal.NewOptionalDateTime(i.CreatedAt),
-		UpdatedAt: internal.NewOptionalDateTime(i.UpdatedAt),
+		CreatedAt: internal.NewDateTime(i.CreatedAt),
+		UpdatedAt: internal.NewDateTime(i.UpdatedAt),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -1403,36 +1357,6 @@ func (i *IntelligentFieldResponse) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", i)
-}
-
-// Lifecycle state for whether this field is evaluated
-type IntelligentFieldStatus string
-
-const (
-	// The field is evaluated, and values are computed for matching entities.
-	IntelligentFieldStatusActive IntelligentFieldStatus = "ACTIVE"
-	// The field exists but is not evaluated. This is the state a new field is created in.
-	IntelligentFieldStatusInactive IntelligentFieldStatus = "INACTIVE"
-	// The field has been soft deleted and cannot be modified. Set by the delete endpoint
-	// rather than by a patch.
-	IntelligentFieldStatusDeleted IntelligentFieldStatus = "DELETED"
-)
-
-func NewIntelligentFieldStatusFromString(s string) (IntelligentFieldStatus, error) {
-	switch s {
-	case "ACTIVE":
-		return IntelligentFieldStatusActive, nil
-	case "INACTIVE":
-		return IntelligentFieldStatusInactive, nil
-	case "DELETED":
-		return IntelligentFieldStatusDeleted, nil
-	}
-	var t IntelligentFieldStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (i IntelligentFieldStatus) Ptr() *IntelligentFieldStatus {
-	return &i
 }
 
 // Result type hint used for schema generation, UI, and validation
