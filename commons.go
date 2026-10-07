@@ -1796,6 +1796,97 @@ func (a *ActionUser) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+// A shared vocabulary of `contextInfo.additionalData` keys, for any event from any sender. Events
+// that carry the same kind of information under the same key share a shape, so one event
+// condition or report works across all of them. Using these keys is encouraged, not required:
+// any other key is still accepted.
+//
+// Values are strings, like every value in `additionalData`: numbers and booleans as their text
+// (`3`, `true`), anything structured as JSON.
+type AdditionalDataKey string
+
+const (
+	// The new value of whatever changed. Absent when undetermined. Maven sets it on `INTELLIGENT_FIELD_VALUE_CHANGED`.
+	AdditionalDataKeyValue AdditionalDataKey = "value"
+	// The value before the change. Absent when it was undetermined or there was none. Maven sets it on `INTELLIGENT_FIELD_VALUE_CHANGED`.
+	AdditionalDataKeyPreviousValue AdditionalDataKey = "previousValue"
+	// The name of the thing acted on, such as a form, flow, file or plan.
+	AdditionalDataKeyName AdditionalDataKey = "name"
+	// The step reached within a flow or form, as its name or number.
+	AdditionalDataKeyStep AdditionalDataKey = "step"
+	// Why it happened, such as why a handoff was requested or a subscription cancelled.
+	AdditionalDataKeyReason AdditionalDataKey = "reason"
+	// A machine-readable code for the error, for events that report a failure.
+	AdditionalDataKeyErrorCode AdditionalDataKey = "errorCode"
+	// A human-readable description of the error, for events that report a failure.
+	AdditionalDataKeyErrorMessage AdditionalDataKey = "errorMessage"
+	// The URL involved, such as the target of a clicked link.
+	AdditionalDataKeyURL AdditionalDataKey = "url"
+	// The text searched for.
+	AdditionalDataKeyQuery AdditionalDataKey = "query"
+	// The 1-based position of the chosen item in a list, such as a search result or a suggestion.
+	AdditionalDataKeyPosition AdditionalDataKey = "position"
+	// A monetary amount, as a decimal number in `currency`.
+	AdditionalDataKeyAmount AdditionalDataKey = "amount"
+	// The ISO 4217 code of `amount`'s currency, such as `USD`.
+	AdditionalDataKeyCurrency AdditionalDataKey = "currency"
+	// The channel a message went out on, such as `email`, `sms` or `push`.
+	AdditionalDataKeyChannel AdditionalDataKey = "channel"
+	// The language content was translated from, as a BCP 47 tag.
+	AdditionalDataKeySourceLanguage AdditionalDataKey = "sourceLanguage"
+	// The language content was translated into, as a BCP 47 tag.
+	AdditionalDataKeyTargetLanguage AdditionalDataKey = "targetLanguage"
+	// The MIME type of the file involved.
+	AdditionalDataKeyMimeType AdditionalDataKey = "mimeType"
+	// The size of the file involved, in bytes.
+	AdditionalDataKeySizeBytes AdditionalDataKey = "sizeBytes"
+)
+
+func NewAdditionalDataKeyFromString(s string) (AdditionalDataKey, error) {
+	switch s {
+	case "value":
+		return AdditionalDataKeyValue, nil
+	case "previousValue":
+		return AdditionalDataKeyPreviousValue, nil
+	case "name":
+		return AdditionalDataKeyName, nil
+	case "step":
+		return AdditionalDataKeyStep, nil
+	case "reason":
+		return AdditionalDataKeyReason, nil
+	case "errorCode":
+		return AdditionalDataKeyErrorCode, nil
+	case "errorMessage":
+		return AdditionalDataKeyErrorMessage, nil
+	case "url":
+		return AdditionalDataKeyURL, nil
+	case "query":
+		return AdditionalDataKeyQuery, nil
+	case "position":
+		return AdditionalDataKeyPosition, nil
+	case "amount":
+		return AdditionalDataKeyAmount, nil
+	case "currency":
+		return AdditionalDataKeyCurrency, nil
+	case "channel":
+		return AdditionalDataKeyChannel, nil
+	case "sourceLanguage":
+		return AdditionalDataKeySourceLanguage, nil
+	case "targetLanguage":
+		return AdditionalDataKeyTargetLanguage, nil
+	case "mimeType":
+		return AdditionalDataKeyMimeType, nil
+	case "sizeBytes":
+		return AdditionalDataKeySizeBytes, nil
+	}
+	var t AdditionalDataKey
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a AdditionalDataKey) Ptr() *AdditionalDataKey {
+	return &a
+}
+
 var (
 	appPreconditionFieldOperator = big.NewInt(1 << 0)
 	appPreconditionFieldAppID    = big.NewInt(1 << 1)
@@ -3266,9 +3357,10 @@ type BaseConversationResponse struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
-	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
-	// the conversation is created and fixed for its lifetime. Absent when the conversation was
-	// not routed to a variant, for example one created before the agent had variants.
+	// The agent variant this conversation is pinned to. Chosen when the conversation is created,
+	// by the agent's traffic rules or by the simulation's `simulationContext.variantId`, and fixed
+	// for its lifetime. Absent when the conversation was not routed to a variant, for example one
+	// created before the agent had variants.
 	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -9776,9 +9868,10 @@ type ConversationPreview struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
-	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
-	// the conversation is created and fixed for its lifetime. Absent when the conversation was
-	// not routed to a variant, for example one created before the agent had variants.
+	// The agent variant this conversation is pinned to. Chosen when the conversation is created,
+	// by the agent's traffic rules or by the simulation's `simulationContext.variantId`, and fixed
+	// for its lifetime. Absent when the conversation was not routed to a variant, for example one
+	// created before the agent had variants.
 	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -10168,9 +10261,10 @@ type ConversationResponse struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
-	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
-	// the conversation is created and fixed for its lifetime. Absent when the conversation was
-	// not routed to a variant, for example one created before the agent had variants.
+	// The agent variant this conversation is pinned to. Chosen when the conversation is created,
+	// by the agent's traffic rules or by the simulation's `simulationContext.variantId`, and fixed
+	// for its lifetime. Absent when the conversation was not routed to a variant, for example one
+	// created before the agent had variants.
 	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
@@ -12548,10 +12642,12 @@ const (
 	ErrorReasonVariantAlreadyExists ErrorReason = "VARIANT_ALREADY_EXISTS"
 	// The variant is receiving live traffic, so it can't be archived or deleted. Move its traffic elsewhere first.
 	ErrorReasonCannotArchiveLiveVariant ErrorReason = "CANNOT_ARCHIVE_LIVE_VARIANT"
-	// A traffic rule names a variant with staged edits. Publish or discard them first.
+	// A traffic rule, a simulation or an eval run names a variant with staged edits. Publish or discard them first.
 	ErrorReasonVariantHasStagedEdits ErrorReason = "VARIANT_HAS_STAGED_EDITS"
 	// The entity type is versioned on this agent, so the request must name the agent variant to read or write. Pass the variant's reference ID, and its owning app where the endpoint takes one; a request that names none is rejected.
 	ErrorReasonVariantRequired ErrorReason = "VARIANT_REQUIRED"
+	// The write would change an intelligent field's `validationType` in an agent variant. A field keeps its type across variants; to use a different type, create a new field.
+	ErrorReasonIntelligentFieldTypeChanged ErrorReason = "INTELLIGENT_FIELD_TYPE_CHANGED"
 )
 
 func NewErrorReasonFromString(s string) (ErrorReason, error) {
@@ -12574,6 +12670,8 @@ func NewErrorReasonFromString(s string) (ErrorReason, error) {
 		return ErrorReasonVariantHasStagedEdits, nil
 	case "VARIANT_REQUIRED":
 		return ErrorReasonVariantRequired, nil
+	case "INTELLIGENT_FIELD_TYPE_CHANGED":
+		return ErrorReasonIntelligentFieldTypeChanged, nil
 	}
 	var t ErrorReason
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -12722,6 +12820,305 @@ func (e *EventBaseNoID) MarshalJSON() ([]byte, error) {
 }
 
 func (e *EventBaseNoID) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+// A predicate over an event, deciding whether an event trigger fires for it. A trigger with
+// no condition fires for every event on its agent.
+//
+// Each condition tests one thing: `userEventName` and `systemEventName` match events of one
+// family by name, `data` matches one key of `contextInfo.additionalData`, and `references`
+// matches the entities an event references. `data` and `references` match events of either
+// family. Combine conditions with `group`.
+//
+// A condition may nest at most 3 levels deep and hold at most 10 conditions and groups in
+// total. Exceeding either is a 400.
+type EventCondition struct {
+	EventConditionType string
+	UserEventName      *UserEventNameCondition
+	SystemEventName    *SystemEventNameCondition
+	// A condition on one key of `contextInfo.additionalData`. Values are compared as strings,
+	// so there is no numeric comparison.
+	Data       *MetadataEntryCondition
+	References *EventReferencesCondition
+	Group      *EventConditionGroup
+}
+
+func (e *EventCondition) GetEventConditionType() string {
+	if e == nil {
+		return ""
+	}
+	return e.EventConditionType
+}
+
+func (e *EventCondition) GetUserEventName() *UserEventNameCondition {
+	if e == nil {
+		return nil
+	}
+	return e.UserEventName
+}
+
+func (e *EventCondition) GetSystemEventName() *SystemEventNameCondition {
+	if e == nil {
+		return nil
+	}
+	return e.SystemEventName
+}
+
+func (e *EventCondition) GetData() *MetadataEntryCondition {
+	if e == nil {
+		return nil
+	}
+	return e.Data
+}
+
+func (e *EventCondition) GetReferences() *EventReferencesCondition {
+	if e == nil {
+		return nil
+	}
+	return e.References
+}
+
+func (e *EventCondition) GetGroup() *EventConditionGroup {
+	if e == nil {
+		return nil
+	}
+	return e.Group
+}
+
+func (e *EventCondition) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		EventConditionType string `json:"eventConditionType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	e.EventConditionType = unmarshaler.EventConditionType
+	if unmarshaler.EventConditionType == "" {
+		return fmt.Errorf("%T did not include discriminant eventConditionType", e)
+	}
+	switch unmarshaler.EventConditionType {
+	case "userEventName":
+		value := new(UserEventNameCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.UserEventName = value
+	case "systemEventName":
+		value := new(SystemEventNameCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.SystemEventName = value
+	case "data":
+		value := new(MetadataEntryCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.Data = value
+	case "references":
+		value := new(EventReferencesCondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.References = value
+	case "group":
+		value := new(EventConditionGroup)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		e.Group = value
+	}
+	return nil
+}
+
+func (e EventCondition) MarshalJSON() ([]byte, error) {
+	if err := e.validate(); err != nil {
+		return nil, err
+	}
+	if e.UserEventName != nil {
+		return internal.MarshalJSONWithExtraProperty(e.UserEventName, "eventConditionType", "userEventName")
+	}
+	if e.SystemEventName != nil {
+		return internal.MarshalJSONWithExtraProperty(e.SystemEventName, "eventConditionType", "systemEventName")
+	}
+	if e.Data != nil {
+		return internal.MarshalJSONWithExtraProperty(e.Data, "eventConditionType", "data")
+	}
+	if e.References != nil {
+		return internal.MarshalJSONWithExtraProperty(e.References, "eventConditionType", "references")
+	}
+	if e.Group != nil {
+		return internal.MarshalJSONWithExtraProperty(e.Group, "eventConditionType", "group")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", e)
+}
+
+type EventConditionVisitor interface {
+	VisitUserEventName(*UserEventNameCondition) error
+	VisitSystemEventName(*SystemEventNameCondition) error
+	VisitData(*MetadataEntryCondition) error
+	VisitReferences(*EventReferencesCondition) error
+	VisitGroup(*EventConditionGroup) error
+}
+
+func (e *EventCondition) Accept(visitor EventConditionVisitor) error {
+	if e.UserEventName != nil {
+		return visitor.VisitUserEventName(e.UserEventName)
+	}
+	if e.SystemEventName != nil {
+		return visitor.VisitSystemEventName(e.SystemEventName)
+	}
+	if e.Data != nil {
+		return visitor.VisitData(e.Data)
+	}
+	if e.References != nil {
+		return visitor.VisitReferences(e.References)
+	}
+	if e.Group != nil {
+		return visitor.VisitGroup(e.Group)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", e)
+}
+
+func (e *EventCondition) validate() error {
+	if e == nil {
+		return fmt.Errorf("type %T is nil", e)
+	}
+	var fields []string
+	if e.UserEventName != nil {
+		fields = append(fields, "userEventName")
+	}
+	if e.SystemEventName != nil {
+		fields = append(fields, "systemEventName")
+	}
+	if e.Data != nil {
+		fields = append(fields, "data")
+	}
+	if e.References != nil {
+		fields = append(fields, "references")
+	}
+	if e.Group != nil {
+		fields = append(fields, "group")
+	}
+	if len(fields) == 0 {
+		if e.EventConditionType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", e, e.EventConditionType)
+		}
+		return fmt.Errorf("type %T is empty", e)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", e, fields)
+	}
+	if e.EventConditionType != "" {
+		field := fields[0]
+		if e.EventConditionType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				e,
+				e.EventConditionType,
+				e,
+			)
+		}
+	}
+	return nil
+}
+
+// Combines event conditions with a logical operator. Groups nest, so `(a AND b) OR c` is a
+// group holding a group and a condition.
+var (
+	eventConditionGroupFieldOperator   = big.NewInt(1 << 0)
+	eventConditionGroupFieldConditions = big.NewInt(1 << 1)
+)
+
+type EventConditionGroup struct {
+	// How to combine `conditions`.
+	Operator PreconditionGroupOperator `json:"operator" url:"operator"`
+	// The conditions to combine. At least one is required; to match every event, omit the trigger's condition entirely.
+	Conditions []*EventCondition `json:"conditions" url:"conditions"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventConditionGroup) GetOperator() PreconditionGroupOperator {
+	if e == nil {
+		return ""
+	}
+	return e.Operator
+}
+
+func (e *EventConditionGroup) GetConditions() []*EventCondition {
+	if e == nil {
+		return nil
+	}
+	return e.Conditions
+}
+
+func (e *EventConditionGroup) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventConditionGroup) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventConditionGroup) SetOperator(operator PreconditionGroupOperator) {
+	e.Operator = operator
+	e.require(eventConditionGroupFieldOperator)
+}
+
+// SetConditions sets the Conditions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventConditionGroup) SetConditions(conditions []*EventCondition) {
+	e.Conditions = conditions
+	e.require(eventConditionGroupFieldConditions)
+}
+
+func (e *EventConditionGroup) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventConditionGroup
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventConditionGroup(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventConditionGroup) MarshalJSON() ([]byte, error) {
+	type embed EventConditionGroup
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventConditionGroup) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -13026,6 +13423,106 @@ func (e *EventFilter) MarshalJSON() ([]byte, error) {
 }
 
 func (e *EventFilter) String() string {
+	if len(e.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(e); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", e)
+}
+
+// A condition on the entities an event references -- the conversation it is about, the
+// intelligent field whose value changed, the user who acted.
+//
+// A set relation between the entities the event references and the ones named here.
+var (
+	eventReferencesConditionFieldOperator   = big.NewInt(1 << 0)
+	eventReferencesConditionFieldReferences = big.NewInt(1 << 1)
+)
+
+type EventReferencesCondition struct {
+	// The set relation to apply. The event's references are the left-hand set.
+	Operator SetRelationOperator `json:"operator" url:"operator"`
+	// The entities to match, at most 50. A conversation message is identified by its conversation, so give the conversation as `scopeEntityId` when naming one. An event that references a message also references its conversation, so `EQ` and `SUBSET_OF` must name both.
+	References []*ScopedEntity `json:"references" url:"references"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (e *EventReferencesCondition) GetOperator() SetRelationOperator {
+	if e == nil {
+		return ""
+	}
+	return e.Operator
+}
+
+func (e *EventReferencesCondition) GetReferences() []*ScopedEntity {
+	if e == nil {
+		return nil
+	}
+	return e.References
+}
+
+func (e *EventReferencesCondition) GetExtraProperties() map[string]interface{} {
+	return e.extraProperties
+}
+
+func (e *EventReferencesCondition) require(field *big.Int) {
+	if e.explicitFields == nil {
+		e.explicitFields = big.NewInt(0)
+	}
+	e.explicitFields.Or(e.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventReferencesCondition) SetOperator(operator SetRelationOperator) {
+	e.Operator = operator
+	e.require(eventReferencesConditionFieldOperator)
+}
+
+// SetReferences sets the References field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventReferencesCondition) SetReferences(references []*ScopedEntity) {
+	e.References = references
+	e.require(eventReferencesConditionFieldReferences)
+}
+
+func (e *EventReferencesCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler EventReferencesCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*e = EventReferencesCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *e)
+	if err != nil {
+		return err
+	}
+	e.extraProperties = extraProperties
+	e.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (e *EventReferencesCondition) MarshalJSON() ([]byte, error) {
+	type embed EventReferencesCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*e),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (e *EventReferencesCondition) String() string {
 	if len(e.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(e.rawJSON); err == nil {
 			return value
@@ -16518,9 +17015,10 @@ type InitializeConversationResponse struct {
 	// Whether the conversation is spoken or written. Set by the platform and read-only —
 	// it cannot be supplied when creating or updating a conversation.
 	ConversationMode *ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
-	// The agent variant this conversation is pinned to. Chosen by the agent's traffic rules when
-	// the conversation is created and fixed for its lifetime. Absent when the conversation was
-	// not routed to a variant, for example one created before the agent had variants.
+	// The agent variant this conversation is pinned to. Chosen when the conversation is created,
+	// by the agent's traffic rules or by the simulation's `simulationContext.variantId`, and fixed
+	// for its lifetime. Absent when the conversation was not routed to a variant, for example one
+	// created before the agent had variants.
 	VariantID *EntityID `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageResponse `json:"messages" url:"messages"`
@@ -16897,6 +17395,130 @@ func (i *InitializeConversationResponse) String() string {
 	return fmt.Sprintf("%#v", i)
 }
 
+// Filter by intelligent field values. All conditions are ANDed.
+var (
+	intelligentFieldFilterFieldConditions = big.NewInt(1 << 0)
+)
+
+type IntelligentFieldFilter struct {
+	// List of conditions to filter by. All conditions must match (AND logic).
+	Conditions []*IntelligentFieldSearchCondition `json:"conditions" url:"conditions"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldFilter) GetConditions() []*IntelligentFieldSearchCondition {
+	if i == nil {
+		return nil
+	}
+	return i.Conditions
+}
+
+func (i *IntelligentFieldFilter) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldFilter) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetConditions sets the Conditions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldFilter) SetConditions(conditions []*IntelligentFieldSearchCondition) {
+	i.Conditions = conditions
+	i.require(intelligentFieldFilterFieldConditions)
+}
+
+func (i *IntelligentFieldFilter) UnmarshalJSON(data []byte) error {
+	type unmarshaler IntelligentFieldFilter
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = IntelligentFieldFilter(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldFilter) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldFilter
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldFilter) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
+// Comparison operators for intelligent field filtering.
+type IntelligentFieldOperator string
+
+const (
+	IntelligentFieldOperatorEq        IntelligentFieldOperator = "EQ"
+	IntelligentFieldOperatorNeq       IntelligentFieldOperator = "NEQ"
+	IntelligentFieldOperatorContains  IntelligentFieldOperator = "CONTAINS"
+	IntelligentFieldOperatorGt        IntelligentFieldOperator = "GT"
+	IntelligentFieldOperatorGte       IntelligentFieldOperator = "GTE"
+	IntelligentFieldOperatorLt        IntelligentFieldOperator = "LT"
+	IntelligentFieldOperatorLte       IntelligentFieldOperator = "LTE"
+	IntelligentFieldOperatorExists    IntelligentFieldOperator = "EXISTS"
+	IntelligentFieldOperatorNotExists IntelligentFieldOperator = "NOT_EXISTS"
+)
+
+func NewIntelligentFieldOperatorFromString(s string) (IntelligentFieldOperator, error) {
+	switch s {
+	case "EQ":
+		return IntelligentFieldOperatorEq, nil
+	case "NEQ":
+		return IntelligentFieldOperatorNeq, nil
+	case "CONTAINS":
+		return IntelligentFieldOperatorContains, nil
+	case "GT":
+		return IntelligentFieldOperatorGt, nil
+	case "GTE":
+		return IntelligentFieldOperatorGte, nil
+	case "LT":
+		return IntelligentFieldOperatorLt, nil
+	case "LTE":
+		return IntelligentFieldOperatorLte, nil
+	case "EXISTS":
+		return IntelligentFieldOperatorExists, nil
+	case "NOT_EXISTS":
+		return IntelligentFieldOperatorNotExists, nil
+	}
+	var t IntelligentFieldOperator
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (i IntelligentFieldOperator) Ptr() *IntelligentFieldOperator {
+	return &i
+}
+
 // A precondition based on the computed value of an intelligent field on the conversation.
 //
 // The structure of this precondition follows `LHS OP RHS`, where the LHS is
@@ -17103,6 +17725,120 @@ func (i *IntelligentFieldPreconditionResponse) MarshalJSON() ([]byte, error) {
 }
 
 func (i *IntelligentFieldPreconditionResponse) String() string {
+	if len(i.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(i); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", i)
+}
+
+// A single condition on an intelligent field value.
+var (
+	intelligentFieldSearchConditionFieldFieldID  = big.NewInt(1 << 0)
+	intelligentFieldSearchConditionFieldOperator = big.NewInt(1 << 1)
+	intelligentFieldSearchConditionFieldValue    = big.NewInt(1 << 2)
+)
+
+type IntelligentFieldSearchCondition struct {
+	// The intelligent field to filter on (referenceId + appId)
+	FieldID *EntityIDFilter `json:"fieldId" url:"fieldId"`
+	// The comparison operator to apply
+	Operator IntelligentFieldOperator `json:"operator" url:"operator"`
+	// The value to compare against. Required for all operators except EXISTS and NOT_EXISTS. For BOOLEAN fields use "true" or "false". For NUMBER fields use a numeric string.
+	Value *string `json:"value,omitempty" url:"value,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (i *IntelligentFieldSearchCondition) GetFieldID() *EntityIDFilter {
+	if i == nil {
+		return nil
+	}
+	return i.FieldID
+}
+
+func (i *IntelligentFieldSearchCondition) GetOperator() IntelligentFieldOperator {
+	if i == nil {
+		return ""
+	}
+	return i.Operator
+}
+
+func (i *IntelligentFieldSearchCondition) GetValue() *string {
+	if i == nil {
+		return nil
+	}
+	return i.Value
+}
+
+func (i *IntelligentFieldSearchCondition) GetExtraProperties() map[string]interface{} {
+	return i.extraProperties
+}
+
+func (i *IntelligentFieldSearchCondition) require(field *big.Int) {
+	if i.explicitFields == nil {
+		i.explicitFields = big.NewInt(0)
+	}
+	i.explicitFields.Or(i.explicitFields, field)
+}
+
+// SetFieldID sets the FieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldSearchCondition) SetFieldID(fieldID *EntityIDFilter) {
+	i.FieldID = fieldID
+	i.require(intelligentFieldSearchConditionFieldFieldID)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldSearchCondition) SetOperator(operator IntelligentFieldOperator) {
+	i.Operator = operator
+	i.require(intelligentFieldSearchConditionFieldOperator)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldSearchCondition) SetValue(value *string) {
+	i.Value = value
+	i.require(intelligentFieldSearchConditionFieldValue)
+}
+
+func (i *IntelligentFieldSearchCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler IntelligentFieldSearchCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*i = IntelligentFieldSearchCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *i)
+	if err != nil {
+		return err
+	}
+	i.extraProperties = extraProperties
+	i.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (i *IntelligentFieldSearchCondition) MarshalJSON() ([]byte, error) {
+	type embed IntelligentFieldSearchCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*i),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (i *IntelligentFieldSearchCondition) String() string {
 	if len(i.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
 			return value
@@ -24400,6 +25136,7 @@ var (
 	simulationContextFieldAdditionalPromptText    = big.NewInt(1 << 0)
 	simulationContextFieldPersona                 = big.NewInt(1 << 1)
 	simulationContextFieldAvailableKnowledgeBases = big.NewInt(1 << 2)
+	simulationContextFieldVariantID               = big.NewInt(1 << 3)
 )
 
 type SimulationContext struct {
@@ -24411,6 +25148,16 @@ type SimulationContext struct {
 	Persona *LlmPersona `json:"persona,omitempty" url:"persona,omitempty"`
 	// If provided, knowledge search will be restricted to the provided list of knowledge bases. Otherwise, all active knowledge bases will be used. An empty list means no knowledge bases will be used.
 	AvailableKnowledgeBases []*EntityID `json:"availableKnowledgeBases,omitempty" url:"availableKnowledgeBases,omitempty"`
+	// The agent variant to run the simulation on, instead of the one the agent's traffic rules
+	// would choose. Any ACTIVE variant of the agent with no staged edits can be named, including
+	// one with no traffic. The conversation is pinned to it when created, like any other
+	// conversation; the conversation's `variantId` reports it, and this field is not returned.
+	//
+	// Rejected with reason `VARIANT_NOT_ACTIVE` for an archived or deleted variant, and
+	// `VARIANT_HAS_STAGED_EDITS` for one with staged edits (publish them first). Rejected too
+	// while agent variants aren't enabled for the agent. A conversation that already exists
+	// keeps the variant it was created with.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -24438,6 +25185,13 @@ func (s *SimulationContext) GetAvailableKnowledgeBases() []*EntityID {
 		return nil
 	}
 	return s.AvailableKnowledgeBases
+}
+
+func (s *SimulationContext) GetVariantID() *EntityIDWithoutAgent {
+	if s == nil {
+		return nil
+	}
+	return s.VariantID
 }
 
 func (s *SimulationContext) GetExtraProperties() map[string]interface{} {
@@ -24470,6 +25224,13 @@ func (s *SimulationContext) SetPersona(persona *LlmPersona) {
 func (s *SimulationContext) SetAvailableKnowledgeBases(availableKnowledgeBases []*EntityID) {
 	s.AvailableKnowledgeBases = availableKnowledgeBases
 	s.require(simulationContextFieldAvailableKnowledgeBases)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationContext) SetVariantID(variantID *EntityIDWithoutAgent) {
+	s.VariantID = variantID
+	s.require(simulationContextFieldVariantID)
 }
 
 func (s *SimulationContext) UnmarshalJSON(data []byte) error {
@@ -25636,7 +26397,9 @@ const (
 	SystemEventNameSyncCompleted SystemEventName = "SYNC_COMPLETED"
 	// A data sync with an external system failed
 	SystemEventNameSyncFailed SystemEventName = "SYNC_FAILED"
-	// An intelligent field's value on a conversation was set or changed. `references` carries the conversation and the field; `contextInfo.additionalData` carries `fieldReferenceId`, `fieldAppId`, the new `value` and the `previousValue`, both as JSON strings. An undetermined value is the JSON string `null` on either key. `previousValue` is absent only when the field was set for the first time and had no previous value at all.
+	// A conversation was closed, by setting `open` to false through the conversation PATCH. `references` carries the conversation.
+	SystemEventNameConversationClosed SystemEventName = "CONVERSATION_CLOSED"
+	// An intelligent field's value on a conversation was set or changed. `references` carries the conversation and the field; `contextInfo.additionalData` carries the new `value` and the `previousValue` (see `AdditionalDataKey`). A string value is written as is, a boolean or number as its text (`true`, `3`), and a multi-select's options as a JSON array. A key is absent when its value is undetermined or, for `previousValue`, when the field had no previous value.
 	SystemEventNameIntelligentFieldValueChanged SystemEventName = "INTELLIGENT_FIELD_VALUE_CHANGED"
 )
 
@@ -25664,6 +26427,8 @@ func NewSystemEventNameFromString(s string) (SystemEventName, error) {
 		return SystemEventNameSyncCompleted, nil
 	case "SYNC_FAILED":
 		return SystemEventNameSyncFailed, nil
+	case "CONVERSATION_CLOSED":
+		return SystemEventNameConversationClosed, nil
 	case "INTELLIGENT_FIELD_VALUE_CHANGED":
 		return SystemEventNameIntelligentFieldValueChanged, nil
 	}
@@ -25673,6 +26438,103 @@ func NewSystemEventNameFromString(s string) (SystemEventName, error) {
 
 func (s SystemEventName) Ptr() *SystemEventName {
 	return &s
+}
+
+// A condition on the name of a system event. Matches system events only.
+var (
+	systemEventNameConditionFieldOperator = big.NewInt(1 << 0)
+	systemEventNameConditionFieldNames    = big.NewInt(1 << 1)
+)
+
+type SystemEventNameCondition struct {
+	// The membership operator to apply.
+	Operator StringMembershipOperator `json:"operator" url:"operator"`
+	// The system event names to match, at most 50. At least one is required.
+	Names []SystemEventName `json:"names" url:"names"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SystemEventNameCondition) GetOperator() StringMembershipOperator {
+	if s == nil {
+		return ""
+	}
+	return s.Operator
+}
+
+func (s *SystemEventNameCondition) GetNames() []SystemEventName {
+	if s == nil {
+		return nil
+	}
+	return s.Names
+}
+
+func (s *SystemEventNameCondition) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SystemEventNameCondition) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SystemEventNameCondition) SetOperator(operator StringMembershipOperator) {
+	s.Operator = operator
+	s.require(systemEventNameConditionFieldOperator)
+}
+
+// SetNames sets the Names field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SystemEventNameCondition) SetNames(names []SystemEventName) {
+	s.Names = names
+	s.require(systemEventNameConditionFieldNames)
+}
+
+func (s *SystemEventNameCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler SystemEventNameCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SystemEventNameCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SystemEventNameCondition) MarshalJSON() ([]byte, error) {
+	type embed SystemEventNameCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SystemEventNameCondition) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
 }
 
 var (
@@ -26999,6 +27861,103 @@ func NewUserEventNameFromString(s string) (UserEventName, error) {
 
 func (u UserEventName) Ptr() *UserEventName {
 	return &u
+}
+
+// A condition on the name of a user event. Matches user events only.
+var (
+	userEventNameConditionFieldOperator = big.NewInt(1 << 0)
+	userEventNameConditionFieldNames    = big.NewInt(1 << 1)
+)
+
+type UserEventNameCondition struct {
+	// The membership operator to apply.
+	Operator StringMembershipOperator `json:"operator" url:"operator"`
+	// The user event names to match, at most 50. At least one is required.
+	Names []UserEventName `json:"names" url:"names"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UserEventNameCondition) GetOperator() StringMembershipOperator {
+	if u == nil {
+		return ""
+	}
+	return u.Operator
+}
+
+func (u *UserEventNameCondition) GetNames() []UserEventName {
+	if u == nil {
+		return nil
+	}
+	return u.Names
+}
+
+func (u *UserEventNameCondition) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UserEventNameCondition) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserEventNameCondition) SetOperator(operator StringMembershipOperator) {
+	u.Operator = operator
+	u.require(userEventNameConditionFieldOperator)
+}
+
+// SetNames sets the Names field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserEventNameCondition) SetNames(names []UserEventName) {
+	u.Names = names
+	u.require(userEventNameConditionFieldNames)
+}
+
+func (u *UserEventNameCondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler UserEventNameCondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UserEventNameCondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UserEventNameCondition) MarshalJSON() ([]byte, error) {
+	type embed UserEventNameCondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UserEventNameCondition) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
 }
 
 var (

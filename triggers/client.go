@@ -117,10 +117,10 @@ func (c *Client) Delete(
 	return nil
 }
 
-// Deprecated. Use `PATCH /v1/capabilities/TRIGGER/{referenceId}` with a `status`, which
-// publishes and unpublishes any kind of capability the same way.
+// Updates an event trigger. `enabled` and `condition` are the editable fields.
 //
-// Updates an event trigger. Only the enabled field is editable.
+// `PATCH /v1/capabilities/TRIGGER/{referenceId}` with a `status` also turns a trigger on and
+// off, the same way it publishes and unpublishes any kind of capability.
 func (c *Client) PartialUpdate(
 	ctx context.Context,
 	// The reference ID of the event trigger to update. All other entity ID fields are inferred from the request.

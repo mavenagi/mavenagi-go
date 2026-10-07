@@ -24,7 +24,7 @@ type CharterDeleteRequest struct {
 	// agent's live configuration.
 	//
 	// Omit this parameter to delete directly from the agent. Variant scoping is not
-	// active yet: a variant supplied today is accepted and ignored, and the delete applies
+	// active yet: a variant supplied today is validated but not applied, and the delete applies
 	// to the agent.
 	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
 	// The App ID of the agent variant named by `variantReferenceId`. If not provided, the ID of the calling app will be used.
@@ -63,12 +63,18 @@ func (c *CharterDeleteRequest) SetVariantAppID(variantAppID *string) {
 }
 
 var (
-	charterGetRequestFieldAppID = big.NewInt(1 << 0)
+	charterGetRequestFieldAppID              = big.NewInt(1 << 0)
+	charterGetRequestFieldVariantReferenceID = big.NewInt(1 << 1)
+	charterGetRequestFieldVariantAppID       = big.NewInt(1 << 2)
 )
 
 type CharterGetRequest struct {
 	// The App ID of the charter to get. If not provided, the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
+	// The agent variant reference ID to resolve the charter's version through. If not provided, defaults to the agent's production variant. Currently, validated but not applied.
+	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
+	// The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
+	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -86,6 +92,20 @@ func (c *CharterGetRequest) require(field *big.Int) {
 func (c *CharterGetRequest) SetAppID(appID *string) {
 	c.AppID = appID
 	c.require(charterGetRequestFieldAppID)
+}
+
+// SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterGetRequest) SetVariantReferenceID(variantReferenceID *string) {
+	c.VariantReferenceID = variantReferenceID
+	c.require(charterGetRequestFieldVariantReferenceID)
+}
+
+// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterGetRequest) SetVariantAppID(variantAppID *string) {
+	c.VariantAppID = variantAppID
+	c.require(charterGetRequestFieldVariantAppID)
 }
 
 var (
@@ -165,7 +185,7 @@ type CharterPatchRequest struct {
 	// variant's working set instead of being applied to the agent's live configuration.
 	//
 	// Omit this field to patch the agent directly. Variant scoping is not active yet:
-	// a variant supplied today is accepted and ignored, and the patch applies to the
+	// a variant supplied today is validated but not applied, and the patch applies to the
 	// agent.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
 
@@ -339,13 +359,20 @@ func (c *CharterAncestorsResponse) String() string {
 
 var (
 	charterBaseFieldName        = big.NewInt(1 << 0)
-	charterBaseFieldDescription = big.NewInt(1 << 1)
-	charterBaseFieldManual      = big.NewInt(1 << 2)
+	charterBaseFieldVariantID   = big.NewInt(1 << 1)
+	charterBaseFieldDescription = big.NewInt(1 << 2)
+	charterBaseFieldManual      = big.NewInt(1 << 3)
 )
 
 type CharterBase struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
+	// ID of the agent variant this charter belongs to, if applicable.
+	//
+	// On a write this is validated -- an unknown variant is rejected, as is any
+	// variant while variant scoping is off for charters -- but not yet applied: the
+	// write reaches the agent's live configuration either way.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// Optional additional natural language instruction text when this
@@ -367,6 +394,13 @@ func (c *CharterBase) GetName() string {
 		return ""
 	}
 	return c.Name
+}
+
+func (c *CharterBase) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *CharterBase) GetDescription() *string {
@@ -399,6 +433,13 @@ func (c *CharterBase) require(field *big.Int) {
 func (c *CharterBase) SetName(name string) {
 	c.Name = name
 	c.require(charterBaseFieldName)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterBase) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterBaseFieldVariantID)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
@@ -611,19 +652,26 @@ func (c *CharterChildrenGroup) String() string {
 // distinct from absent.
 var (
 	charterContentFieldName            = big.NewInt(1 << 0)
-	charterContentFieldDescription     = big.NewInt(1 << 1)
-	charterContentFieldManual          = big.NewInt(1 << 2)
-	charterContentFieldParentCharterID = big.NewInt(1 << 3)
-	charterContentFieldPrecondition    = big.NewInt(1 << 4)
-	charterContentFieldStatus          = big.NewInt(1 << 5)
-	charterContentFieldType            = big.NewInt(1 << 6)
-	charterContentFieldUserRank        = big.NewInt(1 << 7)
-	charterContentFieldReferences      = big.NewInt(1 << 8)
+	charterContentFieldVariantID       = big.NewInt(1 << 1)
+	charterContentFieldDescription     = big.NewInt(1 << 2)
+	charterContentFieldManual          = big.NewInt(1 << 3)
+	charterContentFieldParentCharterID = big.NewInt(1 << 4)
+	charterContentFieldPrecondition    = big.NewInt(1 << 5)
+	charterContentFieldStatus          = big.NewInt(1 << 6)
+	charterContentFieldType            = big.NewInt(1 << 7)
+	charterContentFieldUserRank        = big.NewInt(1 << 8)
+	charterContentFieldReferences      = big.NewInt(1 << 9)
 )
 
 type CharterContent struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
+	// ID of the agent variant this charter belongs to, if applicable.
+	//
+	// On a write this is validated -- an unknown variant is rejected, as is any
+	// variant while variant scoping is off for charters -- but not yet applied: the
+	// write reaches the agent's live configuration either way.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// Optional additional natural language instruction text when this
@@ -685,6 +733,13 @@ func (c *CharterContent) GetName() string {
 		return ""
 	}
 	return c.Name
+}
+
+func (c *CharterContent) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *CharterContent) GetDescription() *string {
@@ -759,6 +814,13 @@ func (c *CharterContent) require(field *big.Int) {
 func (c *CharterContent) SetName(name string) {
 	c.Name = name
 	c.require(charterContentFieldName)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterContent) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterContentFieldVariantID)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
@@ -1451,21 +1513,27 @@ func (c *CharterReferences) String() string {
 
 var (
 	charterRequestFieldName            = big.NewInt(1 << 0)
-	charterRequestFieldDescription     = big.NewInt(1 << 1)
-	charterRequestFieldManual          = big.NewInt(1 << 2)
-	charterRequestFieldParentCharterID = big.NewInt(1 << 3)
-	charterRequestFieldPrecondition    = big.NewInt(1 << 4)
-	charterRequestFieldStatus          = big.NewInt(1 << 5)
-	charterRequestFieldType            = big.NewInt(1 << 6)
-	charterRequestFieldUserRank        = big.NewInt(1 << 7)
-	charterRequestFieldReferences      = big.NewInt(1 << 8)
-	charterRequestFieldCharterID       = big.NewInt(1 << 9)
-	charterRequestFieldVariantID       = big.NewInt(1 << 10)
+	charterRequestFieldVariantID       = big.NewInt(1 << 1)
+	charterRequestFieldDescription     = big.NewInt(1 << 2)
+	charterRequestFieldManual          = big.NewInt(1 << 3)
+	charterRequestFieldParentCharterID = big.NewInt(1 << 4)
+	charterRequestFieldPrecondition    = big.NewInt(1 << 5)
+	charterRequestFieldStatus          = big.NewInt(1 << 6)
+	charterRequestFieldType            = big.NewInt(1 << 7)
+	charterRequestFieldUserRank        = big.NewInt(1 << 8)
+	charterRequestFieldReferences      = big.NewInt(1 << 9)
+	charterRequestFieldCharterID       = big.NewInt(1 << 10)
 )
 
 type CharterRequest struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
+	// ID of the agent variant this charter belongs to, if applicable.
+	//
+	// On a write this is validated -- an unknown variant is rejected, as is any
+	// variant while variant scoping is off for charters -- but not yet applied: the
+	// write reaches the agent's live configuration either way.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// Optional additional natural language instruction text when this
@@ -1516,12 +1584,6 @@ type CharterRequest struct {
 	References *CharterReferences `json:"references" url:"references"`
 	// ID that uniquely identifies this charter.
 	CharterID *EntityIDBase `json:"charterId" url:"charterId"`
-	// The agent variant this write is scoped to. When set, the charter content is staged in
-	// that variant's working set instead of being applied to the agent's live configuration.
-	//
-	// Omit this field to write directly to the agent. Variant scoping is not active yet: a
-	// variant supplied today is accepted and ignored, and the write applies to the agent.
-	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1535,6 +1597,13 @@ func (c *CharterRequest) GetName() string {
 		return ""
 	}
 	return c.Name
+}
+
+func (c *CharterRequest) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *CharterRequest) GetDescription() *string {
@@ -1600,13 +1669,6 @@ func (c *CharterRequest) GetCharterID() *EntityIDBase {
 	return c.CharterID
 }
 
-func (c *CharterRequest) GetVariantID() *EntityIDWithoutAgent {
-	if c == nil {
-		return nil
-	}
-	return c.VariantID
-}
-
 func (c *CharterRequest) GetExtraProperties() map[string]interface{} {
 	return c.extraProperties
 }
@@ -1623,6 +1685,13 @@ func (c *CharterRequest) require(field *big.Int) {
 func (c *CharterRequest) SetName(name string) {
 	c.Name = name
 	c.require(charterRequestFieldName)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterRequestFieldVariantID)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
@@ -1688,13 +1757,6 @@ func (c *CharterRequest) SetCharterID(charterID *EntityIDBase) {
 	c.require(charterRequestFieldCharterID)
 }
 
-// SetVariantID sets the VariantID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CharterRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
-	c.VariantID = variantID
-	c.require(charterRequestFieldVariantID)
-}
-
 func (c *CharterRequest) UnmarshalJSON(data []byte) error {
 	type unmarshaler CharterRequest
 	var value unmarshaler
@@ -1736,24 +1798,31 @@ func (c *CharterRequest) String() string {
 
 var (
 	charterResponseFieldName                    = big.NewInt(1 << 0)
-	charterResponseFieldDescription             = big.NewInt(1 << 1)
-	charterResponseFieldManual                  = big.NewInt(1 << 2)
-	charterResponseFieldCharterID               = big.NewInt(1 << 3)
-	charterResponseFieldParentCharterID         = big.NewInt(1 << 4)
-	charterResponseFieldChildCharterIDs         = big.NewInt(1 << 5)
-	charterResponseFieldPrecondition            = big.NewInt(1 << 6)
-	charterResponseFieldStatus                  = big.NewInt(1 << 7)
-	charterResponseFieldType                    = big.NewInt(1 << 8)
-	charterResponseFieldChildrenExclusionPolicy = big.NewInt(1 << 9)
-	charterResponseFieldUserRank                = big.NewInt(1 << 10)
-	charterResponseFieldReferences              = big.NewInt(1 << 11)
-	charterResponseFieldCreatedAt               = big.NewInt(1 << 12)
-	charterResponseFieldUpdatedAt               = big.NewInt(1 << 13)
+	charterResponseFieldVariantID               = big.NewInt(1 << 1)
+	charterResponseFieldDescription             = big.NewInt(1 << 2)
+	charterResponseFieldManual                  = big.NewInt(1 << 3)
+	charterResponseFieldCharterID               = big.NewInt(1 << 4)
+	charterResponseFieldParentCharterID         = big.NewInt(1 << 5)
+	charterResponseFieldChildCharterIDs         = big.NewInt(1 << 6)
+	charterResponseFieldPrecondition            = big.NewInt(1 << 7)
+	charterResponseFieldStatus                  = big.NewInt(1 << 8)
+	charterResponseFieldType                    = big.NewInt(1 << 9)
+	charterResponseFieldChildrenExclusionPolicy = big.NewInt(1 << 10)
+	charterResponseFieldUserRank                = big.NewInt(1 << 11)
+	charterResponseFieldReferences              = big.NewInt(1 << 12)
+	charterResponseFieldCreatedAt               = big.NewInt(1 << 13)
+	charterResponseFieldUpdatedAt               = big.NewInt(1 << 14)
 )
 
 type CharterResponse struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
+	// ID of the agent variant this charter belongs to, if applicable.
+	//
+	// On a write this is validated -- an unknown variant is rejected, as is any
+	// variant while variant scoping is off for charters -- but not yet applied: the
+	// write reaches the agent's live configuration either way.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// Optional additional natural language instruction text when this
@@ -1803,6 +1872,13 @@ func (c *CharterResponse) GetName() string {
 		return ""
 	}
 	return c.Name
+}
+
+func (c *CharterResponse) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *CharterResponse) GetDescription() *string {
@@ -1912,6 +1988,13 @@ func (c *CharterResponse) require(field *big.Int) {
 func (c *CharterResponse) SetName(name string) {
 	c.Name = name
 	c.require(charterResponseFieldName)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterResponse) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterResponseFieldVariantID)
 }
 
 // SetDescription sets the Description field and marks it as non-optional;
@@ -2085,6 +2168,7 @@ var (
 	charterSearchFilterFieldActionIDs           = big.NewInt(1 << 0)
 	charterSearchFilterFieldKnowledgeBaseIDs    = big.NewInt(1 << 1)
 	charterSearchFilterFieldIntelligentFieldIDs = big.NewInt(1 << 2)
+	charterSearchFilterFieldVariantID           = big.NewInt(1 << 3)
 )
 
 type CharterSearchFilter struct {
@@ -2096,6 +2180,8 @@ type CharterSearchFilter struct {
 	// A charter reaches an intelligent field through its precondition, not by referencing it
 	// directly the way it does an action or a knowledge base.
 	IntelligentFieldIDs []*EntityID `json:"intelligentFieldIds,omitempty" url:"intelligentFieldIds,omitempty"`
+	// Filter to values generated by a specific agent variant. If not provided, returns values from all variants.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2123,6 +2209,13 @@ func (c *CharterSearchFilter) GetIntelligentFieldIDs() []*EntityID {
 		return nil
 	}
 	return c.IntelligentFieldIDs
+}
+
+func (c *CharterSearchFilter) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *CharterSearchFilter) GetExtraProperties() map[string]interface{} {
@@ -2155,6 +2248,13 @@ func (c *CharterSearchFilter) SetKnowledgeBaseIDs(knowledgeBaseIDs []*EntityID) 
 func (c *CharterSearchFilter) SetIntelligentFieldIDs(intelligentFieldIDs []*EntityID) {
 	c.IntelligentFieldIDs = intelligentFieldIDs
 	c.require(charterSearchFilterFieldIntelligentFieldIDs)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterSearchFilter) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterSearchFilterFieldVariantID)
 }
 
 func (c *CharterSearchFilter) UnmarshalJSON(data []byte) error {

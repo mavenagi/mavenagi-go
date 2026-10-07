@@ -128,9 +128,9 @@ type IntelligentFieldPatchRequest struct {
 	Description *string `json:"description,omitempty" url:"-"`
 	// Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"-"`
-	// The agent variant to stage this patch in, by reference ID. Its owning app is `variantAppId`. Required on an agent with versioned intelligent fields; a patch that omits it there is rejected with reason `VARIANT_REQUIRED`.
-	VariantID *EntityIDBase `json:"variantId,omitempty" url:"-"`
-	// The App ID of the agent variant named by `variantId`. If not provided, the ID of the calling app will be used — name the owning app to patch in a variant the caller does not own, as the platform's own seeded variants are.
+	// The agent variant to stage this patch in. Required on an agent with versioned intelligent fields; a patch that omits it there is rejected with reason `VARIANT_REQUIRED`.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
+	// Deprecated, use `variantId.appId`, which wins when both are set.
 	VariantAppID *string `json:"variantAppId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -181,7 +181,7 @@ func (i *IntelligentFieldPatchRequest) SetEnumOptions(enumOptions []*EnumOption)
 
 // SetVariantID sets the VariantID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldPatchRequest) SetVariantID(variantID *EntityIDBase) {
+func (i *IntelligentFieldPatchRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
 	i.VariantID = variantID
 	i.require(intelligentFieldPatchRequestFieldVariantID)
 }
@@ -334,9 +334,9 @@ type IntelligentFieldBase struct {
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
 	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
-	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
+	// Target entity type for evaluation. CONVERSATION is supported, and AGENT_USER is supported for agents with user-level intelligent fields enabled. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant this field belongs to, if applicable
+	// On a request, the agent variant to stage the write in. On a response, the variant the request named, if any; absent when it named none.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -620,9 +620,9 @@ type IntelligentFieldDetailResponse struct {
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
 	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
-	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
+	// Target entity type for evaluation. CONVERSATION is supported, and AGENT_USER is supported for agents with user-level intelligent fields enabled. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant this field belongs to, if applicable
+	// On a request, the agent variant to stage the write in. On a response, the variant the request named, if any; absent when it named none.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The capability's display name, shown to whoever manages the agent. A trigger registered
 	// without one is named after the app that registered it and the event it fires on.
@@ -906,9 +906,9 @@ type IntelligentFieldRequest struct {
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
 	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
-	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
+	// Target entity type for evaluation. CONVERSATION is supported, and AGENT_USER is supported for agents with user-level intelligent fields enabled. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant this field belongs to, if applicable
+	// On a request, the agent variant to stage the write in. On a response, the variant the request named, if any; absent when it named none.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// Display name for the intelligent field
 	Name string `json:"name" url:"name"`
@@ -1117,9 +1117,9 @@ type IntelligentFieldResponse struct {
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
 	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
-	// Target entity type for evaluation. Only CONVERSATION is supported at this time. The backend will return an error for other types.
+	// Target entity type for evaluation. CONVERSATION is supported, and AGENT_USER is supported for agents with user-level intelligent fields enabled. The backend will return an error for other types.
 	EntityType EntityType `json:"entityType" url:"entityType"`
-	// ID of the agent variant this field belongs to, if applicable
+	// On a request, the agent variant to stage the write in. On a response, the variant the request named, if any; absent when it named none.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// The capability's display name, shown to whoever manages the agent. A trigger registered
 	// without one is named after the app that registered it and the event it fires on.
@@ -1605,7 +1605,13 @@ type IntelligentFieldValueSearchRequest struct {
 	IncludeUnknownValues *bool `json:"includeUnknownValues,omitempty" url:"includeUnknownValues,omitempty"`
 	// Field to sort by. Defaults to CREATED_AT.
 	Sort *IntelligentFieldValueSortField `json:"sort,omitempty" url:"sort,omitempty"`
-	// Filter to values generated by a specific agent variant. If not provided, returns values from all variants.
+	// Returns values of the fields in this agent variant's scope: its published snapshot plus
+	// its staged edits, matched by field. A value is included whichever variant's conversation
+	// produced it, and is named as this variant names the field. If not provided, returns
+	// values from all variants.
+	//
+	// To see values from the conversations pinned to a variant, filter conversations by
+	// `variantIds` in conversation search or the analytics APIs.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

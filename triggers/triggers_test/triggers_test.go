@@ -155,9 +155,7 @@ func TestTriggersPartialUpdateWithWireMock(
 			WireMockBaseURL,
 		),
 	)
-	request := &mavenagigo.PartialUpdateRequest{
-		Body: &mavenagigo.TriggerPartialUpdate{},
-	}
+	request := &mavenagigo.PartialUpdateRequest{}
 	_, invocationErr := client.Triggers.PartialUpdate(
 		context.TODO(),
 		"triggerReferenceId",

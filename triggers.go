@@ -11,13 +11,18 @@ import (
 )
 
 var (
-	partialUpdateRequestFieldAppID = big.NewInt(1 << 0)
+	partialUpdateRequestFieldAppID     = big.NewInt(1 << 0)
+	partialUpdateRequestFieldEnabled   = big.NewInt(1 << 1)
+	partialUpdateRequestFieldCondition = big.NewInt(1 << 2)
 )
 
 type PartialUpdateRequest struct {
 	// The App ID of the trigger to update. If not provided, the ID of the calling app will be used.
-	AppID *string               `json:"-" url:"appId,omitempty"`
-	Body  *TriggerPartialUpdate `json:"-" url:"-"`
+	AppID *string `json:"-" url:"appId,omitempty"`
+	// Whether the trigger will be called by Maven.
+	Enabled *bool `json:"enabled,omitempty" url:"-"`
+	// Narrows which events fire this trigger. Omitted leaves the current condition alone; an explicit null removes it, so the trigger fires for every event again.
+	Condition *EventCondition `json:"condition,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -37,21 +42,23 @@ func (p *PartialUpdateRequest) SetAppID(appID *string) {
 	p.require(partialUpdateRequestFieldAppID)
 }
 
-func (p *PartialUpdateRequest) UnmarshalJSON(data []byte) error {
-	body := new(TriggerPartialUpdate)
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	p.Body = body
-	return nil
+// SetEnabled sets the Enabled field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PartialUpdateRequest) SetEnabled(enabled *bool) {
+	p.Enabled = enabled
+	p.require(partialUpdateRequestFieldEnabled)
 }
 
-func (p *PartialUpdateRequest) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.Body)
+// SetCondition sets the Condition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PartialUpdateRequest) SetCondition(condition *EventCondition) {
+	p.Condition = condition
+	p.require(partialUpdateRequestFieldCondition)
 }
 
 var (
-	eventTriggerBaseFieldType = big.NewInt(1 << 0)
+	eventTriggerBaseFieldType      = big.NewInt(1 << 0)
+	eventTriggerBaseFieldCondition = big.NewInt(1 << 1)
 )
 
 type EventTriggerBase struct {
@@ -64,6 +71,12 @@ type EventTriggerBase struct {
 	//
 	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
+	// Narrows which events fire this trigger. Without one the trigger fires for every event on
+	// the agent. Re-registering writes whatever condition the request carries, so omitting it
+	// removes one; PATCH changes or removes a condition without re-registering.
+	//
+	// Only allowed on `EVENT_CREATED`; the other trigger types reject it.
+	Condition *EventCondition `json:"condition,omitempty" url:"condition,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -77,6 +90,13 @@ func (e *EventTriggerBase) GetType() EventTriggerType {
 		return ""
 	}
 	return e.Type
+}
+
+func (e *EventTriggerBase) GetCondition() *EventCondition {
+	if e == nil {
+		return nil
+	}
+	return e.Condition
 }
 
 func (e *EventTriggerBase) GetExtraProperties() map[string]interface{} {
@@ -95,6 +115,13 @@ func (e *EventTriggerBase) require(field *big.Int) {
 func (e *EventTriggerBase) SetType(type_ EventTriggerType) {
 	e.Type = type_
 	e.require(eventTriggerBaseFieldType)
+}
+
+// SetCondition sets the Condition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerBase) SetCondition(condition *EventCondition) {
+	e.Condition = condition
+	e.require(eventTriggerBaseFieldCondition)
 }
 
 func (e *EventTriggerBase) UnmarshalJSON(data []byte) error {
@@ -138,9 +165,10 @@ func (e *EventTriggerBase) String() string {
 
 var (
 	eventTriggerRequestFieldType        = big.NewInt(1 << 0)
-	eventTriggerRequestFieldName        = big.NewInt(1 << 1)
-	eventTriggerRequestFieldDescription = big.NewInt(1 << 2)
-	eventTriggerRequestFieldTriggerID   = big.NewInt(1 << 3)
+	eventTriggerRequestFieldCondition   = big.NewInt(1 << 1)
+	eventTriggerRequestFieldName        = big.NewInt(1 << 2)
+	eventTriggerRequestFieldDescription = big.NewInt(1 << 3)
+	eventTriggerRequestFieldTriggerID   = big.NewInt(1 << 4)
 )
 
 type EventTriggerRequest struct {
@@ -153,6 +181,12 @@ type EventTriggerRequest struct {
 	//
 	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
+	// Narrows which events fire this trigger. Without one the trigger fires for every event on
+	// the agent. Re-registering writes whatever condition the request carries, so omitting it
+	// removes one; PATCH changes or removes a condition without re-registering.
+	//
+	// Only allowed on `EVENT_CREATED`; the other trigger types reject it.
+	Condition *EventCondition `json:"condition,omitempty" url:"condition,omitempty"`
 	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
 	// The description of what the event trigger does, shown in the Maven Dashboard
@@ -172,6 +206,13 @@ func (e *EventTriggerRequest) GetType() EventTriggerType {
 		return ""
 	}
 	return e.Type
+}
+
+func (e *EventTriggerRequest) GetCondition() *EventCondition {
+	if e == nil {
+		return nil
+	}
+	return e.Condition
 }
 
 func (e *EventTriggerRequest) GetName() *string {
@@ -211,6 +252,13 @@ func (e *EventTriggerRequest) require(field *big.Int) {
 func (e *EventTriggerRequest) SetType(type_ EventTriggerType) {
 	e.Type = type_
 	e.require(eventTriggerRequestFieldType)
+}
+
+// SetCondition sets the Condition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerRequest) SetCondition(condition *EventCondition) {
+	e.Condition = condition
+	e.require(eventTriggerRequestFieldCondition)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -275,13 +323,14 @@ func (e *EventTriggerRequest) String() string {
 
 var (
 	eventTriggerResponseFieldType        = big.NewInt(1 << 0)
-	eventTriggerResponseFieldName        = big.NewInt(1 << 1)
-	eventTriggerResponseFieldDescription = big.NewInt(1 << 2)
-	eventTriggerResponseFieldCreatedAt   = big.NewInt(1 << 3)
-	eventTriggerResponseFieldUpdatedAt   = big.NewInt(1 << 4)
-	eventTriggerResponseFieldStatus      = big.NewInt(1 << 5)
-	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 6)
-	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 7)
+	eventTriggerResponseFieldCondition   = big.NewInt(1 << 1)
+	eventTriggerResponseFieldName        = big.NewInt(1 << 2)
+	eventTriggerResponseFieldDescription = big.NewInt(1 << 3)
+	eventTriggerResponseFieldCreatedAt   = big.NewInt(1 << 4)
+	eventTriggerResponseFieldUpdatedAt   = big.NewInt(1 << 5)
+	eventTriggerResponseFieldStatus      = big.NewInt(1 << 6)
+	eventTriggerResponseFieldTriggerID   = big.NewInt(1 << 7)
+	eventTriggerResponseFieldEnabled     = big.NewInt(1 << 8)
 )
 
 type EventTriggerResponse struct {
@@ -294,6 +343,12 @@ type EventTriggerResponse struct {
 	//
 	// Inbox triggers fire when an inbox item is created or updated.
 	Type EventTriggerType `json:"type" url:"type"`
+	// Narrows which events fire this trigger. Without one the trigger fires for every event on
+	// the agent. Re-registering writes whatever condition the request carries, so omitting it
+	// removes one; PATCH changes or removes a condition without re-registering.
+	//
+	// Only allowed on `EVENT_CREATED`; the other trigger types reject it.
+	Condition *EventCondition `json:"condition,omitempty" url:"condition,omitempty"`
 	// The capability's display name, shown to whoever manages the agent. A trigger registered
 	// without one is named after the app that registered it and the event it fires on.
 	Name string `json:"name" url:"name"`
@@ -325,6 +380,13 @@ func (e *EventTriggerResponse) GetType() EventTriggerType {
 		return ""
 	}
 	return e.Type
+}
+
+func (e *EventTriggerResponse) GetCondition() *EventCondition {
+	if e == nil {
+		return nil
+	}
+	return e.Condition
 }
 
 func (e *EventTriggerResponse) GetName() string {
@@ -392,6 +454,13 @@ func (e *EventTriggerResponse) require(field *big.Int) {
 func (e *EventTriggerResponse) SetType(type_ EventTriggerType) {
 	e.Type = type_
 	e.require(eventTriggerResponseFieldType)
+}
+
+// SetCondition sets the Condition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventTriggerResponse) SetCondition(condition *EventCondition) {
+	e.Condition = condition
+	e.require(eventTriggerResponseFieldCondition)
 }
 
 // SetName sets the Name field and marks it as non-optional;
@@ -790,83 +859,4 @@ func NewTriggerFieldFromString(s string) (TriggerField, error) {
 
 func (t TriggerField) Ptr() *TriggerField {
 	return &t
-}
-
-var (
-	triggerPartialUpdateFieldEnabled = big.NewInt(1 << 0)
-)
-
-type TriggerPartialUpdate struct {
-	// Whether the trigger will be called by Maven.
-	Enabled *bool `json:"enabled,omitempty" url:"enabled,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (t *TriggerPartialUpdate) GetEnabled() *bool {
-	if t == nil {
-		return nil
-	}
-	return t.Enabled
-}
-
-func (t *TriggerPartialUpdate) GetExtraProperties() map[string]interface{} {
-	return t.extraProperties
-}
-
-func (t *TriggerPartialUpdate) require(field *big.Int) {
-	if t.explicitFields == nil {
-		t.explicitFields = big.NewInt(0)
-	}
-	t.explicitFields.Or(t.explicitFields, field)
-}
-
-// SetEnabled sets the Enabled field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (t *TriggerPartialUpdate) SetEnabled(enabled *bool) {
-	t.Enabled = enabled
-	t.require(triggerPartialUpdateFieldEnabled)
-}
-
-func (t *TriggerPartialUpdate) UnmarshalJSON(data []byte) error {
-	type unmarshaler TriggerPartialUpdate
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*t = TriggerPartialUpdate(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *t)
-	if err != nil {
-		return err
-	}
-	t.extraProperties = extraProperties
-	t.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (t *TriggerPartialUpdate) MarshalJSON() ([]byte, error) {
-	type embed TriggerPartialUpdate
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*t),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (t *TriggerPartialUpdate) String() string {
-	if len(t.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(t); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", t)
 }

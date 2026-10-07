@@ -1419,9 +1419,28 @@ const (
 	ConversationFieldAgentEnvironment ConversationField = "AgentEnvironment"
 	ConversationFieldInboxItems       ConversationField = "InboxItems"
 	ConversationFieldInvolvedApps     ConversationField = "InvolvedApps"
+	// In development, part of agent versioning. The agent variant the conversation is pinned
+	// to (its `variantId`). A conversation from before the agent's conversations were pinned
+	// has none; grouping puts those under `BEFORE_VERSIONING`. In a table row a variant is an
+	// `entityId` value and `BEFORE_VERSIONING` a `string` value.
+	ConversationFieldVariant ConversationField = "Variant"
 	// Selects an intelligent field rather than a built-in conversation field.
 	// When used, `intelligentFieldId` must also be set to identify which field.
+	// Grouping by it splits that one field's conversations by value; to split conversations by
+	// which fields they have, use `IntelligentFields`.
 	ConversationFieldIntelligentField ConversationField = "IntelligentField"
+	// Groups conversations by each intelligent field that has a value on them: one bucket per
+	// field, keyed by the field as an `entityId` value. A conversation with three fields counts
+	// once under each, as with `Actions`. A field counts when the conversation has a value for
+	// it, an undetermined one included: the same conversations an `intelligentFields`
+	// `EXISTS` condition matches. Only conversation-level fields are on a conversation.
+	//
+	// Unlike `IntelligentField`, it takes no `intelligentFieldId` and doesn't look at values.
+	// Combine it with `Variant` to see which fields each variant's conversations have.
+	//
+	// It only works as a grouping: a metric targeting it, such as a `distinctCount`, is
+	// rejected with a 400.
+	ConversationFieldIntelligentFields ConversationField = "IntelligentFields"
 )
 
 func NewConversationFieldFromString(s string) (ConversationField, error) {
@@ -1496,8 +1515,12 @@ func NewConversationFieldFromString(s string) (ConversationField, error) {
 		return ConversationFieldInboxItems, nil
 	case "InvolvedApps":
 		return ConversationFieldInvolvedApps, nil
+	case "Variant":
+		return ConversationFieldVariant, nil
 	case "IntelligentField":
 		return ConversationFieldIntelligentField, nil
+	case "IntelligentFields":
+		return ConversationFieldIntelligentFields, nil
 	}
 	var t ConversationField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -1525,19 +1548,21 @@ var (
 	conversationFilterFieldResponseLength         = big.NewInt(1 << 14)
 	conversationFilterFieldSentiment              = big.NewInt(1 << 15)
 	conversationFilterFieldConversationMode       = big.NewInt(1 << 16)
-	conversationFilterFieldTags                   = big.NewInt(1 << 17)
-	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 18)
-	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 19)
-	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 20)
-	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 21)
-	conversationFilterFieldHasAttachment          = big.NewInt(1 << 22)
-	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 23)
-	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 24)
-	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 25)
-	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 26)
-	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 27)
-	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 28)
-	conversationFilterFieldBillable               = big.NewInt(1 << 29)
+	conversationFilterFieldDeleted                = big.NewInt(1 << 17)
+	conversationFilterFieldTags                   = big.NewInt(1 << 18)
+	conversationFilterFieldAgentUserIDs           = big.NewInt(1 << 19)
+	conversationFilterFieldResolutionStatus       = big.NewInt(1 << 20)
+	conversationFilterFieldResolvedByMaven        = big.NewInt(1 << 21)
+	conversationFilterFieldUserMessageCount       = big.NewInt(1 << 22)
+	conversationFilterFieldHasAttachment          = big.NewInt(1 << 23)
+	conversationFilterFieldMatchedSegmentIDs      = big.NewInt(1 << 24)
+	conversationFilterFieldMatchedCharterIDs      = big.NewInt(1 << 25)
+	conversationFilterFieldAnyMsgCharterMode      = big.NewInt(1 << 26)
+	conversationFilterFieldInboxItemIDs           = big.NewInt(1 << 27)
+	conversationFilterFieldVariantIDs             = big.NewInt(1 << 28)
+	conversationFilterFieldSimulationFilter       = big.NewInt(1 << 29)
+	conversationFilterFieldIntelligentFields      = big.NewInt(1 << 30)
+	conversationFilterFieldBillable               = big.NewInt(1 << 31)
 )
 
 type ConversationFilter struct {
@@ -1597,6 +1622,12 @@ type ConversationFilter struct {
 	// Filter by whether the conversation is spoken or written. Platform-assigned, never
 	// customer-writable.
 	ConversationMode []ConversationMode `json:"conversationMode,omitempty" url:"conversationMode,omitempty"`
+	// Filter by whether the conversation has been deleted with `deleteConversation`. `true`
+	// returns only deleted conversations, `false` excludes them. When unset, both are returned.
+	//
+	// The filter reads the search index, which is updated shortly after a deletion. Use the
+	// `deleted` field on each result to confirm.
+	Deleted *bool `json:"deleted,omitempty" url:"deleted,omitempty"`
 	// Filter by tags applied to the conversation
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Filter by agent user IDs associated with the conversation
@@ -1631,6 +1662,14 @@ type ConversationFilter struct {
 	AnyMsgCharterMode *bool `json:"anyMsgCharterMode,omitempty" url:"anyMsgCharterMode,omitempty"`
 	// Filter by inbox item IDs associated with the conversation
 	InboxItemIDs []*EntityIDFilter `json:"inboxItemIds,omitempty" url:"inboxItemIds,omitempty"`
+	// Filter by the agent variant each conversation is pinned to (its `variantId`), by
+	// reference ID and owning app, resolved against the calling agent. Matches conversations
+	// pinned to any of them.
+	//
+	// Omit it to match every conversation in the window, whichever variant it ran on. A
+	// conversation from before the agent's conversations were pinned has no variant, so it
+	// matches no list; grouping by `Variant` reports those as `BEFORE_VERSIONING`.
+	VariantIDs []*EntityIDFilter `json:"variantIds,omitempty" url:"variantIds,omitempty"`
 	// Whether to include simulation conversations in search results. Defaults to only non-simulation conversations.
 	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"simulationFilter,omitempty"`
 	// Filter by intelligent field values. All conditions are ANDed together.
@@ -1772,6 +1811,13 @@ func (c *ConversationFilter) GetConversationMode() []ConversationMode {
 	return c.ConversationMode
 }
 
+func (c *ConversationFilter) GetDeleted() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.Deleted
+}
+
 func (c *ConversationFilter) GetTags() []string {
 	if c == nil {
 		return nil
@@ -1840,6 +1886,13 @@ func (c *ConversationFilter) GetInboxItemIDs() []*EntityIDFilter {
 		return nil
 	}
 	return c.InboxItemIDs
+}
+
+func (c *ConversationFilter) GetVariantIDs() []*EntityIDFilter {
+	if c == nil {
+		return nil
+	}
+	return c.VariantIDs
 }
 
 func (c *ConversationFilter) GetSimulationFilter() *SimulationFilter {
@@ -1993,6 +2046,13 @@ func (c *ConversationFilter) SetConversationMode(conversationMode []Conversation
 	c.require(conversationFilterFieldConversationMode)
 }
 
+// SetDeleted sets the Deleted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetDeleted(deleted *bool) {
+	c.Deleted = deleted
+	c.require(conversationFilterFieldDeleted)
+}
+
 // SetTags sets the Tags field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ConversationFilter) SetTags(tags []string) {
@@ -2061,6 +2121,13 @@ func (c *ConversationFilter) SetAnyMsgCharterMode(anyMsgCharterMode *bool) {
 func (c *ConversationFilter) SetInboxItemIDs(inboxItemIDs []*EntityIDFilter) {
 	c.InboxItemIDs = inboxItemIDs
 	c.require(conversationFilterFieldInboxItemIDs)
+}
+
+// SetVariantIDs sets the VariantIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationFilter) SetVariantIDs(variantIDs []*EntityIDFilter) {
+	c.VariantIDs = variantIDs
+	c.require(conversationFilterFieldVariantIDs)
 }
 
 // SetSimulationFilter sets the SimulationFilter field and marks it as non-optional;
@@ -2438,7 +2505,7 @@ var (
 type ConversationPatchRequest struct {
 	// The App ID of the conversation to patch. If not provided the ID of the calling app will be used.
 	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
-	// Whether the conversation is able to receive asynchronous messages. Only valid for conversations with the `ASYNC` capability.
+	// Whether the conversation is open. Set it to false to close the conversation, which records a `CONVERSATION_CLOSED` system event. Closing is final: a closed conversation cannot be reopened and takes no new questions, form submissions, messages or metadata. It can still be read, deleted, and patched otherwise, for example to add attachments. For a conversation with the `ASYNC` capability, only an open conversation can receive asynchronous messages.
 	Open *bool `json:"open,omitempty" url:"open,omitempty"`
 	// Whether the LLM is enabled for this conversation.
 	LlmEnabled *bool `json:"llmEnabled,omitempty" url:"llmEnabled,omitempty"`
@@ -3249,8 +3316,8 @@ type ConversationsSearchRequest struct {
 	Size *int `json:"size,omitempty" url:"size,omitempty"`
 	// Whether to sort descending, defaults to true
 	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
-	// Field to sort results by. `IntelligentField` is not supported here - sorting conversations
-	// by an intelligent field value is not available. Intelligent fields can be filtered on via
+	// Field to sort results by. `IntelligentField` and `IntelligentFields` are not supported
+	// here - sorting conversations by an intelligent field value is not available. Intelligent fields can be filtered on via
 	// `filter.intelligentFields`, and grouped or aggregated through the analytics APIs.
 	Sort   *ConversationField  `json:"sort,omitempty" url:"sort,omitempty"`
 	Filter *ConversationFilter `json:"filter,omitempty" url:"filter,omitempty"`
@@ -4154,244 +4221,6 @@ func (f *FeedbackRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", f)
-}
-
-// Filter conversations by intelligent field values. All conditions are ANDed.
-var (
-	intelligentFieldFilterFieldConditions = big.NewInt(1 << 0)
-)
-
-type IntelligentFieldFilter struct {
-	// List of conditions to filter by. All conditions must match (AND logic).
-	Conditions []*IntelligentFieldSearchCondition `json:"conditions" url:"conditions"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldFilter) GetConditions() []*IntelligentFieldSearchCondition {
-	if i == nil {
-		return nil
-	}
-	return i.Conditions
-}
-
-func (i *IntelligentFieldFilter) GetExtraProperties() map[string]interface{} {
-	return i.extraProperties
-}
-
-func (i *IntelligentFieldFilter) require(field *big.Int) {
-	if i.explicitFields == nil {
-		i.explicitFields = big.NewInt(0)
-	}
-	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetConditions sets the Conditions field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldFilter) SetConditions(conditions []*IntelligentFieldSearchCondition) {
-	i.Conditions = conditions
-	i.require(intelligentFieldFilterFieldConditions)
-}
-
-func (i *IntelligentFieldFilter) UnmarshalJSON(data []byte) error {
-	type unmarshaler IntelligentFieldFilter
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*i = IntelligentFieldFilter(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *i)
-	if err != nil {
-		return err
-	}
-	i.extraProperties = extraProperties
-	i.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (i *IntelligentFieldFilter) MarshalJSON() ([]byte, error) {
-	type embed IntelligentFieldFilter
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*i),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (i *IntelligentFieldFilter) String() string {
-	if len(i.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(i); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", i)
-}
-
-// Comparison operators for intelligent field filtering.
-type IntelligentFieldOperator string
-
-const (
-	IntelligentFieldOperatorEq        IntelligentFieldOperator = "EQ"
-	IntelligentFieldOperatorNeq       IntelligentFieldOperator = "NEQ"
-	IntelligentFieldOperatorContains  IntelligentFieldOperator = "CONTAINS"
-	IntelligentFieldOperatorGt        IntelligentFieldOperator = "GT"
-	IntelligentFieldOperatorGte       IntelligentFieldOperator = "GTE"
-	IntelligentFieldOperatorLt        IntelligentFieldOperator = "LT"
-	IntelligentFieldOperatorLte       IntelligentFieldOperator = "LTE"
-	IntelligentFieldOperatorExists    IntelligentFieldOperator = "EXISTS"
-	IntelligentFieldOperatorNotExists IntelligentFieldOperator = "NOT_EXISTS"
-)
-
-func NewIntelligentFieldOperatorFromString(s string) (IntelligentFieldOperator, error) {
-	switch s {
-	case "EQ":
-		return IntelligentFieldOperatorEq, nil
-	case "NEQ":
-		return IntelligentFieldOperatorNeq, nil
-	case "CONTAINS":
-		return IntelligentFieldOperatorContains, nil
-	case "GT":
-		return IntelligentFieldOperatorGt, nil
-	case "GTE":
-		return IntelligentFieldOperatorGte, nil
-	case "LT":
-		return IntelligentFieldOperatorLt, nil
-	case "LTE":
-		return IntelligentFieldOperatorLte, nil
-	case "EXISTS":
-		return IntelligentFieldOperatorExists, nil
-	case "NOT_EXISTS":
-		return IntelligentFieldOperatorNotExists, nil
-	}
-	var t IntelligentFieldOperator
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (i IntelligentFieldOperator) Ptr() *IntelligentFieldOperator {
-	return &i
-}
-
-// A single condition on an intelligent field value.
-var (
-	intelligentFieldSearchConditionFieldFieldID  = big.NewInt(1 << 0)
-	intelligentFieldSearchConditionFieldOperator = big.NewInt(1 << 1)
-	intelligentFieldSearchConditionFieldValue    = big.NewInt(1 << 2)
-)
-
-type IntelligentFieldSearchCondition struct {
-	// The intelligent field to filter on (referenceId + appId)
-	FieldID *EntityIDFilter `json:"fieldId" url:"fieldId"`
-	// The comparison operator to apply
-	Operator IntelligentFieldOperator `json:"operator" url:"operator"`
-	// The value to compare against. Required for all operators except EXISTS and NOT_EXISTS. For BOOLEAN fields use "true" or "false". For NUMBER fields use a numeric string.
-	Value *string `json:"value,omitempty" url:"value,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (i *IntelligentFieldSearchCondition) GetFieldID() *EntityIDFilter {
-	if i == nil {
-		return nil
-	}
-	return i.FieldID
-}
-
-func (i *IntelligentFieldSearchCondition) GetOperator() IntelligentFieldOperator {
-	if i == nil {
-		return ""
-	}
-	return i.Operator
-}
-
-func (i *IntelligentFieldSearchCondition) GetValue() *string {
-	if i == nil {
-		return nil
-	}
-	return i.Value
-}
-
-func (i *IntelligentFieldSearchCondition) GetExtraProperties() map[string]interface{} {
-	return i.extraProperties
-}
-
-func (i *IntelligentFieldSearchCondition) require(field *big.Int) {
-	if i.explicitFields == nil {
-		i.explicitFields = big.NewInt(0)
-	}
-	i.explicitFields.Or(i.explicitFields, field)
-}
-
-// SetFieldID sets the FieldID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldSearchCondition) SetFieldID(fieldID *EntityIDFilter) {
-	i.FieldID = fieldID
-	i.require(intelligentFieldSearchConditionFieldFieldID)
-}
-
-// SetOperator sets the Operator field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldSearchCondition) SetOperator(operator IntelligentFieldOperator) {
-	i.Operator = operator
-	i.require(intelligentFieldSearchConditionFieldOperator)
-}
-
-// SetValue sets the Value field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldSearchCondition) SetValue(value *string) {
-	i.Value = value
-	i.require(intelligentFieldSearchConditionFieldValue)
-}
-
-func (i *IntelligentFieldSearchCondition) UnmarshalJSON(data []byte) error {
-	type unmarshaler IntelligentFieldSearchCondition
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*i = IntelligentFieldSearchCondition(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *i)
-	if err != nil {
-		return err
-	}
-	i.extraProperties = extraProperties
-	i.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (i *IntelligentFieldSearchCondition) MarshalJSON() ([]byte, error) {
-	type embed IntelligentFieldSearchCondition
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*i),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, i.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (i *IntelligentFieldSearchCondition) String() string {
-	if len(i.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(i.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(i); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", i)
 }
 
 type NumericConversationField string

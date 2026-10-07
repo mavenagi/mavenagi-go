@@ -230,6 +230,7 @@ func (r *RawClient) PartialUpdate(
 		r.options.ToHeader(),
 		options.ToHeader(),
 	)
+	headers.Add("Content-Type", "application/merge-patch+json")
 	var response *mavenagigo.EventTriggerResponse
 	raw, err := r.caller.Call(
 		ctx,

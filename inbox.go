@@ -401,6 +401,7 @@ var (
 	inboxFilterFieldTags          = big.NewInt(1 << 2)
 	inboxFilterFieldCreatedAfter  = big.NewInt(1 << 3)
 	inboxFilterFieldCreatedBefore = big.NewInt(1 << 4)
+	inboxFilterFieldVariantIDs    = big.NewInt(1 << 5)
 )
 
 type InboxFilter struct {
@@ -414,6 +415,15 @@ type InboxFilter struct {
 	CreatedAfter *time.Time `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
 	// Filter for items created before this timestamp.
 	CreatedBefore *time.Time `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
+	// Filter for items raised from conversations pinned to any of these agent variants, by
+	// reference ID and owning app. Only missing-knowledge items are raised from
+	// conversations, so no other item type matches a variant. Simulation conversations don't
+	// count. Omit it to match items whatever variant their conversations ran on.
+	//
+	// Reads those conversations, so it needs permission to read conversations as well as the
+	// inbox. At most 10,000 items are considered: those referenced by the most of the
+	// variants' conversations.
+	VariantIDs []*EntityIDFilter `json:"variantIds,omitempty" url:"variantIds,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -455,6 +465,13 @@ func (i *InboxFilter) GetCreatedBefore() *time.Time {
 		return nil
 	}
 	return i.CreatedBefore
+}
+
+func (i *InboxFilter) GetVariantIDs() []*EntityIDFilter {
+	if i == nil {
+		return nil
+	}
+	return i.VariantIDs
 }
 
 func (i *InboxFilter) GetExtraProperties() map[string]interface{} {
@@ -501,6 +518,13 @@ func (i *InboxFilter) SetCreatedAfter(createdAfter *time.Time) {
 func (i *InboxFilter) SetCreatedBefore(createdBefore *time.Time) {
 	i.CreatedBefore = createdBefore
 	i.require(inboxFilterFieldCreatedBefore)
+}
+
+// SetVariantIDs sets the VariantIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InboxFilter) SetVariantIDs(variantIDs []*EntityIDFilter) {
+	i.VariantIDs = variantIDs
+	i.require(inboxFilterFieldVariantIDs)
 }
 
 func (i *InboxFilter) UnmarshalJSON(data []byte) error {

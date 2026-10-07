@@ -181,8 +181,9 @@ var (
 	capabilitiesSearchRequestFieldDescription             = big.NewInt(1 << 4)
 	capabilitiesSearchRequestFieldUserInteractionRequired = big.NewInt(1 << 5)
 	capabilitiesSearchRequestFieldSortID                  = big.NewInt(1 << 6)
-	capabilitiesSearchRequestFieldVariantReferenceID      = big.NewInt(1 << 7)
-	capabilitiesSearchRequestFieldVariantAppID            = big.NewInt(1 << 8)
+	capabilitiesSearchRequestFieldVariantID               = big.NewInt(1 << 7)
+	capabilitiesSearchRequestFieldVariantReferenceID      = big.NewInt(1 << 8)
+	capabilitiesSearchRequestFieldVariantAppID            = big.NewInt(1 << 9)
 )
 
 type CapabilitiesSearchRequest struct {
@@ -212,8 +213,10 @@ type CapabilitiesSearchRequest struct {
 	// with versioned intelligent fields unless `capabilityTypes` excludes them; a
 	// request that omits it there is rejected with reason `VARIANT_REQUIRED`. Otherwise,
 	// if omitted, the agent's only variant is used.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
+	// Deprecated, use `variantId`, which wins when both are set.
 	VariantReferenceID *string `json:"variantReferenceId,omitempty" url:"-"`
-	// The app that owns the agent variant. Defaults to the calling app.
+	// Deprecated, use `variantId`, which wins when both are set.
 	VariantAppID *string `json:"variantAppId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -274,6 +277,13 @@ func (c *CapabilitiesSearchRequest) SetUserInteractionRequired(userInteractionRe
 func (c *CapabilitiesSearchRequest) SetSortID(sortID *CapabilitySortField) {
 	c.SortID = sortID
 	c.require(capabilitiesSearchRequestFieldSortID)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilitiesSearchRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(capabilitiesSearchRequestFieldVariantID)
 }
 
 // SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;

@@ -40,7 +40,7 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// Create a new event
+// Create a new event. Events are immutable, so a create that reuses the `referenceId` of an existing event in the same app is rejected with a 409 and leaves that event unchanged.
 func (c *Client) Create(
 	ctx context.Context,
 	request *mavenagigo.EventRequest,

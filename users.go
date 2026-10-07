@@ -63,12 +63,13 @@ func (u *UserGetRequest) SetAppID(appID *string) {
 }
 
 var (
-	agentUserFieldID          = big.NewInt(1 << 0)
-	agentUserFieldCreatedAt   = big.NewInt(1 << 1)
-	agentUserFieldUpdatedAt   = big.NewInt(1 << 2)
-	agentUserFieldIdentifiers = big.NewInt(1 << 3)
-	agentUserFieldDefaultName = big.NewInt(1 << 4)
-	agentUserFieldUsers       = big.NewInt(1 << 5)
+	agentUserFieldID                     = big.NewInt(1 << 0)
+	agentUserFieldCreatedAt              = big.NewInt(1 << 1)
+	agentUserFieldUpdatedAt              = big.NewInt(1 << 2)
+	agentUserFieldIdentifiers            = big.NewInt(1 << 3)
+	agentUserFieldDefaultName            = big.NewInt(1 << 4)
+	agentUserFieldUsers                  = big.NewInt(1 << 5)
+	agentUserFieldIntelligentFieldValues = big.NewInt(1 << 6)
 )
 
 type AgentUser struct {
@@ -86,6 +87,8 @@ type AgentUser struct {
 	// App created users that are associated with this agent user.
 	// If two apps create users with the same identifying properties, they will be merged into a single agent user.
 	Users []*AppUserSummary `json:"users" url:"users"`
+	// Latest successful values of the agent user's intelligent fields.
+	IntelligentFieldValues []*IntelligentFieldValueResponse `json:"intelligentFieldValues,omitempty" url:"intelligentFieldValues,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -134,6 +137,13 @@ func (a *AgentUser) GetUsers() []*AppUserSummary {
 		return nil
 	}
 	return a.Users
+}
+
+func (a *AgentUser) GetIntelligentFieldValues() []*IntelligentFieldValueResponse {
+	if a == nil {
+		return nil
+	}
+	return a.IntelligentFieldValues
 }
 
 func (a *AgentUser) GetExtraProperties() map[string]interface{} {
@@ -187,6 +197,13 @@ func (a *AgentUser) SetDefaultName(defaultName *string) {
 func (a *AgentUser) SetUsers(users []*AppUserSummary) {
 	a.Users = users
 	a.require(agentUserFieldUsers)
+}
+
+// SetIntelligentFieldValues sets the IntelligentFieldValues field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUser) SetIntelligentFieldValues(intelligentFieldValues []*IntelligentFieldValueResponse) {
+	a.IntelligentFieldValues = intelligentFieldValues
+	a.require(agentUserFieldIntelligentFieldValues)
 }
 
 func (a *AgentUser) UnmarshalJSON(data []byte) error {
@@ -263,10 +280,11 @@ func (a AgentUserField) Ptr() *AgentUserField {
 }
 
 var (
-	agentUserFilterFieldSearch      = big.NewInt(1 << 0)
-	agentUserFilterFieldIdentifiers = big.NewInt(1 << 1)
-	agentUserFilterFieldDisplayName = big.NewInt(1 << 2)
-	agentUserFilterFieldIsAnonymous = big.NewInt(1 << 3)
+	agentUserFilterFieldSearch            = big.NewInt(1 << 0)
+	agentUserFilterFieldIdentifiers       = big.NewInt(1 << 1)
+	agentUserFilterFieldDisplayName       = big.NewInt(1 << 2)
+	agentUserFilterFieldIsAnonymous       = big.NewInt(1 << 3)
+	agentUserFilterFieldIntelligentFields = big.NewInt(1 << 4)
 )
 
 type AgentUserFilter struct {
@@ -281,6 +299,8 @@ type AgentUserFilter struct {
 	// Filter by anonymous users. When true, only anonymous users are returned.
 	// When false, only non-anonymous users are returned. An anonymous user is one without any identifiers or name data.
 	IsAnonymous *bool `json:"isAnonymous,omitempty" url:"isAnonymous,omitempty"`
+	// Filter by intelligent field values. All conditions are ANDed together.
+	IntelligentFields *IntelligentFieldFilter `json:"intelligentFields,omitempty" url:"intelligentFields,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -315,6 +335,13 @@ func (a *AgentUserFilter) GetIsAnonymous() *bool {
 		return nil
 	}
 	return a.IsAnonymous
+}
+
+func (a *AgentUserFilter) GetIntelligentFields() *IntelligentFieldFilter {
+	if a == nil {
+		return nil
+	}
+	return a.IntelligentFields
 }
 
 func (a *AgentUserFilter) GetExtraProperties() map[string]interface{} {
@@ -354,6 +381,13 @@ func (a *AgentUserFilter) SetDisplayName(displayName *string) {
 func (a *AgentUserFilter) SetIsAnonymous(isAnonymous *bool) {
 	a.IsAnonymous = isAnonymous
 	a.require(agentUserFilterFieldIsAnonymous)
+}
+
+// SetIntelligentFields sets the IntelligentFields field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserFilter) SetIntelligentFields(intelligentFields *IntelligentFieldFilter) {
+	a.IntelligentFields = intelligentFields
+	a.require(agentUserFilterFieldIntelligentFields)
 }
 
 func (a *AgentUserFilter) UnmarshalJSON(data []byte) error {

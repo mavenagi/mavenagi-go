@@ -1525,6 +1525,8 @@ type ConversationBarChartRequest struct {
 	// - `ErroredActions`: "Action Name - App Name" (e.g., "Get Balance - Core Banking")
 	// - `Users`: User identifier value (e.g., "user@example.com")
 	// - `InboxItems`: Inbox item title
+	// - `Variant`: Variant title, or its reference ID when it has none; `BEFORE_VERSIONING` for conversations with no variant
+	// - `IntelligentFields`: Intelligent field name
 	// - `HumanAgents`: Human agent display name
 	// - `HumanAgentsWithInserts`: Human agent display name (for agents who made inserts)
 	// - Other fields: Field value as stored (e.g., "GOOD", "NEEDS_IMPROVEMENT" for Quality)
@@ -1541,6 +1543,8 @@ type ConversationBarChartRequest struct {
 	// - `ErroredActions`: "Action Name - App Name" (e.g., "Get Balance - Core Banking")
 	// - `Users`: User identifier value (e.g., "user@example.com")
 	// - `InboxItems`: Inbox item title
+	// - `Variant`: Variant title, or its reference ID when it has none; `BEFORE_VERSIONING` for conversations with no variant
+	// - `IntelligentFields`: Intelligent field name
 	// - `HumanAgents`: Human agent display name
 	// - `HumanAgentsWithInserts`: Human agent display name (for agents who made inserts)
 	// - Other fields: Field value as stored (e.g., "GOOD", "NEEDS_IMPROVEMENT" for Quality)
@@ -1679,7 +1683,8 @@ var (
 )
 
 type ConversationBasicMetric struct {
-	// Field to apply the metric to.
+	// Field to apply the metric to. `IntelligentFields` is a grouping only and is rejected
+	// here with a 400.
 	TargetField ConversationField `json:"targetField" url:"targetField"`
 	// Fully specified ID of the intelligent field. Required when `targetField` is
 	// `IntelligentField`, and ignored otherwise.
@@ -2093,6 +2098,8 @@ type ConversationDateHistogramRequest struct {
 	// - `ErroredActions`: "Action Name - App Name" (e.g., "Get Balance - Core Banking")
 	// - `Users`: User identifier value (e.g., "user@example.com")
 	// - `InboxItems`: Inbox item title
+	// - `Variant`: Variant title, or its reference ID when it has none; `BEFORE_VERSIONING` for conversations with no variant
+	// - `IntelligentFields`: Intelligent field name
 	// - `HumanAgents`: Human agent display name
 	// - `HumanAgentsWithInserts`: Human agent display name (for agents who made inserts)
 	// - Other fields: Field value as stored (e.g., "GOOD", "NEEDS_IMPROVEMENT" for Quality)
@@ -2235,7 +2242,8 @@ var (
 )
 
 type ConversationDistinctCount struct {
-	// Field to apply the metric to.
+	// Field to apply the metric to. `IntelligentFields` is a grouping only and is rejected
+	// here with a 400.
 	TargetField ConversationField `json:"targetField" url:"targetField"`
 	// Fully specified ID of the intelligent field. Required when `targetField` is
 	// `IntelligentField`, and ignored otherwise.
@@ -3258,6 +3266,8 @@ type ConversationPieChartRequest struct {
 	// - `ErroredActions`: "Action Name - App Name" (e.g., "Get Balance - Core Banking")
 	// - `Users`: User identifier value (e.g., "user@example.com")
 	// - `InboxItems`: Inbox item title
+	// - `Variant`: Variant title, or its reference ID when it has none; `BEFORE_VERSIONING` for conversations with no variant
+	// - `IntelligentFields`: Intelligent field name
 	// - `HumanAgents`: Human agent display name
 	// - `HumanAgentsWithInserts`: Human agent display name (for agents who made inserts)
 	// - Other fields: Field value as stored (e.g., "GOOD", "NEEDS_IMPROVEMENT" for Quality)
