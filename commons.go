@@ -4894,7 +4894,7 @@ type BotLogicCharterDetail struct {
 	CharterID *EntityIDWithoutAgent `json:"charterId" url:"charterId"`
 	// Human-readable charter name at the time of evaluation.
 	Name string `json:"name" url:"name"`
-	// The segment that gates this charter, if any. Absent for wildcard charters.
+	// Deprecated, read the charter's `precondition` from the charters API instead.
 	SegmentID *EntityIDWithoutAgent `json:"segmentId,omitempty" url:"segmentId,omitempty"`
 	// The parent charter in the hierarchy, if any. Absent for root-level charters.
 	ParentID *EntityIDWithoutAgent `json:"parentId,omitempty" url:"parentId,omitempty"`
@@ -6132,6 +6132,7 @@ func (b *BotLogicSafetyItem) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Segments that matched this bot response. Omitted when the agent is in charter mode.
 var (
 	botLogicSegmentsItemFieldMatchingSegmentIDs = big.NewInt(1 << 0)
 )
@@ -8215,7 +8216,7 @@ type ConversationAnalysis struct {
 	AgentResponse *string `json:"agentResponse,omitempty" url:"agentResponse,omitempty"`
 	// Generated resolution status of the conversation
 	ResolutionStatus *ResolutionStatus `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
-	// Generated category of the conversation
+	// Generated category of the conversation. For agents with a `categoryIntelligentFieldId`, this is that intelligent field's value. New agents without one have no category.
 	Category *string `json:"category,omitempty" url:"category,omitempty"`
 	// Generated sentiment of the conversation
 	Sentiment *Sentiment `json:"sentiment,omitempty" url:"sentiment,omitempty"`
@@ -12648,6 +12649,8 @@ const (
 	ErrorReasonVariantRequired ErrorReason = "VARIANT_REQUIRED"
 	// The write would change an intelligent field's `validationType` in an agent variant. A field keeps its type across variants; to use a different type, create a new field.
 	ErrorReasonIntelligentFieldTypeChanged ErrorReason = "INTELLIGENT_FIELD_TYPE_CHANGED"
+	// The working set holds staged edits of an entity type that isn't versioned for the agentw now (see `agents.getVersionedEntityTypes`), left from before its versioning was turned off - note that this can only happen in case of a reverted rollout. Committing would  publish them. Discard them with `discardWorkingSetEdits`'`entityType`, then retry.
+	ErrorReasonWorkingSetHasUnversionedEdits ErrorReason = "WORKING_SET_HAS_UNVERSIONED_EDITS"
 )
 
 func NewErrorReasonFromString(s string) (ErrorReason, error) {
@@ -12672,6 +12675,8 @@ func NewErrorReasonFromString(s string) (ErrorReason, error) {
 		return ErrorReasonVariantRequired, nil
 	case "INTELLIGENT_FIELD_TYPE_CHANGED":
 		return ErrorReasonIntelligentFieldTypeChanged, nil
+	case "WORKING_SET_HAS_UNVERSIONED_EDITS":
+		return ErrorReasonWorkingSetHasUnversionedEdits, nil
 	}
 	var t ErrorReason
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

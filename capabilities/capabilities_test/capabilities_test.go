@@ -146,3 +146,33 @@ func TestCapabilitiesSearchCapabilitiesWithWireMock(
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "POST", "/v1/capabilities/search", nil, 1)
 }
+
+func TestCapabilitiesSearchCapabilityExecutionsWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.CapabilityExecutionsSearchRequest{
+		SubjectIDs: []*mavenagigo.EntityID{
+			&mavenagigo.EntityID{
+				ReferenceID:    "conversation-123",
+				AppID:          "zendesk",
+				OrganizationID: "acme",
+				AgentID:        "support",
+				Type:           mavenagigo.EntityTypeConversation,
+			},
+		},
+	}
+	_, invocationErr := client.Capabilities.SearchCapabilityExecutions(
+		context.TODO(),
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/capabilities/executions/search", nil, 1)
+}

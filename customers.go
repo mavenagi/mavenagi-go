@@ -200,7 +200,18 @@ var (
 )
 
 type CustomerFilter struct {
-	// The search query to apply to the customers' name and description.
+	// The search query to apply to the customers. Matches any part of a customer's name or
+	// description.
+	//
+	// This field also supports a syntax for advanced filtering the `metadata` field.
+	//
+	// Metadata examples:
+	// - `metadata:myvalue` - matches customers with any metadata field set to `myvalue`
+	// - `metadata.mykey:myvalue` - matches customers with a metadata field `mykey` set to `myvalue`
+	// - `metadata.mykey:(myvalue OR anothervalue)` - matches customers with a metadata field `mykey` set to `myvalue` or `anothervalue`
+	// - `metadata.mykey:*` - matches customers with a metadata field `mykey`
+	// - `-metadata:myvalue` - matches customers that do not have any metadata field set to `myvalue`
+	// - `_exists_:metadata` - matches customers that have any metadata field set
 	Search *string `json:"search,omitempty" url:"search,omitempty"`
 	// The statuses to filter the customers by.
 	Statuses []CustomerStatus `json:"statuses,omitempty" url:"statuses,omitempty"`

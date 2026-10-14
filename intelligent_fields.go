@@ -65,7 +65,13 @@ var (
 type IntelligentFieldGetRequest struct {
 	// The App ID of the intelligent field to get. If not provided the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
-	// The agent variant reference ID to resolve the intelligent field's version through. Required on an agent with versioned intelligent fields; a request that omits it there is rejected with reason `VARIANT_REQUIRED`. Otherwise, if omitted, the agent's only variant is used.
+	// The agent variant reference ID to resolve the intelligent field's version through.
+	// Required on an agent with versioned intelligent fields; a request that omits it there
+	// is rejected with reason `VARIANT_REQUIRED`. Otherwise, if omitted, the agent's only
+	// variant is used, as its snapshot has it. When a variant is named, its staged edits
+	// are included: a field with a staged edit is returned at that edit, a field created in
+	// the variant is returned, and a field deleted in the variant, whether the delete is
+	// staged or already in its snapshot, returns 404.
 	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
 	// The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
 	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
@@ -1605,10 +1611,11 @@ type IntelligentFieldValueSearchRequest struct {
 	IncludeUnknownValues *bool `json:"includeUnknownValues,omitempty" url:"includeUnknownValues,omitempty"`
 	// Field to sort by. Defaults to CREATED_AT.
 	Sort *IntelligentFieldValueSortField `json:"sort,omitempty" url:"sort,omitempty"`
-	// Returns values of the fields in this agent variant's scope: its published snapshot plus
-	// its staged edits, matched by field. A value is included whichever variant's conversation
-	// produced it, and is named as this variant names the field. If not provided, returns
-	// values from all variants.
+	// Returns values of the fields in this agent variant's scope: its snapshot with its staged
+	// edits applied, matched by field, so a field deleted in the variant, by a staged edit or in
+	// its snapshot, is left out. A
+	// value is included whichever variant's conversation produced it, and is named as this
+	// variant names the field. If not provided, returns values from all variants.
 	//
 	// To see values from the conversations pinned to a variant, filter conversations by
 	// `variantIds` in conversation search or the analytics APIs.

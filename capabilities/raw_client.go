@@ -239,3 +239,45 @@ func (r *RawClient) SearchCapabilities(
 		Body:       response,
 	}, nil
 }
+
+func (r *RawClient) SearchCapabilityExecutions(
+	ctx context.Context,
+	request *mavenagigo.CapabilityExecutionsSearchRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*mavenagigo.CapabilityExecutionsSearchResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := baseURL + "/v1/capabilities/executions/search"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response *mavenagigo.CapabilityExecutionsSearchResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*mavenagigo.CapabilityExecutionsSearchResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}

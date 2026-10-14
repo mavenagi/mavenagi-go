@@ -19,13 +19,13 @@ var (
 type CharterDeleteRequest struct {
 	// The App ID of the charter to delete. If not provided, the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
-	// The reference ID of the agent variant this delete is scoped to. When set, the
-	// deletion is staged in that variant's working set instead of being applied to the
-	// agent's live configuration.
+	// The reference ID of the agent variant this delete is scoped to. While charters are
+	// versioned for the agent, the deletion is staged in that variant's working set
+	// instead of being applied to the agent's live configuration, and a delete that names
+	// no variant is rejected with `VARIANT_REQUIRED`.
 	//
-	// Omit this parameter to delete directly from the agent. Variant scoping is not
-	// active yet: a variant supplied today is validated but not applied, and the delete applies
-	// to the agent.
+	// While they aren't, omit this parameter to delete directly from the agent; naming a
+	// variant then is rejected.
 	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
 	// The App ID of the agent variant named by `variantReferenceId`. If not provided, the ID of the calling app will be used.
 	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
@@ -71,7 +71,13 @@ var (
 type CharterGetRequest struct {
 	// The App ID of the charter to get. If not provided, the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
-	// The agent variant reference ID to resolve the charter's version through. If not provided, defaults to the agent's production variant. Currently, validated but not applied.
+	// The agent variant reference ID to read the charter through. Its staged edits are
+	// included: a charter with a staged edit is read at that edit, a charter created in the
+	// variant is included, and a charter deleted in the variant, whether the delete is
+	// staged or already in its snapshot, is a 404, as is one the variant doesn't carry. If
+	// not provided, the request is rejected with `VARIANT_REQUIRED` while charters are
+	// versioned for the agent, and otherwise reads through the agent's single variant, as
+	// its snapshot has it, or the published charters while variant reads are off.
 	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
 	// The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
 	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
@@ -109,12 +115,24 @@ func (c *CharterGetRequest) SetVariantAppID(variantAppID *string) {
 }
 
 var (
-	charterGetAncestorsRequestFieldAppID = big.NewInt(1 << 0)
+	charterGetAncestorsRequestFieldAppID              = big.NewInt(1 << 0)
+	charterGetAncestorsRequestFieldVariantReferenceID = big.NewInt(1 << 1)
+	charterGetAncestorsRequestFieldVariantAppID       = big.NewInt(1 << 2)
 )
 
 type CharterGetAncestorsRequest struct {
 	// The App ID of the charter. If not provided, the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
+	// The agent variant reference ID to read the ancestors through. Its staged edits are
+	// included: a charter with a staged edit is read at that edit, a charter created in the
+	// variant is included, and a charter deleted in the variant, whether the delete is
+	// staged or already in its snapshot, is a 404, as is one the variant doesn't carry. If
+	// not provided, the request is rejected with `VARIANT_REQUIRED` while charters are
+	// versioned for the agent, and otherwise reads through the agent's single variant, as
+	// its snapshot has it, or the published charters while variant reads are off.
+	VariantReferenceID *string `json:"-" url:"variantReferenceId,omitempty"`
+	// The App ID of the agent variant reference. If not provided, the ID of the calling app will be used.
+	VariantAppID *string `json:"-" url:"variantAppId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -132,6 +150,20 @@ func (c *CharterGetAncestorsRequest) require(field *big.Int) {
 func (c *CharterGetAncestorsRequest) SetAppID(appID *string) {
 	c.AppID = appID
 	c.require(charterGetAncestorsRequestFieldAppID)
+}
+
+// SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterGetAncestorsRequest) SetVariantReferenceID(variantReferenceID *string) {
+	c.VariantReferenceID = variantReferenceID
+	c.require(charterGetAncestorsRequestFieldVariantReferenceID)
+}
+
+// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterGetAncestorsRequest) SetVariantAppID(variantAppID *string) {
+	c.VariantAppID = variantAppID
+	c.require(charterGetAncestorsRequestFieldVariantAppID)
 }
 
 var (
@@ -181,12 +213,11 @@ type CharterPatchRequest struct {
 	// Context items (knowledge bases and actions) this charter makes available.
 	// Each sub-field is independently optional — omit to leave unchanged.
 	References *CharterPatchReferences `json:"references,omitempty" url:"-"`
-	// The agent variant this patch is scoped to. When set, the patch is staged in that
-	// variant's working set instead of being applied to the agent's live configuration.
-	//
-	// Omit this field to patch the agent directly. Variant scoping is not active yet:
-	// a variant supplied today is validated but not applied, and the patch applies to the
-	// agent.
+	// The agent variant this patch is scoped to. While charters are versioned for the
+	// agent, the patch is applied to the charter as this variant sees it and staged in
+	// its working set rather than applied to the agent's live configuration, and a patch
+	// that names no variant is rejected with `VARIANT_REQUIRED`. While they aren't, a
+	// patch that names a variant is rejected. An unknown variant is a 404.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -369,9 +400,10 @@ type CharterBase struct {
 	Name string `json:"name" url:"name"`
 	// ID of the agent variant this charter belongs to, if applicable.
 	//
-	// On a write this is validated -- an unknown variant is rejected, as is any
-	// variant while variant scoping is off for charters -- but not yet applied: the
-	// write reaches the agent's live configuration either way.
+	// While charters are versioned for the agent, a write is staged in this variant's
+	// working set rather than applied to the agent's live configuration, and a write that
+	// names no variant is rejected with `VARIANT_REQUIRED`. While they aren't, a write that
+	// names a variant is rejected. An unknown variant is a 404.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
@@ -668,9 +700,10 @@ type CharterContent struct {
 	Name string `json:"name" url:"name"`
 	// ID of the agent variant this charter belongs to, if applicable.
 	//
-	// On a write this is validated -- an unknown variant is rejected, as is any
-	// variant while variant scoping is off for charters -- but not yet applied: the
-	// write reaches the agent's live configuration either way.
+	// While charters are versioned for the agent, a write is staged in this variant's
+	// working set rather than applied to the agent's live configuration, and a write that
+	// names no variant is rejected with `VARIANT_REQUIRED`. While they aren't, a write that
+	// names a variant is rejected. An unknown variant is a 404.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
@@ -1026,6 +1059,7 @@ var (
 	charterListChildrenRequestFieldSize      = big.NewInt(1 << 1)
 	charterListChildrenRequestFieldSortDesc  = big.NewInt(1 << 2)
 	charterListChildrenRequestFieldParentIDs = big.NewInt(1 << 3)
+	charterListChildrenRequestFieldVariantID = big.NewInt(1 << 4)
 )
 
 type CharterListChildrenRequest struct {
@@ -1039,6 +1073,14 @@ type CharterListChildrenRequest struct {
 	// charters for the agent. Roots and specific parents cannot be mixed in one request.
 	// Maximum 50 parent IDs per request.
 	ParentIDs []*EntityID `json:"parentIds" url:"parentIds"`
+	// List the charters as this agent variant sees them, parents and children alike. Its staged
+	// edits are included: a charter with a staged edit is read at that edit, a charter created
+	// in the variant is included, and a charter deleted in the variant, whether the delete is
+	// staged or already in its snapshot, is left out; naming one as a parent is rejected with a
+	// 400. A parent the variant doesn't carry has no children. If not provided, the request is rejected with `VARIANT_REQUIRED` while charters
+	// are versioned for the agent, and otherwise reads through the agent's single variant, as
+	// its snapshot has it, or the published charters while variant reads are off.
+	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1073,6 +1115,13 @@ func (c *CharterListChildrenRequest) GetParentIDs() []*EntityID {
 		return nil
 	}
 	return c.ParentIDs
+}
+
+func (c *CharterListChildrenRequest) GetVariantID() *EntityIDWithoutAgent {
+	if c == nil {
+		return nil
+	}
+	return c.VariantID
 }
 
 func (c *CharterListChildrenRequest) GetExtraProperties() map[string]interface{} {
@@ -1112,6 +1161,13 @@ func (c *CharterListChildrenRequest) SetSortDesc(sortDesc *bool) {
 func (c *CharterListChildrenRequest) SetParentIDs(parentIDs []*EntityID) {
 	c.ParentIDs = parentIDs
 	c.require(charterListChildrenRequestFieldParentIDs)
+}
+
+// SetVariantID sets the VariantID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CharterListChildrenRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
+	c.VariantID = variantID
+	c.require(charterListChildrenRequestFieldVariantID)
 }
 
 func (c *CharterListChildrenRequest) UnmarshalJSON(data []byte) error {
@@ -1530,9 +1586,10 @@ type CharterRequest struct {
 	Name string `json:"name" url:"name"`
 	// ID of the agent variant this charter belongs to, if applicable.
 	//
-	// On a write this is validated -- an unknown variant is rejected, as is any
-	// variant while variant scoping is off for charters -- but not yet applied: the
-	// write reaches the agent's live configuration either way.
+	// While charters are versioned for the agent, a write is staged in this variant's
+	// working set rather than applied to the agent's live configuration, and a write that
+	// names no variant is rejected with `VARIANT_REQUIRED`. While they aren't, a write that
+	// names a variant is rejected. An unknown variant is a 404.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
@@ -1819,9 +1876,10 @@ type CharterResponse struct {
 	Name string `json:"name" url:"name"`
 	// ID of the agent variant this charter belongs to, if applicable.
 	//
-	// On a write this is validated -- an unknown variant is rejected, as is any
-	// variant while variant scoping is off for charters -- but not yet applied: the
-	// write reaches the agent's live configuration either way.
+	// While charters are versioned for the agent, a write is staged in this variant's
+	// working set rather than applied to the agent's live configuration, and a write that
+	// names no variant is rejected with `VARIANT_REQUIRED`. While they aren't, a write that
+	// names a variant is rejected. An unknown variant is a 404.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 	// A plain text description of this charter. If not set, existing description is preserved if present.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
@@ -2180,7 +2238,13 @@ type CharterSearchFilter struct {
 	// A charter reaches an intelligent field through its precondition, not by referencing it
 	// directly the way it does an action or a knowledge base.
 	IntelligentFieldIDs []*EntityID `json:"intelligentFieldIds,omitempty" url:"intelligentFieldIds,omitempty"`
-	// Filter to values generated by a specific agent variant. If not provided, returns values from all variants.
+	// Search the charters as this agent variant sees them. Its staged edits are included: a
+	// charter with a staged edit is read at that edit, a charter created in the variant is
+	// included, and a charter deleted in the variant, whether the delete is staged or already in
+	// its snapshot, is left out. If not provided, the request is rejected with
+	// `VARIANT_REQUIRED` while charters are versioned for the agent, and otherwise reads through
+	// the agent's single variant, as its snapshot has it, or the published charters while
+	// variant reads are off.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

@@ -147,3 +147,28 @@ func (c *Client) SearchCapabilities(
 	}
 	return response.Body, nil
 }
+
+// Search the recorded runs of an agent's capabilities, newest first by default. An execution
+// is one run of one capability for one subject, with its outcome and timing: an Event
+// Trigger notifying its app, or a Conversation Kickoff running when a conversation started.
+//
+// Pass a conversation in `subjectIds` to get the executions recorded against it. An
+// `EVENT_CREATED` trigger records the event as its subject, so pass the event's ID to find
+// those.
+//
+// Results can trail a run by a few seconds. Executions are searchable for 90 days.
+func (c *Client) SearchCapabilityExecutions(
+	ctx context.Context,
+	request *mavenagigo.CapabilityExecutionsSearchRequest,
+	opts ...option.RequestOption,
+) (*mavenagigo.CapabilityExecutionsSearchResponse, error) {
+	response, err := c.WithRawResponse.SearchCapabilityExecutions(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}

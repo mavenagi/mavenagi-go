@@ -19,8 +19,9 @@ var (
 	agentPatchRequestFieldPersona                                  = big.NewInt(1 << 5)
 	agentPatchRequestFieldAdditionalPromptText                     = big.NewInt(1 << 6)
 	agentPatchRequestFieldCategoryGenerationPromptText             = big.NewInt(1 << 7)
-	agentPatchRequestFieldContentSafetyViolationResponsePromptText = big.NewInt(1 << 8)
-	agentPatchRequestFieldRejectQuestionsWithoutKnowledge          = big.NewInt(1 << 9)
+	agentPatchRequestFieldCategoryIntelligentFieldID               = big.NewInt(1 << 8)
+	agentPatchRequestFieldContentSafetyViolationResponsePromptText = big.NewInt(1 << 9)
+	agentPatchRequestFieldRejectQuestionsWithoutKnowledge          = big.NewInt(1 << 10)
 )
 
 type AgentPatchRequest struct {
@@ -38,8 +39,16 @@ type AgentPatchRequest struct {
 	Persona *LlmPersona `json:"persona,omitempty" url:"-"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"-"`
+	// Deprecated. Use `categoryIntelligentFieldId` instead. Not supported on new agents, and ignored while `categoryIntelligentFieldId` is set.
+	//
 	// LLM prompt for category generation.
 	CategoryGenerationPromptText *string `json:"categoryGenerationPromptText,omitempty" url:"-"`
+	// The intelligent field whose value becomes each conversation's category. Send null to clear it.
+	//
+	// Must be a `STRING` conversation field on this agent. Giving the field `enumOptions` is highly recommended, so the category comes from a fixed list.
+	//
+	// The field must be `ACTIVE` to produce values. While it is inactive, conversations get no category. With agent variants, a conversation gets a category only if the field is active in its variant. Categories are capped at 280 characters.
+	CategoryIntelligentFieldID *EntityIDWithoutAgent `json:"categoryIntelligentFieldId,omitempty" url:"-"`
 	// LLM prompt for generating a response when the user's question has been detected as unsafe.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"-"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
@@ -114,6 +123,13 @@ func (a *AgentPatchRequest) SetCategoryGenerationPromptText(categoryGenerationPr
 	a.require(agentPatchRequestFieldCategoryGenerationPromptText)
 }
 
+// SetCategoryIntelligentFieldID sets the CategoryIntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentPatchRequest) SetCategoryIntelligentFieldID(categoryIntelligentFieldID *EntityIDWithoutAgent) {
+	a.CategoryIntelligentFieldID = categoryIntelligentFieldID
+	a.require(agentPatchRequestFieldCategoryIntelligentFieldID)
+}
+
 // SetContentSafetyViolationResponsePromptText sets the ContentSafetyViolationResponsePromptText field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (a *AgentPatchRequest) SetContentSafetyViolationResponsePromptText(contentSafetyViolationResponsePromptText *string) {
@@ -129,14 +145,15 @@ func (a *AgentPatchRequest) SetRejectQuestionsWithoutKnowledge(rejectQuestionsWi
 }
 
 var (
-	agentFieldAgentID               = big.NewInt(1 << 0)
-	agentFieldName                  = big.NewInt(1 << 1)
-	agentFieldCreatedAt             = big.NewInt(1 << 2)
-	agentFieldEnvironment           = big.NewInt(1 << 3)
-	agentFieldDefaultTimezone       = big.NewInt(1 << 4)
-	agentFieldEnabledPiiCategories  = big.NewInt(1 << 5)
-	agentFieldSystemFallbackMessage = big.NewInt(1 << 6)
-	agentFieldPrompting             = big.NewInt(1 << 7)
+	agentFieldAgentID                    = big.NewInt(1 << 0)
+	agentFieldName                       = big.NewInt(1 << 1)
+	agentFieldCreatedAt                  = big.NewInt(1 << 2)
+	agentFieldEnvironment                = big.NewInt(1 << 3)
+	agentFieldDefaultTimezone            = big.NewInt(1 << 4)
+	agentFieldEnabledPiiCategories       = big.NewInt(1 << 5)
+	agentFieldSystemFallbackMessage      = big.NewInt(1 << 6)
+	agentFieldPrompting                  = big.NewInt(1 << 7)
+	agentFieldCategoryIntelligentFieldID = big.NewInt(1 << 8)
 )
 
 type Agent struct {
@@ -164,6 +181,10 @@ type Agent struct {
 	SystemFallbackMessage *string `json:"systemFallbackMessage,omitempty" url:"systemFallbackMessage,omitempty"`
 	// Agent prompting settings.
 	Prompting *AgentPrompting `json:"prompting" url:"prompting"`
+	// The intelligent field whose value becomes each conversation's category.
+	// When set, its value replaces the category generated from `prompting.categoryGenerationPromptText`.
+	// An inactive field produces no values, so conversations get no category until it is activated.
+	CategoryIntelligentFieldID *EntityIDWithoutAgent `json:"categoryIntelligentFieldId,omitempty" url:"categoryIntelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -226,6 +247,13 @@ func (a *Agent) GetPrompting() *AgentPrompting {
 		return nil
 	}
 	return a.Prompting
+}
+
+func (a *Agent) GetCategoryIntelligentFieldID() *EntityIDWithoutAgent {
+	if a == nil {
+		return nil
+	}
+	return a.CategoryIntelligentFieldID
 }
 
 func (a *Agent) GetExtraProperties() map[string]interface{} {
@@ -293,6 +321,13 @@ func (a *Agent) SetSystemFallbackMessage(systemFallbackMessage *string) {
 func (a *Agent) SetPrompting(prompting *AgentPrompting) {
 	a.Prompting = prompting
 	a.require(agentFieldPrompting)
+}
+
+// SetCategoryIntelligentFieldID sets the CategoryIntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *Agent) SetCategoryIntelligentFieldID(categoryIntelligentFieldID *EntityIDWithoutAgent) {
+	a.CategoryIntelligentFieldID = categoryIntelligentFieldID
+	a.require(agentFieldCategoryIntelligentFieldID)
 }
 
 func (a *Agent) UnmarshalJSON(data []byte) error {
@@ -481,6 +516,8 @@ type AgentPrompting struct {
 	Persona LlmPersona `json:"persona" url:"persona"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"additionalPromptText,omitempty"`
+	// Deprecated. Use `categoryIntelligentFieldId` instead. Not supported on new agents, and ignored while `categoryIntelligentFieldId` is set.
+	//
 	// LLM prompt for category generation.
 	//
 	// Use this to specify a fixed set of categories that an LLM should choose from when analyzing a conversation.
