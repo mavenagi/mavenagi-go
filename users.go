@@ -70,6 +70,7 @@ var (
 	agentUserFieldDefaultName            = big.NewInt(1 << 4)
 	agentUserFieldUsers                  = big.NewInt(1 << 5)
 	agentUserFieldIntelligentFieldValues = big.NewInt(1 << 6)
+	agentUserFieldExecutionMode          = big.NewInt(1 << 7)
 )
 
 type AgentUser struct {
@@ -89,6 +90,8 @@ type AgentUser struct {
 	Users []*AppUserSummary `json:"users" url:"users"`
 	// Latest successful values of the agent user's intelligent fields.
 	IntelligentFieldValues []*IntelligentFieldValueResponse `json:"intelligentFieldValues,omitempty" url:"intelligentFieldValues,omitempty"`
+	// The execution mode the agent user lives in. Its app users all share it.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -144,6 +147,13 @@ func (a *AgentUser) GetIntelligentFieldValues() []*IntelligentFieldValueResponse
 		return nil
 	}
 	return a.IntelligentFieldValues
+}
+
+func (a *AgentUser) GetExecutionMode() ExecutionMode {
+	if a == nil {
+		return ""
+	}
+	return a.ExecutionMode
 }
 
 func (a *AgentUser) GetExtraProperties() map[string]interface{} {
@@ -204,6 +214,13 @@ func (a *AgentUser) SetUsers(users []*AppUserSummary) {
 func (a *AgentUser) SetIntelligentFieldValues(intelligentFieldValues []*IntelligentFieldValueResponse) {
 	a.IntelligentFieldValues = intelligentFieldValues
 	a.require(agentUserFieldIntelligentFieldValues)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUser) SetExecutionMode(executionMode ExecutionMode) {
+	a.ExecutionMode = executionMode
+	a.require(agentUserFieldExecutionMode)
 }
 
 func (a *AgentUser) UnmarshalJSON(data []byte) error {
@@ -285,11 +302,14 @@ var (
 	agentUserFilterFieldDisplayName       = big.NewInt(1 << 2)
 	agentUserFilterFieldIsAnonymous       = big.NewInt(1 << 3)
 	agentUserFilterFieldIntelligentFields = big.NewInt(1 << 4)
+	agentUserFilterFieldSimulationFilter  = big.NewInt(1 << 5)
 )
 
 type AgentUserFilter struct {
 	// Full-text search query for matching agent users by content.
 	// When you search with this parameter, you're performing a full-text search across the user identifiers.
+	//
+	// Shown in Agent Designer as "Content includes".
 	Search *string `json:"search,omitempty" url:"search,omitempty"`
 	// Filter by identifiers
 	Identifiers []string `json:"identifiers,omitempty" url:"identifiers,omitempty"`
@@ -301,6 +321,8 @@ type AgentUserFilter struct {
 	IsAnonymous *bool `json:"isAnonymous,omitempty" url:"isAnonymous,omitempty"`
 	// Filter by intelligent field values. All conditions are ANDed together.
 	IntelligentFields *IntelligentFieldFilter `json:"intelligentFields,omitempty" url:"intelligentFields,omitempty"`
+	// Whether to include simulation users in search results. Defaults to only non-simulation users.
+	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"simulationFilter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -342,6 +364,13 @@ func (a *AgentUserFilter) GetIntelligentFields() *IntelligentFieldFilter {
 		return nil
 	}
 	return a.IntelligentFields
+}
+
+func (a *AgentUserFilter) GetSimulationFilter() *SimulationFilter {
+	if a == nil {
+		return nil
+	}
+	return a.SimulationFilter
 }
 
 func (a *AgentUserFilter) GetExtraProperties() map[string]interface{} {
@@ -388,6 +417,13 @@ func (a *AgentUserFilter) SetIsAnonymous(isAnonymous *bool) {
 func (a *AgentUserFilter) SetIntelligentFields(intelligentFields *IntelligentFieldFilter) {
 	a.IntelligentFields = intelligentFields
 	a.require(agentUserFilterFieldIntelligentFields)
+}
+
+// SetSimulationFilter sets the SimulationFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserFilter) SetSimulationFilter(simulationFilter *SimulationFilter) {
+	a.SimulationFilter = simulationFilter
+	a.require(agentUserFilterFieldSimulationFilter)
 }
 
 func (a *AgentUserFilter) UnmarshalJSON(data []byte) error {

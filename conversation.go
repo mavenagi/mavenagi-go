@@ -19,7 +19,7 @@ var (
 type ConversationDeleteRequest struct {
 	// The App ID of the conversation to delete. If not provided the ID of the calling app will be used.
 	AppID *string `json:"-" url:"appId,omitempty"`
-	// The reason for deleting the conversation. This message will replace all user messages in the conversation.
+	// The reason for deleting the conversation. It replaces the text of every message in the conversation, and the conversation's `analysis.userRequest`.
 	Reason string `json:"-" url:"reason"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1273,9 +1273,9 @@ func (a *AskStreamTextEvent) String() string {
 }
 
 // Fields used to filter conversations by billing status:
-// - ELIGIBLE_AND_BILLABLE: Billable conversations with a RESOLVED resolution status.
-// - ELIGIBLE_AND_NOT_BILLABLE: Conversations eligible for billing consideration but not currently billable. Includes ERROR, IN_PROGRESS, ESCALATED, INCOMPLETE, and NEGATIVE_FEEDBACK.
-// - INELIGIBLE: Conversations excluded from billing consideration. Includes CONTENT_SAFETY_FLAGGED, PROMPT_ATTACK_FLAGGED, HANGUP, INELIGIBLE, and UNKNOWN.
+// - ELIGIBLE_AND_BILLABLE: Billable conversations with a RESOLVED resolution status. Shown in Agent Designer as "Billable".
+// - ELIGIBLE_AND_NOT_BILLABLE: Conversations eligible for billing consideration but not currently billable. Shown in Agent Designer as "Not billable". Includes ERROR, IN_PROGRESS, ESCALATED, INCOMPLETE, and NEGATIVE_FEEDBACK.
+// - INELIGIBLE: Conversations excluded from billing consideration. Includes CONTENT_SAFETY_FLAGGED, PROMPT_ATTACK_FLAGGED, HANGUP, INELIGIBLE, and UNKNOWN. Shown in Agent Designer as "Not eligible".
 type BillableFilterField string
 
 const (
@@ -1382,9 +1382,10 @@ func (c *CategorizationResponse) String() string {
 type ConversationField string
 
 const (
-	ConversationFieldCategory               ConversationField = "Category"
-	ConversationFieldFirstResponseTime      ConversationField = "FirstResponseTime"
-	ConversationFieldHandleTime             ConversationField = "HandleTime"
+	ConversationFieldCategory          ConversationField = "Category"
+	ConversationFieldFirstResponseTime ConversationField = "FirstResponseTime"
+	ConversationFieldHandleTime        ConversationField = "HandleTime"
+	// Shown in Agent Designer Insights as the "Top agents" table.
 	ConversationFieldHumanAgents            ConversationField = "HumanAgents"
 	ConversationFieldHumanAgentsWithInserts ConversationField = "HumanAgentsWithInserts"
 	ConversationFieldApp                    ConversationField = "App"
@@ -1393,27 +1394,30 @@ const (
 	ConversationFieldResolutionStatus       ConversationField = "ResolutionStatus"
 	ConversationFieldResolvedByMaven        ConversationField = "ResolvedByMaven"
 	ConversationFieldQuality                ConversationField = "Quality"
-	ConversationFieldUsers                  ConversationField = "Users"
-	ConversationFieldResponseLength         ConversationField = "ResponseLength"
-	ConversationFieldThumbsUpCount          ConversationField = "ThumbsUpCount"
-	ConversationFieldThumbsDownCount        ConversationField = "ThumbsDownCount"
-	ConversationFieldInsertCount            ConversationField = "InsertCount"
-	ConversationFieldTags                   ConversationField = "Tags"
-	ConversationFieldUserMessageCount       ConversationField = "UserMessageCount"
-	ConversationFieldBotMessageCount        ConversationField = "BotMessageCount"
-	ConversationFieldLanguages              ConversationField = "Languages"
-	ConversationFieldActions                ConversationField = "Actions"
-	ConversationFieldIncompleteActions      ConversationField = "IncompleteActions"
-	ConversationFieldErroredActions         ConversationField = "ErroredActions"
-	ConversationFieldActionExecutionCount   ConversationField = "ActionExecutionCount"
-	ConversationFieldActionErrorCount       ConversationField = "ActionErrorCount"
-	ConversationFieldCharters               ConversationField = "Charters"
-	ConversationFieldSources                ConversationField = "Sources"
-	ConversationFieldCreatedAt              ConversationField = "CreatedAt"
-	ConversationFieldPredictedNps           ConversationField = "PredictedNPS"
-	ConversationFieldCsat                   ConversationField = "Csat"
-	ConversationFieldOrganizationID         ConversationField = "OrganizationId"
-	ConversationFieldAgentID                ConversationField = "AgentId"
+	// Shown in Agent Designer as "Active users" when counted distinctly.
+	ConversationFieldUsers           ConversationField = "Users"
+	ConversationFieldResponseLength  ConversationField = "ResponseLength"
+	ConversationFieldThumbsUpCount   ConversationField = "ThumbsUpCount"
+	ConversationFieldThumbsDownCount ConversationField = "ThumbsDownCount"
+	ConversationFieldInsertCount     ConversationField = "InsertCount"
+	ConversationFieldTags            ConversationField = "Tags"
+	// Shown in Agent Designer as "Customer interactions".
+	ConversationFieldUserMessageCount     ConversationField = "UserMessageCount"
+	ConversationFieldBotMessageCount      ConversationField = "BotMessageCount"
+	ConversationFieldLanguages            ConversationField = "Languages"
+	ConversationFieldActions              ConversationField = "Actions"
+	ConversationFieldIncompleteActions    ConversationField = "IncompleteActions"
+	ConversationFieldErroredActions       ConversationField = "ErroredActions"
+	ConversationFieldActionExecutionCount ConversationField = "ActionExecutionCount"
+	ConversationFieldActionErrorCount     ConversationField = "ActionErrorCount"
+	ConversationFieldCharters             ConversationField = "Charters"
+	// Shown in Agent Designer Insights as the "Top knowledge documents" table.
+	ConversationFieldSources        ConversationField = "Sources"
+	ConversationFieldCreatedAt      ConversationField = "CreatedAt"
+	ConversationFieldPredictedNps   ConversationField = "PredictedNPS"
+	ConversationFieldCsat           ConversationField = "Csat"
+	ConversationFieldOrganizationID ConversationField = "OrganizationId"
+	ConversationFieldAgentID        ConversationField = "AgentId"
 	// The environment configured on the agent: DEMO, STAGING, or PRODUCTION. Constant within a
 	// single agent, so it only separates conversations on a cross-agent request.
 	ConversationFieldAgentEnvironment ConversationField = "AgentEnvironment"
@@ -1585,6 +1589,8 @@ type ConversationFilter struct {
 	// - `tags:myvalue OR anothervalue` - matches conversations with a tag of `myvalue` or `anothervalue`
 	// - `-tags:myvalue` - matches conversations that do not have the tag `myvalue`
 	// - `_exists_:tags` - matches conversations that have any tags field set
+	//
+	// Shown in Agent Designer as "Content includes".
 	Search *string `json:"search,omitempty" url:"search,omitempty"`
 	// Filter conversations created on or after this timestamp
 	CreatedAfter *time.Time `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
@@ -1604,6 +1610,8 @@ type ConversationFilter struct {
 	// `BUTTON_CLICKED` events by their `feedbackInfo.thumbUp` value, and `Insert` matches
 	// `TEXT_INSERTED` events. `Handoff` matches bot responses that returned the system fallback
 	// message.
+	//
+	// Shown in Agent Designer as "Event".
 	Feedback []FeedbackType `json:"feedback,omitempty" url:"feedback,omitempty"`
 	// Filter by human agents who participated in the conversation
 	HumanAgents []string `json:"humanAgents,omitempty" url:"humanAgents,omitempty"`
@@ -1630,7 +1638,7 @@ type ConversationFilter struct {
 	Deleted *bool `json:"deleted,omitempty" url:"deleted,omitempty"`
 	// Filter by tags applied to the conversation
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
-	// Filter by agent user IDs associated with the conversation
+	// Filter by agent user IDs associated with the conversation. Shown in Agent Designer as "Users", where the user enters identifiers such as an email.
 	AgentUserIDs []string `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
 	// Filter by conversation resolution status which is determined by AI based on the conversation content.
 	//
@@ -1683,6 +1691,8 @@ type ConversationFilter struct {
 	//
 	// If billable is `null` or `[]` then defaults to all eligible conversations,
 	// which means ELIGIBLE_AND_BILLABLE and ELIGIBLE_AND_NOT_BILLABLE.
+	//
+	// Shown in Agent Designer as "Billing status".
 	Billable []BillableFilterField `json:"billable,omitempty" url:"billable,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2505,7 +2515,7 @@ var (
 type ConversationPatchRequest struct {
 	// The App ID of the conversation to patch. If not provided the ID of the calling app will be used.
 	AppID *string `json:"appId,omitempty" url:"appId,omitempty"`
-	// Whether the conversation is open. Set it to false to close the conversation, which records a `CONVERSATION_CLOSED` system event. Closing is final: a closed conversation cannot be reopened and takes no new questions, form submissions, messages or metadata. It can still be read, deleted, and patched otherwise, for example to add attachments. For a conversation with the `ASYNC` capability, only an open conversation can receive asynchronous messages.
+	// Whether the conversation is open. Set it to false to close the conversation, which records a `CONVERSATION_CLOSED` system event. Closing is final: a closed conversation cannot be reopened and takes no new questions, form submissions, messages or metadata. It can still be read, deleted, and patched otherwise, for example to add attachments. For a conversation with the `ASYNC` capability, only an open conversation can receive asynchronous messages. Close a conversation only after its ask calls have returned. An answer still being generated when the conversation closes is saved anyway, and the `CONVERSATION_CLOSED` event can then go out before that answer is in the conversation's data.
 	Open *bool `json:"open,omitempty" url:"open,omitempty"`
 	// Whether the LLM is enabled for this conversation.
 	LlmEnabled *bool `json:"llmEnabled,omitempty" url:"llmEnabled,omitempty"`

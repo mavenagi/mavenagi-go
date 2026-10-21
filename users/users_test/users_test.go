@@ -100,6 +100,25 @@ func TestUsersGetAgentUserWithWireMock(
 	VerifyRequestCount(t, "GET", "/v1/agentusers/aus_1234567890", nil, 1)
 }
 
+func TestUsersDeleteAgentUserWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	invocationErr := client.Users.DeleteAgentUser(
+		context.TODO(),
+		"aus_1234567890",
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "DELETE", "/v1/agentusers/aus_1234567890", nil, 1)
+}
+
 func TestUsersCreateOrUpdateWithWireMock(
 	t *testing.T,
 ) {

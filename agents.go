@@ -34,6 +34,8 @@ type AgentPatchRequest struct {
 	// The PII categories that are enabled for the agent.
 	EnabledPiiCategories []PiiCategory `json:"enabledPiiCategories,omitempty" url:"-"`
 	// The system fallback message.
+	//
+	// Rejected with reason `VARIANT_REQUIRED` while `SYSTEM_FALLBACK_MESSAGE` is in `getVersionedEntityTypes`; set it through `patchVersionedSettings`.
 	SystemFallbackMessage *string `json:"systemFallbackMessage,omitempty" url:"-"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	Persona *LlmPersona `json:"persona,omitempty" url:"-"`
@@ -50,6 +52,8 @@ type AgentPatchRequest struct {
 	// The field must be `ACTIVE` to produce values. While it is inactive, conversations get no category. With agent variants, a conversation gets a category only if the field is active in its variant. Categories are capped at 280 characters.
 	CategoryIntelligentFieldID *EntityIDWithoutAgent `json:"categoryIntelligentFieldId,omitempty" url:"-"`
 	// LLM prompt for generating a response when the user's question has been detected as unsafe.
+	//
+	// Rejected with reason `VARIANT_REQUIRED` while `CONTENT_SAFETY_VIOLATION_RESPONSE_PROMPT_TEXT` is in `getVersionedEntityTypes`; set it through `patchVersionedSettings`.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"-"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	//
@@ -174,10 +178,12 @@ type Agent struct {
 	// Defaults to `AbaRoutingNumber`, `CreditCardNumber`, `IpAddress`, `PhoneNumber`, `SwiftCode`,
 	// `UsBankAccountNumber`, `UsDriversLicenseNumber`, `UsIndividualTaxpayerIdentification`,
 	// `UsUkPassportNumber`, `UsSocialSecurityNumber`.
+	//
+	// Shown in Agent Designer as "PII Redaction".
 	EnabledPiiCategories []PiiCategory `json:"enabledPiiCategories" url:"enabledPiiCategories"`
 	// Text shown to end users when the system encounters an error while generating a bot response message.
 	//
-	// This text is also used when a content safety violation is detected, unless `contentSafetyViolationPromptText` is set.
+	// Omitted while `SYSTEM_FALLBACK_MESSAGE` is in `getVersionedEntityTypes`; read it through `getVersionedSettings`.
 	SystemFallbackMessage *string `json:"systemFallbackMessage,omitempty" url:"systemFallbackMessage,omitempty"`
 	// Agent prompting settings.
 	Prompting *AgentPrompting `json:"prompting" url:"prompting"`
@@ -515,6 +521,8 @@ type AgentPrompting struct {
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	Persona LlmPersona `json:"persona" url:"persona"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
+	//
+	// Shown in Agent Designer as "Additional persona instructions".
 	AdditionalPromptText *string `json:"additionalPromptText,omitempty" url:"additionalPromptText,omitempty"`
 	// Deprecated. Use `categoryIntelligentFieldId` instead. Not supported on new agents, and ignored while `categoryIntelligentFieldId` is set.
 	//
@@ -522,15 +530,21 @@ type AgentPrompting struct {
 	//
 	// Use this to specify a fixed set of categories that an LLM should choose from when analyzing a conversation.
 	// When not set uses a default prompt which gives the LLM flexibility to determine appropriate categories on its own.
+	//
+	// Shown in Agent Designer as "Category prompt override".
 	CategoryGenerationPromptText *string `json:"categoryGenerationPromptText,omitempty" url:"categoryGenerationPromptText,omitempty"`
 	// LLM prompt for generating a response when the user's question has been detected as unsafe.
 	//
 	// Use this to provide custom LLM generated replies when dealing with content safety violations.
-	// When not set, the system fallback message will be used and replies will not be personalized by the LLM as it will not be involved.
+	// When not set, a default response is sent and replies will not be personalized by the LLM as it will not be involved.
+	//
+	// Omitted while `CONTENT_SAFETY_VIOLATION_RESPONSE_PROMPT_TEXT` is in `getVersionedEntityTypes`; read it through `getVersionedSettings`.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"contentSafetyViolationResponsePromptText,omitempty"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	//
 	// Return the system fallback message on all questions that have no relevant knowledge bases or actions.
+	//
+	// Shown in Agent Designer as "Only return answers for existing knowledge".
 	RejectQuestionsWithoutKnowledge bool `json:"rejectQuestionsWithoutKnowledge" url:"rejectQuestionsWithoutKnowledge"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

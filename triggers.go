@@ -76,6 +76,8 @@ type EventTriggerBase struct {
 	// removes one; PATCH changes or removes a condition without re-registering.
 	//
 	// Only allowed on `EVENT_CREATED`; the other trigger types reject it.
+	//
+	// Shown in Agent Designer as "When".
 	Condition *EventCondition `json:"condition,omitempty" url:"condition,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -186,6 +188,8 @@ type EventTriggerRequest struct {
 	// removes one; PATCH changes or removes a condition without re-registering.
 	//
 	// Only allowed on `EVENT_CREATED`; the other trigger types reject it.
+	//
+	// Shown in Agent Designer as "When".
 	Condition *EventCondition `json:"condition,omitempty" url:"condition,omitempty"`
 	// The name of the trigger, displayed to end users. If not set, a name is derived from the app ID and trigger type.
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
@@ -348,6 +352,8 @@ type EventTriggerResponse struct {
 	// removes one; PATCH changes or removes a condition without re-registering.
 	//
 	// Only allowed on `EVENT_CREATED`; the other trigger types reject it.
+	//
+	// Shown in Agent Designer as "When".
 	Condition *EventCondition `json:"condition,omitempty" url:"condition,omitempty"`
 	// The capability's display name, shown to whoever manages the agent. A trigger registered
 	// without one is named after the app that registered it and the event it fires on.

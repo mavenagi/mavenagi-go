@@ -842,7 +842,9 @@ func (s *SegmentResponse) String() string {
 type SegmentStatus string
 
 const (
-	SegmentStatusActive   SegmentStatus = "ACTIVE"
+	// Shown in Agent Designer as "Live".
+	SegmentStatusActive SegmentStatus = "ACTIVE"
+	// Shown in Agent Designer as "Draft".
 	SegmentStatusInactive SegmentStatus = "INACTIVE"
 	SegmentStatusDeleted  SegmentStatus = "DELETED"
 )

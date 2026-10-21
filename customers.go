@@ -212,6 +212,8 @@ type CustomerFilter struct {
 	// - `metadata.mykey:*` - matches customers with a metadata field `mykey`
 	// - `-metadata:myvalue` - matches customers that do not have any metadata field set to `myvalue`
 	// - `_exists_:metadata` - matches customers that have any metadata field set
+	//
+	// Shown in Agent Designer as "Name or description".
 	Search *string `json:"search,omitempty" url:"search,omitempty"`
 	// The statuses to filter the customers by.
 	Statuses []CustomerStatus `json:"statuses,omitempty" url:"statuses,omitempty"`
@@ -644,9 +646,9 @@ type CustomerResponse struct {
 	Status CustomerStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this customer
 	CustomerID *EntityID `json:"customerId" url:"customerId"`
-	// Set of agent user IDs assigned to this customer
+	// Set of agent user IDs assigned to this customer. Shown in Agent Designer under "People", together with `members`.
 	Assignees []string `json:"assignees" url:"assignees"`
-	// Set of agent user IDs who are members of this customer
+	// Set of agent user IDs who are members of this customer. Shown in Agent Designer under "People", together with `assignees`.
 	Members []string `json:"members" url:"members"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

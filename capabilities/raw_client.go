@@ -198,6 +198,63 @@ func (r *RawClient) DeleteCapability(
 	}, nil
 }
 
+func (r *RawClient) SimulateCapability(
+	ctx context.Context,
+	// Which kind of capability to simulate. Must match the body's `capabilityType`.
+	capabilityType *mavenagigo.CapabilityType,
+	// The capability's reference ID, unique within its type and app.
+	referenceID string,
+	request *mavenagigo.SimulateCapabilityByTypeRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*mavenagigo.CapabilitySimulationResult], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		r.baseURL,
+		"https://www.mavenagi-apis.com",
+	)
+	endpointURL := internal.EncodeURL(
+		baseURL+"/v1/capabilities/%v/%v/simulate",
+		capabilityType,
+		referenceID,
+	)
+	queryParams, err := internal.QueryValues(request)
+	if err != nil {
+		return nil, err
+	}
+	if len(queryParams) > 0 {
+		endpointURL += "?" + queryParams.Encode()
+	}
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response *mavenagigo.CapabilitySimulationResult
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*mavenagigo.CapabilitySimulationResult]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
 func (r *RawClient) SearchCapabilities(
 	ctx context.Context,
 	request *mavenagigo.CapabilitiesSearchRequest,

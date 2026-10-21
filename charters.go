@@ -398,7 +398,9 @@ var (
 type CharterBase struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
-	// ID of the agent variant this charter belongs to, if applicable.
+	// On a write request, the agent variant to stage the write in. On a response, it is set
+	// only on each side of a working-set diff, naming the variant that side comes from; every
+	// other charter response, and every staged-edit payload, leaves it unset.
 	//
 	// While charters are versioned for the agent, a write is staged in this variant's
 	// working set rather than applied to the agent's live configuration, and a write that
@@ -412,6 +414,8 @@ type CharterBase struct {
 	// before delivery.
 	//
 	// If not set, existing manual is preserved if present.
+	//
+	// Shown in Agent Designer as "Manual", or "Return text" when `type` is `STRICT_RETURN`.
 	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -540,7 +544,8 @@ func (c *CharterBase) String() string {
 type CharterChildrenExclusionPolicy string
 
 const (
-	CharterChildrenExclusionPolicyDefault      CharterChildrenExclusionPolicy = "DEFAULT"
+	CharterChildrenExclusionPolicyDefault CharterChildrenExclusionPolicy = "DEFAULT"
+	// Shown in Agent Designer as "Turn overlapping children on".
 	CharterChildrenExclusionPolicyAllowOverlap CharterChildrenExclusionPolicy = "ALLOW_OVERLAP"
 )
 
@@ -698,7 +703,9 @@ var (
 type CharterContent struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
-	// ID of the agent variant this charter belongs to, if applicable.
+	// On a write request, the agent variant to stage the write in. On a response, it is set
+	// only on each side of a working-set diff, naming the variant that side comes from; every
+	// other charter response, and every staged-edit payload, leaves it unset.
 	//
 	// While charters are versioned for the agent, a write is staged in this variant's
 	// working set rather than applied to the agent's live configuration, and a write that
@@ -712,6 +719,8 @@ type CharterContent struct {
 	// before delivery.
 	//
 	// If not set, existing manual is preserved if present.
+	//
+	// Shown in Agent Designer as "Manual", or "Return text" when `type` is `STRICT_RETURN`.
 	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
 	// The fully-qualified ID of the parent charter. Send null to place this charter at the
 	// root level -- the field is nullable rather than optional, so null is meaningful and
@@ -725,6 +734,8 @@ type CharterContent struct {
 	// precondition to determine whether there is a match. When null, the
 	// charter is a wildcard and always matches (subject to ancestor
 	// preconditions still combining with AND logic).
+	//
+	// Shown in Agent Designer as the charter's "Segment". A null precondition shows as "All conversations".
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// Desired lifecycle status.
 	Status CharterStatus `json:"status" url:"status"`
@@ -1376,6 +1387,8 @@ type CharterPatchReferences struct {
 	// Replaces the entire set when provided. Omit to leave unchanged.
 	// An empty set removes all action associations.
 	// Maximum 50 actions per charter.
+	//
+	// Shown in Agent Designer as "Capabilities".
 	ActionIDs []*EntityID `json:"actionIds,omitempty" url:"actionIds,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1480,6 +1493,8 @@ type CharterReferences struct {
 	KnowledgeBases []*CharterKnowledgeBaseReference `json:"knowledgeBases,omitempty" url:"knowledgeBases,omitempty"`
 	// The IDs of actions this charter makes available.
 	// Maximum 50 actions per charter.
+	//
+	// Shown in Agent Designer as "Capabilities".
 	ActionIDs []*EntityID `json:"actionIds" url:"actionIds"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1584,7 +1599,9 @@ var (
 type CharterRequest struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
-	// ID of the agent variant this charter belongs to, if applicable.
+	// On a write request, the agent variant to stage the write in. On a response, it is set
+	// only on each side of a working-set diff, naming the variant that side comes from; every
+	// other charter response, and every staged-edit payload, leaves it unset.
 	//
 	// While charters are versioned for the agent, a write is staged in this variant's
 	// working set rather than applied to the agent's live configuration, and a write that
@@ -1598,6 +1615,8 @@ type CharterRequest struct {
 	// before delivery.
 	//
 	// If not set, existing manual is preserved if present.
+	//
+	// Shown in Agent Designer as "Manual", or "Return text" when `type` is `STRICT_RETURN`.
 	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
 	// The fully-qualified ID of the parent charter. Send null to place this charter at the
 	// root level -- the field is nullable rather than optional, so null is meaningful and
@@ -1611,6 +1630,8 @@ type CharterRequest struct {
 	// precondition to determine whether there is a match. When null, the
 	// charter is a wildcard and always matches (subject to ancestor
 	// preconditions still combining with AND logic).
+	//
+	// Shown in Agent Designer as the charter's "Segment". A null precondition shows as "All conversations".
 	Precondition *Precondition `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// Desired lifecycle status.
 	Status CharterStatus `json:"status" url:"status"`
@@ -1874,7 +1895,9 @@ var (
 type CharterResponse struct {
 	// Display name for this charter or group.
 	Name string `json:"name" url:"name"`
-	// ID of the agent variant this charter belongs to, if applicable.
+	// On a write request, the agent variant to stage the write in. On a response, it is set
+	// only on each side of a working-set diff, naming the variant that side comes from; every
+	// other charter response, and every staged-edit payload, leaves it unset.
 	//
 	// While charters are versioned for the agent, a write is staged in this variant's
 	// working set rather than applied to the agent's live configuration, and a write that
@@ -1888,6 +1911,8 @@ type CharterResponse struct {
 	// before delivery.
 	//
 	// If not set, existing manual is preserved if present.
+	//
+	// Shown in Agent Designer as "Manual", or "Return text" when `type` is `STRICT_RETURN`.
 	Manual *string `json:"manual,omitempty" url:"manual,omitempty"`
 	// ID that uniquely identifies this charter.
 	CharterID *EntityID `json:"charterId" url:"charterId"`
@@ -1900,6 +1925,8 @@ type CharterResponse struct {
 	// The IDs of direct child charters, in their userRank order.
 	ChildCharterIDs []*EntityID `json:"childCharterIds" url:"childCharterIds"`
 	// The rule controlling when this charter applies. Empty means wildcard (always matches).
+	//
+	// Shown in Agent Designer as the charter's "Segment". A null precondition shows as "All conversations".
 	Precondition *PreconditionResponse `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The lifecycle status of this charter.
 	Status CharterStatus `json:"status" url:"status"`
@@ -2663,7 +2690,9 @@ func (c *CharterSearchResponse) String() string {
 type CharterStatus string
 
 const (
-	CharterStatusActive   CharterStatus = "ACTIVE"
+	// Shown in Agent Designer as "Live".
+	CharterStatusActive CharterStatus = "ACTIVE"
+	// Shown in Agent Designer as "Draft".
 	CharterStatusInactive CharterStatus = "INACTIVE"
 	CharterStatusDeleted  CharterStatus = "DELETED"
 )
@@ -2705,6 +2734,8 @@ type CharterSummary struct {
 	// The display name of the charter.
 	Name string `json:"name" url:"name"`
 	// The rule controlling when this charter applies. Null means wildcard (always matches).
+	//
+	// Shown in Agent Designer as the charter's "Segment". A null precondition shows as "All conversations".
 	Precondition *PreconditionResponse `json:"precondition,omitempty" url:"precondition,omitempty"`
 	// The ID of the parent charter. Null for root-level charters.
 	ParentCharterID *EntityID `json:"parentCharterId,omitempty" url:"parentCharterId,omitempty"`
@@ -2912,45 +2943,4 @@ func (c *CharterSummary) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
-}
-
-// The behavioral mode for a charter.
-//
-//   - STANDARD: Default. The charter's manual is delivered to the LLM as instructions,
-//     concatenated with ancestor charter manuals before delivery.
-//
-//   - STRICT_RETURN: When matched, this charter's manual becomes the response: it is returned
-//     verbatim, without invoking the LLM. The charter cannot have children, and
-//     its manual must be non-blank — the manual is the response.
-//
-//     A STRICT_RETURN charter references nothing: both `knowledgeBases` and
-//     `actionIds` must be empty, and a create or update supplying either is
-//     rejected. With no LLM in the round there is nothing to consult a knowledge
-//     base or to choose an action.
-//
-//     A STRICT_RETURN charter is matched exactly like any other charter — same
-//     ordering and mutual-exclusion rules. The only difference is what a match
-//     does: the first matched STRICT_RETURN charter takes over the round, so its
-//     manual is the whole response and every other matched charter is ignored.
-//     (At most one applies per round.)
-type CharterType string
-
-const (
-	CharterTypeStandard     CharterType = "STANDARD"
-	CharterTypeStrictReturn CharterType = "STRICT_RETURN"
-)
-
-func NewCharterTypeFromString(s string) (CharterType, error) {
-	switch s {
-	case "STANDARD":
-		return CharterTypeStandard, nil
-	case "STRICT_RETURN":
-		return CharterTypeStrictReturn, nil
-	}
-	var t CharterType
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CharterType) Ptr() *CharterType {
-	return &c
 }

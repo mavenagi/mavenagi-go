@@ -1103,7 +1103,7 @@ func (k *KnowledgeBaseIndexingProgressState) String() string {
 	return fmt.Sprintf("%#v", k)
 }
 
-// The indexing status of the knowledge base version
+// The indexing status of the knowledge base version. In the Agent Designer "Refresh Log", `BUILDING`, `INDEXING` and `INDEXED` show as "Syncing", `PUBLISHED` as "Synced", and `SUPERSEDED`, `ROLLING_BACK` and `ROLLED_BACK` as "Interrupted".
 type KnowledgeBaseIndexingStatus string
 
 const (
@@ -1524,8 +1524,10 @@ type KnowledgeBaseResponse struct {
 	// The status of the most recent version of the knowledge base.
 	// The `activeVersionId` will only be populated if this status is `SUCCEEDED`.
 	// Use the `listKnowledgeBaseVersions` endpoint to get the full list of versions.
+	//
+	// Shown in Agent Designer as "Refresh status".
 	MostRecentVersionStatus KnowledgeBaseVersionStatus `json:"mostRecentVersionStatus" url:"mostRecentVersionStatus"`
-	// The type of the knowledge base. Can not be changed once created.
+	// The type of the knowledge base. Can not be changed once created. Shown in Agent Designer as "Source".
 	Type KnowledgeBaseType `json:"type" url:"type"`
 	// Metadata for the knowledge base.
 	Metadata map[string]string `json:"metadata" url:"metadata"`
@@ -2010,6 +2012,7 @@ func (k *KnowledgeBaseSearchRequest) String() string {
 type KnowledgeBaseType string
 
 const (
+	// Shown in Agent Designer as "Maven app".
 	KnowledgeBaseTypeAPI    KnowledgeBaseType = "API"
 	KnowledgeBaseTypeURL    KnowledgeBaseType = "URL"
 	KnowledgeBaseTypeManual KnowledgeBaseType = "MANUAL"
@@ -2038,6 +2041,7 @@ func (k KnowledgeBaseType) Ptr() *KnowledgeBaseType {
 	return &k
 }
 
+// Each version is one entry in the knowledge base's "Refresh Log" in Agent Designer.
 var (
 	knowledgeBaseVersionFieldType           = big.NewInt(1 << 0)
 	knowledgeBaseVersionFieldVersionID      = big.NewInt(1 << 1)
@@ -2612,8 +2616,10 @@ func (k *KnowledgeBaseVersionRequest) String() string {
 type KnowledgeBaseVersionStatus string
 
 const (
-	KnowledgeBaseVersionStatusSucceeded  KnowledgeBaseVersionStatus = "SUCCEEDED"
-	KnowledgeBaseVersionStatusFailed     KnowledgeBaseVersionStatus = "FAILED"
+	// Shown in Agent Designer as "Success".
+	KnowledgeBaseVersionStatusSucceeded KnowledgeBaseVersionStatus = "SUCCEEDED"
+	KnowledgeBaseVersionStatusFailed    KnowledgeBaseVersionStatus = "FAILED"
+	// Shown in Agent Designer as "Processing".
 	KnowledgeBaseVersionStatusInProgress KnowledgeBaseVersionStatus = "IN_PROGRESS"
 	// Stopped before completing, by a cancel request rather than a failure.
 	KnowledgeBaseVersionStatusCanceled KnowledgeBaseVersionStatus = "CANCELED"

@@ -78,6 +78,39 @@ func (c *Client) GetAgentUser(
 	return response.Body, nil
 }
 
+// Deletes the identifiers and user data that every app has saved for an agent user.
+// This is the same as calling `DELETE /users/{userId}` for each of the agent user's app users.
+//
+// The agent user and its app users still exist afterwards, with no identifiers or user data.
+// Apps can keep writing to them; a later create or update adds data back to the same users.
+//
+// Conversations, their messages and events are not modified, apart from the intelligent field values below. To wipe a conversation, use `DELETE /conversations/{conversationId}`.
+//
+// If the ID belongs to an agent user that has been merged into another, the agent user it was merged into is wiped.
+//
+// <Warning>This is a destructive operation and cannot be undone.</Warning>
+//
+// ### Intelligent fields
+//
+// The agent user's intelligent field values are deleted too, and removed from their `INTELLIGENT_FIELD_VALUE_CHANGED` events; the events themselves are kept.
+// Unlike `DELETE /users/{userId}`, the wipe does not recompute the values. They can be computed again later from the user's remaining conversations, for example after the user sends another message; wipe those conversations first to prevent that.
+func (c *Client) DeleteAgentUser(
+	ctx context.Context,
+	// The ID of the agent user to wipe.
+	agentUserID string,
+	opts ...option.RequestOption,
+) error {
+	_, err := c.WithRawResponse.DeleteAgentUser(
+		ctx,
+		agentUserID,
+		opts...,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Update an app user or create it if it doesn't exist.
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
@@ -115,8 +148,13 @@ func (c *Client) Get(
 	return response.Body, nil
 }
 
-// Deletes all identifiers and user data saved by the specified app.
+// Deletes all identifiers and user data saved by the specified app for this user.
 // Does not modify data or identifiers saved by other apps.
+//
+// The app user still exists afterwards, with no identifiers or user data, and the app can keep writing to it.
+// Conversations, their messages and events are not modified.
+// The agent user's intelligent field values are not deleted; they are recomputed without this app's data.
+// To wipe a conversation, use `DELETE /conversations/{conversationId}`. To wipe every app's data for a user, use `DELETE /agentusers/{agentUserId}`.
 //
 // If this user is linked to a user from another app, it will not be unlinked. Unlinking of users is not yet supported.
 //

@@ -376,6 +376,176 @@ func (c *CapabilityExecutionsSearchRequest) SetStatuses(statuses []CapabilityExe
 }
 
 var (
+	simulateCapabilityByTypeRequestFieldAppID = big.NewInt(1 << 0)
+)
+
+type SimulateCapabilityByTypeRequest struct {
+	// The app that owns the capability. Defaults to the calling app.
+	AppID *string                    `json:"-" url:"appId,omitempty"`
+	Body  *CapabilitySimulationInput `json:"-" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (s *SimulateCapabilityByTypeRequest) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulateCapabilityByTypeRequest) SetAppID(appID *string) {
+	s.AppID = appID
+	s.require(simulateCapabilityByTypeRequestFieldAppID)
+}
+
+func (s *SimulateCapabilityByTypeRequest) UnmarshalJSON(data []byte) error {
+	body := new(CapabilitySimulationInput)
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	s.Body = body
+	return nil
+}
+
+func (s *SimulateCapabilityByTypeRequest) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Body)
+}
+
+var (
+	actionSimulationInputFieldConversationMetadata = big.NewInt(1 << 0)
+	actionSimulationInputFieldUser                 = big.NewInt(1 << 1)
+	actionSimulationInputFieldTransientData        = big.NewInt(1 << 2)
+	actionSimulationInputFieldParameters           = big.NewInt(1 << 3)
+)
+
+type ActionSimulationInput struct {
+	// The conversation's metadata, as the capability would read it.
+	ConversationMetadata map[string]string `json:"conversationMetadata,omitempty" url:"conversationMetadata,omitempty"`
+	// The user the capability runs for. Omit it to run for an anonymous user.
+	User *SimulatedUser `json:"user,omitempty" url:"user,omitempty"`
+	// Data passed to the capability for this run only and never stored.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+	// The action's parameters, keyed by parameter ID.
+	Parameters map[string]interface{} `json:"parameters,omitempty" url:"parameters,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *ActionSimulationInput) GetConversationMetadata() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.ConversationMetadata
+}
+
+func (a *ActionSimulationInput) GetUser() *SimulatedUser {
+	if a == nil {
+		return nil
+	}
+	return a.User
+}
+
+func (a *ActionSimulationInput) GetTransientData() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.TransientData
+}
+
+func (a *ActionSimulationInput) GetParameters() map[string]interface{} {
+	if a == nil {
+		return nil
+	}
+	return a.Parameters
+}
+
+func (a *ActionSimulationInput) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *ActionSimulationInput) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetConversationMetadata sets the ConversationMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionSimulationInput) SetConversationMetadata(conversationMetadata map[string]string) {
+	a.ConversationMetadata = conversationMetadata
+	a.require(actionSimulationInputFieldConversationMetadata)
+}
+
+// SetUser sets the User field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionSimulationInput) SetUser(user *SimulatedUser) {
+	a.User = user
+	a.require(actionSimulationInputFieldUser)
+}
+
+// SetTransientData sets the TransientData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionSimulationInput) SetTransientData(transientData map[string]string) {
+	a.TransientData = transientData
+	a.require(actionSimulationInputFieldTransientData)
+}
+
+// SetParameters sets the Parameters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionSimulationInput) SetParameters(parameters map[string]interface{}) {
+	a.Parameters = parameters
+	a.require(actionSimulationInputFieldParameters)
+}
+
+func (a *ActionSimulationInput) UnmarshalJSON(data []byte) error {
+	type unmarshaler ActionSimulationInput
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = ActionSimulationInput(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *ActionSimulationInput) MarshalJSON() ([]byte, error) {
+	type embed ActionSimulationInput
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *ActionSimulationInput) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
 	capabilitiesSearchResponseFieldNumber        = big.NewInt(1 << 0)
 	capabilitiesSearchResponseFieldSize          = big.NewInt(1 << 1)
 	capabilitiesSearchResponseFieldTotalElements = big.NewInt(1 << 2)
@@ -1311,6 +1481,195 @@ func (c *CapabilityResponse) validate() error {
 	return nil
 }
 
+// What a capability is simulated with, by kind. Only actions can be simulated today; a variant
+// is added for each kind as it becomes simulation-aware.
+type CapabilitySimulationInput struct {
+	CapabilityType string
+	Action         *ActionSimulationInput
+}
+
+func (c *CapabilitySimulationInput) GetCapabilityType() string {
+	if c == nil {
+		return ""
+	}
+	return c.CapabilityType
+}
+
+func (c *CapabilitySimulationInput) GetAction() *ActionSimulationInput {
+	if c == nil {
+		return nil
+	}
+	return c.Action
+}
+
+func (c *CapabilitySimulationInput) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		CapabilityType string `json:"capabilityType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	c.CapabilityType = unmarshaler.CapabilityType
+	if unmarshaler.CapabilityType == "" {
+		return fmt.Errorf("%T did not include discriminant capabilityType", c)
+	}
+	switch unmarshaler.CapabilityType {
+	case "ACTION":
+		value := new(ActionSimulationInput)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Action = value
+	}
+	return nil
+}
+
+func (c CapabilitySimulationInput) MarshalJSON() ([]byte, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	if c.Action != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Action, "capabilityType", "ACTION")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+type CapabilitySimulationInputVisitor interface {
+	VisitAction(*ActionSimulationInput) error
+}
+
+func (c *CapabilitySimulationInput) Accept(visitor CapabilitySimulationInputVisitor) error {
+	if c.Action != nil {
+		return visitor.VisitAction(c.Action)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+func (c *CapabilitySimulationInput) validate() error {
+	if c == nil {
+		return fmt.Errorf("type %T is nil", c)
+	}
+	var fields []string
+	if c.Action != nil {
+		fields = append(fields, "ACTION")
+	}
+	if len(fields) == 0 {
+		if c.CapabilityType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", c, c.CapabilityType)
+		}
+		return fmt.Errorf("type %T is empty", c)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", c, fields)
+	}
+	if c.CapabilityType != "" {
+		field := fields[0]
+		if c.CapabilityType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				c,
+				c.CapabilityType,
+				c,
+			)
+		}
+	}
+	return nil
+}
+
+// What one simulated run of a capability produced, by kind.
+type CapabilitySimulationResult struct {
+	CapabilityType string
+	Action         *ExecuteActionResponse
+}
+
+func (c *CapabilitySimulationResult) GetCapabilityType() string {
+	if c == nil {
+		return ""
+	}
+	return c.CapabilityType
+}
+
+func (c *CapabilitySimulationResult) GetAction() *ExecuteActionResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Action
+}
+
+func (c *CapabilitySimulationResult) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		CapabilityType string `json:"capabilityType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	c.CapabilityType = unmarshaler.CapabilityType
+	if unmarshaler.CapabilityType == "" {
+		return fmt.Errorf("%T did not include discriminant capabilityType", c)
+	}
+	switch unmarshaler.CapabilityType {
+	case "ACTION":
+		value := new(ExecuteActionResponse)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Action = value
+	}
+	return nil
+}
+
+func (c CapabilitySimulationResult) MarshalJSON() ([]byte, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	if c.Action != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Action, "capabilityType", "ACTION")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+type CapabilitySimulationResultVisitor interface {
+	VisitAction(*ExecuteActionResponse) error
+}
+
+func (c *CapabilitySimulationResult) Accept(visitor CapabilitySimulationResultVisitor) error {
+	if c.Action != nil {
+		return visitor.VisitAction(c.Action)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+func (c *CapabilitySimulationResult) validate() error {
+	if c == nil {
+		return fmt.Errorf("type %T is nil", c)
+	}
+	var fields []string
+	if c.Action != nil {
+		fields = append(fields, "ACTION")
+	}
+	if len(fields) == 0 {
+		if c.CapabilityType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", c, c.CapabilityType)
+		}
+		return fmt.Errorf("type %T is empty", c)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", c, fields)
+	}
+	if c.CapabilityType != "" {
+		field := fields[0]
+		if c.CapabilityType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				c,
+				c.CapabilityType,
+				c,
+			)
+		}
+	}
+	return nil
+}
+
 // The fields a capability search can be ordered by.
 type CapabilitySortField string
 
@@ -1523,6 +1882,122 @@ func (c *CapabilitySummary) MarshalJSON() ([]byte, error) {
 }
 
 func (c *CapabilitySummary) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// The conversation and user a capability runs in, supplied directly rather than read from an
+// existing conversation or agent user. Shared by every capability that runs inside a
+// conversation. Each field defaults to empty.
+var (
+	conversationContextSimulationInputFieldConversationMetadata = big.NewInt(1 << 0)
+	conversationContextSimulationInputFieldUser                 = big.NewInt(1 << 1)
+	conversationContextSimulationInputFieldTransientData        = big.NewInt(1 << 2)
+)
+
+type ConversationContextSimulationInput struct {
+	// The conversation's metadata, as the capability would read it.
+	ConversationMetadata map[string]string `json:"conversationMetadata,omitempty" url:"conversationMetadata,omitempty"`
+	// The user the capability runs for. Omit it to run for an anonymous user.
+	User *SimulatedUser `json:"user,omitempty" url:"user,omitempty"`
+	// Data passed to the capability for this run only and never stored.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationContextSimulationInput) GetConversationMetadata() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMetadata
+}
+
+func (c *ConversationContextSimulationInput) GetUser() *SimulatedUser {
+	if c == nil {
+		return nil
+	}
+	return c.User
+}
+
+func (c *ConversationContextSimulationInput) GetTransientData() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.TransientData
+}
+
+func (c *ConversationContextSimulationInput) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationContextSimulationInput) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetConversationMetadata sets the ConversationMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationContextSimulationInput) SetConversationMetadata(conversationMetadata map[string]string) {
+	c.ConversationMetadata = conversationMetadata
+	c.require(conversationContextSimulationInputFieldConversationMetadata)
+}
+
+// SetUser sets the User field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationContextSimulationInput) SetUser(user *SimulatedUser) {
+	c.User = user
+	c.require(conversationContextSimulationInputFieldUser)
+}
+
+// SetTransientData sets the TransientData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationContextSimulationInput) SetTransientData(transientData map[string]string) {
+	c.TransientData = transientData
+	c.require(conversationContextSimulationInputFieldTransientData)
+}
+
+func (c *ConversationContextSimulationInput) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationContextSimulationInput
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationContextSimulationInput(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationContextSimulationInput) MarshalJSON() ([]byte, error) {
+	type embed ConversationContextSimulationInput
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationContextSimulationInput) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value
@@ -1770,6 +2245,183 @@ func (c *ConversationKickoffCapabilityExecution) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
+}
+
+// A user described in full by the caller, for one run only. Nothing is looked up or stored,
+// so no agent user has to exist first.
+var (
+	simulatedUserFieldAgentUserData = big.NewInt(1 << 0)
+)
+
+type SimulatedUser struct {
+	// The user's data, keyed by field name, with that field's value from each app that set it.
+	AgentUserData map[string][]*SimulatedUserData `json:"agentUserData,omitempty" url:"agentUserData,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SimulatedUser) GetAgentUserData() map[string][]*SimulatedUserData {
+	if s == nil {
+		return nil
+	}
+	return s.AgentUserData
+}
+
+func (s *SimulatedUser) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SimulatedUser) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetAgentUserData sets the AgentUserData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulatedUser) SetAgentUserData(agentUserData map[string][]*SimulatedUserData) {
+	s.AgentUserData = agentUserData
+	s.require(simulatedUserFieldAgentUserData)
+}
+
+func (s *SimulatedUser) UnmarshalJSON(data []byte) error {
+	type unmarshaler SimulatedUser
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SimulatedUser(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SimulatedUser) MarshalJSON() ([]byte, error) {
+	type embed SimulatedUser
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SimulatedUser) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+var (
+	simulatedUserDataFieldAppID = big.NewInt(1 << 0)
+	simulatedUserDataFieldValue = big.NewInt(1 << 1)
+)
+
+type SimulatedUserData struct {
+	// The app that holds this value.
+	AppID string `json:"appId" url:"appId"`
+	// The value.
+	Value string `json:"value" url:"value"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SimulatedUserData) GetAppID() string {
+	if s == nil {
+		return ""
+	}
+	return s.AppID
+}
+
+func (s *SimulatedUserData) GetValue() string {
+	if s == nil {
+		return ""
+	}
+	return s.Value
+}
+
+func (s *SimulatedUserData) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SimulatedUserData) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulatedUserData) SetAppID(appID string) {
+	s.AppID = appID
+	s.require(simulatedUserDataFieldAppID)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulatedUserData) SetValue(value string) {
+	s.Value = value
+	s.require(simulatedUserDataFieldValue)
+}
+
+func (s *SimulatedUserData) UnmarshalJSON(data []byte) error {
+	type unmarshaler SimulatedUserData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SimulatedUserData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SimulatedUserData) MarshalJSON() ([]byte, error) {
+	type embed SimulatedUserData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SimulatedUserData) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
 }
 
 // An Event Trigger notifying its app of an event. `SUCCESS` means the app's handler

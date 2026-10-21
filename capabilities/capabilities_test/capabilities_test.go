@@ -127,6 +127,32 @@ func TestCapabilitiesDeleteCapabilityWithWireMock(
 	VerifyRequestCount(t, "DELETE", "/v1/capabilities/ACTION/referenceId", nil, 1)
 }
 
+func TestCapabilitiesSimulateCapabilityWithWireMock(
+	t *testing.T,
+) {
+	ResetWireMockRequests(t)
+	WireMockBaseURL := "http://localhost:8080"
+	client := client.NewMavenAGI(
+		option.WithBaseURL(
+			WireMockBaseURL,
+		),
+	)
+	request := &mavenagigo.SimulateCapabilityByTypeRequest{
+		Body: &mavenagigo.CapabilitySimulationInput{
+			Action: &mavenagigo.ActionSimulationInput{},
+		},
+	}
+	_, invocationErr := client.Capabilities.SimulateCapability(
+		context.TODO(),
+		mavenagigo.CapabilityTypeAction.Ptr(),
+		"referenceId",
+		request,
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "POST", "/v1/capabilities/ACTION/referenceId/simulate", nil, 1)
+}
+
 func TestCapabilitiesSearchCapabilitiesWithWireMock(
 	t *testing.T,
 ) {

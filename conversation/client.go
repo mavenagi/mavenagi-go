@@ -111,17 +111,19 @@ func (c *Client) Get(
 	return response.Body, nil
 }
 
-// Wipes a conversation of all user data.
-// The conversation ID will still exist and non-user specific data will still be retained.
-// Attempts to modify or add messages to the conversation will throw an error.
-// The conversation is sealed against further writes as soon as this call returns. A `202 Accepted` response means the wipe is still completing and will finish on its own.
+// Wipes the user content from a conversation.
+// The conversation and its ID still exist afterwards, and so does its non-content data, so it still counts in metrics.
+// The conversation is sealed against further writes as soon as this call returns: adding or changing messages fails with `409 Conflict`, and so does deleting it again once the wipe has finished.
+// A `202 Accepted` response means the wipe is still completing and will finish on its own.
 //
 // Simulation conversations will no longer be visible in search results nor metrics.
-// Non-simulation conversations will remain visible - they can not be fully removed from the system.
+// Non-simulation conversations remain visible; they cannot be fully removed from the system.
 //
 // <Warning>This is a destructive operation and cannot be undone. <br/><br/>
-// The exact fields cleared include: the conversation subject, userRequest, agentResponse.
-// As well as the text response, followup questions, and backend LLM prompt of all messages.</Warning>
+// What is wiped: the conversation's `subject` and `analysis.agentResponse` are cleared, and `analysis.userRequest` is replaced with `reason`.
+// Every message's text, from the user and the agent alike, is replaced with `reason`, and its attachments, follow-up questions, backend LLM prompt and history, the data actions returned, and action arguments are cleared.
+// Evaluation results for the conversation are deleted, and the payloads recorded on its trigger and action executions are cleared. <br/><br/>
+// What is kept: the conversation's metadata, each message's charts, structured answer and app-supplied metadata, the conversation's intelligent field values, its feedback and events, and the users who took part. To wipe a user's data, use `DELETE /users/{userId}` or `DELETE /agentusers/{agentUserId}`.</Warning>
 func (c *Client) Delete(
 	ctx context.Context,
 	// The ID of the conversation to delete
@@ -444,6 +446,8 @@ func (c *Client) Export(
 //
 // This API is offered for backwards compatibility.
 // Most API callers should create simulations programmatically to allow for more flexibility.
+//
+// Shown in Agent Designer as "Import questions".
 func (c *Client) ImportSimulations(
 	ctx context.Context,
 	request *mavenagigo.SimulationImportRequest,
