@@ -20,6 +20,9 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
+	if options.Token == "" {
+		options.Token = os.Getenv("MAVENAGI_TOKEN")
+	}
 	if options.AppID == "" {
 		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
@@ -41,9 +44,9 @@ func NewClient(options *core.RequestOptions) *Client {
 
 // Create a new organization.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// Only Maven staff hold this permission.
+//
+// <Note>**Required permission:** `create:organization`</Note>
 func (c *Client) Create(
 	ctx context.Context,
 	// The reference ID of the organization.
@@ -64,6 +67,8 @@ func (c *Client) Create(
 }
 
 // Get an organization by ID
+//
+// <Note>**Required permission:** `read:organization`</Note>
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the organization.
@@ -84,9 +89,7 @@ func (c *Client) Get(
 // Update mutable organization fields.
 // All fields will overwrite the existing value on the organization only if provided.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// <Note>**Required permission:** `edit:organization`</Note>
 func (c *Client) Patch(
 	ctx context.Context,
 	// The reference ID of the organization.
@@ -108,9 +111,7 @@ func (c *Client) Patch(
 
 // Delete an organization.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// <Note>**Required permission:** `delete:organization`</Note>
 func (c *Client) Delete(
 	ctx context.Context,
 	// The reference ID of the organization.
@@ -131,9 +132,9 @@ func (c *Client) Delete(
 // Retrieves structured conversation data across all organizations, formatted as a table,
 // allowing users to group, filter, and define specific metrics to display as columns.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// Only Maven staff hold this permission.
+//
+// <Note>**Required permission:** `read:all-organizations`</Note>
 func (c *Client) GetConversationTable(
 	ctx context.Context,
 	request *mavenagigo.ConversationTableRequest,
@@ -153,9 +154,9 @@ func (c *Client) GetConversationTable(
 // Fetches conversation data across all organizations, visualized in a chart format.
 // Supported chart types include pie chart, date histogram, and stacked bar charts.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// Only Maven staff hold this permission.
+//
+// <Note>**Required permission:** `read:all-organizations`</Note>
 func (c *Client) GetConversationChart(
 	ctx context.Context,
 	request *mavenagigo.ConversationChartRequest,

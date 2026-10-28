@@ -279,6 +279,12 @@ type AgentUserField string
 const (
 	AgentUserFieldCreatedAt AgentUserField = "CreatedAt"
 	AgentUserFieldUpdatedAt AgentUserField = "UpdatedAt"
+	// Whether the user is anonymous, as `isAnonymous` filters on. Groups as a `boolean` value.
+	AgentUserFieldAnonymous AgentUserField = "Anonymous"
+	// Selects a user-level intelligent field. When used, `intelligentFieldId` must also be set
+	// to identify which field. Grouping by it splits that field's users by value; a user without
+	// a value for it is left out.
+	AgentUserFieldIntelligentField AgentUserField = "IntelligentField"
 )
 
 func NewAgentUserFieldFromString(s string) (AgentUserField, error) {
@@ -287,6 +293,10 @@ func NewAgentUserFieldFromString(s string) (AgentUserField, error) {
 		return AgentUserFieldCreatedAt, nil
 	case "UpdatedAt":
 		return AgentUserFieldUpdatedAt, nil
+	case "Anonymous":
+		return AgentUserFieldAnonymous, nil
+	case "IntelligentField":
+		return AgentUserFieldIntelligentField, nil
 	}
 	var t AgentUserField
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -479,9 +489,11 @@ type AgentUserSearchRequest struct {
 	// The size of the page to return, defaults to 20
 	Size *int `json:"size,omitempty" url:"size,omitempty"`
 	// Whether to sort descending, defaults to true
-	SortDesc *bool            `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
-	Sort     *AgentUserField  `json:"sort,omitempty" url:"sort,omitempty"`
-	Filter   *AgentUserFilter `json:"filter,omitempty" url:"filter,omitempty"`
+	SortDesc *bool `json:"sortDesc,omitempty" url:"sortDesc,omitempty"`
+	// Field to sort results by. `IntelligentField` is not supported here; intelligent fields
+	// can be filtered on via `filter.intelligentFields` and grouped through the analytics APIs.
+	Sort   *AgentUserField  `json:"sort,omitempty" url:"sort,omitempty"`
+	Filter *AgentUserFilter `json:"filter,omitempty" url:"filter,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`

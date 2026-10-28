@@ -775,12 +775,15 @@ type BaseDetailApp struct {
 	// Whether this app is an auto-provisioned agent app created for a specific agent.
 	IsAgentApp *bool `json:"isAgentApp,omitempty" url:"isAgentApp,omitempty"`
 	// Guidance shown while installing the app, for example how to obtain the credentials it asks for.
+	// May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as `${agentId}`.
 	InstallationInstructions *string `json:"installationInstructions,omitempty" url:"installationInstructions,omitempty"`
-	// Guidance shown once the app is installed.
+	// Guidance shown once the app is installed. May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders), settings included.
 	Instructions *string `json:"instructions,omitempty" url:"instructions,omitempty"`
-	// URL of a preview image or demo for the app's detail page.
+	// URL of a preview image or demo for the app's detail page. May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as
+	// `${appHost}` and `${settings.region}`.
 	PreviewURL *string `json:"previewUrl,omitempty" url:"previewUrl,omitempty"`
-	// Supporting links published by the author, such as documentation or a privacy policy.
+	// Supporting links published by the author, such as documentation or a privacy policy. Their URLs
+	// may use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as `${appHost}`, but never settings: links are public.
 	Links []*Link `json:"links" url:"links"`
 	// The settings the app accepts. Drives the install form, and describes which values are files
 	// rather than plain values.
@@ -1419,7 +1422,7 @@ type Link struct {
 	Title string `json:"title" url:"title"`
 	// Optional longer explanation of where the link goes.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
-	// Destination URL.
+	// Destination URL. May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as `${appHost}`.
 	URL string `json:"url" url:"url"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1791,7 +1794,8 @@ func (m *MarketplaceApp) String() string {
 }
 
 // A detailed app definition used when rendering an app detail page within the app directory.
-// The instructions, installationInstructions, previewUrl have their templated values substituted with appropriate values.
+// The installationInstructions and links have their placeholders filled in for the agent, and, once the
+// app is installed, so do the instructions and previewUrl. See [Placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders).
 var (
 	marketplaceAppDetailFieldID                       = big.NewInt(1 << 0)
 	marketplaceAppDetailFieldName                     = big.NewInt(1 << 1)
@@ -1839,12 +1843,15 @@ type MarketplaceAppDetail struct {
 	// Whether this app is an auto-provisioned agent app created for a specific agent.
 	IsAgentApp *bool `json:"isAgentApp,omitempty" url:"isAgentApp,omitempty"`
 	// Guidance shown while installing the app, for example how to obtain the credentials it asks for.
+	// May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as `${agentId}`.
 	InstallationInstructions *string `json:"installationInstructions,omitempty" url:"installationInstructions,omitempty"`
-	// Guidance shown once the app is installed.
+	// Guidance shown once the app is installed. May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders), settings included.
 	Instructions *string `json:"instructions,omitempty" url:"instructions,omitempty"`
-	// URL of a preview image or demo for the app's detail page.
+	// URL of a preview image or demo for the app's detail page. May use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as
+	// `${appHost}` and `${settings.region}`.
 	PreviewURL *string `json:"previewUrl,omitempty" url:"previewUrl,omitempty"`
-	// Supporting links published by the author, such as documentation or a privacy policy.
+	// Supporting links published by the author, such as documentation or a privacy policy. Their URLs
+	// may use [placeholders](https://developers.mavenagi.com/docs/documentation/configuration-and-integration/placeholders) such as `${appHost}`, but never settings: links are public.
 	Links []*Link `json:"links" url:"links"`
 	// The settings the app accepts. Drives the install form, and describes which values are files
 	// rather than plain values.

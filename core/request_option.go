@@ -25,6 +25,7 @@ type RequestOptions struct {
 	BodyProperties  map[string]interface{}
 	QueryParameters url.Values
 	MaxAttempts     uint
+	Token           string
 	AppID           string
 	AppSecret       string
 	OrganizationID  string
@@ -51,6 +52,9 @@ func NewRequestOptions(opts ...RequestOption) *RequestOptions {
 // for the request(s).
 func (r *RequestOptions) ToHeader() http.Header {
 	header := r.cloneHeader()
+	if r.Token != "" {
+		header.Set("Authorization", "Bearer "+r.Token)
+	}
 	if r.AppID != "" && r.AppSecret != "" {
 		header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.AppID+": "+r.AppSecret)))
 	}
@@ -63,8 +67,8 @@ func (r *RequestOptions) cloneHeader() http.Header {
 	headers := r.HTTPHeader.Clone()
 	headers.Set("X-Fern-Language", "Go")
 	headers.Set("X-Fern-SDK-Name", "github.com/mavenagi/mavenagi-go")
-	headers.Set("X-Fern-SDK-Version", "v1.2.65")
-	headers.Set("User-Agent", "github.com/mavenagi/mavenagi-go/1.2.65")
+	headers.Set("X-Fern-SDK-Version", "v1.2.66")
+	headers.Set("User-Agent", "github.com/mavenagi/mavenagi-go/1.2.66")
 	return headers
 }
 
@@ -120,6 +124,15 @@ type MaxAttemptsOption struct {
 
 func (m *MaxAttemptsOption) applyRequestOptions(opts *RequestOptions) {
 	opts.MaxAttempts = m.MaxAttempts
+}
+
+// TokenOption implements the RequestOption interface.
+type TokenOption struct {
+	Token string
+}
+
+func (t *TokenOption) applyRequestOptions(opts *RequestOptions) {
+	opts.Token = t.Token
 }
 
 // BasicAuthOption implements the RequestOption interface.

@@ -158,48 +158,6 @@ func (r *RawClient) ExportConversationTable(
 	}, nil
 }
 
-func (r *RawClient) GetFeedbackTable(
-	ctx context.Context,
-	request *mavenagigo.FeedbackTableRequest,
-	opts ...option.RequestOption,
-) (*core.Response[*mavenagigo.FeedbackTableResponse], error) {
-	options := core.NewRequestOptions(opts...)
-	baseURL := internal.ResolveBaseURL(
-		options.BaseURL,
-		r.baseURL,
-		"https://www.mavenagi-apis.com",
-	)
-	endpointURL := baseURL + "/v1/tables/feedback"
-	headers := internal.MergeHeaders(
-		r.options.ToHeader(),
-		options.ToHeader(),
-	)
-	var response *mavenagigo.FeedbackTableResponse
-	raw, err := r.caller.Call(
-		ctx,
-		&internal.CallParams{
-			URL:             endpointURL,
-			Method:          http.MethodPost,
-			Headers:         headers,
-			MaxAttempts:     options.MaxAttempts,
-			BodyProperties:  options.BodyProperties,
-			QueryParameters: options.QueryParameters,
-			Client:          options.HTTPClient,
-			Request:         request,
-			Response:        &response,
-			ErrorDecoder:    internal.NewErrorDecoder(mavenagigo.ErrorCodes),
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &core.Response[*mavenagigo.FeedbackTableResponse]{
-		StatusCode: raw.StatusCode,
-		Header:     raw.Header,
-		Body:       response,
-	}, nil
-}
-
 func (r *RawClient) GetAgentUserTable(
 	ctx context.Context,
 	request *mavenagigo.AgentUserTableRequest,

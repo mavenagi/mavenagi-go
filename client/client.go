@@ -62,6 +62,9 @@ type MavenAGI struct {
 
 func NewMavenAGI(opts ...option.RequestOption) *MavenAGI {
 	options := core.NewRequestOptions(opts...)
+	if options.Token == "" {
+		options.Token = os.Getenv("MAVENAGI_TOKEN")
+	}
 	if options.AppID == "" {
 		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}

@@ -21,6 +21,9 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
+	if options.Token == "" {
+		options.Token = os.Getenv("MAVENAGI_TOKEN")
+	}
 	if options.AppID == "" {
 		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
@@ -83,27 +86,6 @@ func (c *Client) ExportConversationTable(
 	opts ...option.RequestOption,
 ) (io.Reader, error) {
 	response, err := c.WithRawResponse.ExportConversationTable(
-		ctx,
-		request,
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.Body, nil
-}
-
-// Deprecated. Use `getEventTable` instead, which reports the same thumbs up/down and insert
-// activity as user events.
-//
-// Retrieves structured feedback data formatted as a table, allowing users to group, filter,
-// and define specific metrics to display as columns.
-func (c *Client) GetFeedbackTable(
-	ctx context.Context,
-	request *mavenagigo.FeedbackTableRequest,
-	opts ...option.RequestOption,
-) (*mavenagigo.FeedbackTableResponse, error) {
-	response, err := c.WithRawResponse.GetFeedbackTable(
 		ctx,
 		request,
 		opts...,

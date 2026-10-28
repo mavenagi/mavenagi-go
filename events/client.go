@@ -21,6 +21,9 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
+	if options.Token == "" {
+		options.Token = os.Getenv("MAVENAGI_TOKEN")
+	}
 	if options.AppID == "" {
 		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}

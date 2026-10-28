@@ -63,6 +63,13 @@ func WithMaxAttempts(attempts uint) *core.MaxAttemptsOption {
 	}
 }
 
+// WithToken sets the 'Authorization: Bearer <token>' request header.
+func WithToken(token string) *core.TokenOption {
+	return &core.TokenOption{
+		Token: token,
+	}
+}
+
 // WithBasicAuth sets the 'Authorization: Basic <base64>' request header.
 func WithBasicAuth(appID, appSecret string) *core.BasicAuthOption {
 	return &core.BasicAuthOption{

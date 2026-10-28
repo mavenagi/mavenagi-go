@@ -73,30 +73,9 @@ func TestConversationInitializeWithWireMock(
 	)
 	request := &mavenagigo.ConversationRequest{
 		ConversationID: &mavenagigo.EntityIDBase{
-			ReferenceID: "x",
+			ReferenceID: "conversation-0",
 		},
-		Messages: []*mavenagigo.ConversationMessageRequest{
-			&mavenagigo.ConversationMessageRequest{
-				ConversationMessageID: &mavenagigo.EntityIDBase{
-					ReferenceID: "x",
-				},
-				UserID: &mavenagigo.EntityIDBase{
-					ReferenceID: "x",
-				},
-				Text:            "text",
-				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
-			},
-			&mavenagigo.ConversationMessageRequest{
-				ConversationMessageID: &mavenagigo.EntityIDBase{
-					ReferenceID: "x",
-				},
-				UserID: &mavenagigo.EntityIDBase{
-					ReferenceID: "x",
-				},
-				Text:            "text",
-				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
-			},
-		},
+		Messages: []*mavenagigo.ConversationMessageRequest{},
 	}
 	_, invocationErr := client.Conversation.Initialize(
 		context.TODO(),

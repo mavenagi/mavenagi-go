@@ -22,6 +22,9 @@ type Client struct {
 }
 
 func NewClient(options *core.RequestOptions) *Client {
+	if options.Token == "" {
+		options.Token = os.Getenv("MAVENAGI_TOKEN")
+	}
 	if options.AppID == "" {
 		options.AppID = os.Getenv("MAVENAGI_APP_ID")
 	}
@@ -466,9 +469,11 @@ func (c *Client) ImportSimulations(
 
 // Deliver a message to a user or conversation.
 //
+// A closed conversation (`open` set to false) takes no new messages and returns a 400.
+//
 // <Warning>
-// Currently, messages can only be successfully delivered to conversations with the `ASYNC` capability that are `open`.
-// User message delivery is not yet supported.
+// Currently, messages can only be successfully delivered to conversations with the `ASYNC` capability.
+// User message delivery is not yet supported and returns a 400.
 // </Warning>
 func (c *Client) DeliverMessage(
 	ctx context.Context,

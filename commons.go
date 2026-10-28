@@ -1829,11 +1829,11 @@ func (a *ActionUser) String() string {
 type AdditionalDataKey string
 
 const (
-	// The new value of whatever changed. Absent when undetermined. Maven sets it on `INTELLIGENT_FIELD_VALUE_CHANGED`.
+	// The new value of whatever changed, never a sum of money (that is `amount`). Absent when undetermined. Maven sets it on `INTELLIGENT_FIELD_VALUE_CHANGED`.
 	AdditionalDataKeyValue AdditionalDataKey = "value"
 	// The value before the change. Absent when it was undetermined or there was none. Maven sets it on `INTELLIGENT_FIELD_VALUE_CHANGED`.
 	AdditionalDataKeyPreviousValue AdditionalDataKey = "previousValue"
-	// The name of the thing acted on, such as a form, flow, file or plan.
+	// The name of the thing acted on, such as a form, flow, file, plan or item bought.
 	AdditionalDataKeyName AdditionalDataKey = "name"
 	// The step reached within a flow or form, as its name or number.
 	AdditionalDataKeyStep AdditionalDataKey = "step"
@@ -1851,7 +1851,7 @@ const (
 	AdditionalDataKeyPosition AdditionalDataKey = "position"
 	// The `botMessageType` of the bot message. Maven sets it on `BOT_REPLY_CREATED`.
 	AdditionalDataKeyBotMessageType AdditionalDataKey = "botMessageType"
-	// A monetary amount, as a decimal number in `currency`.
+	// A monetary amount, as a decimal number in `currency`. A Google Analytics 4 `value` goes here.
 	AdditionalDataKeyAmount AdditionalDataKey = "amount"
 	// The ISO 4217 code of `amount`'s currency, such as `USD`.
 	AdditionalDataKeyCurrency AdditionalDataKey = "currency"
@@ -1865,6 +1865,58 @@ const (
 	AdditionalDataKeyMimeType AdditionalDataKey = "mimeType"
 	// The size of the file involved, in bytes.
 	AdditionalDataKeySizeBytes AdditionalDataKey = "sizeBytes"
+	// How it was done, such as the sign-in method (`google`) or the way content was shared (`copy link`).
+	AdditionalDataKeyMethod AdditionalDataKey = "method"
+	// The products involved, as a JSON array in a string. Each object uses the Google Analytics 4 item parameter names (`item_id`, `item_name`, `price`, `quantity`, …), so a GA4 `items` array can be sent as is.
+	AdditionalDataKeyItems AdditionalDataKey = "items"
+	// The ID of the order or transaction.
+	AdditionalDataKeyTransactionID AdditionalDataKey = "transactionId"
+	// The coupon code applied.
+	AdditionalDataKeyCoupon AdditionalDataKey = "coupon"
+	// The shipping cost, as a decimal number in `currency`.
+	AdditionalDataKeyShipping AdditionalDataKey = "shipping"
+	// The tax, as a decimal number in `currency`.
+	AdditionalDataKeyTax AdditionalDataKey = "tax"
+	// Whether the customer is `new` or `returning`.
+	AdditionalDataKeyCustomerType AdditionalDataKey = "customerType"
+	// The payment method chosen, such as `credit card`.
+	AdditionalDataKeyPaymentType AdditionalDataKey = "paymentType"
+	// The shipping option chosen, such as `ground` or `next day`.
+	AdditionalDataKeyShippingTier AdditionalDataKey = "shippingTier"
+	// The ID of the list the products were shown in.
+	AdditionalDataKeyItemListID AdditionalDataKey = "itemListId"
+	// The name of the list the products were shown in, such as `related products`.
+	AdditionalDataKeyItemListName AdditionalDataKey = "itemListName"
+	// The ID of the promotion.
+	AdditionalDataKeyPromotionID AdditionalDataKey = "promotionId"
+	// The name of the promotion.
+	AdditionalDataKeyPromotionName AdditionalDataKey = "promotionName"
+	// The name of the promotion's creative, such as a banner.
+	AdditionalDataKeyCreativeName AdditionalDataKey = "creativeName"
+	// Where the promotion's creative was shown.
+	AdditionalDataKeyCreativeSlot AdditionalDataKey = "creativeSlot"
+	// Where the lead came from, such as `trade show`.
+	AdditionalDataKeyLeadSource AdditionalDataKey = "leadSource"
+	// The lead's status in the sales process, such as `contacted`.
+	AdditionalDataKeyLeadStatus AdditionalDataKey = "leadStatus"
+	// The type of the content involved, such as `video` or `article`.
+	AdditionalDataKeyContentType AdditionalDataKey = "contentType"
+	// The ID of the content involved.
+	AdditionalDataKeyContentID AdditionalDataKey = "contentId"
+	// The ID of the group, team or community involved.
+	AdditionalDataKeyGroupID AdditionalDataKey = "groupId"
+	// The name of an in-app currency, such as `gems`.
+	AdditionalDataKeyVirtualCurrencyName AdditionalDataKey = "virtualCurrencyName"
+	// A number of `virtualCurrencyName` units, as a decimal number.
+	AdditionalDataKeyVirtualCurrencyAmount AdditionalDataKey = "virtualCurrencyAmount"
+	// The platform that served the ad, such as `AdMob`.
+	AdditionalDataKeyAdPlatform AdditionalDataKey = "adPlatform"
+	// The ad network the ad came from, such as `AdColony`.
+	AdditionalDataKeyAdSource AdditionalDataKey = "adSource"
+	// The ad's format, such as `banner` or `interstitial`.
+	AdditionalDataKeyAdFormat AdditionalDataKey = "adFormat"
+	// The name of the ad unit.
+	AdditionalDataKeyAdUnitName AdditionalDataKey = "adUnitName"
 )
 
 func NewAdditionalDataKeyFromString(s string) (AdditionalDataKey, error) {
@@ -1905,6 +1957,58 @@ func NewAdditionalDataKeyFromString(s string) (AdditionalDataKey, error) {
 		return AdditionalDataKeyMimeType, nil
 	case "sizeBytes":
 		return AdditionalDataKeySizeBytes, nil
+	case "method":
+		return AdditionalDataKeyMethod, nil
+	case "items":
+		return AdditionalDataKeyItems, nil
+	case "transactionId":
+		return AdditionalDataKeyTransactionID, nil
+	case "coupon":
+		return AdditionalDataKeyCoupon, nil
+	case "shipping":
+		return AdditionalDataKeyShipping, nil
+	case "tax":
+		return AdditionalDataKeyTax, nil
+	case "customerType":
+		return AdditionalDataKeyCustomerType, nil
+	case "paymentType":
+		return AdditionalDataKeyPaymentType, nil
+	case "shippingTier":
+		return AdditionalDataKeyShippingTier, nil
+	case "itemListId":
+		return AdditionalDataKeyItemListID, nil
+	case "itemListName":
+		return AdditionalDataKeyItemListName, nil
+	case "promotionId":
+		return AdditionalDataKeyPromotionID, nil
+	case "promotionName":
+		return AdditionalDataKeyPromotionName, nil
+	case "creativeName":
+		return AdditionalDataKeyCreativeName, nil
+	case "creativeSlot":
+		return AdditionalDataKeyCreativeSlot, nil
+	case "leadSource":
+		return AdditionalDataKeyLeadSource, nil
+	case "leadStatus":
+		return AdditionalDataKeyLeadStatus, nil
+	case "contentType":
+		return AdditionalDataKeyContentType, nil
+	case "contentId":
+		return AdditionalDataKeyContentID, nil
+	case "groupId":
+		return AdditionalDataKeyGroupID, nil
+	case "virtualCurrencyName":
+		return AdditionalDataKeyVirtualCurrencyName, nil
+	case "virtualCurrencyAmount":
+		return AdditionalDataKeyVirtualCurrencyAmount, nil
+	case "adPlatform":
+		return AdditionalDataKeyAdPlatform, nil
+	case "adSource":
+		return AdditionalDataKeyAdSource, nil
+	case "adFormat":
+		return AdditionalDataKeyAdFormat, nil
+	case "adUnitName":
+		return AdditionalDataKeyAdUnitName, nil
 	}
 	var t AdditionalDataKey
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -3360,9 +3464,10 @@ var (
 	baseConversationResponseFieldOpen              = big.NewInt(1 << 12)
 	baseConversationResponseFieldLlmEnabled        = big.NewInt(1 << 13)
 	baseConversationResponseFieldSimulationContext = big.NewInt(1 << 14)
-	baseConversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
-	baseConversationResponseFieldConversationMode  = big.NewInt(1 << 16)
-	baseConversationResponseFieldVariantID         = big.NewInt(1 << 17)
+	baseConversationResponseFieldExecutionMode     = big.NewInt(1 << 15)
+	baseConversationResponseFieldRelatedEntities   = big.NewInt(1 << 16)
+	baseConversationResponseFieldConversationMode  = big.NewInt(1 << 17)
+	baseConversationResponseFieldVariantID         = big.NewInt(1 << 18)
 )
 
 type BaseConversationResponse struct {
@@ -3400,6 +3505,10 @@ type BaseConversationResponse struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Whether the conversation runs on live data or is a simulation. A conversation created
+	// with a `simulationContext` is a `SIMULATION`, and so are the conversations Maven runs
+	// itself, such as evaluations, which have no `simulationContext`.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 	// Related entity ids grouped by relationship type.
 	//
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
@@ -3524,6 +3633,13 @@ func (b *BaseConversationResponse) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return b.SimulationContext
+}
+
+func (b *BaseConversationResponse) GetExecutionMode() ExecutionMode {
+	if b == nil {
+		return ""
+	}
+	return b.ExecutionMode
 }
 
 func (b *BaseConversationResponse) GetRelatedEntities() map[RelationshipType][]*EntityID {
@@ -3661,6 +3777,13 @@ func (b *BaseConversationResponse) SetLlmEnabled(llmEnabled bool) {
 func (b *BaseConversationResponse) SetSimulationContext(simulationContext *SimulationContext) {
 	b.SimulationContext = simulationContext
 	b.require(baseConversationResponseFieldSimulationContext)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BaseConversationResponse) SetExecutionMode(executionMode ExecutionMode) {
+	b.ExecutionMode = executionMode
+	b.require(baseConversationResponseFieldExecutionMode)
 }
 
 // SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
@@ -6502,7 +6625,7 @@ type BotMessage struct {
 	Responses             []*BotResponse             `json:"responses" url:"responses"`
 	Metadata              *BotResponseMetadata       `json:"metadata" url:"metadata"`
 	Status                MessageStatus              `json:"status" url:"status"`
-	// The logic that was used to generate the response. Response size may be large; only present on the getConversation request.
+	// The logic that was used to generate the response. Response size may be large; only present on the getConversation request, unless it passes `includeLogic=false`.
 	Logic *BotLogic `json:"logic,omitempty" url:"logic,omitempty"`
 	// Why the agent could not answer. Present only when `status` is `REJECTED` or `FAILED`, and absent for every other status.
 	// A `FAILED` message without a reason failed for some other cause, such as the model returning no answer.
@@ -10060,9 +10183,10 @@ var (
 	conversationPreviewFieldOpen              = big.NewInt(1 << 12)
 	conversationPreviewFieldLlmEnabled        = big.NewInt(1 << 13)
 	conversationPreviewFieldSimulationContext = big.NewInt(1 << 14)
-	conversationPreviewFieldRelatedEntities   = big.NewInt(1 << 15)
-	conversationPreviewFieldConversationMode  = big.NewInt(1 << 16)
-	conversationPreviewFieldVariantID         = big.NewInt(1 << 17)
+	conversationPreviewFieldExecutionMode     = big.NewInt(1 << 15)
+	conversationPreviewFieldRelatedEntities   = big.NewInt(1 << 16)
+	conversationPreviewFieldConversationMode  = big.NewInt(1 << 17)
+	conversationPreviewFieldVariantID         = big.NewInt(1 << 18)
 )
 
 type ConversationPreview struct {
@@ -10100,6 +10224,10 @@ type ConversationPreview struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Whether the conversation runs on live data or is a simulation. A conversation created
+	// with a `simulationContext` is a `SIMULATION`, and so are the conversations Maven runs
+	// itself, such as evaluations, which have no `simulationContext`.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 	// Related entity ids grouped by relationship type.
 	//
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
@@ -10224,6 +10352,13 @@ func (c *ConversationPreview) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return c.SimulationContext
+}
+
+func (c *ConversationPreview) GetExecutionMode() ExecutionMode {
+	if c == nil {
+		return ""
+	}
+	return c.ExecutionMode
 }
 
 func (c *ConversationPreview) GetRelatedEntities() map[RelationshipType][]*EntityID {
@@ -10363,6 +10498,13 @@ func (c *ConversationPreview) SetSimulationContext(simulationContext *Simulation
 	c.require(conversationPreviewFieldSimulationContext)
 }
 
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationPreview) SetExecutionMode(executionMode ExecutionMode) {
+	c.ExecutionMode = executionMode
+	c.require(conversationPreviewFieldExecutionMode)
+}
+
 // SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ConversationPreview) SetRelatedEntities(relatedEntities map[RelationshipType][]*EntityID) {
@@ -10451,11 +10593,12 @@ var (
 	conversationResponseFieldOpen              = big.NewInt(1 << 12)
 	conversationResponseFieldLlmEnabled        = big.NewInt(1 << 13)
 	conversationResponseFieldSimulationContext = big.NewInt(1 << 14)
-	conversationResponseFieldRelatedEntities   = big.NewInt(1 << 15)
-	conversationResponseFieldConversationMode  = big.NewInt(1 << 16)
-	conversationResponseFieldVariantID         = big.NewInt(1 << 17)
-	conversationResponseFieldMessages          = big.NewInt(1 << 18)
-	conversationResponseFieldAttachments       = big.NewInt(1 << 19)
+	conversationResponseFieldExecutionMode     = big.NewInt(1 << 15)
+	conversationResponseFieldRelatedEntities   = big.NewInt(1 << 16)
+	conversationResponseFieldConversationMode  = big.NewInt(1 << 17)
+	conversationResponseFieldVariantID         = big.NewInt(1 << 18)
+	conversationResponseFieldMessages          = big.NewInt(1 << 19)
+	conversationResponseFieldAttachments       = big.NewInt(1 << 20)
 )
 
 type ConversationResponse struct {
@@ -10493,6 +10636,10 @@ type ConversationResponse struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Whether the conversation runs on live data or is a simulation. A conversation created
+	// with a `simulationContext` is a `SIMULATION`, and so are the conversations Maven runs
+	// itself, such as evaluations, which have no `simulationContext`.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 	// Related entity ids grouped by relationship type.
 	//
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
@@ -10623,6 +10770,13 @@ func (c *ConversationResponse) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return c.SimulationContext
+}
+
+func (c *ConversationResponse) GetExecutionMode() ExecutionMode {
+	if c == nil {
+		return ""
+	}
+	return c.ExecutionMode
 }
 
 func (c *ConversationResponse) GetRelatedEntities() map[RelationshipType][]*EntityID {
@@ -10774,6 +10928,13 @@ func (c *ConversationResponse) SetLlmEnabled(llmEnabled bool) {
 func (c *ConversationResponse) SetSimulationContext(simulationContext *SimulationContext) {
 	c.SimulationContext = simulationContext
 	c.require(conversationResponseFieldSimulationContext)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationResponse) SetExecutionMode(executionMode ExecutionMode) {
+	c.ExecutionMode = executionMode
+	c.require(conversationResponseFieldExecutionMode)
 }
 
 // SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
@@ -11441,6 +11602,7 @@ func (c *ConversationSummary) String() string {
 type ConversationValueSource struct {
 	Type                 string
 	ConversationMetadata *ConversationMetadataValueSource
+	UserData             *UserDataValueSource
 }
 
 func (c *ConversationValueSource) GetType() string {
@@ -11455,6 +11617,13 @@ func (c *ConversationValueSource) GetConversationMetadata() *ConversationMetadat
 		return nil
 	}
 	return c.ConversationMetadata
+}
+
+func (c *ConversationValueSource) GetUserData() *UserDataValueSource {
+	if c == nil {
+		return nil
+	}
+	return c.UserData
 }
 
 func (c *ConversationValueSource) UnmarshalJSON(data []byte) error {
@@ -11475,6 +11644,12 @@ func (c *ConversationValueSource) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.ConversationMetadata = value
+	case "userData":
+		value := new(UserDataValueSource)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.UserData = value
 	}
 	return nil
 }
@@ -11486,16 +11661,23 @@ func (c ConversationValueSource) MarshalJSON() ([]byte, error) {
 	if c.ConversationMetadata != nil {
 		return internal.MarshalJSONWithExtraProperty(c.ConversationMetadata, "type", "conversationMetadata")
 	}
+	if c.UserData != nil {
+		return internal.MarshalJSONWithExtraProperty(c.UserData, "type", "userData")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
 }
 
 type ConversationValueSourceVisitor interface {
 	VisitConversationMetadata(*ConversationMetadataValueSource) error
+	VisitUserData(*UserDataValueSource) error
 }
 
 func (c *ConversationValueSource) Accept(visitor ConversationValueSourceVisitor) error {
 	if c.ConversationMetadata != nil {
 		return visitor.VisitConversationMetadata(c.ConversationMetadata)
+	}
+	if c.UserData != nil {
+		return visitor.VisitUserData(c.UserData)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", c)
 }
@@ -11507,6 +11689,9 @@ func (c *ConversationValueSource) validate() error {
 	var fields []string
 	if c.ConversationMetadata != nil {
 		fields = append(fields, "conversationMetadata")
+	}
+	if c.UserData != nil {
+		fields = append(fields, "userData")
 	}
 	if len(fields) == 0 {
 		if c.Type != "" {
@@ -12991,9 +13176,9 @@ const (
 	ErrorReasonNothingToCommit ErrorReason = "NOTHING_TO_COMMIT"
 	// The ID requested for a new variant is already taken.
 	ErrorReasonVariantAlreadyExists ErrorReason = "VARIANT_ALREADY_EXISTS"
-	// The agent is at its limit of ACTIVE variants, so no variant can be created, forked, committed or set back to ACTIVE. Archive or delete one first.
+	// The agent is at its limit of ACTIVE variants, so no variant can be created, forked, committed or set back to ACTIVE. Archive or delete one first. A commit that archives its source doesn't add one, so it isn't refused at the limit.
 	ErrorReasonVariantLimitReached ErrorReason = "VARIANT_LIMIT_REACHED"
-	// The variant is receiving live traffic, so it can't be archived or deleted. Move its traffic elsewhere first.
+	// The variant is receiving live traffic, so it can't be archived or deleted, including by a commit that archives its source. Move its traffic elsewhere first.
 	ErrorReasonCannotArchiveLiveVariant ErrorReason = "CANNOT_ARCHIVE_LIVE_VARIANT"
 	// A traffic rule, a simulation or an eval run names a variant with staged edits. Publish or discard them first.
 	ErrorReasonVariantHasStagedEdits ErrorReason = "VARIANT_HAS_STAGED_EDITS"
@@ -13041,11 +13226,12 @@ func (e ErrorReason) Ptr() *ErrorReason {
 }
 
 var (
-	eventBaseNoIDFieldTimestamp   = big.NewInt(1 << 0)
-	eventBaseNoIDFieldReferences  = big.NewInt(1 << 1)
-	eventBaseNoIDFieldSourceInfo  = big.NewInt(1 << 2)
-	eventBaseNoIDFieldSessionInfo = big.NewInt(1 << 3)
-	eventBaseNoIDFieldContextInfo = big.NewInt(1 << 4)
+	eventBaseNoIDFieldTimestamp     = big.NewInt(1 << 0)
+	eventBaseNoIDFieldReferences    = big.NewInt(1 << 1)
+	eventBaseNoIDFieldSourceInfo    = big.NewInt(1 << 2)
+	eventBaseNoIDFieldSessionInfo   = big.NewInt(1 << 3)
+	eventBaseNoIDFieldContextInfo   = big.NewInt(1 << 4)
+	eventBaseNoIDFieldExecutionMode = big.NewInt(1 << 5)
 )
 
 type EventBaseNoID struct {
@@ -13054,6 +13240,10 @@ type EventBaseNoID struct {
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
+	// Whether the event happened on live data or in a simulation. Defaults to `LIVE` when
+	// creating an event, and is always set on a returned event. Creating a `SIMULATION` event
+	// requires the `create:simulations` permission.
+	ExecutionMode *ExecutionMode `json:"executionMode,omitempty" url:"executionMode,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -13095,6 +13285,13 @@ func (e *EventBaseNoID) GetContextInfo() *ContextInfo {
 		return nil
 	}
 	return e.ContextInfo
+}
+
+func (e *EventBaseNoID) GetExecutionMode() *ExecutionMode {
+	if e == nil {
+		return nil
+	}
+	return e.ExecutionMode
 }
 
 func (e *EventBaseNoID) GetExtraProperties() map[string]interface{} {
@@ -13141,6 +13338,13 @@ func (e *EventBaseNoID) SetSessionInfo(sessionInfo *SessionInfo) {
 func (e *EventBaseNoID) SetContextInfo(contextInfo *ContextInfo) {
 	e.ContextInfo = contextInfo
 	e.require(eventBaseNoIDFieldContextInfo)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventBaseNoID) SetExecutionMode(executionMode *ExecutionMode) {
+	e.ExecutionMode = executionMode
+	e.require(eventBaseNoIDFieldExecutionMode)
 }
 
 func (e *EventBaseNoID) UnmarshalJSON(data []byte) error {
@@ -13558,23 +13762,26 @@ func (e EventField) Ptr() *EventField {
 
 var (
 	eventFilterFieldSearch              = big.NewInt(1 << 0)
-	eventFilterFieldCreatedAfter        = big.NewInt(1 << 1)
-	eventFilterFieldCreatedBefore       = big.NewInt(1 << 2)
-	eventFilterFieldReferences          = big.NewInt(1 << 3)
-	eventFilterFieldEventTypes          = big.NewInt(1 << 4)
-	eventFilterFieldUserEventNames      = big.NewInt(1 << 5)
-	eventFilterFieldSystemEventNames    = big.NewInt(1 << 6)
-	eventFilterFieldAgentUserIDs        = big.NewInt(1 << 7)
-	eventFilterFieldLegacyFeedbackTypes = big.NewInt(1 << 8)
-	eventFilterFieldHasEventText        = big.NewInt(1 << 9)
+	eventFilterFieldSimulationFilter    = big.NewInt(1 << 1)
+	eventFilterFieldCreatedAfter        = big.NewInt(1 << 2)
+	eventFilterFieldCreatedBefore       = big.NewInt(1 << 3)
+	eventFilterFieldReferences          = big.NewInt(1 << 4)
+	eventFilterFieldEventTypes          = big.NewInt(1 << 5)
+	eventFilterFieldUserEventNames      = big.NewInt(1 << 6)
+	eventFilterFieldSystemEventNames    = big.NewInt(1 << 7)
+	eventFilterFieldAgentUserIDs        = big.NewInt(1 << 8)
+	eventFilterFieldLegacyFeedbackTypes = big.NewInt(1 << 9)
+	eventFilterFieldHasEventText        = big.NewInt(1 << 10)
 )
 
 type EventFilter struct {
-	Search        *string         `json:"search,omitempty" url:"search,omitempty"`
-	CreatedAfter  *time.Time      `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
-	CreatedBefore *time.Time      `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
-	References    []*ScopedEntity `json:"references,omitempty" url:"references,omitempty"`
-	EventTypes    []EventType     `json:"eventTypes,omitempty" url:"eventTypes,omitempty"`
+	Search *string `json:"search,omitempty" url:"search,omitempty"`
+	// Whether to include simulation events in search results. Defaults to only non-simulation events.
+	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"simulationFilter,omitempty"`
+	CreatedAfter     *time.Time        `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
+	CreatedBefore    *time.Time        `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
+	References       []*ScopedEntity   `json:"references,omitempty" url:"references,omitempty"`
+	EventTypes       []EventType       `json:"eventTypes,omitempty" url:"eventTypes,omitempty"`
 	// Shown in Agent Designer as "Event type".
 	UserEventNames   []UserEventName   `json:"userEventNames,omitempty" url:"userEventNames,omitempty"`
 	SystemEventNames []SystemEventName `json:"systemEventNames,omitempty" url:"systemEventNames,omitempty"`
@@ -13597,6 +13804,13 @@ func (e *EventFilter) GetSearch() *string {
 		return nil
 	}
 	return e.Search
+}
+
+func (e *EventFilter) GetSimulationFilter() *SimulationFilter {
+	if e == nil {
+		return nil
+	}
+	return e.SimulationFilter
 }
 
 func (e *EventFilter) GetCreatedAfter() *time.Time {
@@ -13678,6 +13892,13 @@ func (e *EventFilter) require(field *big.Int) {
 func (e *EventFilter) SetSearch(search *string) {
 	e.Search = search
 	e.require(eventFilterFieldSearch)
+}
+
+// SetSimulationFilter sets the SimulationFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (e *EventFilter) SetSimulationFilter(simulationFilter *SimulationFilter) {
+	e.SimulationFilter = simulationFilter
+	e.require(eventFilterFieldSimulationFilter)
 }
 
 // SetCreatedAfter sets the CreatedAfter field and marks it as non-optional;
@@ -14131,11 +14352,16 @@ func (e *EventResponse) validate() error {
 type EventTriggerType string
 
 const (
+	// Deprecated. Use `EVENT_CREATED` instead. Never fires for simulation conversations; an
+	// `EVENT_CREATED` trigger also fires for simulation events, with
+	// `executionContext.mode: SIMULATION`.
 	EventTriggerTypeConversationCreated EventTriggerType = "CONVERSATION_CREATED"
 	// Deprecated. Use `EVENT_CREATED` instead.
 	EventTriggerTypeFeedbackCreated  EventTriggerType = "FEEDBACK_CREATED"
 	EventTriggerTypeInboxItemCreated EventTriggerType = "INBOX_ITEM_CREATED"
-	EventTriggerTypeEventCreated     EventTriggerType = "EVENT_CREATED"
+	// Fires for live and simulation events alike. The app is told which in
+	// `executionContext.mode`.
+	EventTriggerTypeEventCreated EventTriggerType = "EVENT_CREATED"
 )
 
 func NewEventTriggerTypeFromString(s string) (EventTriggerType, error) {
@@ -17578,12 +17804,13 @@ var (
 	initializeConversationResponseFieldOpen                       = big.NewInt(1 << 12)
 	initializeConversationResponseFieldLlmEnabled                 = big.NewInt(1 << 13)
 	initializeConversationResponseFieldSimulationContext          = big.NewInt(1 << 14)
-	initializeConversationResponseFieldRelatedEntities            = big.NewInt(1 << 15)
-	initializeConversationResponseFieldConversationMode           = big.NewInt(1 << 16)
-	initializeConversationResponseFieldVariantID                  = big.NewInt(1 << 17)
-	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 18)
-	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 19)
-	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 20)
+	initializeConversationResponseFieldExecutionMode              = big.NewInt(1 << 15)
+	initializeConversationResponseFieldRelatedEntities            = big.NewInt(1 << 16)
+	initializeConversationResponseFieldConversationMode           = big.NewInt(1 << 17)
+	initializeConversationResponseFieldVariantID                  = big.NewInt(1 << 18)
+	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 19)
+	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 20)
+	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 21)
 )
 
 type InitializeConversationResponse struct {
@@ -17621,6 +17848,10 @@ type InitializeConversationResponse struct {
 	// Additional context used for simulation runs. When present, this conversation is treated as a simulation.
 	// Simulation conversations are excluded from normal search results unless explicitly included via the `simulationFilter` field.
 	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// Whether the conversation runs on live data or is a simulation. A conversation created
+	// with a `simulationContext` is a `SIMULATION`, and so are the conversations Maven runs
+	// itself, such as evaluations, which have no `simulationContext`.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 	// Related entity ids grouped by relationship type.
 	//
 	// - `SPAWN_FROM`: the conversation this one was spawned from (set via `ConversationCreateRequest.spawnedFromConversationId`).
@@ -17756,6 +17987,13 @@ func (i *InitializeConversationResponse) GetSimulationContext() *SimulationConte
 		return nil
 	}
 	return i.SimulationContext
+}
+
+func (i *InitializeConversationResponse) GetExecutionMode() ExecutionMode {
+	if i == nil {
+		return ""
+	}
+	return i.ExecutionMode
 }
 
 func (i *InitializeConversationResponse) GetRelatedEntities() map[RelationshipType][]*EntityID {
@@ -17914,6 +18152,13 @@ func (i *InitializeConversationResponse) SetLlmEnabled(llmEnabled bool) {
 func (i *InitializeConversationResponse) SetSimulationContext(simulationContext *SimulationContext) {
 	i.SimulationContext = simulationContext
 	i.require(initializeConversationResponseFieldSimulationContext)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetExecutionMode(executionMode ExecutionMode) {
+	i.ExecutionMode = executionMode
+	i.require(initializeConversationResponseFieldExecutionMode)
 }
 
 // SetRelatedEntities sets the RelatedEntities field and marks it as non-optional;
@@ -19761,9 +20006,9 @@ func (m *MetadataCondition) validate() error {
 // Matches documents whose value under `key` equals a value read from the conversation
 // being answered, so one filter follows each conversation instead of naming a fixed value.
 //
-// When the conversation has no value at `source`, nothing matches. To also keep documents
-// that apply everywhere, combine this with an entry in an `OR` group, for example
-// `state = All`.
+// When the conversation has no value at `source`, nothing matches. For `userData`, that
+// includes a conversation with no user. To also keep documents that apply everywhere,
+// combine this with an entry in an `OR` group, for example `state = All`.
 var (
 	metadataConversationValueFilterFieldKey    = big.NewInt(1 << 0)
 	metadataConversationValueFilterFieldSource = big.NewInt(1 << 1)
@@ -20511,13 +20756,14 @@ func (m *MultilineSettingsSchemaEntry) String() string {
 }
 
 var (
-	novelSystemEventFieldTimestamp   = big.NewInt(1 << 0)
-	novelSystemEventFieldReferences  = big.NewInt(1 << 1)
-	novelSystemEventFieldSourceInfo  = big.NewInt(1 << 2)
-	novelSystemEventFieldSessionInfo = big.NewInt(1 << 3)
-	novelSystemEventFieldContextInfo = big.NewInt(1 << 4)
-	novelSystemEventFieldEventName   = big.NewInt(1 << 5)
-	novelSystemEventFieldID          = big.NewInt(1 << 6)
+	novelSystemEventFieldTimestamp     = big.NewInt(1 << 0)
+	novelSystemEventFieldReferences    = big.NewInt(1 << 1)
+	novelSystemEventFieldSourceInfo    = big.NewInt(1 << 2)
+	novelSystemEventFieldSessionInfo   = big.NewInt(1 << 3)
+	novelSystemEventFieldContextInfo   = big.NewInt(1 << 4)
+	novelSystemEventFieldExecutionMode = big.NewInt(1 << 5)
+	novelSystemEventFieldEventName     = big.NewInt(1 << 6)
+	novelSystemEventFieldID            = big.NewInt(1 << 7)
 )
 
 type NovelSystemEvent struct {
@@ -20526,6 +20772,10 @@ type NovelSystemEvent struct {
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
+	// Whether the event happened on live data or in a simulation. Defaults to `LIVE` when
+	// creating an event, and is always set on a returned event. Creating a `SIMULATION` event
+	// requires the `create:simulations` permission.
+	ExecutionMode *ExecutionMode `json:"executionMode,omitempty" url:"executionMode,omitempty"`
 	// The name of the event
 	EventName SystemEventName `json:"eventName" url:"eventName"`
 	// The unique ID of the event
@@ -20571,6 +20821,13 @@ func (n *NovelSystemEvent) GetContextInfo() *ContextInfo {
 		return nil
 	}
 	return n.ContextInfo
+}
+
+func (n *NovelSystemEvent) GetExecutionMode() *ExecutionMode {
+	if n == nil {
+		return nil
+	}
+	return n.ExecutionMode
 }
 
 func (n *NovelSystemEvent) GetEventName() SystemEventName {
@@ -20631,6 +20888,13 @@ func (n *NovelSystemEvent) SetSessionInfo(sessionInfo *SessionInfo) {
 func (n *NovelSystemEvent) SetContextInfo(contextInfo *ContextInfo) {
 	n.ContextInfo = contextInfo
 	n.require(novelSystemEventFieldContextInfo)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NovelSystemEvent) SetExecutionMode(executionMode *ExecutionMode) {
+	n.ExecutionMode = executionMode
+	n.require(novelSystemEventFieldExecutionMode)
 }
 
 // SetEventName sets the EventName field and marks it as non-optional;
@@ -20695,12 +20959,13 @@ func (n *NovelSystemEvent) String() string {
 }
 
 var (
-	novelSystemEventNoIDFieldTimestamp   = big.NewInt(1 << 0)
-	novelSystemEventNoIDFieldReferences  = big.NewInt(1 << 1)
-	novelSystemEventNoIDFieldSourceInfo  = big.NewInt(1 << 2)
-	novelSystemEventNoIDFieldSessionInfo = big.NewInt(1 << 3)
-	novelSystemEventNoIDFieldContextInfo = big.NewInt(1 << 4)
-	novelSystemEventNoIDFieldEventName   = big.NewInt(1 << 5)
+	novelSystemEventNoIDFieldTimestamp     = big.NewInt(1 << 0)
+	novelSystemEventNoIDFieldReferences    = big.NewInt(1 << 1)
+	novelSystemEventNoIDFieldSourceInfo    = big.NewInt(1 << 2)
+	novelSystemEventNoIDFieldSessionInfo   = big.NewInt(1 << 3)
+	novelSystemEventNoIDFieldContextInfo   = big.NewInt(1 << 4)
+	novelSystemEventNoIDFieldExecutionMode = big.NewInt(1 << 5)
+	novelSystemEventNoIDFieldEventName     = big.NewInt(1 << 6)
 )
 
 type NovelSystemEventNoID struct {
@@ -20709,6 +20974,10 @@ type NovelSystemEventNoID struct {
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
+	// Whether the event happened on live data or in a simulation. Defaults to `LIVE` when
+	// creating an event, and is always set on a returned event. Creating a `SIMULATION` event
+	// requires the `create:simulations` permission.
+	ExecutionMode *ExecutionMode `json:"executionMode,omitempty" url:"executionMode,omitempty"`
 	// The name of the event
 	EventName SystemEventName `json:"eventName" url:"eventName"`
 
@@ -20752,6 +21021,13 @@ func (n *NovelSystemEventNoID) GetContextInfo() *ContextInfo {
 		return nil
 	}
 	return n.ContextInfo
+}
+
+func (n *NovelSystemEventNoID) GetExecutionMode() *ExecutionMode {
+	if n == nil {
+		return nil
+	}
+	return n.ExecutionMode
 }
 
 func (n *NovelSystemEventNoID) GetEventName() SystemEventName {
@@ -20805,6 +21081,13 @@ func (n *NovelSystemEventNoID) SetSessionInfo(sessionInfo *SessionInfo) {
 func (n *NovelSystemEventNoID) SetContextInfo(contextInfo *ContextInfo) {
 	n.ContextInfo = contextInfo
 	n.require(novelSystemEventNoIDFieldContextInfo)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NovelSystemEventNoID) SetExecutionMode(executionMode *ExecutionMode) {
+	n.ExecutionMode = executionMode
+	n.require(novelSystemEventNoIDFieldExecutionMode)
 }
 
 // SetEventName sets the EventName field and marks it as non-optional;
@@ -20862,17 +21145,18 @@ func (n *NovelSystemEventNoID) String() string {
 }
 
 var (
-	novelUserEventFieldTimestamp    = big.NewInt(1 << 0)
-	novelUserEventFieldReferences   = big.NewInt(1 << 1)
-	novelUserEventFieldSourceInfo   = big.NewInt(1 << 2)
-	novelUserEventFieldSessionInfo  = big.NewInt(1 << 3)
-	novelUserEventFieldContextInfo  = big.NewInt(1 << 4)
-	novelUserEventFieldID           = big.NewInt(1 << 5)
-	novelUserEventFieldEventName    = big.NewInt(1 << 6)
-	novelUserEventFieldUserInfo     = big.NewInt(1 << 7)
-	novelUserEventFieldCsatInfo     = big.NewInt(1 << 8)
-	novelUserEventFieldFeedbackInfo = big.NewInt(1 << 9)
-	novelUserEventFieldPageInfo     = big.NewInt(1 << 10)
+	novelUserEventFieldTimestamp     = big.NewInt(1 << 0)
+	novelUserEventFieldReferences    = big.NewInt(1 << 1)
+	novelUserEventFieldSourceInfo    = big.NewInt(1 << 2)
+	novelUserEventFieldSessionInfo   = big.NewInt(1 << 3)
+	novelUserEventFieldContextInfo   = big.NewInt(1 << 4)
+	novelUserEventFieldExecutionMode = big.NewInt(1 << 5)
+	novelUserEventFieldID            = big.NewInt(1 << 6)
+	novelUserEventFieldEventName     = big.NewInt(1 << 7)
+	novelUserEventFieldUserInfo      = big.NewInt(1 << 8)
+	novelUserEventFieldCsatInfo      = big.NewInt(1 << 9)
+	novelUserEventFieldFeedbackInfo  = big.NewInt(1 << 10)
+	novelUserEventFieldPageInfo      = big.NewInt(1 << 11)
 )
 
 type NovelUserEvent struct {
@@ -20881,6 +21165,10 @@ type NovelUserEvent struct {
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
+	// Whether the event happened on live data or in a simulation. Defaults to `LIVE` when
+	// creating an event, and is always set on a returned event. Creating a `SIMULATION` event
+	// requires the `create:simulations` permission.
+	ExecutionMode *ExecutionMode `json:"executionMode,omitempty" url:"executionMode,omitempty"`
 	// The unique ID of the event
 	ID *EntityIDBase `json:"id" url:"id"`
 	// The name of the event
@@ -20935,6 +21223,13 @@ func (n *NovelUserEvent) GetContextInfo() *ContextInfo {
 		return nil
 	}
 	return n.ContextInfo
+}
+
+func (n *NovelUserEvent) GetExecutionMode() *ExecutionMode {
+	if n == nil {
+		return nil
+	}
+	return n.ExecutionMode
 }
 
 func (n *NovelUserEvent) GetID() *EntityIDBase {
@@ -21023,6 +21318,13 @@ func (n *NovelUserEvent) SetSessionInfo(sessionInfo *SessionInfo) {
 func (n *NovelUserEvent) SetContextInfo(contextInfo *ContextInfo) {
 	n.ContextInfo = contextInfo
 	n.require(novelUserEventFieldContextInfo)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NovelUserEvent) SetExecutionMode(executionMode *ExecutionMode) {
+	n.ExecutionMode = executionMode
+	n.require(novelUserEventFieldExecutionMode)
 }
 
 // SetID sets the ID field and marks it as non-optional;
@@ -25885,8 +26187,9 @@ func (s SideEffects) Ptr() *SideEffects {
 type SimulationActionBehavior struct {
 	Type string
 	// The platform does not call the action's app and uses this result as the action's
-	// result. `response` and `errorMessage` are Handlebars templates over the action's input
-	// parameters, such as `{{parameterId}}`, rendered without HTML escaping.
+	// result. `response` is required. `response` and `errorMessage` are Handlebars templates
+	// over the action's input parameters, such as `{{parameterId}}`, rendered without HTML
+	// escaping. Set `status` to `ERROR` to mock a failed action.
 	FixedResponse *ExecuteActionResponse
 	// The platform calls the action's app instead of returning a mocked result.
 	CallApp *SimulationActionCallApp
@@ -26068,8 +26371,9 @@ var (
 )
 
 type SimulationActionMock struct {
-	// The action this entry applies to.
-	ActionID *EntityIDWithoutAgent     `json:"actionId" url:"actionId"`
+	// The action this entry applies to. Its `type` must be `ACTION`.
+	ActionID *EntityIDWithoutAgent `json:"actionId" url:"actionId"`
+	// What the platform does when the agent executes this action.
 	Behavior *SimulationActionBehavior `json:"behavior" url:"behavior"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -26338,6 +26642,31 @@ func (s *SimulationContext) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", s)
+}
+
+type SimulationFilter string
+
+const (
+	SimulationFilterNonSimulations SimulationFilter = "NON_SIMULATIONS"
+	SimulationFilterSimulations    SimulationFilter = "SIMULATIONS"
+	SimulationFilterAll            SimulationFilter = "ALL"
+)
+
+func NewSimulationFilterFromString(s string) (SimulationFilter, error) {
+	switch s {
+	case "NON_SIMULATIONS":
+		return SimulationFilterNonSimulations, nil
+	case "SIMULATIONS":
+		return SimulationFilterSimulations, nil
+	case "ALL":
+		return SimulationFilterAll, nil
+	}
+	var t SimulationFilter
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SimulationFilter) Ptr() *SimulationFilter {
+	return &s
 }
 
 var (
@@ -27257,13 +27586,14 @@ func (s *SwitchSettingsSchemaEntry) String() string {
 }
 
 var (
-	systemEventFieldTimestamp   = big.NewInt(1 << 0)
-	systemEventFieldReferences  = big.NewInt(1 << 1)
-	systemEventFieldSourceInfo  = big.NewInt(1 << 2)
-	systemEventFieldSessionInfo = big.NewInt(1 << 3)
-	systemEventFieldContextInfo = big.NewInt(1 << 4)
-	systemEventFieldEventName   = big.NewInt(1 << 5)
-	systemEventFieldID          = big.NewInt(1 << 6)
+	systemEventFieldTimestamp     = big.NewInt(1 << 0)
+	systemEventFieldReferences    = big.NewInt(1 << 1)
+	systemEventFieldSourceInfo    = big.NewInt(1 << 2)
+	systemEventFieldSessionInfo   = big.NewInt(1 << 3)
+	systemEventFieldContextInfo   = big.NewInt(1 << 4)
+	systemEventFieldExecutionMode = big.NewInt(1 << 5)
+	systemEventFieldEventName     = big.NewInt(1 << 6)
+	systemEventFieldID            = big.NewInt(1 << 7)
 )
 
 type SystemEvent struct {
@@ -27272,6 +27602,10 @@ type SystemEvent struct {
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
+	// Whether the event happened on live data or in a simulation. Defaults to `LIVE` when
+	// creating an event, and is always set on a returned event. Creating a `SIMULATION` event
+	// requires the `create:simulations` permission.
+	ExecutionMode *ExecutionMode `json:"executionMode,omitempty" url:"executionMode,omitempty"`
 	// The name of the event
 	EventName SystemEventName `json:"eventName" url:"eventName"`
 	// The unique ID of the event
@@ -27317,6 +27651,13 @@ func (s *SystemEvent) GetContextInfo() *ContextInfo {
 		return nil
 	}
 	return s.ContextInfo
+}
+
+func (s *SystemEvent) GetExecutionMode() *ExecutionMode {
+	if s == nil {
+		return nil
+	}
+	return s.ExecutionMode
 }
 
 func (s *SystemEvent) GetEventName() SystemEventName {
@@ -27377,6 +27718,13 @@ func (s *SystemEvent) SetSessionInfo(sessionInfo *SessionInfo) {
 func (s *SystemEvent) SetContextInfo(contextInfo *ContextInfo) {
 	s.ContextInfo = contextInfo
 	s.require(systemEventFieldContextInfo)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SystemEvent) SetExecutionMode(executionMode *ExecutionMode) {
+	s.ExecutionMode = executionMode
+	s.require(systemEventFieldExecutionMode)
 }
 
 // SetEventName sets the EventName field and marks it as non-optional;
@@ -28396,6 +28744,87 @@ func (u *UserData) String() string {
 	return fmt.Sprintf("%#v", u)
 }
 
+// A value from the data of the user the conversation is with. User data set by different apps
+// is read together, the same way a segment's `user` condition reads it.
+var (
+	userDataValueSourceFieldKey = big.NewInt(1 << 0)
+)
+
+type UserDataValueSource struct {
+	// The user data key to read.
+	Key string `json:"key" url:"key"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UserDataValueSource) GetKey() string {
+	if u == nil {
+		return ""
+	}
+	return u.Key
+}
+
+func (u *UserDataValueSource) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UserDataValueSource) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataValueSource) SetKey(key string) {
+	u.Key = key
+	u.require(userDataValueSourceFieldKey)
+}
+
+func (u *UserDataValueSource) UnmarshalJSON(data []byte) error {
+	type unmarshaler UserDataValueSource
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UserDataValueSource(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UserDataValueSource) MarshalJSON() ([]byte, error) {
+	type embed UserDataValueSource
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UserDataValueSource) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
+}
+
 var (
 	userDataWithReferenceFieldValue      = big.NewInt(1 << 0)
 	userDataWithReferenceFieldVisibility = big.NewInt(1 << 1)
@@ -28510,18 +28939,19 @@ func (u *UserDataWithReference) String() string {
 }
 
 var (
-	userEventFieldTimestamp    = big.NewInt(1 << 0)
-	userEventFieldReferences   = big.NewInt(1 << 1)
-	userEventFieldSourceInfo   = big.NewInt(1 << 2)
-	userEventFieldSessionInfo  = big.NewInt(1 << 3)
-	userEventFieldContextInfo  = big.NewInt(1 << 4)
-	userEventFieldID           = big.NewInt(1 << 5)
-	userEventFieldCreatedAt    = big.NewInt(1 << 6)
-	userEventFieldEventName    = big.NewInt(1 << 7)
-	userEventFieldUserInfo     = big.NewInt(1 << 8)
-	userEventFieldFeedbackInfo = big.NewInt(1 << 9)
-	userEventFieldCsatInfo     = big.NewInt(1 << 10)
-	userEventFieldPageInfo     = big.NewInt(1 << 11)
+	userEventFieldTimestamp     = big.NewInt(1 << 0)
+	userEventFieldReferences    = big.NewInt(1 << 1)
+	userEventFieldSourceInfo    = big.NewInt(1 << 2)
+	userEventFieldSessionInfo   = big.NewInt(1 << 3)
+	userEventFieldContextInfo   = big.NewInt(1 << 4)
+	userEventFieldExecutionMode = big.NewInt(1 << 5)
+	userEventFieldID            = big.NewInt(1 << 6)
+	userEventFieldCreatedAt     = big.NewInt(1 << 7)
+	userEventFieldEventName     = big.NewInt(1 << 8)
+	userEventFieldUserInfo      = big.NewInt(1 << 9)
+	userEventFieldFeedbackInfo  = big.NewInt(1 << 10)
+	userEventFieldCsatInfo      = big.NewInt(1 << 11)
+	userEventFieldPageInfo      = big.NewInt(1 << 12)
 )
 
 type UserEvent struct {
@@ -28530,6 +28960,10 @@ type UserEvent struct {
 	SourceInfo  *SourceInfo     `json:"sourceInfo,omitempty" url:"sourceInfo,omitempty"`
 	SessionInfo *SessionInfo    `json:"sessionInfo,omitempty" url:"sessionInfo,omitempty"`
 	ContextInfo *ContextInfo    `json:"contextInfo,omitempty" url:"contextInfo,omitempty"`
+	// Whether the event happened on live data or in a simulation. Defaults to `LIVE` when
+	// creating an event, and is always set on a returned event. Creating a `SIMULATION` event
+	// requires the `create:simulations` permission.
+	ExecutionMode *ExecutionMode `json:"executionMode,omitempty" url:"executionMode,omitempty"`
 	// The unique ID of the event
 	ID *EntityID `json:"id" url:"id"`
 	// The date and time the event was created
@@ -28586,6 +29020,13 @@ func (u *UserEvent) GetContextInfo() *ContextInfo {
 		return nil
 	}
 	return u.ContextInfo
+}
+
+func (u *UserEvent) GetExecutionMode() *ExecutionMode {
+	if u == nil {
+		return nil
+	}
+	return u.ExecutionMode
 }
 
 func (u *UserEvent) GetID() *EntityID {
@@ -28681,6 +29122,13 @@ func (u *UserEvent) SetSessionInfo(sessionInfo *SessionInfo) {
 func (u *UserEvent) SetContextInfo(contextInfo *ContextInfo) {
 	u.ContextInfo = contextInfo
 	u.require(userEventFieldContextInfo)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserEvent) SetExecutionMode(executionMode *ExecutionMode) {
+	u.ExecutionMode = executionMode
+	u.require(userEventFieldExecutionMode)
 }
 
 // SetID sets the ID field and marks it as non-optional;
@@ -28812,7 +29260,7 @@ const (
 	UserEventNameTextCopied UserEventName = "TEXT_COPIED"
 	// Content was translated into another language
 	UserEventNameContentTranslated UserEventName = "CONTENT_TRANSLATED"
-	// A search query was submitted
+	// A search query was submitted. `contextInfo.additionalData` carries `query` (see `AdditionalDataKey`).
 	UserEventNameSearchSubmitted UserEventName = "SEARCH_SUBMITTED"
 	// A search result was opened
 	UserEventNameSearchResultClicked UserEventName = "SEARCH_RESULT_CLICKED"
@@ -28836,9 +29284,9 @@ const (
 	UserEventNameFlowCompleted UserEventName = "FLOW_COMPLETED"
 	// The user left a multi-step flow partway through. Pair with an `EVENT_CREATED` trigger to follow up on an onboarding or checkout that was never finished. Name the flow and the step it stopped on in `contextInfo.additionalData`.
 	UserEventNameFlowAbandoned UserEventName = "FLOW_ABANDONED"
-	// The user created an account
+	// The user created an account. `contextInfo.additionalData` carries `method` (see `AdditionalDataKey`).
 	UserEventNameAccountCreated UserEventName = "ACCOUNT_CREATED"
-	// The user signed in
+	// The user signed in. `contextInfo.additionalData` carries `method` (see `AdditionalDataKey`).
 	UserEventNameSignedIn UserEventName = "SIGNED_IN"
 	// The user signed out
 	UserEventNameSignedOut UserEventName = "SIGNED_OUT"
@@ -28846,7 +29294,7 @@ const (
 	UserEventNameSubscriptionStarted UserEventName = "SUBSCRIPTION_STARTED"
 	// The user cancelled a subscription or plan
 	UserEventNameSubscriptionCancelled UserEventName = "SUBSCRIPTION_CANCELLED"
-	// The user placed an order
+	// The user placed an order. `contextInfo.additionalData` carries `transactionId`, `amount`, `currency`, `coupon`, `shipping`, `tax`, `customerType` and `items` (see `AdditionalDataKey`).
 	UserEventNameOrderPlaced UserEventName = "ORDER_PLACED"
 	// The user cancelled an order
 	UserEventNameOrderCancelled UserEventName = "ORDER_CANCELLED"
@@ -28854,6 +29302,56 @@ const (
 	UserEventNamePaymentFailed UserEventName = "PAYMENT_FAILED"
 	// The user was shown an error
 	UserEventNameErrorDisplayed UserEventName = "ERROR_DISPLAYED"
+	// The user was shown an ad. `contextInfo.additionalData` carries `adPlatform`, `adSource`, `adFormat`, `adUnitName`, `amount` and `currency` (see `AdditionalDataKey`).
+	UserEventNameAdImpression UserEventName = "AD_IMPRESSION"
+	// The user earned points, credits or another in-app currency. `contextInfo.additionalData` carries `virtualCurrencyName` and `virtualCurrencyAmount` (see `AdditionalDataKey`).
+	UserEventNameEarnVirtualCurrency UserEventName = "EARN_VIRTUAL_CURRENCY"
+	// The user joined a group, team or community. `contextInfo.additionalData` carries `groupId` (see `AdditionalDataKey`).
+	UserEventNameJoinGroup UserEventName = "JOIN_GROUP"
+	// The user selected a piece of content, such as a video or a card. `contextInfo.additionalData` carries `contentType` and `contentId` (see `AdditionalDataKey`).
+	UserEventNameSelectContent UserEventName = "SELECT_CONTENT"
+	// The user shared content. `contextInfo.additionalData` carries `method`, `contentType` and `contentId` (see `AdditionalDataKey`).
+	UserEventNameShare UserEventName = "SHARE"
+	// The user spent points, credits or another in-app currency. `contextInfo.additionalData` carries `virtualCurrencyName`, `virtualCurrencyAmount` and `name` (see `AdditionalDataKey`).
+	UserEventNameSpendVirtualCurrency UserEventName = "SPEND_VIRTUAL_CURRENCY"
+	// The user was shown a list of products, such as category or search results. `contextInfo.additionalData` carries `itemListId`, `itemListName` and `items` (see `AdditionalDataKey`).
+	UserEventNameViewItemList UserEventName = "VIEW_ITEM_LIST"
+	// The user selected a product from a list. `contextInfo.additionalData` carries `itemListId`, `itemListName` and `items` (see `AdditionalDataKey`).
+	UserEventNameSelectItem UserEventName = "SELECT_ITEM"
+	// The user viewed a product. `contextInfo.additionalData` carries `amount`, `currency` and `items` (see `AdditionalDataKey`).
+	UserEventNameViewItem UserEventName = "VIEW_ITEM"
+	// The user was shown a promotion. `contextInfo.additionalData` carries `promotionId`, `promotionName`, `creativeName`, `creativeSlot` and `items` (see `AdditionalDataKey`).
+	UserEventNameViewPromotion UserEventName = "VIEW_PROMOTION"
+	// The user selected a promotion. `contextInfo.additionalData` carries `promotionId`, `promotionName`, `creativeName`, `creativeSlot` and `items` (see `AdditionalDataKey`).
+	UserEventNameSelectPromotion UserEventName = "SELECT_PROMOTION"
+	// The user added a product to a wishlist. `contextInfo.additionalData` carries `amount`, `currency` and `items` (see `AdditionalDataKey`).
+	UserEventNameAddToWishlist UserEventName = "ADD_TO_WISHLIST"
+	// The user added a product to their cart. `contextInfo.additionalData` carries `amount`, `currency` and `items` (see `AdditionalDataKey`).
+	UserEventNameAddToCart UserEventName = "ADD_TO_CART"
+	// The user removed a product from their cart. `contextInfo.additionalData` carries `amount`, `currency` and `items` (see `AdditionalDataKey`).
+	UserEventNameRemoveFromCart UserEventName = "REMOVE_FROM_CART"
+	// The user viewed their cart. `contextInfo.additionalData` carries `amount`, `currency` and `items` (see `AdditionalDataKey`).
+	UserEventNameViewCart UserEventName = "VIEW_CART"
+	// The user started checkout. `contextInfo.additionalData` carries `amount`, `currency`, `coupon` and `items` (see `AdditionalDataKey`).
+	UserEventNameBeginCheckout UserEventName = "BEGIN_CHECKOUT"
+	// The user submitted shipping information during checkout. `contextInfo.additionalData` carries `amount`, `currency`, `coupon`, `shippingTier` and `items` (see `AdditionalDataKey`).
+	UserEventNameAddShippingInfo UserEventName = "ADD_SHIPPING_INFO"
+	// The user submitted payment information during checkout. `contextInfo.additionalData` carries `amount`, `currency`, `coupon`, `paymentType` and `items` (see `AdditionalDataKey`).
+	UserEventNameAddPaymentInfo UserEventName = "ADD_PAYMENT_INFO"
+	// An order, or part of one, was refunded. `contextInfo.additionalData` carries `transactionId`, `amount`, `currency`, `coupon`, `shipping`, `tax` and `items` (see `AdditionalDataKey`).
+	UserEventNameRefund UserEventName = "REFUND"
+	// The user became a lead, for example by submitting a contact form. `contextInfo.additionalData` carries `amount`, `currency` and `leadSource` (see `AdditionalDataKey`).
+	UserEventNameGenerateLead UserEventName = "GENERATE_LEAD"
+	// A lead was marked qualified. `contextInfo.additionalData` carries `amount` and `currency` (see `AdditionalDataKey`).
+	UserEventNameQualifyLead UserEventName = "QUALIFY_LEAD"
+	// A lead was marked disqualified. `contextInfo.additionalData` carries `amount`, `currency` and `reason` (see `AdditionalDataKey`).
+	UserEventNameDisqualifyLead UserEventName = "DISQUALIFY_LEAD"
+	// A lead was contacted and is being worked. `contextInfo.additionalData` carries `amount`, `currency` and `leadStatus` (see `AdditionalDataKey`).
+	UserEventNameWorkingLead UserEventName = "WORKING_LEAD"
+	// A lead converted into a customer. `contextInfo.additionalData` carries `amount` and `currency` (see `AdditionalDataKey`).
+	UserEventNameCloseConvertLead UserEventName = "CLOSE_CONVERT_LEAD"
+	// A lead was closed without converting. `contextInfo.additionalData` carries `amount`, `currency` and `reason` (see `AdditionalDataKey`).
+	UserEventNameCloseUnconvertLead UserEventName = "CLOSE_UNCONVERT_LEAD"
 )
 
 func NewUserEventNameFromString(s string) (UserEventName, error) {
@@ -28926,6 +29424,56 @@ func NewUserEventNameFromString(s string) (UserEventName, error) {
 		return UserEventNamePaymentFailed, nil
 	case "ERROR_DISPLAYED":
 		return UserEventNameErrorDisplayed, nil
+	case "AD_IMPRESSION":
+		return UserEventNameAdImpression, nil
+	case "EARN_VIRTUAL_CURRENCY":
+		return UserEventNameEarnVirtualCurrency, nil
+	case "JOIN_GROUP":
+		return UserEventNameJoinGroup, nil
+	case "SELECT_CONTENT":
+		return UserEventNameSelectContent, nil
+	case "SHARE":
+		return UserEventNameShare, nil
+	case "SPEND_VIRTUAL_CURRENCY":
+		return UserEventNameSpendVirtualCurrency, nil
+	case "VIEW_ITEM_LIST":
+		return UserEventNameViewItemList, nil
+	case "SELECT_ITEM":
+		return UserEventNameSelectItem, nil
+	case "VIEW_ITEM":
+		return UserEventNameViewItem, nil
+	case "VIEW_PROMOTION":
+		return UserEventNameViewPromotion, nil
+	case "SELECT_PROMOTION":
+		return UserEventNameSelectPromotion, nil
+	case "ADD_TO_WISHLIST":
+		return UserEventNameAddToWishlist, nil
+	case "ADD_TO_CART":
+		return UserEventNameAddToCart, nil
+	case "REMOVE_FROM_CART":
+		return UserEventNameRemoveFromCart, nil
+	case "VIEW_CART":
+		return UserEventNameViewCart, nil
+	case "BEGIN_CHECKOUT":
+		return UserEventNameBeginCheckout, nil
+	case "ADD_SHIPPING_INFO":
+		return UserEventNameAddShippingInfo, nil
+	case "ADD_PAYMENT_INFO":
+		return UserEventNameAddPaymentInfo, nil
+	case "REFUND":
+		return UserEventNameRefund, nil
+	case "GENERATE_LEAD":
+		return UserEventNameGenerateLead, nil
+	case "QUALIFY_LEAD":
+		return UserEventNameQualifyLead, nil
+	case "DISQUALIFY_LEAD":
+		return UserEventNameDisqualifyLead, nil
+	case "WORKING_LEAD":
+		return UserEventNameWorkingLead, nil
+	case "CLOSE_CONVERT_LEAD":
+		return UserEventNameCloseConvertLead, nil
+	case "CLOSE_UNCONVERT_LEAD":
+		return UserEventNameCloseUnconvertLead, nil
 	}
 	var t UserEventName
 	return "", fmt.Errorf("%s is not a valid %T", s, t)

@@ -185,8 +185,6 @@ var (
 	capabilitiesSearchRequestFieldUserInteractionRequired = big.NewInt(1 << 5)
 	capabilitiesSearchRequestFieldSortID                  = big.NewInt(1 << 6)
 	capabilitiesSearchRequestFieldVariantID               = big.NewInt(1 << 7)
-	capabilitiesSearchRequestFieldVariantReferenceID      = big.NewInt(1 << 8)
-	capabilitiesSearchRequestFieldVariantAppID            = big.NewInt(1 << 9)
 )
 
 type CapabilitiesSearchRequest struct {
@@ -220,10 +218,6 @@ type CapabilitiesSearchRequest struct {
 	// staged edit if it has one, and a field deleted in the variant, whether the delete is
 	// staged or already in its snapshot, is left out.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
-	// Deprecated, use `variantId`, which wins when both are set.
-	VariantReferenceID *string `json:"variantReferenceId,omitempty" url:"-"`
-	// Deprecated, use `variantId`, which wins when both are set.
-	VariantAppID *string `json:"variantAppId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -292,25 +286,12 @@ func (c *CapabilitiesSearchRequest) SetVariantID(variantID *EntityIDWithoutAgent
 	c.require(capabilitiesSearchRequestFieldVariantID)
 }
 
-// SetVariantReferenceID sets the VariantReferenceID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CapabilitiesSearchRequest) SetVariantReferenceID(variantReferenceID *string) {
-	c.VariantReferenceID = variantReferenceID
-	c.require(capabilitiesSearchRequestFieldVariantReferenceID)
-}
-
-// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CapabilitiesSearchRequest) SetVariantAppID(variantAppID *string) {
-	c.VariantAppID = variantAppID
-	c.require(capabilitiesSearchRequestFieldVariantAppID)
-}
-
 var (
-	capabilityExecutionsSearchRequestFieldSubjectIDs      = big.NewInt(1 << 0)
-	capabilityExecutionsSearchRequestFieldCapabilityTypes = big.NewInt(1 << 1)
-	capabilityExecutionsSearchRequestFieldCapabilityIDs   = big.NewInt(1 << 2)
-	capabilityExecutionsSearchRequestFieldStatuses        = big.NewInt(1 << 3)
+	capabilityExecutionsSearchRequestFieldSubjectIDs       = big.NewInt(1 << 0)
+	capabilityExecutionsSearchRequestFieldCapabilityTypes  = big.NewInt(1 << 1)
+	capabilityExecutionsSearchRequestFieldCapabilityIDs    = big.NewInt(1 << 2)
+	capabilityExecutionsSearchRequestFieldStatuses         = big.NewInt(1 << 3)
+	capabilityExecutionsSearchRequestFieldSimulationFilter = big.NewInt(1 << 4)
 )
 
 type CapabilityExecutionsSearchRequest struct {
@@ -335,6 +316,9 @@ type CapabilityExecutionsSearchRequest struct {
 	CapabilityIDs []*EntityID `json:"capabilityIds,omitempty" url:"-"`
 	// Only return executions in these states.
 	Statuses []CapabilityExecutionStatus `json:"statuses,omitempty" url:"-"`
+	// Whether to include executions from simulations. Defaults to `ALL`, so a
+	// simulation conversation's executions are found by its ID like any other.
+	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -373,6 +357,13 @@ func (c *CapabilityExecutionsSearchRequest) SetCapabilityIDs(capabilityIDs []*En
 func (c *CapabilityExecutionsSearchRequest) SetStatuses(statuses []CapabilityExecutionStatus) {
 	c.Statuses = statuses
 	c.require(capabilityExecutionsSearchRequestFieldStatuses)
+}
+
+// SetSimulationFilter sets the SimulationFilter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityExecutionsSearchRequest) SetSimulationFilter(simulationFilter *SimulationFilter) {
+	c.SimulationFilter = simulationFilter
+	c.require(capabilityExecutionsSearchRequestFieldSimulationFilter)
 }
 
 var (
@@ -821,6 +812,7 @@ var (
 	capabilityExecutionBaseFieldCompletedAt      = big.NewInt(1 << 6)
 	capabilityExecutionBaseFieldDurationMs       = big.NewInt(1 << 7)
 	capabilityExecutionBaseFieldCreatedAt        = big.NewInt(1 << 8)
+	capabilityExecutionBaseFieldExecutionMode    = big.NewInt(1 << 9)
 )
 
 type CapabilityExecutionBase struct {
@@ -847,6 +839,9 @@ type CapabilityExecutionBase struct {
 	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 	// When the execution was recorded. Results are ordered by this field.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
+	// its conversation's mode, and an Event Trigger its event's.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -916,6 +911,13 @@ func (c *CapabilityExecutionBase) GetCreatedAt() time.Time {
 		return time.Time{}
 	}
 	return c.CreatedAt
+}
+
+func (c *CapabilityExecutionBase) GetExecutionMode() ExecutionMode {
+	if c == nil {
+		return ""
+	}
+	return c.ExecutionMode
 }
 
 func (c *CapabilityExecutionBase) GetExtraProperties() map[string]interface{} {
@@ -990,6 +992,13 @@ func (c *CapabilityExecutionBase) SetDurationMs(durationMs *int64) {
 func (c *CapabilityExecutionBase) SetCreatedAt(createdAt time.Time) {
 	c.CreatedAt = createdAt
 	c.require(capabilityExecutionBaseFieldCreatedAt)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityExecutionBase) SetExecutionMode(executionMode ExecutionMode) {
+	c.ExecutionMode = executionMode
+	c.require(capabilityExecutionBaseFieldExecutionMode)
 }
 
 func (c *CapabilityExecutionBase) UnmarshalJSON(data []byte) error {
@@ -2021,6 +2030,7 @@ var (
 	conversationKickoffCapabilityExecutionFieldCompletedAt      = big.NewInt(1 << 6)
 	conversationKickoffCapabilityExecutionFieldDurationMs       = big.NewInt(1 << 7)
 	conversationKickoffCapabilityExecutionFieldCreatedAt        = big.NewInt(1 << 8)
+	conversationKickoffCapabilityExecutionFieldExecutionMode    = big.NewInt(1 << 9)
 )
 
 type ConversationKickoffCapabilityExecution struct {
@@ -2047,6 +2057,9 @@ type ConversationKickoffCapabilityExecution struct {
 	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 	// When the execution was recorded. Results are ordered by this field.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
+	// its conversation's mode, and an Event Trigger its event's.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2116,6 +2129,13 @@ func (c *ConversationKickoffCapabilityExecution) GetCreatedAt() time.Time {
 		return time.Time{}
 	}
 	return c.CreatedAt
+}
+
+func (c *ConversationKickoffCapabilityExecution) GetExecutionMode() ExecutionMode {
+	if c == nil {
+		return ""
+	}
+	return c.ExecutionMode
 }
 
 func (c *ConversationKickoffCapabilityExecution) GetExtraProperties() map[string]interface{} {
@@ -2190,6 +2210,13 @@ func (c *ConversationKickoffCapabilityExecution) SetDurationMs(durationMs *int64
 func (c *ConversationKickoffCapabilityExecution) SetCreatedAt(createdAt time.Time) {
 	c.CreatedAt = createdAt
 	c.require(conversationKickoffCapabilityExecutionFieldCreatedAt)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffCapabilityExecution) SetExecutionMode(executionMode ExecutionMode) {
+	c.ExecutionMode = executionMode
+	c.require(conversationKickoffCapabilityExecutionFieldExecutionMode)
 }
 
 func (c *ConversationKickoffCapabilityExecution) UnmarshalJSON(data []byte) error {
@@ -2436,10 +2463,11 @@ var (
 	triggerCapabilityExecutionFieldCompletedAt      = big.NewInt(1 << 6)
 	triggerCapabilityExecutionFieldDurationMs       = big.NewInt(1 << 7)
 	triggerCapabilityExecutionFieldCreatedAt        = big.NewInt(1 << 8)
-	triggerCapabilityExecutionFieldEventType        = big.NewInt(1 << 9)
-	triggerCapabilityExecutionFieldAttempt          = big.NewInt(1 << 10)
-	triggerCapabilityExecutionFieldRetryability     = big.NewInt(1 << 11)
-	triggerCapabilityExecutionFieldHTTPStatus       = big.NewInt(1 << 12)
+	triggerCapabilityExecutionFieldExecutionMode    = big.NewInt(1 << 9)
+	triggerCapabilityExecutionFieldEventType        = big.NewInt(1 << 10)
+	triggerCapabilityExecutionFieldAttempt          = big.NewInt(1 << 11)
+	triggerCapabilityExecutionFieldRetryability     = big.NewInt(1 << 12)
+	triggerCapabilityExecutionFieldHTTPStatus       = big.NewInt(1 << 13)
 )
 
 type TriggerCapabilityExecution struct {
@@ -2466,6 +2494,9 @@ type TriggerCapabilityExecution struct {
 	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 	// When the execution was recorded. Results are ordered by this field.
 	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
+	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
+	// its conversation's mode, and an Event Trigger its event's.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
 	// The kind of event that caused this run.
 	EventType EventTriggerType `json:"eventType" url:"eventType"`
 	// Which delivery attempt this is, starting at 1. Retries are recorded as further
@@ -2545,6 +2576,13 @@ func (t *TriggerCapabilityExecution) GetCreatedAt() time.Time {
 		return time.Time{}
 	}
 	return t.CreatedAt
+}
+
+func (t *TriggerCapabilityExecution) GetExecutionMode() ExecutionMode {
+	if t == nil {
+		return ""
+	}
+	return t.ExecutionMode
 }
 
 func (t *TriggerCapabilityExecution) GetEventType() EventTriggerType {
@@ -2647,6 +2685,13 @@ func (t *TriggerCapabilityExecution) SetDurationMs(durationMs *int64) {
 func (t *TriggerCapabilityExecution) SetCreatedAt(createdAt time.Time) {
 	t.CreatedAt = createdAt
 	t.require(triggerCapabilityExecutionFieldCreatedAt)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerCapabilityExecution) SetExecutionMode(executionMode ExecutionMode) {
+	t.ExecutionMode = executionMode
+	t.require(triggerCapabilityExecutionFieldExecutionMode)
 }
 
 // SetEventType sets the EventType field and marks it as non-optional;

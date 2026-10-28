@@ -50,6 +50,7 @@ func (c *ConversationDeleteRequest) SetReason(reason string) {
 var (
 	conversationGetRequestFieldAppID               = big.NewInt(1 << 0)
 	conversationGetRequestFieldTranslationLanguage = big.NewInt(1 << 1)
+	conversationGetRequestFieldIncludeLogic        = big.NewInt(1 << 2)
 )
 
 type ConversationGetRequest struct {
@@ -57,6 +58,8 @@ type ConversationGetRequest struct {
 	AppID *string `json:"-" url:"appId,omitempty"`
 	// The language to translate the conversation analysis into
 	TranslationLanguage *string `json:"-" url:"translationLanguage,omitempty"`
+	// Whether to return `logic` on each bot message. Defaults to `true`. Pass `false` to leave it out, which makes the response much smaller.
+	IncludeLogic *bool `json:"-" url:"includeLogic,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -81,6 +84,13 @@ func (c *ConversationGetRequest) SetAppID(appID *string) {
 func (c *ConversationGetRequest) SetTranslationLanguage(translationLanguage *string) {
 	c.TranslationLanguage = translationLanguage
 	c.require(conversationGetRequestFieldTranslationLanguage)
+}
+
+// SetIncludeLogic sets the IncludeLogic field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationGetRequest) SetIncludeLogic(includeLogic *bool) {
+	c.IncludeLogic = includeLogic
+	c.require(conversationGetRequestFieldIncludeLogic)
 }
 
 type SimulationImportRequest struct {
@@ -3465,7 +3475,7 @@ var (
 )
 
 type DeliverConversationMessageRequest struct {
-	// The ID of the conversation to deliver the message to. Message delivery will fail if the conversation does not have the `ASYNC` capability or if it is not `open`.
+	// The ID of the conversation to deliver the message to. Message delivery will fail if the conversation does not have the `ASYNC` capability, and a closed conversation (`open` set to false) returns a 400.
 	ConversationID *EntityIDWithoutAgent `json:"conversationId" url:"conversationId"`
 	// The message to deliver.
 	Message *ConversationMessageRequest `json:"message" url:"message"`
@@ -3871,204 +3881,6 @@ func (d DeliveryStatus) Ptr() *DeliveryStatus {
 	return &d
 }
 
-type FeedbackField string
-
-const (
-	FeedbackFieldType      FeedbackField = "Type"
-	FeedbackFieldCreatedBy FeedbackField = "CreatedBy"
-	FeedbackFieldCreatedAt FeedbackField = "CreatedAt"
-	FeedbackFieldApp       FeedbackField = "App"
-)
-
-func NewFeedbackFieldFromString(s string) (FeedbackField, error) {
-	switch s {
-	case "Type":
-		return FeedbackFieldType, nil
-	case "CreatedBy":
-		return FeedbackFieldCreatedBy, nil
-	case "CreatedAt":
-		return FeedbackFieldCreatedAt, nil
-	case "App":
-		return FeedbackFieldApp, nil
-	}
-	var t FeedbackField
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (f FeedbackField) Ptr() *FeedbackField {
-	return &f
-}
-
-var (
-	feedbackFilterFieldSearch        = big.NewInt(1 << 0)
-	feedbackFilterFieldCreatedAfter  = big.NewInt(1 << 1)
-	feedbackFilterFieldCreatedBefore = big.NewInt(1 << 2)
-	feedbackFilterFieldUsers         = big.NewInt(1 << 3)
-	feedbackFilterFieldApps          = big.NewInt(1 << 4)
-	feedbackFilterFieldTypes         = big.NewInt(1 << 5)
-)
-
-type FeedbackFilter struct {
-	Search        *string        `json:"search,omitempty" url:"search,omitempty"`
-	CreatedAfter  *time.Time     `json:"createdAfter,omitempty" url:"createdAfter,omitempty"`
-	CreatedBefore *time.Time     `json:"createdBefore,omitempty" url:"createdBefore,omitempty"`
-	Users         []string       `json:"users,omitempty" url:"users,omitempty"`
-	Apps          []string       `json:"apps,omitempty" url:"apps,omitempty"`
-	Types         []FeedbackType `json:"types,omitempty" url:"types,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackFilter) GetSearch() *string {
-	if f == nil {
-		return nil
-	}
-	return f.Search
-}
-
-func (f *FeedbackFilter) GetCreatedAfter() *time.Time {
-	if f == nil {
-		return nil
-	}
-	return f.CreatedAfter
-}
-
-func (f *FeedbackFilter) GetCreatedBefore() *time.Time {
-	if f == nil {
-		return nil
-	}
-	return f.CreatedBefore
-}
-
-func (f *FeedbackFilter) GetUsers() []string {
-	if f == nil {
-		return nil
-	}
-	return f.Users
-}
-
-func (f *FeedbackFilter) GetApps() []string {
-	if f == nil {
-		return nil
-	}
-	return f.Apps
-}
-
-func (f *FeedbackFilter) GetTypes() []FeedbackType {
-	if f == nil {
-		return nil
-	}
-	return f.Types
-}
-
-func (f *FeedbackFilter) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackFilter) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetSearch sets the Search field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackFilter) SetSearch(search *string) {
-	f.Search = search
-	f.require(feedbackFilterFieldSearch)
-}
-
-// SetCreatedAfter sets the CreatedAfter field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackFilter) SetCreatedAfter(createdAfter *time.Time) {
-	f.CreatedAfter = createdAfter
-	f.require(feedbackFilterFieldCreatedAfter)
-}
-
-// SetCreatedBefore sets the CreatedBefore field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackFilter) SetCreatedBefore(createdBefore *time.Time) {
-	f.CreatedBefore = createdBefore
-	f.require(feedbackFilterFieldCreatedBefore)
-}
-
-// SetUsers sets the Users field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackFilter) SetUsers(users []string) {
-	f.Users = users
-	f.require(feedbackFilterFieldUsers)
-}
-
-// SetApps sets the Apps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackFilter) SetApps(apps []string) {
-	f.Apps = apps
-	f.require(feedbackFilterFieldApps)
-}
-
-// SetTypes sets the Types field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackFilter) SetTypes(types []FeedbackType) {
-	f.Types = types
-	f.require(feedbackFilterFieldTypes)
-}
-
-func (f *FeedbackFilter) UnmarshalJSON(data []byte) error {
-	type embed FeedbackFilter
-	var unmarshaler = struct {
-		embed
-		CreatedAfter  *internal.DateTime `json:"createdAfter,omitempty"`
-		CreatedBefore *internal.DateTime `json:"createdBefore,omitempty"`
-	}{
-		embed: embed(*f),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
-		return err
-	}
-	*f = FeedbackFilter(unmarshaler.embed)
-	f.CreatedAfter = unmarshaler.CreatedAfter.TimePtr()
-	f.CreatedBefore = unmarshaler.CreatedBefore.TimePtr()
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackFilter) MarshalJSON() ([]byte, error) {
-	type embed FeedbackFilter
-	var marshaler = struct {
-		embed
-		CreatedAfter  *internal.DateTime `json:"createdAfter,omitempty"`
-		CreatedBefore *internal.DateTime `json:"createdBefore,omitempty"`
-	}{
-		embed:         embed(*f),
-		CreatedAfter:  internal.NewOptionalDateTime(f.CreatedAfter),
-		CreatedBefore: internal.NewOptionalDateTime(f.CreatedBefore),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackFilter) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
 var (
 	feedbackRequestFieldType                  = big.NewInt(1 << 0)
 	feedbackRequestFieldText                  = big.NewInt(1 << 1)
@@ -4285,31 +4097,6 @@ func NewNumericConversationFieldFromString(s string) (NumericConversationField, 
 
 func (n NumericConversationField) Ptr() *NumericConversationField {
 	return &n
-}
-
-type SimulationFilter string
-
-const (
-	SimulationFilterNonSimulations SimulationFilter = "NON_SIMULATIONS"
-	SimulationFilterSimulations    SimulationFilter = "SIMULATIONS"
-	SimulationFilterAll            SimulationFilter = "ALL"
-)
-
-func NewSimulationFilterFromString(s string) (SimulationFilter, error) {
-	switch s {
-	case "NON_SIMULATIONS":
-		return SimulationFilterNonSimulations, nil
-	case "SIMULATIONS":
-		return SimulationFilterSimulations, nil
-	case "ALL":
-		return SimulationFilterAll, nil
-	}
-	var t SimulationFilter
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (s SimulationFilter) Ptr() *SimulationFilter {
-	return &s
 }
 
 type StreamResponse struct {

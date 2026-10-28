@@ -1187,89 +1187,6 @@ client.Analytics.ExportConversationTable(
 </dl>
 </details>
 
-<details><summary><code>client.Analytics.GetFeedbackTable(request) -> *mavenagigo.FeedbackTableResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Deprecated. Use `getEventTable` instead, which reports the same thumbs up/down and insert
-activity as user events.
-
-Retrieves structured feedback data formatted as a table, allowing users to group, filter,
-and define specific metrics to display as columns.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &mavenagigo.FeedbackTableRequest{
-        FeedbackFilter: &mavenagigo.FeedbackFilter{
-            Types: []mavenagigo.FeedbackType{
-                mavenagigo.FeedbackTypeThumbsUp,
-                mavenagigo.FeedbackTypeInsert,
-            },
-        },
-        FieldGroupings: []*mavenagigo.FeedbackGroupBy{
-            &mavenagigo.FeedbackGroupBy{
-                Field: mavenagigo.FeedbackFieldCreatedBy,
-            },
-        },
-        ColumnDefinitions: []*mavenagigo.FeedbackColumnDefinition{
-            &mavenagigo.FeedbackColumnDefinition{
-                Header: "feedback_count",
-                Metric: &mavenagigo.FeedbackMetric{
-                    Count: &mavenagigo.FeedbackCount{},
-                },
-            },
-        },
-    }
-client.Analytics.GetFeedbackTable(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `*mavenagigo.FeedbackTableRequest` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
 <details><summary><code>client.Analytics.GetAgentUserTable(request) -> *mavenagigo.AgentUserTableResponse</code></summary>
 <dl>
 <dd>
@@ -2763,22 +2680,6 @@ staged or already in its snapshot, is left out.
     
 </dd>
 </dl>
-
-<dl>
-<dd>
-
-**variantReferenceID:** `*string` — Deprecated, use `variantId`, which wins when both are set.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**variantAppID:** `*string` — Deprecated, use `variantId`, which wins when both are set.
-    
-</dd>
-</dl>
 </dd>
 </dl>
 
@@ -2890,6 +2791,17 @@ a returned execution. At most 100 ids.
 <dd>
 
 **statuses:** `[]*mavenagigo.CapabilityExecutionStatus` — Only return executions in these states.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**simulationFilter:** `*mavenagigo.SimulationFilter` 
+
+Whether to include executions from simulations. Defaults to `ALL`, so a
+simulation conversation's executions are found by its ID like any other.
     
 </dd>
 </dl>
@@ -3751,30 +3663,9 @@ After initialization,
 ```go
 request := &mavenagigo.ConversationRequest{
         ConversationID: &mavenagigo.EntityIDBase{
-            ReferenceID: "x",
+            ReferenceID: "conversation-0",
         },
-        Messages: []*mavenagigo.ConversationMessageRequest{
-            &mavenagigo.ConversationMessageRequest{
-                ConversationMessageID: &mavenagigo.EntityIDBase{
-                    ReferenceID: "x",
-                },
-                UserID: &mavenagigo.EntityIDBase{
-                    ReferenceID: "x",
-                },
-                Text: "text",
-                UserMessageType: mavenagigo.UserConversationMessageTypeUser,
-            },
-            &mavenagigo.ConversationMessageRequest{
-                ConversationMessageID: &mavenagigo.EntityIDBase{
-                    ReferenceID: "x",
-                },
-                UserID: &mavenagigo.EntityIDBase{
-                    ReferenceID: "x",
-                },
-                Text: "text",
-                UserMessageType: mavenagigo.UserConversationMessageTypeUser,
-            },
-        },
+        Messages: []*mavenagigo.ConversationMessageRequest{},
     }
 client.Conversation.Initialize(
         context.TODO(),
@@ -3950,6 +3841,14 @@ client.Conversation.Get(
 <dd>
 
 **translationLanguage:** `*string` — The language to translate the conversation analysis into
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**includeLogic:** `*bool` — Whether to return `logic` on each bot message. Defaults to `true`. Pass `false` to leave it out, which makes the response much smaller.
     
 </dd>
 </dl>
@@ -4936,9 +4835,11 @@ client.Conversation.Export(
 
 Deliver a message to a user or conversation.
 
+A closed conversation (`open` set to false) takes no new messages and returns a 400.
+
 <Warning>
-Currently, messages can only be successfully delivered to conversations with the `ASYNC` capability that are `open`.
-User message delivery is not yet supported.
+Currently, messages can only be successfully delivered to conversations with the `ASYNC` capability.
+User message delivery is not yet supported and returns a 400.
 </Warning>
 </dd>
 </dl>
@@ -6537,14 +6438,6 @@ cannot be deactivated.
     
 </dd>
 </dl>
-
-<dl>
-<dd>
-
-**variantAppID:** `*string` — Deprecated, use `variantId.appId`, which wins when both are set.
-    
-</dd>
-</dl>
 </dd>
 </dl>
 
@@ -8031,9 +7924,9 @@ client.Knowledge.PatchKnowledgeDocument(
 
 Create a new organization.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+Only Maven staff hold this permission.
+
+<Note>**Required permission:** `create:organization`</Note>
 </dd>
 </dl>
 </dd>
@@ -8105,6 +7998,8 @@ client.Organizations.Create(
 <dd>
 
 Get an organization by ID
+
+<Note>**Required permission:** `read:organization`</Note>
 </dd>
 </dl>
 </dd>
@@ -8165,9 +8060,7 @@ client.Organizations.Get(
 Update mutable organization fields.
 All fields will overwrite the existing value on the organization only if provided.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+<Note>**Required permission:** `edit:organization`</Note>
 </dd>
 </dl>
 </dd>
@@ -8237,9 +8130,7 @@ client.Organizations.Patch(
 
 Delete an organization.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+<Note>**Required permission:** `delete:organization`</Note>
 </dd>
 </dl>
 </dd>
@@ -8300,9 +8191,9 @@ client.Organizations.Delete(
 Retrieves structured conversation data across all organizations, formatted as a table, 
 allowing users to group, filter, and define specific metrics to display as columns.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+Only Maven staff hold this permission.
+
+<Note>**Required permission:** `read:all-organizations`</Note>
 </dd>
 </dl>
 </dd>
@@ -8402,9 +8293,9 @@ client.Organizations.GetConversationTable(
 Fetches conversation data across all organizations, visualized in a chart format. 
 Supported chart types include pie chart, date histogram, and stacked bar charts.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+Only Maven staff hold this permission.
+
+<Note>**Required permission:** `read:all-organizations`</Note>
 </dd>
 </dl>
 </dd>

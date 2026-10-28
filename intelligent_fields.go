@@ -109,13 +109,12 @@ func (i *IntelligentFieldGetRequest) SetVariantAppID(variantAppID *string) {
 }
 
 var (
-	intelligentFieldPatchRequestFieldAppID        = big.NewInt(1 << 0)
-	intelligentFieldPatchRequestFieldDefinition   = big.NewInt(1 << 1)
-	intelligentFieldPatchRequestFieldStatus       = big.NewInt(1 << 2)
-	intelligentFieldPatchRequestFieldDescription  = big.NewInt(1 << 3)
-	intelligentFieldPatchRequestFieldEnumOptions  = big.NewInt(1 << 4)
-	intelligentFieldPatchRequestFieldVariantID    = big.NewInt(1 << 5)
-	intelligentFieldPatchRequestFieldVariantAppID = big.NewInt(1 << 6)
+	intelligentFieldPatchRequestFieldAppID       = big.NewInt(1 << 0)
+	intelligentFieldPatchRequestFieldDefinition  = big.NewInt(1 << 1)
+	intelligentFieldPatchRequestFieldStatus      = big.NewInt(1 << 2)
+	intelligentFieldPatchRequestFieldDescription = big.NewInt(1 << 3)
+	intelligentFieldPatchRequestFieldEnumOptions = big.NewInt(1 << 4)
+	intelligentFieldPatchRequestFieldVariantID   = big.NewInt(1 << 5)
 )
 
 type IntelligentFieldPatchRequest struct {
@@ -136,8 +135,6 @@ type IntelligentFieldPatchRequest struct {
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"-"`
 	// The agent variant to stage this patch in. Required on an agent with versioned intelligent fields; a patch that omits it there is rejected with reason `VARIANT_REQUIRED`.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
-	// Deprecated, use `variantId.appId`, which wins when both are set.
-	VariantAppID *string `json:"variantAppId,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -190,13 +187,6 @@ func (i *IntelligentFieldPatchRequest) SetEnumOptions(enumOptions []*EnumOption)
 func (i *IntelligentFieldPatchRequest) SetVariantID(variantID *EntityIDWithoutAgent) {
 	i.VariantID = variantID
 	i.require(intelligentFieldPatchRequestFieldVariantID)
-}
-
-// SetVariantAppID sets the VariantAppID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IntelligentFieldPatchRequest) SetVariantAppID(variantAppID *string) {
-	i.VariantAppID = variantAppID
-	i.require(intelligentFieldPatchRequestFieldVariantAppID)
 }
 
 // One allowed choice for a field whose value should come from a finite set. Use with

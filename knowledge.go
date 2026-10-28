@@ -956,6 +956,120 @@ func (k *KnowledgeBaseFilter) String() string {
 	return fmt.Sprintf("%#v", k)
 }
 
+// The three Function versions that sync a knowledge base, all in its own app.
+var (
+	knowledgeBaseFunctionBindingsFieldFetchMetadata    = big.NewInt(1 << 0)
+	knowledgeBaseFunctionBindingsFieldFetchDocuments   = big.NewInt(1 << 1)
+	knowledgeBaseFunctionBindingsFieldConvertDocuments = big.NewInt(1 << 2)
+)
+
+type KnowledgeBaseFunctionBindings struct {
+	// Fetches the lookup data the other two Functions need, once per sync.
+	FetchMetadata *FunctionVersionBinding `json:"fetchMetadata" url:"fetchMetadata"`
+	// Fetches one page of raw records from the source.
+	FetchDocuments *FunctionVersionBinding `json:"fetchDocuments" url:"fetchDocuments"`
+	// Converts one page of raw records into documents.
+	ConvertDocuments *FunctionVersionBinding `json:"convertDocuments" url:"convertDocuments"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (k *KnowledgeBaseFunctionBindings) GetFetchMetadata() *FunctionVersionBinding {
+	if k == nil {
+		return nil
+	}
+	return k.FetchMetadata
+}
+
+func (k *KnowledgeBaseFunctionBindings) GetFetchDocuments() *FunctionVersionBinding {
+	if k == nil {
+		return nil
+	}
+	return k.FetchDocuments
+}
+
+func (k *KnowledgeBaseFunctionBindings) GetConvertDocuments() *FunctionVersionBinding {
+	if k == nil {
+		return nil
+	}
+	return k.ConvertDocuments
+}
+
+func (k *KnowledgeBaseFunctionBindings) GetExtraProperties() map[string]interface{} {
+	return k.extraProperties
+}
+
+func (k *KnowledgeBaseFunctionBindings) require(field *big.Int) {
+	if k.explicitFields == nil {
+		k.explicitFields = big.NewInt(0)
+	}
+	k.explicitFields.Or(k.explicitFields, field)
+}
+
+// SetFetchMetadata sets the FetchMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseFunctionBindings) SetFetchMetadata(fetchMetadata *FunctionVersionBinding) {
+	k.FetchMetadata = fetchMetadata
+	k.require(knowledgeBaseFunctionBindingsFieldFetchMetadata)
+}
+
+// SetFetchDocuments sets the FetchDocuments field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseFunctionBindings) SetFetchDocuments(fetchDocuments *FunctionVersionBinding) {
+	k.FetchDocuments = fetchDocuments
+	k.require(knowledgeBaseFunctionBindingsFieldFetchDocuments)
+}
+
+// SetConvertDocuments sets the ConvertDocuments field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseFunctionBindings) SetConvertDocuments(convertDocuments *FunctionVersionBinding) {
+	k.ConvertDocuments = convertDocuments
+	k.require(knowledgeBaseFunctionBindingsFieldConvertDocuments)
+}
+
+func (k *KnowledgeBaseFunctionBindings) UnmarshalJSON(data []byte) error {
+	type unmarshaler KnowledgeBaseFunctionBindings
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*k = KnowledgeBaseFunctionBindings(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *k)
+	if err != nil {
+		return err
+	}
+	k.extraProperties = extraProperties
+	k.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (k *KnowledgeBaseFunctionBindings) MarshalJSON() ([]byte, error) {
+	type embed KnowledgeBaseFunctionBindings
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*k),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, k.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (k *KnowledgeBaseFunctionBindings) String() string {
+	if len(k.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(k.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(k); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", k)
+}
+
 var (
 	knowledgeBaseIndexingProgressStateFieldVersionID     = big.NewInt(1 << 0)
 	knowledgeBaseIndexingProgressStateFieldStatus        = big.NewInt(1 << 1)
@@ -3645,7 +3759,7 @@ type KnowledgeDocumentResponse struct {
 	RelevantEntities []*ScopedEntity `json:"relevantEntities" url:"relevantEntities"`
 	// The current processing status of the knowledge document
 	ProcessingStatus *KnowledgeDocumentStatus `json:"processingStatus,omitempty" url:"processingStatus,omitempty"`
-	// The content of the document in markdown format. Not shown directly to users. May be absent for asset-backed documents that have not yet been processed.
+	// The content of the document in markdown format. Not shown directly to users. May be absent for asset-backed documents that have not yet been processed, or on a document GET when the document's processed form is larger than 20,000,000 bytes. When content is absent, asset.url (if present) links to the original uploaded file.
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
 	// If the document is associated with an asset, this will contain the asset metadata
 	Asset *AttachmentResponse `json:"asset,omitempty" url:"asset,omitempty"`

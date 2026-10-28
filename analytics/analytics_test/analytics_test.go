@@ -197,46 +197,6 @@ func TestAnalyticsExportConversationTableWithWireMock(
 	VerifyRequestCount(t, "POST", "/v1/tables/conversations/export", nil, 1)
 }
 
-func TestAnalyticsGetFeedbackTableWithWireMock(
-	t *testing.T,
-) {
-	ResetWireMockRequests(t)
-	WireMockBaseURL := "http://localhost:8080"
-	client := client.NewMavenAGI(
-		option.WithBaseURL(
-			WireMockBaseURL,
-		),
-	)
-	request := &mavenagigo.FeedbackTableRequest{
-		FeedbackFilter: &mavenagigo.FeedbackFilter{
-			Types: []mavenagigo.FeedbackType{
-				mavenagigo.FeedbackTypeThumbsUp,
-				mavenagigo.FeedbackTypeInsert,
-			},
-		},
-		FieldGroupings: []*mavenagigo.FeedbackGroupBy{
-			&mavenagigo.FeedbackGroupBy{
-				Field: mavenagigo.FeedbackFieldCreatedBy,
-			},
-		},
-		ColumnDefinitions: []*mavenagigo.FeedbackColumnDefinition{
-			&mavenagigo.FeedbackColumnDefinition{
-				Header: "feedback_count",
-				Metric: &mavenagigo.FeedbackMetric{
-					Count: &mavenagigo.FeedbackCount{},
-				},
-			},
-		},
-	}
-	_, invocationErr := client.Analytics.GetFeedbackTable(
-		context.TODO(),
-		request,
-	)
-
-	require.NoError(t, invocationErr, "Client method call should succeed")
-	VerifyRequestCount(t, "POST", "/v1/tables/feedback", nil, 1)
-}
-
 func TestAnalyticsGetAgentUserTableWithWireMock(
 	t *testing.T,
 ) {

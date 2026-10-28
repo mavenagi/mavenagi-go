@@ -264,6 +264,138 @@ func (a *AgentUserCount) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+var (
+	agentUserGroupByFieldLimit              = big.NewInt(1 << 0)
+	agentUserGroupByFieldField              = big.NewInt(1 << 1)
+	agentUserGroupByFieldIntelligentFieldID = big.NewInt(1 << 2)
+	agentUserGroupByFieldRanges             = big.NewInt(1 << 3)
+)
+
+type AgentUserGroupBy struct {
+	// Limits the number of groups returned (defaults to 100 if omitted).
+	Limit *int `json:"limit,omitempty" url:"limit,omitempty"`
+	// Field used for data grouping.
+	Field AgentUserField `json:"field" url:"field"`
+	// Fully specified ID of a user-level intelligent field. Required when `field` is
+	// `IntelligentField`, and ignored otherwise.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
+	// Numeric ranges for grouping data into predefined buckets.
+	// Applies only to NUMBER-validated intelligent fields.
+	Ranges []*Range `json:"ranges,omitempty" url:"ranges,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AgentUserGroupBy) GetLimit() *int {
+	if a == nil {
+		return nil
+	}
+	return a.Limit
+}
+
+func (a *AgentUserGroupBy) GetField() AgentUserField {
+	if a == nil {
+		return ""
+	}
+	return a.Field
+}
+
+func (a *AgentUserGroupBy) GetIntelligentFieldID() *EntityID {
+	if a == nil {
+		return nil
+	}
+	return a.IntelligentFieldID
+}
+
+func (a *AgentUserGroupBy) GetRanges() []*Range {
+	if a == nil {
+		return nil
+	}
+	return a.Ranges
+}
+
+func (a *AgentUserGroupBy) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AgentUserGroupBy) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetLimit sets the Limit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserGroupBy) SetLimit(limit *int) {
+	a.Limit = limit
+	a.require(agentUserGroupByFieldLimit)
+}
+
+// SetField sets the Field field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserGroupBy) SetField(field AgentUserField) {
+	a.Field = field
+	a.require(agentUserGroupByFieldField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserGroupBy) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	a.IntelligentFieldID = intelligentFieldID
+	a.require(agentUserGroupByFieldIntelligentFieldID)
+}
+
+// SetRanges sets the Ranges field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserGroupBy) SetRanges(ranges []*Range) {
+	a.Ranges = ranges
+	a.require(agentUserGroupByFieldRanges)
+}
+
+func (a *AgentUserGroupBy) UnmarshalJSON(data []byte) error {
+	type unmarshaler AgentUserGroupBy
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AgentUserGroupBy(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AgentUserGroupBy) MarshalJSON() ([]byte, error) {
+	type embed AgentUserGroupBy
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AgentUserGroupBy) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
 // Defines the metric to be calculated for a column or chart.
 type AgentUserMetric struct {
 	Type  string
@@ -476,8 +608,9 @@ func (a *AgentUserRow) String() string {
 }
 
 var (
-	agentUserRowIdentifierFieldValue = big.NewInt(1 << 0)
-	agentUserRowIdentifierFieldField = big.NewInt(1 << 1)
+	agentUserRowIdentifierFieldValue              = big.NewInt(1 << 0)
+	agentUserRowIdentifierFieldField              = big.NewInt(1 << 1)
+	agentUserRowIdentifierFieldIntelligentFieldID = big.NewInt(1 << 2)
 )
 
 type AgentUserRowIdentifier struct {
@@ -485,6 +618,8 @@ type AgentUserRowIdentifier struct {
 	Value *FieldValue `json:"value" url:"value"`
 	// Field this grouping was on.
 	Field AgentUserField `json:"field" url:"field"`
+	// Which intelligent field this grouping was on, set when `field` is `IntelligentField`.
+	IntelligentFieldID *EntityID `json:"intelligentFieldId,omitempty" url:"intelligentFieldId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -505,6 +640,13 @@ func (a *AgentUserRowIdentifier) GetField() AgentUserField {
 		return ""
 	}
 	return a.Field
+}
+
+func (a *AgentUserRowIdentifier) GetIntelligentFieldID() *EntityID {
+	if a == nil {
+		return nil
+	}
+	return a.IntelligentFieldID
 }
 
 func (a *AgentUserRowIdentifier) GetExtraProperties() map[string]interface{} {
@@ -530,6 +672,13 @@ func (a *AgentUserRowIdentifier) SetValue(value *FieldValue) {
 func (a *AgentUserRowIdentifier) SetField(field AgentUserField) {
 	a.Field = field
 	a.require(agentUserRowIdentifierFieldField)
+}
+
+// SetIntelligentFieldID sets the IntelligentFieldID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserRowIdentifier) SetIntelligentFieldID(intelligentFieldID *EntityID) {
+	a.IntelligentFieldID = intelligentFieldID
+	a.require(agentUserRowIdentifierFieldIntelligentFieldID)
 }
 
 func (a *AgentUserRowIdentifier) UnmarshalJSON(data []byte) error {
@@ -575,7 +724,8 @@ var (
 	agentUserTableRequestFieldAgentUserFilter   = big.NewInt(1 << 0)
 	agentUserTableRequestFieldTimezone          = big.NewInt(1 << 1)
 	agentUserTableRequestFieldTimeGrouping      = big.NewInt(1 << 2)
-	agentUserTableRequestFieldColumnDefinitions = big.NewInt(1 << 3)
+	agentUserTableRequestFieldFieldGroupings    = big.NewInt(1 << 3)
+	agentUserTableRequestFieldColumnDefinitions = big.NewInt(1 << 4)
 )
 
 type AgentUserTableRequest struct {
@@ -589,6 +739,11 @@ type AgentUserTableRequest struct {
 	//
 	//	Example: If set to "DAY," data will be aggregated by day.
 	TimeGrouping *TimeInterval `json:"timeGrouping,omitempty" url:"timeGrouping,omitempty"`
+	// Specifies the fields by which data should be grouped. Each unique combination forms a row.
+	// If multiple fields are provided, the result is grouped by their unique value combinations.
+	// If omitted or empty, all data is aggregated into a single row.
+	// `CreatedAt` and `UpdatedAt` are rejected here; group by time with `timeGrouping`.
+	FieldGroupings []*AgentUserGroupBy `json:"fieldGroupings,omitempty" url:"fieldGroupings,omitempty"`
 	// Specifies the metrics to be displayed as columns.
 	// Only the `count` metric is supported for agent user tables, so each table will have a single column definition using `count`.
 	ColumnDefinitions []*AgentUserColumnDefinition `json:"columnDefinitions" url:"columnDefinitions"`
@@ -619,6 +774,13 @@ func (a *AgentUserTableRequest) GetTimeGrouping() *TimeInterval {
 		return nil
 	}
 	return a.TimeGrouping
+}
+
+func (a *AgentUserTableRequest) GetFieldGroupings() []*AgentUserGroupBy {
+	if a == nil {
+		return nil
+	}
+	return a.FieldGroupings
 }
 
 func (a *AgentUserTableRequest) GetColumnDefinitions() []*AgentUserColumnDefinition {
@@ -658,6 +820,13 @@ func (a *AgentUserTableRequest) SetTimezone(timezone *string) {
 func (a *AgentUserTableRequest) SetTimeGrouping(timeGrouping *TimeInterval) {
 	a.TimeGrouping = timeGrouping
 	a.require(agentUserTableRequestFieldTimeGrouping)
+}
+
+// SetFieldGroupings sets the FieldGroupings field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AgentUserTableRequest) SetFieldGroupings(fieldGroupings []*AgentUserGroupBy) {
+	a.FieldGroupings = fieldGroupings
+	a.require(agentUserTableRequestFieldFieldGroupings)
 }
 
 // SetColumnDefinitions sets the ColumnDefinitions field and marks it as non-optional;
@@ -714,7 +883,8 @@ var (
 type AgentUserTableResponse struct {
 	// Column headers in the table, aligning with the column definitions specified in the request.
 	Headers []string `json:"headers" url:"headers"`
-	// Each row contains the user count for the given search query and corresponding time grouping.
+	// One row per combination of time bucket and field grouping values, each holding the user
+	// count for the given filter.
 	Rows []*AgentUserRow `json:"rows" url:"rows"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -5633,1022 +5803,6 @@ func (e *EventTableResponse) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", e)
-}
-
-var (
-	feedbackAnalyticsRequestFieldFeedbackFilter = big.NewInt(1 << 0)
-	feedbackAnalyticsRequestFieldTimezone       = big.NewInt(1 << 1)
-)
-
-type FeedbackAnalyticsRequest struct {
-	// Optional filter applied to refine the feedback data before processing.
-	FeedbackFilter *FeedbackFilter `json:"feedbackFilter,omitempty" url:"feedbackFilter,omitempty"`
-	// IANA timezone identifier (e.g., "America/Los_Angeles").
-	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
-	// otherwise UTC is used.
-	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackAnalyticsRequest) GetFeedbackFilter() *FeedbackFilter {
-	if f == nil {
-		return nil
-	}
-	return f.FeedbackFilter
-}
-
-func (f *FeedbackAnalyticsRequest) GetTimezone() *string {
-	if f == nil {
-		return nil
-	}
-	return f.Timezone
-}
-
-func (f *FeedbackAnalyticsRequest) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackAnalyticsRequest) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetFeedbackFilter sets the FeedbackFilter field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackAnalyticsRequest) SetFeedbackFilter(feedbackFilter *FeedbackFilter) {
-	f.FeedbackFilter = feedbackFilter
-	f.require(feedbackAnalyticsRequestFieldFeedbackFilter)
-}
-
-// SetTimezone sets the Timezone field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackAnalyticsRequest) SetTimezone(timezone *string) {
-	f.Timezone = timezone
-	f.require(feedbackAnalyticsRequestFieldTimezone)
-}
-
-func (f *FeedbackAnalyticsRequest) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackAnalyticsRequest
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackAnalyticsRequest(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackAnalyticsRequest) MarshalJSON() ([]byte, error) {
-	type embed FeedbackAnalyticsRequest
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackAnalyticsRequest) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
-	feedbackColumnDefinitionFieldHeader = big.NewInt(1 << 0)
-	feedbackColumnDefinitionFieldMetric = big.NewInt(1 << 1)
-)
-
-type FeedbackColumnDefinition struct {
-	// Unique column header, serving as the key for corresponding metric values.
-	Header string `json:"header" url:"header"`
-	// The metric calculated for this column, stored in the row data under the specified header.
-	Metric *FeedbackMetric `json:"metric" url:"metric"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackColumnDefinition) GetHeader() string {
-	if f == nil {
-		return ""
-	}
-	return f.Header
-}
-
-func (f *FeedbackColumnDefinition) GetMetric() *FeedbackMetric {
-	if f == nil {
-		return nil
-	}
-	return f.Metric
-}
-
-func (f *FeedbackColumnDefinition) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackColumnDefinition) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetHeader sets the Header field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackColumnDefinition) SetHeader(header string) {
-	f.Header = header
-	f.require(feedbackColumnDefinitionFieldHeader)
-}
-
-// SetMetric sets the Metric field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackColumnDefinition) SetMetric(metric *FeedbackMetric) {
-	f.Metric = metric
-	f.require(feedbackColumnDefinitionFieldMetric)
-}
-
-func (f *FeedbackColumnDefinition) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackColumnDefinition
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackColumnDefinition(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackColumnDefinition) MarshalJSON() ([]byte, error) {
-	type embed FeedbackColumnDefinition
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackColumnDefinition) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-// Returns the total count of records in a group.
-type FeedbackCount struct {
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackCount) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackCount) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-func (f *FeedbackCount) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackCount
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackCount(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackCount) MarshalJSON() ([]byte, error) {
-	type embed FeedbackCount
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackCount) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-// Calculates the number of unique values in the specified field.
-// Supports fields with list values as well.
-var (
-	feedbackDistinctCountFieldTargetField = big.NewInt(1 << 0)
-)
-
-type FeedbackDistinctCount struct {
-	// All the distinct values of this field will be counted.
-	TargetField FeedbackField `json:"targetField" url:"targetField"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackDistinctCount) GetTargetField() FeedbackField {
-	if f == nil {
-		return ""
-	}
-	return f.TargetField
-}
-
-func (f *FeedbackDistinctCount) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackDistinctCount) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetTargetField sets the TargetField field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackDistinctCount) SetTargetField(targetField FeedbackField) {
-	f.TargetField = targetField
-	f.require(feedbackDistinctCountFieldTargetField)
-}
-
-func (f *FeedbackDistinctCount) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackDistinctCount
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackDistinctCount(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackDistinctCount) MarshalJSON() ([]byte, error) {
-	type embed FeedbackDistinctCount
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackDistinctCount) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
-	feedbackGroupByFieldLimit = big.NewInt(1 << 0)
-	feedbackGroupByFieldField = big.NewInt(1 << 1)
-)
-
-type FeedbackGroupBy struct {
-	// Limits the number of groups returned (defaults to 100 if omitted).
-	Limit *int `json:"limit,omitempty" url:"limit,omitempty"`
-	// Field used for data grouping.
-	Field FeedbackField `json:"field" url:"field"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackGroupBy) GetLimit() *int {
-	if f == nil {
-		return nil
-	}
-	return f.Limit
-}
-
-func (f *FeedbackGroupBy) GetField() FeedbackField {
-	if f == nil {
-		return ""
-	}
-	return f.Field
-}
-
-func (f *FeedbackGroupBy) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackGroupBy) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetLimit sets the Limit field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackGroupBy) SetLimit(limit *int) {
-	f.Limit = limit
-	f.require(feedbackGroupByFieldLimit)
-}
-
-// SetField sets the Field field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackGroupBy) SetField(field FeedbackField) {
-	f.Field = field
-	f.require(feedbackGroupByFieldField)
-}
-
-func (f *FeedbackGroupBy) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackGroupBy
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackGroupBy(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackGroupBy) MarshalJSON() ([]byte, error) {
-	type embed FeedbackGroupBy
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackGroupBy) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-// Defines the metric to be calculated for a column or chart.
-type FeedbackMetric struct {
-	Type          string
-	Count         *FeedbackCount
-	DistinctCount *FeedbackDistinctCount
-}
-
-func (f *FeedbackMetric) GetType() string {
-	if f == nil {
-		return ""
-	}
-	return f.Type
-}
-
-func (f *FeedbackMetric) GetCount() *FeedbackCount {
-	if f == nil {
-		return nil
-	}
-	return f.Count
-}
-
-func (f *FeedbackMetric) GetDistinctCount() *FeedbackDistinctCount {
-	if f == nil {
-		return nil
-	}
-	return f.DistinctCount
-}
-
-func (f *FeedbackMetric) UnmarshalJSON(data []byte) error {
-	var unmarshaler struct {
-		Type string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
-		return err
-	}
-	f.Type = unmarshaler.Type
-	if unmarshaler.Type == "" {
-		return fmt.Errorf("%T did not include discriminant type", f)
-	}
-	switch unmarshaler.Type {
-	case "count":
-		value := new(FeedbackCount)
-		if err := json.Unmarshal(data, &value); err != nil {
-			return err
-		}
-		f.Count = value
-	case "distinctCount":
-		value := new(FeedbackDistinctCount)
-		if err := json.Unmarshal(data, &value); err != nil {
-			return err
-		}
-		f.DistinctCount = value
-	}
-	return nil
-}
-
-func (f FeedbackMetric) MarshalJSON() ([]byte, error) {
-	if err := f.validate(); err != nil {
-		return nil, err
-	}
-	if f.Count != nil {
-		return internal.MarshalJSONWithExtraProperty(f.Count, "type", "count")
-	}
-	if f.DistinctCount != nil {
-		return internal.MarshalJSONWithExtraProperty(f.DistinctCount, "type", "distinctCount")
-	}
-	return nil, fmt.Errorf("type %T does not define a non-empty union type", f)
-}
-
-type FeedbackMetricVisitor interface {
-	VisitCount(*FeedbackCount) error
-	VisitDistinctCount(*FeedbackDistinctCount) error
-}
-
-func (f *FeedbackMetric) Accept(visitor FeedbackMetricVisitor) error {
-	if f.Count != nil {
-		return visitor.VisitCount(f.Count)
-	}
-	if f.DistinctCount != nil {
-		return visitor.VisitDistinctCount(f.DistinctCount)
-	}
-	return fmt.Errorf("type %T does not define a non-empty union type", f)
-}
-
-func (f *FeedbackMetric) validate() error {
-	if f == nil {
-		return fmt.Errorf("type %T is nil", f)
-	}
-	var fields []string
-	if f.Count != nil {
-		fields = append(fields, "count")
-	}
-	if f.DistinctCount != nil {
-		fields = append(fields, "distinctCount")
-	}
-	if len(fields) == 0 {
-		if f.Type != "" {
-			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", f, f.Type)
-		}
-		return fmt.Errorf("type %T is empty", f)
-	}
-	if len(fields) > 1 {
-		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", f, fields)
-	}
-	if f.Type != "" {
-		field := fields[0]
-		if f.Type != field {
-			return fmt.Errorf(
-				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
-				f,
-				f.Type,
-				f,
-			)
-		}
-	}
-	return nil
-}
-
-var (
-	feedbackRowFieldData        = big.NewInt(1 << 0)
-	feedbackRowFieldIdentifier  = big.NewInt(1 << 1)
-	feedbackRowFieldIdentifiers = big.NewInt(1 << 2)
-)
-
-type FeedbackRow struct {
-	// The actual row data, where keys represent column headers and values contain the respective metric results.
-	// A column the metric could not measure is absent from the map, so a row can carry fewer
-	// entries than there are headers.
-	Data map[string]*CellData `json:"data" url:"data"`
-	// Keyed by field, so it cannot represent two groupings that share a key - notably two
-	// intelligent fields. Use `identifiers`, which carries one entry per grouping in request
-	// order.
-	Identifier map[FeedbackField]*FieldValue `json:"identifier" url:"identifier"`
-	// One entry per grouping, in the order the groupings were requested.
-	Identifiers []*FeedbackRowIdentifier `json:"identifiers" url:"identifiers"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackRow) GetData() map[string]*CellData {
-	if f == nil {
-		return nil
-	}
-	return f.Data
-}
-
-func (f *FeedbackRow) GetIdentifier() map[FeedbackField]*FieldValue {
-	if f == nil {
-		return nil
-	}
-	return f.Identifier
-}
-
-func (f *FeedbackRow) GetIdentifiers() []*FeedbackRowIdentifier {
-	if f == nil {
-		return nil
-	}
-	return f.Identifiers
-}
-
-func (f *FeedbackRow) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackRow) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRow) SetData(data map[string]*CellData) {
-	f.Data = data
-	f.require(feedbackRowFieldData)
-}
-
-// SetIdentifier sets the Identifier field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRow) SetIdentifier(identifier map[FeedbackField]*FieldValue) {
-	f.Identifier = identifier
-	f.require(feedbackRowFieldIdentifier)
-}
-
-// SetIdentifiers sets the Identifiers field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRow) SetIdentifiers(identifiers []*FeedbackRowIdentifier) {
-	f.Identifiers = identifiers
-	f.require(feedbackRowFieldIdentifiers)
-}
-
-func (f *FeedbackRow) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackRow
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackRow(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackRow) MarshalJSON() ([]byte, error) {
-	type embed FeedbackRow
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackRow) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
-	feedbackRowIdentifierFieldValue = big.NewInt(1 << 0)
-	feedbackRowIdentifierFieldField = big.NewInt(1 << 1)
-)
-
-type FeedbackRowIdentifier struct {
-	// The row's value for this grouping.
-	Value *FieldValue `json:"value" url:"value"`
-	// Field this grouping was on.
-	Field FeedbackField `json:"field" url:"field"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackRowIdentifier) GetValue() *FieldValue {
-	if f == nil {
-		return nil
-	}
-	return f.Value
-}
-
-func (f *FeedbackRowIdentifier) GetField() FeedbackField {
-	if f == nil {
-		return ""
-	}
-	return f.Field
-}
-
-func (f *FeedbackRowIdentifier) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackRowIdentifier) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetValue sets the Value field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRowIdentifier) SetValue(value *FieldValue) {
-	f.Value = value
-	f.require(feedbackRowIdentifierFieldValue)
-}
-
-// SetField sets the Field field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackRowIdentifier) SetField(field FeedbackField) {
-	f.Field = field
-	f.require(feedbackRowIdentifierFieldField)
-}
-
-func (f *FeedbackRowIdentifier) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackRowIdentifier
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackRowIdentifier(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackRowIdentifier) MarshalJSON() ([]byte, error) {
-	type embed FeedbackRowIdentifier
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackRowIdentifier) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
-	feedbackTableRequestFieldFeedbackFilter    = big.NewInt(1 << 0)
-	feedbackTableRequestFieldTimezone          = big.NewInt(1 << 1)
-	feedbackTableRequestFieldTimeGrouping      = big.NewInt(1 << 2)
-	feedbackTableRequestFieldFieldGroupings    = big.NewInt(1 << 3)
-	feedbackTableRequestFieldColumnDefinitions = big.NewInt(1 << 4)
-)
-
-type FeedbackTableRequest struct {
-	// Optional filter applied to refine the feedback data before processing.
-	FeedbackFilter *FeedbackFilter `json:"feedbackFilter,omitempty" url:"feedbackFilter,omitempty"`
-	// IANA timezone identifier (e.g., "America/Los_Angeles").
-	// When provided, time-based groupings (e.g., DAY) and date filters are evaluated in this timezone;
-	// otherwise UTC is used.
-	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
-	// Defines the time interval for grouping data. If specified, data is grouped accordingly based on the time they were created.
-	//
-	//	Example: If set to "DAY," data will be aggregated by day.
-	TimeGrouping *TimeInterval `json:"timeGrouping,omitempty" url:"timeGrouping,omitempty"`
-	// Specifies the fields by which data should be grouped. Each unique combination forms a row.
-	// If multiple fields are provided, the result is grouped by their unique value combinations.
-	// If empty, all data is aggregated into a single row.
-	// Note: The field CreatedAt should not be used here, all the time-based grouping should be done using the timeGrouping field.
-	FieldGroupings []*FeedbackGroupBy `json:"fieldGroupings" url:"fieldGroupings"`
-	// Specifies the metrics to be displayed as columns.
-	// Column headers act as keys, with computed metric values as their mapped values.
-	// There needs to be at least one column definition in the table request.
-	ColumnDefinitions []*FeedbackColumnDefinition `json:"columnDefinitions" url:"columnDefinitions"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackTableRequest) GetFeedbackFilter() *FeedbackFilter {
-	if f == nil {
-		return nil
-	}
-	return f.FeedbackFilter
-}
-
-func (f *FeedbackTableRequest) GetTimezone() *string {
-	if f == nil {
-		return nil
-	}
-	return f.Timezone
-}
-
-func (f *FeedbackTableRequest) GetTimeGrouping() *TimeInterval {
-	if f == nil {
-		return nil
-	}
-	return f.TimeGrouping
-}
-
-func (f *FeedbackTableRequest) GetFieldGroupings() []*FeedbackGroupBy {
-	if f == nil {
-		return nil
-	}
-	return f.FieldGroupings
-}
-
-func (f *FeedbackTableRequest) GetColumnDefinitions() []*FeedbackColumnDefinition {
-	if f == nil {
-		return nil
-	}
-	return f.ColumnDefinitions
-}
-
-func (f *FeedbackTableRequest) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackTableRequest) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetFeedbackFilter sets the FeedbackFilter field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableRequest) SetFeedbackFilter(feedbackFilter *FeedbackFilter) {
-	f.FeedbackFilter = feedbackFilter
-	f.require(feedbackTableRequestFieldFeedbackFilter)
-}
-
-// SetTimezone sets the Timezone field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableRequest) SetTimezone(timezone *string) {
-	f.Timezone = timezone
-	f.require(feedbackTableRequestFieldTimezone)
-}
-
-// SetTimeGrouping sets the TimeGrouping field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableRequest) SetTimeGrouping(timeGrouping *TimeInterval) {
-	f.TimeGrouping = timeGrouping
-	f.require(feedbackTableRequestFieldTimeGrouping)
-}
-
-// SetFieldGroupings sets the FieldGroupings field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableRequest) SetFieldGroupings(fieldGroupings []*FeedbackGroupBy) {
-	f.FieldGroupings = fieldGroupings
-	f.require(feedbackTableRequestFieldFieldGroupings)
-}
-
-// SetColumnDefinitions sets the ColumnDefinitions field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableRequest) SetColumnDefinitions(columnDefinitions []*FeedbackColumnDefinition) {
-	f.ColumnDefinitions = columnDefinitions
-	f.require(feedbackTableRequestFieldColumnDefinitions)
-}
-
-func (f *FeedbackTableRequest) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackTableRequest
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackTableRequest(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackTableRequest) MarshalJSON() ([]byte, error) {
-	type embed FeedbackTableRequest
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackTableRequest) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
-	feedbackTableResponseFieldHeaders = big.NewInt(1 << 0)
-	feedbackTableResponseFieldRows    = big.NewInt(1 << 1)
-)
-
-type FeedbackTableResponse struct {
-	// Column headers in the table, aligning with the column definitions specified in the request.
-	Headers []string `json:"headers" url:"headers"`
-	// The dataset rows, where each row represents a unique combination of grouping field values.
-	// The identifier map contains grouping field names mapped to their respective values.
-	// The data map contains column headers mapped to their respective metric values.
-	Rows []*FeedbackRow `json:"rows" url:"rows"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeedbackTableResponse) GetHeaders() []string {
-	if f == nil {
-		return nil
-	}
-	return f.Headers
-}
-
-func (f *FeedbackTableResponse) GetRows() []*FeedbackRow {
-	if f == nil {
-		return nil
-	}
-	return f.Rows
-}
-
-func (f *FeedbackTableResponse) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeedbackTableResponse) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetHeaders sets the Headers field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableResponse) SetHeaders(headers []string) {
-	f.Headers = headers
-	f.require(feedbackTableResponseFieldHeaders)
-}
-
-// SetRows sets the Rows field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeedbackTableResponse) SetRows(rows []*FeedbackRow) {
-	f.Rows = rows
-	f.require(feedbackTableResponseFieldRows)
-}
-
-func (f *FeedbackTableResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeedbackTableResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeedbackTableResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeedbackTableResponse) MarshalJSON() ([]byte, error) {
-	type embed FeedbackTableResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeedbackTableResponse) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
 }
 
 type FieldValue struct {

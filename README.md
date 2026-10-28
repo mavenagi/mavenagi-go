@@ -38,9 +38,8 @@ import (
 
 func do() {
     client := client.NewMavenAGI(
-        option.WithBasicAuth(
-            "<username>",
-            "<password>",
+        option.WithToken(
+            "<token>",
         ),
     )
     request := &mavenagigo.ActionsSearchRequest{}
