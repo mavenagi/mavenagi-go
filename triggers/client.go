@@ -45,6 +45,8 @@ func NewClient(options *core.RequestOptions) *Client {
 // Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
 // at once. It returns the fields every capability shares rather than the whole Event
 // Trigger; fetch one by its kind and reference ID for the rest.
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Search(
 	ctx context.Context,
 	request *mavenagigo.EventTriggersSearchRequest,
@@ -62,6 +64,8 @@ func (c *Client) Search(
 }
 
 // Update an event trigger or create it if it doesn't exist.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
 	request *mavenagigo.EventTriggerRequest,
@@ -81,7 +85,9 @@ func (c *Client) CreateOrUpdate(
 // Deprecated. Use `GET /v1/capabilities/TRIGGER/{referenceId}`, which returns this same
 // object for a trigger and the equivalent for every other kind of capability.
 //
-// Get an event trigger by its supplied ID
+// # Get an event trigger by its supplied ID
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the event trigger to get. All other entity ID fields are inferred from the request.
@@ -102,7 +108,9 @@ func (c *Client) Get(
 // Deprecated. Use `DELETE /v1/capabilities/TRIGGER/{referenceId}`, which deletes any kind
 // of capability the same way.
 //
-// Delete an event trigger
+// # Delete an event trigger
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) Delete(
 	ctx context.Context,
 	// The reference ID of the event trigger to delete. All other entity ID fields are inferred from the request.
@@ -124,6 +132,8 @@ func (c *Client) Delete(
 //
 // `PATCH /v1/capabilities/TRIGGER/{referenceId}` with a `status` also turns a trigger on and
 // off, the same way it publishes and unpublishes any kind of capability.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) PartialUpdate(
 	ctx context.Context,
 	// The reference ID of the event trigger to update. All other entity ID fields are inferred from the request.

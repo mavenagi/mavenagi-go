@@ -44,9 +44,9 @@ func NewClient(options *core.RequestOptions) *Client {
 
 // Search for agents across all organizations.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// Only Maven staff hold this permission.
+//
+// <Note>**Required permission:** `read:all-organizations`</Note>
 func (c *Client) Search(
 	ctx context.Context,
 	request *mavenagigo.AgentsSearchRequest,
@@ -64,6 +64,8 @@ func (c *Client) Search(
 }
 
 // Lists all agents for an organization
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) List(
 	ctx context.Context,
 	// The ID of the organization.
@@ -83,9 +85,7 @@ func (c *Client) List(
 
 // Create a new agent
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// <Note>**Required permission:** `create:agents`</Note>
 func (c *Client) Create(
 	ctx context.Context,
 	// The ID of the organization.
@@ -109,6 +109,8 @@ func (c *Client) Create(
 }
 
 // Get an agent
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Get(
 	ctx context.Context,
 	// The ID of the organization.
@@ -132,9 +134,7 @@ func (c *Client) Get(
 // Update mutable agent fields
 // All fields will overwrite the existing value on the agent only if provided.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) Patch(
 	ctx context.Context,
 	// The ID of the organization.
@@ -159,9 +159,7 @@ func (c *Client) Patch(
 
 // Delete an agent.
 //
-// <Tip>
-// This endpoint requires additional permissions. Contact support to request access.
-// </Tip>
+// <Note>**Required permission:** `delete:agents`</Note>
 func (c *Client) Delete(
 	ctx context.Context,
 	// The ID of the organization.

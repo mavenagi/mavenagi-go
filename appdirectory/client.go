@@ -95,7 +95,9 @@ func (c *Client) Install(
 	return nil
 }
 
-// Uninstalls the app from the agent.
+// Uninstalls the app from the agent, and deletes the actions and triggers it created.
+//
+// <Note>**Required permission:** `install:apps`</Note>
 func (c *Client) Uninstall(
 	ctx context.Context,
 	appID string,

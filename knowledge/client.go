@@ -43,6 +43,12 @@ func NewClient(options *core.RequestOptions) *Client {
 }
 
 // Search knowledge bases
+//
+// Pagination is limited to the first 10,000 matching knowledge bases: `(page + 1) * size` must
+// not exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to
+// reach later results.
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) SearchKnowledgeBases(
 	ctx context.Context,
 	request *mavenagigo.KnowledgeBaseSearchRequest,
@@ -60,6 +66,8 @@ func (c *Client) SearchKnowledgeBases(
 }
 
 // Update a knowledge base or create it if it doesn't exist.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CreateOrUpdateKnowledgeBase(
 	ctx context.Context,
 	request *mavenagigo.KnowledgeBaseRequest,
@@ -77,6 +85,8 @@ func (c *Client) CreateOrUpdateKnowledgeBase(
 }
 
 // Get an existing knowledge base by its supplied ID
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) GetKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to get. All other entity ID fields are inferred from the request.
@@ -100,6 +110,8 @@ func (c *Client) GetKnowledgeBase(
 //
 // Knowledge bases refresh on a schedule determined by the `refreshFrequency` field.
 // They can also be refreshed on demand by calling this endpoint.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) RefreshKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to refresh. All other entity ID fields are inferred from the request.
@@ -126,6 +138,8 @@ func (c *Client) RefreshKnowledgeBase(
 //
 // An app still refreshing that version finds out on its next write to it: adding or
 // removing a document on a canceled version is rejected rather than succeeding.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CancelKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to cancel ingestion for. All other entity ID fields are inferred from the request.
@@ -146,6 +160,8 @@ func (c *Client) CancelKnowledgeBaseVersion(
 }
 
 // Rolls the knowledge base back to its previous published version.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) RollbackKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to roll back. All other entity ID fields are inferred from the request.
@@ -167,6 +183,8 @@ func (c *Client) RollbackKnowledgeBaseVersion(
 //
 // The `appId` field can be provided to update a knowledge base owned by a different app.
 // All other fields will overwrite the existing value on the knowledge base only if provided.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) PatchKnowledgeBase(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.
@@ -192,6 +210,8 @@ func (c *Client) PatchKnowledgeBase(
 //
 // If another version create for the same knowledge base is still in progress, this request may
 // return 503 with a `Retry-After` header. Nothing is changed in that case, so it is safe to retry.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CreateKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to create a version for. All other entity ID fields are inferred from the request.
@@ -212,6 +232,8 @@ func (c *Client) CreateKnowledgeBaseVersion(
 }
 
 // Finalize the latest knowledge base version. Required to indicate the version is complete. Will throw an exception if the latest version is not in progress.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) FinalizeKnowledgeBaseVersion(
 	ctx context.Context,
 	// The reference ID of the knowledge base to finalize a version for. All other entity ID fields are inferred from the request.
@@ -236,6 +258,8 @@ func (c *Client) FinalizeKnowledgeBaseVersion(
 // Progress is advisory and shown to users while a refresh runs. Each call replaces the
 // version's entire progress state - no history is kept, only the most recent value is
 // retained. Will throw an exception if the target version is not in progress.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) UpdateKnowledgeBaseVersionProgress(
 	ctx context.Context,
 	// The reference ID of the knowledge base to report progress for. All other entity ID fields are inferred from the request.
@@ -256,6 +280,8 @@ func (c *Client) UpdateKnowledgeBaseVersionProgress(
 }
 
 // List all active versions for a knowledge base. Returns the most recent versions first.
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) ListKnowledgeBaseVersions(
 	ctx context.Context,
 	// The reference ID of the knowledge base to list versions for. All other entity ID fields are inferred from the request.
@@ -276,6 +302,12 @@ func (c *Client) ListKnowledgeBaseVersions(
 }
 
 // Search knowledge documents
+//
+// Pagination is limited to the first 10,000 matching knowledge documents: `(page + 1) * size`
+// must not exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter
+// to reach later results.
+//
+// <Note>**Required permission:** `read:documents`</Note>
 func (c *Client) SearchKnowledgeDocuments(
 	ctx context.Context,
 	request *mavenagigo.KnowledgeDocumentSearchRequest,
@@ -299,6 +331,8 @@ func (c *Client) SearchKnowledgeDocuments(
 // This API maintains document version history. If for the same reference ID none of the `title`, `text`, `sourceUrl`, `metadata` fields
 // have changed, a new document version will not be created. The existing version will be reused.
 // </Tip>
+//
+// <Note>**Required permission:** `create:documents`</Note>
 func (c *Client) CreateKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base to create a document for. All other entity ID fields are inferred from the request.
@@ -320,6 +354,8 @@ func (c *Client) CreateKnowledgeDocument(
 
 // Delete knowledge document from a specific version.
 // Requires an existing knowledge base with an in progress version of type PARTIAL. Will throw an exception if the version is not in progress.
+//
+// <Note>**Required permission:** `delete:documents`</Note>
 func (c *Client) DeleteKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base that contains the document to delete. All other entity ID fields are inferred from the request
@@ -343,6 +379,8 @@ func (c *Client) DeleteKnowledgeDocument(
 }
 
 // Get a knowledge document by its supplied version and document IDs. Response includes document content in markdown format.
+//
+// <Note>**Required permission:** `read:documents`</Note>
 func (c *Client) GetKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base version that contains the document. All other entity ID fields are inferred from the request.
@@ -371,6 +409,8 @@ func (c *Client) GetKnowledgeDocument(
 //
 // The `knowledgeBaseAppId` field can be provided to update a knowledge document in a knowledge base owned by a different app.
 // All other fields will overwrite the existing value on the knowledge document only if provided.
+//
+// <Note>**Required permission:** `edit:documents`</Note>
 func (c *Client) PatchKnowledgeDocument(
 	ctx context.Context,
 	// The reference ID of the knowledge base to patch.

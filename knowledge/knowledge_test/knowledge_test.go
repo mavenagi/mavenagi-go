@@ -381,8 +381,10 @@ func TestKnowledgeCreateKnowledgeDocumentWithWireMock(
 			"## Getting started\nThis is a getting started guide for the help center.",
 		),
 		Title: "Getting started",
-		Metadata: map[string]string{
-			"category": "getting-started",
+		Metadata: map[string]*mavenagigo.KnowledgeDocumentMetadataValue{
+			"category": &mavenagigo.KnowledgeDocumentMetadataValue{
+				String: "getting-started",
+			},
 		},
 	}
 	_, invocationErr := client.Knowledge.CreateKnowledgeDocument(

@@ -42,6 +42,13 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
+// Search customers of an agent.
+//
+// Pagination is limited to the first 10,000 matching customers: `(page + 1) * size` must not
+// exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+// later results.
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Search(
 	ctx context.Context,
 	request *mavenagigo.CustomersSearchRequest,
@@ -59,6 +66,8 @@ func (c *Client) Search(
 }
 
 // Update a customer of an agent or create it if it doesn't exist. In case of an update, fields not provided (e.g., description, status) will be preserved.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
 	request *mavenagigo.CustomerRequest,
@@ -76,6 +85,8 @@ func (c *Client) CreateOrUpdate(
 }
 
 // Get a customer by its supplied ID
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the customer to get. All other entity ID fields are inferred from the request.
@@ -99,6 +110,8 @@ func (c *Client) Get(
 //
 // The `appId` field can be provided to update a customer owned by a different app.
 // All other fields will overwrite the existing value on the customer only if provided.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) Patch(
 	ctx context.Context,
 	// The reference ID of the customer to update. All other entity ID fields are inferred from the request.

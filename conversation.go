@@ -252,21 +252,269 @@ func (a *ActionFormRequestParamValue) Accept(visitor ActionFormRequestParamValue
 
 var (
 	askRequestFieldConversationMessageID = big.NewInt(1 << 0)
-	askRequestFieldUserID                = big.NewInt(1 << 1)
-	askRequestFieldType                  = big.NewInt(1 << 2)
-	askRequestFieldText                  = big.NewInt(1 << 3)
-	askRequestFieldTextFormat            = big.NewInt(1 << 4)
-	askRequestFieldAttachments           = big.NewInt(1 << 5)
-	askRequestFieldTransientData         = big.NewInt(1 << 6)
-	askRequestFieldTimezone              = big.NewInt(1 << 7)
-	askRequestFieldAppMetadata           = big.NewInt(1 << 8)
+	askRequestFieldType                  = big.NewInt(1 << 1)
+	askRequestFieldText                  = big.NewInt(1 << 2)
+	askRequestFieldTextFormat            = big.NewInt(1 << 3)
+	askRequestFieldAttachments           = big.NewInt(1 << 4)
+	askRequestFieldTransientData         = big.NewInt(1 << 5)
+	askRequestFieldTimezone              = big.NewInt(1 << 6)
+	askRequestFieldAppMetadata           = big.NewInt(1 << 7)
+	askRequestFieldUserID                = big.NewInt(1 << 8)
 )
 
 type AskRequest struct {
 	// Externally supplied ID to uniquely identify this message within the conversation. If a message with this ID already exists it will be reused and will not be updated.
 	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
+	// What prompts this assistant response. Omit (or send USER_MESSAGE) for a normal user
+	// question — this is the backwards-compatible default. Use WELCOME for an agent-authored
+	// opener, or PROACTIVE for a message the user did not prompt.
+	Type *AskType `json:"type,omitempty" url:"type,omitempty"`
+	// For USER_MESSAGE (the default) this is the user's message, in the user's own words, and
+	// is required. For WELCOME and PROACTIVE it is optional and, when provided, steers the
+	// agent's response (a directive to the agent, not the user's own words). (Changed from
+	// required to optional to support the non-user ask types — existing USER_MESSAGE callers
+	// are unaffected.)
+	Text *string `json:"text,omitempty" url:"text,omitempty"`
+	// What form the answer takes. Omit it for prose, or send `jsonSchema` to additionally get a
+	// `BotObjectResponse` matching a schema you supply.
+	//
+	// Set per ask and independent of `type`, so one conversation can mix prose and structured
+	// rounds. Only the answer's form changes: knowledge, actions, charters and segments apply
+	// the same way either way.
+	//
+	// A structured answer accompanies the prose one rather than replacing it — the same round
+	// produces both, so the conversation stays readable. On `ask_stream` the prose still streams
+	// on `text` events as it always has, and the object arrives whole on a single `object` event
+	// near the end.
+	//
+	// Every answering round carries an object, including one where the agent asks a clarifying
+	// question rather than answering. Shape the schema so it can say "not enough information"
+	// — a populated object is not on its own evidence of a confident answer.
+	//
+	// Two exceptions. A round that asks the user to *act* produces an action form from the
+	// action rather than from an answer, so it carries no object; the round that answers after
+	// the form is submitted does carry one. Leave the `FORMS` capability off if you need an
+	// object on every round.
+	//
+	// A round answered verbatim by a `STRICT_RETURN` charter also carries no object. That
+	// charter's manual is returned exactly as written without consulting the agent, so there is
+	// nothing to shape into the requested schema — the round returns the manual as `text` alone.
+	TextFormat *TextFormat `json:"textFormat,omitempty" url:"textFormat,omitempty"`
+	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
+	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
+	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
+	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Key-value metadata to persist on the user message created by this request. Unlike
+	// `transientData` (which is never persisted) this is stored and returned when the message
+	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
+	// Applied only when the message is first created — if `conversationMessageId` already
+	// exists the message is reused and its metadata is not updated. Keys and values are strings
+	// with a maximum length of 500 characters each.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// Externally supplied ID to uniquely identify the user that created this message
 	UserID *EntityIDBase `json:"userId" url:"userId"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AskRequest) GetConversationMessageID() *EntityIDBase {
+	if a == nil {
+		return nil
+	}
+	return a.ConversationMessageID
+}
+
+func (a *AskRequest) GetType() *AskType {
+	if a == nil {
+		return nil
+	}
+	return a.Type
+}
+
+func (a *AskRequest) GetText() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Text
+}
+
+func (a *AskRequest) GetTextFormat() *TextFormat {
+	if a == nil {
+		return nil
+	}
+	return a.TextFormat
+}
+
+func (a *AskRequest) GetAttachments() []*AttachmentRequest {
+	if a == nil {
+		return nil
+	}
+	return a.Attachments
+}
+
+func (a *AskRequest) GetTransientData() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.TransientData
+}
+
+func (a *AskRequest) GetTimezone() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Timezone
+}
+
+func (a *AskRequest) GetAppMetadata() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.AppMetadata
+}
+
+func (a *AskRequest) GetUserID() *EntityIDBase {
+	if a == nil {
+		return nil
+	}
+	return a.UserID
+}
+
+func (a *AskRequest) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AskRequest) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	a.ConversationMessageID = conversationMessageID
+	a.require(askRequestFieldConversationMessageID)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetType(type_ *AskType) {
+	a.Type = type_
+	a.require(askRequestFieldType)
+}
+
+// SetText sets the Text field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetText(text *string) {
+	a.Text = text
+	a.require(askRequestFieldText)
+}
+
+// SetTextFormat sets the TextFormat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetTextFormat(textFormat *TextFormat) {
+	a.TextFormat = textFormat
+	a.require(askRequestFieldTextFormat)
+}
+
+// SetAttachments sets the Attachments field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetAttachments(attachments []*AttachmentRequest) {
+	a.Attachments = attachments
+	a.require(askRequestFieldAttachments)
+}
+
+// SetTransientData sets the TransientData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetTransientData(transientData map[string]string) {
+	a.TransientData = transientData
+	a.require(askRequestFieldTransientData)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetTimezone(timezone *string) {
+	a.Timezone = timezone
+	a.require(askRequestFieldTimezone)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetAppMetadata(appMetadata map[string]string) {
+	a.AppMetadata = appMetadata
+	a.require(askRequestFieldAppMetadata)
+}
+
+// SetUserID sets the UserID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetUserID(userID *EntityIDBase) {
+	a.UserID = userID
+	a.require(askRequestFieldUserID)
+}
+
+func (a *AskRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler AskRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AskRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AskRequest) MarshalJSON() ([]byte, error) {
+	type embed AskRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AskRequest) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+// An ask without the user who asks, for endpoints that take the user from the caller's credentials.
+var (
+	askRequestBaseFieldConversationMessageID = big.NewInt(1 << 0)
+	askRequestBaseFieldType                  = big.NewInt(1 << 1)
+	askRequestBaseFieldText                  = big.NewInt(1 << 2)
+	askRequestBaseFieldTextFormat            = big.NewInt(1 << 3)
+	askRequestBaseFieldAttachments           = big.NewInt(1 << 4)
+	askRequestBaseFieldTransientData         = big.NewInt(1 << 5)
+	askRequestBaseFieldTimezone              = big.NewInt(1 << 6)
+	askRequestBaseFieldAppMetadata           = big.NewInt(1 << 7)
+)
+
+type AskRequestBase struct {
+	// Externally supplied ID to uniquely identify this message within the conversation. If a message with this ID already exists it will be reused and will not be updated.
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
 	// What prompts this assistant response. Omit (or send USER_MESSAGE) for a normal user
 	// question — this is the backwards-compatible default. Use WELCOME for an agent-authored
 	// opener, or PROACTIVE for a message the user did not prompt.
@@ -324,74 +572,67 @@ type AskRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AskRequest) GetConversationMessageID() *EntityIDBase {
+func (a *AskRequestBase) GetConversationMessageID() *EntityIDBase {
 	if a == nil {
 		return nil
 	}
 	return a.ConversationMessageID
 }
 
-func (a *AskRequest) GetUserID() *EntityIDBase {
-	if a == nil {
-		return nil
-	}
-	return a.UserID
-}
-
-func (a *AskRequest) GetType() *AskType {
+func (a *AskRequestBase) GetType() *AskType {
 	if a == nil {
 		return nil
 	}
 	return a.Type
 }
 
-func (a *AskRequest) GetText() *string {
+func (a *AskRequestBase) GetText() *string {
 	if a == nil {
 		return nil
 	}
 	return a.Text
 }
 
-func (a *AskRequest) GetTextFormat() *TextFormat {
+func (a *AskRequestBase) GetTextFormat() *TextFormat {
 	if a == nil {
 		return nil
 	}
 	return a.TextFormat
 }
 
-func (a *AskRequest) GetAttachments() []*AttachmentRequest {
+func (a *AskRequestBase) GetAttachments() []*AttachmentRequest {
 	if a == nil {
 		return nil
 	}
 	return a.Attachments
 }
 
-func (a *AskRequest) GetTransientData() map[string]string {
+func (a *AskRequestBase) GetTransientData() map[string]string {
 	if a == nil {
 		return nil
 	}
 	return a.TransientData
 }
 
-func (a *AskRequest) GetTimezone() *string {
+func (a *AskRequestBase) GetTimezone() *string {
 	if a == nil {
 		return nil
 	}
 	return a.Timezone
 }
 
-func (a *AskRequest) GetAppMetadata() map[string]string {
+func (a *AskRequestBase) GetAppMetadata() map[string]string {
 	if a == nil {
 		return nil
 	}
 	return a.AppMetadata
 }
 
-func (a *AskRequest) GetExtraProperties() map[string]interface{} {
+func (a *AskRequestBase) GetExtraProperties() map[string]interface{} {
 	return a.extraProperties
 }
 
-func (a *AskRequest) require(field *big.Int) {
+func (a *AskRequestBase) require(field *big.Int) {
 	if a.explicitFields == nil {
 		a.explicitFields = big.NewInt(0)
 	}
@@ -400,74 +641,67 @@ func (a *AskRequest) require(field *big.Int) {
 
 // SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+func (a *AskRequestBase) SetConversationMessageID(conversationMessageID *EntityIDBase) {
 	a.ConversationMessageID = conversationMessageID
-	a.require(askRequestFieldConversationMessageID)
-}
-
-// SetUserID sets the UserID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetUserID(userID *EntityIDBase) {
-	a.UserID = userID
-	a.require(askRequestFieldUserID)
+	a.require(askRequestBaseFieldConversationMessageID)
 }
 
 // SetType sets the Type field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetType(type_ *AskType) {
+func (a *AskRequestBase) SetType(type_ *AskType) {
 	a.Type = type_
-	a.require(askRequestFieldType)
+	a.require(askRequestBaseFieldType)
 }
 
 // SetText sets the Text field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetText(text *string) {
+func (a *AskRequestBase) SetText(text *string) {
 	a.Text = text
-	a.require(askRequestFieldText)
+	a.require(askRequestBaseFieldText)
 }
 
 // SetTextFormat sets the TextFormat field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetTextFormat(textFormat *TextFormat) {
+func (a *AskRequestBase) SetTextFormat(textFormat *TextFormat) {
 	a.TextFormat = textFormat
-	a.require(askRequestFieldTextFormat)
+	a.require(askRequestBaseFieldTextFormat)
 }
 
 // SetAttachments sets the Attachments field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetAttachments(attachments []*AttachmentRequest) {
+func (a *AskRequestBase) SetAttachments(attachments []*AttachmentRequest) {
 	a.Attachments = attachments
-	a.require(askRequestFieldAttachments)
+	a.require(askRequestBaseFieldAttachments)
 }
 
 // SetTransientData sets the TransientData field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetTransientData(transientData map[string]string) {
+func (a *AskRequestBase) SetTransientData(transientData map[string]string) {
 	a.TransientData = transientData
-	a.require(askRequestFieldTransientData)
+	a.require(askRequestBaseFieldTransientData)
 }
 
 // SetTimezone sets the Timezone field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetTimezone(timezone *string) {
+func (a *AskRequestBase) SetTimezone(timezone *string) {
 	a.Timezone = timezone
-	a.require(askRequestFieldTimezone)
+	a.require(askRequestBaseFieldTimezone)
 }
 
 // SetAppMetadata sets the AppMetadata field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetAppMetadata(appMetadata map[string]string) {
+func (a *AskRequestBase) SetAppMetadata(appMetadata map[string]string) {
 	a.AppMetadata = appMetadata
-	a.require(askRequestFieldAppMetadata)
+	a.require(askRequestBaseFieldAppMetadata)
 }
 
-func (a *AskRequest) UnmarshalJSON(data []byte) error {
-	type unmarshaler AskRequest
+func (a *AskRequestBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler AskRequestBase
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*a = AskRequest(value)
+	*a = AskRequestBase(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *a)
 	if err != nil {
 		return err
@@ -477,8 +711,8 @@ func (a *AskRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (a *AskRequest) MarshalJSON() ([]byte, error) {
-	type embed AskRequest
+func (a *AskRequestBase) MarshalJSON() ([]byte, error) {
+	type embed AskRequestBase
 	var marshaler = struct {
 		embed
 	}{
@@ -488,7 +722,7 @@ func (a *AskRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (a *AskRequest) String() string {
+func (a *AskRequestBase) String() string {
 	if len(a.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
 			return value

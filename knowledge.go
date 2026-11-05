@@ -735,7 +735,9 @@ type KnowledgeBaseFilter struct {
 	AppIDs []string `json:"appIds,omitempty" url:"appIds,omitempty"`
 	// Filter by knowledge base type.
 	Types []KnowledgeBaseType `json:"types,omitempty" url:"types,omitempty"`
-	// Filter knowledge bases by the most recent version status
+	// Deprecated. Do not use this filter: it does not filter on the status of the most recent
+	// version and its results are often inaccurate. To check a knowledge base's latest refresh,
+	// call `listKnowledgeBaseVersions`.
 	MostRecentVersionStatus []KnowledgeBaseVersionStatus `json:"mostRecentVersionStatus,omitempty" url:"mostRecentVersionStatus,omitempty"`
 	// Filter knowledge bases by the LLM inclusion status
 	LlmInclusionStatus *LlmInclusionStatus `json:"llmInclusionStatus,omitempty" url:"llmInclusionStatus,omitempty"`
@@ -1217,7 +1219,7 @@ func (k *KnowledgeBaseIndexingProgressState) String() string {
 	return fmt.Sprintf("%#v", k)
 }
 
-// The indexing status of the knowledge base version. In the Agent Designer "Refresh Log", `BUILDING`, `INDEXING` and `INDEXED` show as "Syncing", `PUBLISHED` as "Synced", and `SUPERSEDED`, `ROLLING_BACK` and `ROLLED_BACK` as "Interrupted".
+// The indexing status of the knowledge base version. In the Agent Designer "Version history", `BUILDING`, `INDEXING` and `INDEXED` show as "Syncing", `PUBLISHED` as "Synced", and `SUPERSEDED`, `ROLLING_BACK` and `ROLLED_BACK` as "Interrupted".
 type KnowledgeBaseIndexingStatus string
 
 const (
@@ -1635,11 +1637,9 @@ type KnowledgeBaseResponse struct {
 	KnowledgeBaseID *EntityID `json:"knowledgeBaseId" url:"knowledgeBaseId"`
 	// ID of the knowledge base version that is currently active. Documents can be fetched using this version ID.
 	ActiveVersionID *EntityID `json:"activeVersionId,omitempty" url:"activeVersionId,omitempty"`
-	// The status of the most recent version of the knowledge base.
-	// The `activeVersionId` will only be populated if this status is `SUCCEEDED`.
-	// Use the `listKnowledgeBaseVersions` endpoint to get the full list of versions.
-	//
-	// Shown in Agent Designer as "Refresh status".
+	// Deprecated. Do not use this field: it is not the status of the most recent version and is
+	// often inaccurate. To get the status of the latest refresh, call
+	// `listKnowledgeBaseVersions` and read the first version.
 	MostRecentVersionStatus KnowledgeBaseVersionStatus `json:"mostRecentVersionStatus" url:"mostRecentVersionStatus"`
 	// The type of the knowledge base. Can not be changed once created. Shown in Agent Designer as "Source".
 	Type KnowledgeBaseType `json:"type" url:"type"`
@@ -2155,7 +2155,7 @@ func (k KnowledgeBaseType) Ptr() *KnowledgeBaseType {
 	return &k
 }
 
-// Each version is one entry in the knowledge base's "Refresh Log" in Agent Designer.
+// Each version is one entry in the knowledge base's "Version history" in Agent Designer.
 var (
 	knowledgeBaseVersionFieldType           = big.NewInt(1 << 0)
 	knowledgeBaseVersionFieldVersionID      = big.NewInt(1 << 1)
@@ -3385,6 +3385,69 @@ func (k *KnowledgeDocumentFilter) String() string {
 	return fmt.Sprintf("%#v", k)
 }
 
+// A knowledge document metadata value. Either one string or a list of strings.
+type KnowledgeDocumentMetadataValue struct {
+	String     string
+	StringList []string
+
+	typ string
+}
+
+func (k *KnowledgeDocumentMetadataValue) GetString() string {
+	if k == nil {
+		return ""
+	}
+	return k.String
+}
+
+func (k *KnowledgeDocumentMetadataValue) GetStringList() []string {
+	if k == nil {
+		return nil
+	}
+	return k.StringList
+}
+
+func (k *KnowledgeDocumentMetadataValue) UnmarshalJSON(data []byte) error {
+	var valueString string
+	if err := json.Unmarshal(data, &valueString); err == nil {
+		k.typ = "String"
+		k.String = valueString
+		return nil
+	}
+	var valueStringList []string
+	if err := json.Unmarshal(data, &valueStringList); err == nil {
+		k.typ = "StringList"
+		k.StringList = valueStringList
+		return nil
+	}
+	return fmt.Errorf("%s cannot be deserialized as a %T", data, k)
+}
+
+func (k KnowledgeDocumentMetadataValue) MarshalJSON() ([]byte, error) {
+	if k.typ == "String" || k.String != "" {
+		return json.Marshal(k.String)
+	}
+	if k.typ == "StringList" || k.StringList != nil {
+		return json.Marshal(k.StringList)
+	}
+	return nil, fmt.Errorf("type %T does not include a non-empty union type", k)
+}
+
+type KnowledgeDocumentMetadataValueVisitor interface {
+	VisitString(string) error
+	VisitStringList([]string) error
+}
+
+func (k *KnowledgeDocumentMetadataValue) Accept(visitor KnowledgeDocumentMetadataValueVisitor) error {
+	if k.typ == "String" || k.String != "" {
+		return visitor.VisitString(k.String)
+	}
+	if k.typ == "StringList" || k.StringList != nil {
+		return visitor.VisitStringList(k.StringList)
+	}
+	return fmt.Errorf("type %T does not include a non-empty union type", k)
+}
+
 var (
 	knowledgeDocumentRequestFieldURL                 = big.NewInt(1 << 0)
 	knowledgeDocumentRequestFieldLanguage            = big.NewInt(1 << 1)
@@ -3437,9 +3500,15 @@ type KnowledgeDocumentRequest struct {
 	// for storing additional information about the object in a structured format, and querying for
 	// objects via API or the dashboard.
 	//
-	// Keys are strings with a maximum length of 64 characters. Values are strings with a maximum
-	// length of 512 characters.
-	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
+	// Keys are strings with a maximum length of 64 characters. A value is a string, or a list of up
+	// to 100 strings for a document with several values under one key (for example the states it
+	// applies to). A list is a set: it is stored sorted and without duplicates, so reordering it
+	// doesn't change the document. Each string has a maximum length of 512 characters.
+	//
+	// A charter document filter treats a list as "contains": `EQ` and `IN` match when any value in
+	// the list matches, and `NEQ` and `NOT_IN` match when none does. An empty list is the same as
+	// no value.
+	Metadata map[string]*KnowledgeDocumentMetadataValue `json:"metadata,omitempty" url:"metadata,omitempty"`
 	// The time at which this document was created.
 	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
 	// The time at which this document was last modified.
@@ -3530,7 +3599,7 @@ func (k *KnowledgeDocumentRequest) GetContent() *string {
 	return k.Content
 }
 
-func (k *KnowledgeDocumentRequest) GetMetadata() map[string]string {
+func (k *KnowledgeDocumentRequest) GetMetadata() map[string]*KnowledgeDocumentMetadataValue {
 	if k == nil {
 		return nil
 	}
@@ -3634,7 +3703,7 @@ func (k *KnowledgeDocumentRequest) SetContent(content *string) {
 
 // SetMetadata sets the Metadata field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentRequest) SetMetadata(metadata map[string]string) {
+func (k *KnowledgeDocumentRequest) SetMetadata(metadata map[string]*KnowledgeDocumentMetadataValue) {
 	k.Metadata = metadata
 	k.require(knowledgeDocumentRequestFieldMetadata)
 }
@@ -3763,8 +3832,8 @@ type KnowledgeDocumentResponse struct {
 	Content *string `json:"content,omitempty" url:"content,omitempty"`
 	// If the document is associated with an asset, this will contain the asset metadata
 	Asset *AttachmentResponse `json:"asset,omitempty" url:"asset,omitempty"`
-	// Metadata for the knowledge document.
-	Metadata map[string]string `json:"metadata" url:"metadata"`
+	// Metadata for the knowledge document. A value is a string or a list of strings.
+	Metadata map[string]*KnowledgeDocumentMetadataValue `json:"metadata" url:"metadata"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3878,7 +3947,7 @@ func (k *KnowledgeDocumentResponse) GetAsset() *AttachmentResponse {
 	return k.Asset
 }
 
-func (k *KnowledgeDocumentResponse) GetMetadata() map[string]string {
+func (k *KnowledgeDocumentResponse) GetMetadata() map[string]*KnowledgeDocumentMetadataValue {
 	if k == nil {
 		return nil
 	}
@@ -4003,7 +4072,7 @@ func (k *KnowledgeDocumentResponse) SetAsset(asset *AttachmentResponse) {
 
 // SetMetadata sets the Metadata field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (k *KnowledgeDocumentResponse) SetMetadata(metadata map[string]string) {
+func (k *KnowledgeDocumentResponse) SetMetadata(metadata map[string]*KnowledgeDocumentMetadataValue) {
 	k.Metadata = metadata
 	k.require(knowledgeDocumentResponseFieldMetadata)
 }

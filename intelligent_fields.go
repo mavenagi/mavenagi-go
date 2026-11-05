@@ -131,7 +131,7 @@ type IntelligentFieldPatchRequest struct {
 	Status *CapabilityStatus `json:"status,omitempty" url:"-"`
 	// A plain text description of the intelligent field.
 	Description *string `json:"description,omitempty" url:"-"`
-	// Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
+	// Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The list replaces the existing options: an option left out is removed and is no longer offered to the LLM, while values already computed with it are kept. A field that has options must keep at least one, so an empty list is rejected. An option kept from the existing list must keep its `label`; changing it is rejected.
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"-"`
 	// The agent variant to stage this patch in. Required on an agent with versioned intelligent fields; a patch that omits it there is rejected with reason `VARIANT_REQUIRED`.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"-"`
@@ -330,7 +330,8 @@ type IntelligentFieldBase struct {
 	// Definition used by the LLM when generating this field's value. Shown in Agent Designer as "Define this field" (the evaluation instructions).
 	Definition string `json:"definition" url:"definition"`
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
-	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
+	// the `validationType`. Options may be added or removed later with the patch endpoint, as long
+	// as at least one remains.
 	//
 	// Shown in Agent Designer as "Select Options".
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
@@ -489,7 +490,8 @@ type IntelligentFieldCore struct {
 	// Definition used by the LLM when generating this field's value. Shown in Agent Designer as "Define this field" (the evaluation instructions).
 	Definition string `json:"definition" url:"definition"`
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
-	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
+	// the `validationType`. Options may be added or removed later with the patch endpoint, as long
+	// as at least one remains.
 	//
 	// Shown in Agent Designer as "Select Options".
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
@@ -624,7 +626,8 @@ type IntelligentFieldDetailResponse struct {
 	// Definition used by the LLM when generating this field's value. Shown in Agent Designer as "Define this field" (the evaluation instructions).
 	Definition string `json:"definition" url:"definition"`
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
-	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
+	// the `validationType`. Options may be added or removed later with the patch endpoint, as long
+	// as at least one remains.
 	//
 	// Shown in Agent Designer as "Select Options".
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
@@ -914,7 +917,8 @@ type IntelligentFieldRequest struct {
 	// Definition used by the LLM when generating this field's value. Shown in Agent Designer as "Define this field" (the evaluation instructions).
 	Definition string `json:"definition" url:"definition"`
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
-	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
+	// the `validationType`. Options may be added or removed later with the patch endpoint, as long
+	// as at least one remains.
 	//
 	// Shown in Agent Designer as "Select Options".
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`
@@ -1129,7 +1133,8 @@ type IntelligentFieldResponse struct {
 	// Definition used by the LLM when generating this field's value. Shown in Agent Designer as "Define this field" (the evaluation instructions).
 	Definition string `json:"definition" url:"definition"`
 	// The finite set of values this field may take. Omit to let the LLM produce any value of
-	// the `validationType`. Options may be added later with the patch endpoint, but not removed.
+	// the `validationType`. Options may be added or removed later with the patch endpoint, as long
+	// as at least one remains.
 	//
 	// Shown in Agent Designer as "Select Options".
 	EnumOptions []*EnumOption `json:"enumOptions,omitempty" url:"enumOptions,omitempty"`

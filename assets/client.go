@@ -44,6 +44,8 @@ func NewClient(options *core.RequestOptions) *Client {
 
 // Initiate an upload.
 // Returns a pre-signed URL for direct file upload and an asset ID for subsequent operations.
+//
+// <Note>**Required permission:** `ask:agent`</Note>
 func (c *Client) InitiateUpload(
 	ctx context.Context,
 	request *mavenagigo.InitiateAssetUploadRequest,
@@ -62,6 +64,8 @@ func (c *Client) InitiateUpload(
 
 // Commit an upload after successful file transfer.
 // Updates the asset status and makes it available for use.
+//
+// <Note>**Required permission:** `ask:agent`</Note>
 func (c *Client) CommitUpload(
 	ctx context.Context,
 	// The reference ID of the asset to commit (provided by the initiate call). All other entity ID fields are inferred from the API request.

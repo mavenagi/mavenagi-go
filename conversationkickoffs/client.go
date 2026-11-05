@@ -50,6 +50,8 @@ func NewClient(options *core.RequestOptions) *Client {
 // its status alone, so re-registering on every install refresh never deactivates a kickoff
 // that is already live. Use the capability APIs to activate it, and to read, search or delete
 // it afterwards.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
 	request *mavenagigo.CreateConversationKickoffRequest,

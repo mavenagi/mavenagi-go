@@ -45,6 +45,12 @@ func NewClient(options *core.RequestOptions) *Client {
 // Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
 // at once. It returns the fields every capability shares rather than the whole Action;
 // fetch one by its kind and reference ID for the rest.
+//
+// Pagination is limited to the first 10,000 matching actions: `(page + 1) * size` must not
+// exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+// later results.
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Search(
 	ctx context.Context,
 	request *mavenagigo.ActionsSearchRequest,
@@ -62,6 +68,8 @@ func (c *Client) Search(
 }
 
 // Update an action or create it if it doesn't exist
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
 	request *mavenagigo.ActionRequest,
@@ -81,7 +89,9 @@ func (c *Client) CreateOrUpdate(
 // Deprecated. Use `GET /v1/capabilities/ACTION/{referenceId}`, which returns this same
 // object for an action and the equivalent for every other kind of capability.
 //
-// Get an action by its supplied ID
+// # Get an action by its supplied ID
+//
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Get(
 	ctx context.Context,
 	// The reference ID of the action to get. All other entity ID fields are inferred from the request.
@@ -105,6 +115,8 @@ func (c *Client) Get(
 //
 // The `appId` field can be provided to update an action owned by a different app.
 // All other fields will overwrite the existing value on the action only if provided.
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) Patch(
 	ctx context.Context,
 	// The reference ID of the action to patch.
@@ -127,7 +139,9 @@ func (c *Client) Patch(
 // Deprecated. Use `DELETE /v1/capabilities/ACTION/{referenceId}`, which deletes any kind of
 // capability the same way.
 //
-// Delete an action
+// # Delete an action
+//
+// <Note>**Required permission:** `edit:agents`</Note>
 func (c *Client) Delete(
 	ctx context.Context,
 	// The reference ID of the action to unregister. All other entity ID fields are inferred from the request.

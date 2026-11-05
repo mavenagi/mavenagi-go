@@ -19827,13 +19827,13 @@ func (m *MetadataComparisonCondition) String() string {
 type MetadataComparisonOperator string
 
 const (
-	// Equals (=)
+	// Equals (=). On a list value, any element equals.
 	MetadataComparisonOperatorEq MetadataComparisonOperator = "EQ"
-	// Not equals (!=)
+	// Not equals (!=). On a list value, no element equals.
 	MetadataComparisonOperatorNeq MetadataComparisonOperator = "NEQ"
-	// Value starts with the specified prefix
+	// Value starts with the specified prefix. On a list value, any element does.
 	MetadataComparisonOperatorStartsWith MetadataComparisonOperator = "STARTS_WITH"
-	// Value does not start with the specified prefix
+	// Value does not start with the specified prefix. On a list value, no element does.
 	MetadataComparisonOperatorNotStartsWith MetadataComparisonOperator = "NOT_STARTS_WITH"
 )
 
@@ -20004,7 +20004,7 @@ func (m *MetadataCondition) validate() error {
 }
 
 // Matches documents whose value under `key` equals a value read from the conversation
-// being answered, so one filter follows each conversation instead of naming a fixed value.
+// being answered (or, when the document holds a list, contains it), so one filter follows each conversation instead of naming a fixed value.
 //
 // When the conversation has no value at `source`, nothing matches. For `userData`, that
 // includes a conversation with no user. To also keep documents that apply everywhere,
@@ -20202,9 +20202,14 @@ func (m *MetadataEntryCondition) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
-// A predicate over a string-to-string metadata map: a condition on the value under one
+// A predicate over a knowledge document's metadata: a condition on the value under one
 // key, a match against a value read from the conversation, or a group of predicates
 // combined with a logical operator.
+//
+// A document's value under a key may be a list of strings. A condition then tests the
+// list element by element: `EQ`, `IN` and `STARTS_WITH` match when any element matches,
+// and `NEQ`, `NOT_IN` and `NOT_STARTS_WITH` match when none does. An empty list is the
+// same as no value.
 //
 // Kept small on purpose: by default at most 3 levels of nesting and 10 nodes in total,
 // counting every group, entry and conversation value. A filter is meant to narrow a
@@ -26467,8 +26472,9 @@ var (
 	simulationContextFieldPersona                 = big.NewInt(1 << 1)
 	simulationContextFieldAvailableKnowledgeBases = big.NewInt(1 << 2)
 	simulationContextFieldVariantID               = big.NewInt(1 << 3)
-	simulationContextFieldActionMocks             = big.NewInt(1 << 4)
-	simulationContextFieldDefaultActionBehavior   = big.NewInt(1 << 5)
+	simulationContextFieldEvaluateWithCharters    = big.NewInt(1 << 4)
+	simulationContextFieldActionMocks             = big.NewInt(1 << 5)
+	simulationContextFieldDefaultActionBehavior   = big.NewInt(1 << 6)
 )
 
 type SimulationContext struct {
@@ -26492,6 +26498,13 @@ type SimulationContext struct {
 	// while agent variants aren't enabled for the agent. A conversation that already exists
 	// keeps the variant it was created with.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
+	// When true, the simulation evaluates the agent's charters even if charter evaluation is
+	// turned off for the agent. When absent or false, the simulation follows the agent's own
+	// charter evaluation setting, like any other conversation. While charters are evaluated,
+	// `additionalPromptText` has no effect. Not yet enabled for every agent: until it is, the
+	// value is stored and returned, and the agent's own setting applies. A conversation that
+	// already exists keeps the value it was created with.
+	EvaluateWithCharters *bool `json:"evaluateWithCharters,omitempty" url:"evaluateWithCharters,omitempty"`
 	// What the platform does when the agent executes each action during this simulation. At
 	// most one entry per action; a request that names an action twice is rejected. An action
 	// with no entry follows `defaultActionBehavior`. A conversation that already exists keeps
@@ -26536,6 +26549,13 @@ func (s *SimulationContext) GetVariantID() *EntityIDWithoutAgent {
 		return nil
 	}
 	return s.VariantID
+}
+
+func (s *SimulationContext) GetEvaluateWithCharters() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.EvaluateWithCharters
 }
 
 func (s *SimulationContext) GetActionMocks() []*SimulationActionMock {
@@ -26589,6 +26609,13 @@ func (s *SimulationContext) SetAvailableKnowledgeBases(availableKnowledgeBases [
 func (s *SimulationContext) SetVariantID(variantID *EntityIDWithoutAgent) {
 	s.VariantID = variantID
 	s.require(simulationContextFieldVariantID)
+}
+
+// SetEvaluateWithCharters sets the EvaluateWithCharters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationContext) SetEvaluateWithCharters(evaluateWithCharters *bool) {
+	s.EvaluateWithCharters = evaluateWithCharters
+	s.require(simulationContextFieldEvaluateWithCharters)
 }
 
 // SetActionMocks sets the ActionMocks field and marks it as non-optional;
@@ -27817,6 +27844,8 @@ const (
 	SystemEventNameConversationClosed SystemEventName = "CONVERSATION_CLOSED"
 	// The agent sent a visible reply in a conversation: a response or a suggestion. `references` carries the conversation, the message, the charters matched in the turn that produced this reply, and the actions the bot ran in that turn, failed attempts included. Actions the user submitted as a form, or was only offered, are not included. Each event covers its own reply's turn, not earlier ones. A `references` condition can name a charter, an action or a combination of them. `contextInfo.additionalData` carries the message's `botMessageType` (see `AdditionalDataKey`). Like `CONVERSATION_CLOSED`, it is recorded once Maven has finished analyzing the conversation through that reply.
 	SystemEventNameBotReplyCreated SystemEventName = "BOT_REPLY_CREATED"
+	// The user sent a message in a conversation. `references` carries the conversation and the message. Unlike `BOT_REPLY_CREATED`, it is recorded as soon as Maven saves the message, without waiting for analysis. Each message is recorded once.
+	SystemEventNameUserMessageCreated SystemEventName = "USER_MESSAGE_CREATED"
 	// An intelligent field's value on a conversation or agent user was set or changed. `references` carries the field and the conversation or agent user the value belongs to; `contextInfo.additionalData` carries the new `value` and the `previousValue` (see `AdditionalDataKey`). A string value is written as is, a boolean or number as its text (`true`, `3`), and a multi-select's options as a JSON array. A key is absent when its value is undetermined or, for `previousValue`, when the field had no previous value.
 	SystemEventNameIntelligentFieldValueChanged SystemEventName = "INTELLIGENT_FIELD_VALUE_CHANGED"
 )
@@ -27849,6 +27878,8 @@ func NewSystemEventNameFromString(s string) (SystemEventName, error) {
 		return SystemEventNameConversationClosed, nil
 	case "BOT_REPLY_CREATED":
 		return SystemEventNameBotReplyCreated, nil
+	case "USER_MESSAGE_CREATED":
+		return SystemEventNameUserMessageCreated, nil
 	case "INTELLIGENT_FIELD_VALUE_CHANGED":
 		return SystemEventNameIntelligentFieldValueChanged, nil
 	}

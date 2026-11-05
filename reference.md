@@ -15,6 +15,12 @@
 Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
 at once. It returns the fields every capability shares rather than the whole Action;
 fetch one by its kind and reference ID for the rest.
+
+Pagination is limited to the first 10,000 matching actions: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -74,6 +80,8 @@ client.Actions.Search(
 <dd>
 
 Update an action or create it if it doesn't exist
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -164,6 +172,8 @@ Deprecated. Use `GET /v1/capabilities/ACTION/{referenceId}`, which returns this 
 object for an action and the equivalent for every other kind of capability.
 
 Get an action by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -235,6 +245,8 @@ Update mutable action fields
 
 The `appId` field can be provided to update an action owned by a different app. 
 All other fields will overwrite the existing value on the action only if provided.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -358,6 +370,8 @@ Deprecated. Use `DELETE /v1/capabilities/ACTION/{referenceId}`, which deletes an
 capability the same way.
 
 Delete an action
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -418,9 +432,9 @@ client.Actions.Delete(
 
 Search for agents across all organizations.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+Only Maven staff hold this permission.
+
+<Note>**Required permission:** `read:all-organizations`</Note>
 </dd>
 </dl>
 </dd>
@@ -480,6 +494,8 @@ client.Agents.Search(
 <dd>
 
 Lists all agents for an organization
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -539,9 +555,7 @@ client.Agents.List(
 
 Create a new agent
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+<Note>**Required permission:** `create:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -622,6 +636,8 @@ client.Agents.Create(
 <dd>
 
 Get an agent
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -691,9 +707,7 @@ client.Agents.Get(
 Update mutable agent fields 
 All fields will overwrite the existing value on the agent only if provided.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -874,9 +888,7 @@ Return the system fallback message on all questions that have no relevant knowle
 
 Delete an agent.
 
-<Tip>
-This endpoint requires additional permissions. Contact support to request access.
-</Tip>
+<Note>**Required permission:** `delete:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -945,6 +957,8 @@ client.Agents.Delete(
 <dd>
 
 Retrieves structured conversation data formatted as a table, allowing users to group, filter, and define specific metrics to display as columns.
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -1042,6 +1056,8 @@ client.Analytics.GetConversationTable(
 <dd>
 
 Fetches conversation data visualized in a chart format. Supported chart types include pie chart, date histogram, and stacked bar charts.
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -1118,6 +1134,8 @@ client.Analytics.GetConversationChart(
 Export the conversation analytics table to a CSV file.
 
 This outputs the current table view defined by the request. For most programmatic use cases, prefer `getConversationTable` and format client-side. The CSV format may change and should not be relied upon by code consumers. A maximum of 10,000 rows can be exported at a time.
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -1200,6 +1218,7 @@ client.Analytics.ExportConversationTable(
 <dd>
 
 Retrieves structured agent user data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -1273,6 +1292,7 @@ client.Analytics.GetAgentUserTable(
 <dd>
 
 Retrieves structured event data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+<Note>**Required permission:** `read:events`</Note>
 </dd>
 </dl>
 </dd>
@@ -1351,6 +1371,8 @@ client.Analytics.GetEventTable(
 <dd>
 
 Fetches event data visualized in a chart format. Supported chart types include pie chart, date histogram, and stacked bar charts.
+
+<Note>**Required permission:** `read:events`</Note>
 </dd>
 </dl>
 </dd>
@@ -1613,7 +1635,9 @@ client.AppDirectory.Install(
 <dl>
 <dd>
 
-Uninstalls the app from the agent.
+Uninstalls the app from the agent, and deletes the actions and triggers it created.
+
+<Note>**Required permission:** `install:apps`</Note>
 </dd>
 </dl>
 </dd>
@@ -2006,6 +2030,8 @@ client.AppSettings.Update(
 
 Initiate an upload. 
 Returns a pre-signed URL for direct file upload and an asset ID for subsequent operations.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -2068,6 +2094,8 @@ client.Assets.InitiateUpload(
 
 Commit an upload after successful file transfer.
 Updates the asset status and makes it available for use.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -2142,6 +2170,8 @@ The response carries the same fields the capability's own API returns, so an Act
 here and an Action read from the Actions API are the same object. Intelligent Fields are the
 one exception: their own API also returns the charters referencing the field, which this
 endpoint leaves out.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -2252,6 +2282,8 @@ unpublish operation, and it works the same way for every capability type.
 
 Everything else about a capability -- its name, its description, and any settings
 particular to its kind -- is changed through that capability's own API.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -2368,6 +2400,8 @@ appears in search.
 With `variantReferenceId`, an intelligent field's delete is staged in that variant instead,
 and takes effect when the variant is committed. Until then the agent keeps using the field,
 and only a later patch or delete through the same variant is a 404.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -2475,6 +2509,8 @@ effects in real systems. Nothing here runs a capability live.
 
 Only actions can be simulated today. Triggers and conversation kickoffs are rejected with a
 400 until they can run as simulations. Intelligent fields cannot be simulated.
+
+<Note>**Required permission:** `create:simulations`</Note>
 </dd>
 </dl>
 </dd>
@@ -2572,6 +2608,12 @@ Sorting by `NAME` or `TYPE` instead orders ascending unless `sortDesc` says othe
 `sortDesc` overrides the default either way.
 
 Deleted capabilities are never returned.
+
+Pagination is limited to the first 10,000 matching capabilities: `(page + 1) * size` must
+not exceed 10,000, and a request beyond that is rejected with a 400. Add filters to reach
+later results.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -2709,6 +2751,12 @@ Pass a conversation in `subjectIds` to get the executions recorded against it. A
 those.
 
 Results can trail a run by a few seconds. Executions are searchable for 90 days.
+
+Pagination is limited to the first 10,000 matching executions: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow `createdAfter` and
+`createdBefore` to reach later results.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -2805,6 +2853,22 @@ simulation conversation's executions are found by its ID like any other.
     
 </dd>
 </dl>
+
+<dl>
+<dd>
+
+**createdAfter:** `*time.Time` — Only return executions whose `createdAt` is on or after this timestamp.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**createdBefore:** `*time.Time` — Only return executions whose `createdAt` is on or before this timestamp.
+    
+</dd>
+</dl>
 </dd>
 </dl>
 
@@ -2840,6 +2904,8 @@ preferences among its siblings. The rank is currently only meaningful
 for leaf charters as we enforce mutual exclusion among the leafs and
 pick only the highest ranked (lowest numerical value) leaf to include in
 the round. userRank may have gaps.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -2914,6 +2980,8 @@ client.Charters.CreateOrUpdate(
 <dd>
 
 Get a charter by its reference ID.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3021,6 +3089,8 @@ To promote to root level, set `parentCharterId` explicitly to null.
 **userRank conflict resolution**: When `userRank` is set to a value already held by a
 sibling, siblings at that rank and above are shifted up by 1 (like linked list semantics).
 The caller does not need to manage uniqueness explicitly.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3208,6 +3278,8 @@ soft-deleted regardless.
 Deleted charters are excluded from list results but can be retrieved by ID for archival purposes.
 
 Deleted charters cannot be modified.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3308,6 +3380,12 @@ Returns both ACTIVE and INACTIVE charters (DELETED charters are excluded).
 Results are ordered by the `sort` field (defaults to CreatedAt). Use `sortDesc`
 to control direction (defaults to descending). An empty filter list is
 equivalent to omitting the field (no filter applied).
+
+Pagination is limited to the first 10,000 matching charters: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3383,6 +3461,8 @@ The list is always finite: charter hierarchies are acyclic, so a charter is neve
 ancestor and the walk to the root terminates.
 
 Returns 404 if the charter does not exist or is deleted.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3484,6 +3564,8 @@ at mixed levels are allowed. Roots and specific parents cannot be mixed
 in one request.
 
 DELETED charters are never returned.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3553,6 +3635,8 @@ behaviour on its own. Updating an existing one rewrites its name and description
 its status alone, so re-registering on every install refresh never deactivates a kickoff
 that is already live. Use the capability APIs to activate it, and to read, search or delete
 it afterwards.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -3647,6 +3731,8 @@ Conversations can not be modified using this API. If the conversation already ex
 After initialization,
 - metadata can be changed using the `updateConversationMetadata` API.
 - messages can be added to the conversation with the `appendNewMessages` or `ask` APIs.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -3717,6 +3803,8 @@ All other fields will overwrite the existing value on the conversation only if p
 
 A closed conversation (`open` set to false) cannot be reopened: a patch setting `open` to true
 returns a 400. Its other fields can still be patched.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -3789,6 +3877,8 @@ client.Conversation.Patch(
 <dd>
 
 Get a conversation
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -3875,7 +3965,7 @@ client.Conversation.Get(
 Wipes the user content from a conversation.
 The conversation and its ID still exist afterwards, and so does its non-content data, so it still counts in metrics.
 The conversation is sealed against further writes as soon as this call returns: adding or changing messages fails with `409 Conflict`, and so does deleting it again once the wipe has finished.
-A `202 Accepted` response means the wipe is still completing and will finish on its own.
+The call answers `202 Accepted` and the wipe finishes on its own shortly after. Until it does, getting or searching the conversation can still return its original message text.
 
 Simulation conversations will no longer be visible in search results nor metrics.
 Non-simulation conversations remain visible; they cannot be fully removed from the system.
@@ -3885,6 +3975,8 @@ What is wiped: the conversation's `subject` and `analysis.agentResponse` are cle
 Every message's text, from the user and the agent alike, is replaced with `reason`, and its attachments, follow-up questions, backend LLM prompt and history, the data actions returned, and action arguments are cleared.
 Evaluation results for the conversation are deleted, and the payloads recorded on its trigger and action executions are cleared. <br/><br/>
 What is kept: the conversation's metadata, each message's charts, structured answer and app-supplied metadata, the conversation's intelligent field values, its feedback and events, and the users who took part. To wipe a user's data, use `DELETE /users/{userId}` or `DELETE /agentusers/{agentUserId}`.</Warning>
+
+<Note>**Required permission:** `delete:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -3965,6 +4057,8 @@ client.Conversation.Delete(
 Append messages to an existing conversation. The conversation must be initialized first. If a message with the same ID already exists, it will be ignored. Messages do not allow modification.
 
 A closed conversation (`open` set to false) takes no new messages and returns a 400.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -4064,6 +4158,8 @@ Concurrency Behavior:
 
 Known Limitation:
 - The API does not currently expose metadata indicating whether a response or message is incomplete. This will be addressed in a future update.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -4169,6 +4265,8 @@ Concurrency Behavior:
 
 Known Limitation:
 - The API does not currently expose metadata indicating whether a response or message is incomplete. This will be addressed in a future update.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -4408,6 +4506,8 @@ Additionally, form submission is only allowed when the form is the last message 
 Forms should be disabled in surface UI if a conversation continues and they remain unsubmitted.
 
 A form cannot be submitted on a closed conversation (`open` set to false): that returns a 400.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -4567,6 +4667,8 @@ If it does not exist, it will be added. Will not remove metadata fields.
 Returns all metadata saved by any app on the conversation.
 
 A closed conversation (`open` set to false) takes no new metadata and returns a 400.
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -4641,7 +4743,20 @@ client.Conversation.UpdateConversationMetadata(
 <dl>
 <dd>
 
-Search conversations
+Search conversations.
+
+Pagination is limited to the first 10,000 matching conversations: `(page + 1) * size` must
+not exceed 10,000, and a request beyond that is rejected with a 400. To read past the
+10,000th result, use `searchCursor`.
+
+`searchCursor` orders results by creation time and has no `sort` field. Its defaults differ
+from `search` in two ways:
+- Without `sort`, `search` returns the oldest conversations first. `searchCursor` returns the
+  newest first unless `sortDesc` is `false`.
+- Without a `filter`, `search` returns conversations of every `billable` value.
+  `searchCursor` leaves out `INELIGIBLE` ones unless `filter.billable` includes it.
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -4711,6 +4826,8 @@ rejected rather than silently restarting you at the beginning.
 `nextCursor` is the only reliable end-of-results signal. Do not stop early because a page
 came back with fewer conversations than you asked for: that happens legitimately, and more
 pages may still remain.
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -4771,10 +4888,12 @@ client.Conversation.SearchCursor(
 
 Export conversations to a CSV file.
 
-This will output a summary of each conversation that matches the supplied filter. A maximum of 10,000 conversations can be exported at a time.
+This will output a summary of each conversation that matches the supplied filter. Only the first 10,000 matching conversations can be exported: `(page + 1) * size` must not exceed 10,000, and a request beyond that is rejected with a 400.
 
 For most use cases it is recommended to use the `search` API instead and convert the JSON response to your desired format.
 The CSV format may change over time and should not be relied upon by code consumers.
+
+<Note>**Required permission:** `read:conversations`</Note>
 </dd>
 </dl>
 </dd>
@@ -4841,6 +4960,8 @@ A closed conversation (`open` set to false) takes no new messages and returns a 
 Currently, messages can only be successfully delivered to conversations with the `ASYNC` capability.
 User message delivery is not yet supported and returns a 400.
 </Warning>
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -4910,6 +5031,26 @@ client.Conversation.DeliverMessage(
 <dl>
 <dd>
 
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Search customers of an agent.
+
+Pagination is limited to the first 10,000 matching customers: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:agents`</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
 #### 🔌 Usage
 
 <dl>
@@ -4964,6 +5105,8 @@ client.Customers.Search(
 <dd>
 
 Update a customer of an agent or create it if it doesn't exist. In case of an update, fields not provided (e.g., description, status) will be preserved.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -5028,6 +5171,8 @@ client.Customers.CreateOrUpdate(
 <dd>
 
 Get a customer by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -5099,6 +5244,8 @@ Update mutable customer fields
 
 The `appId` field can be provided to update a customer owned by a different app.
 All other fields will overwrite the existing value on the customer only if provided.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -5167,7 +5314,10 @@ client.Customers.Patch(
 <dl>
 <dd>
 
-Create a new event. Events are immutable, so a create that reuses the `referenceId` of an existing event in the same app is rejected with a 409 and leaves that event unchanged.
+Create a new event. Events are immutable, so a create that reuses the `referenceId` of an
+existing event in the same app is rejected with a 409 and leaves that event unchanged.
+
+<Note>**Required permission:** `ask:agent`. An event with `executionMode: SIMULATION` also needs `create:simulations`.</Note>
 </dd>
 </dl>
 </dd>
@@ -5238,7 +5388,13 @@ client.Events.Create(
 <dl>
 <dd>
 
-Search events
+Search events.
+
+Pagination is limited to the first 10,000 matching events: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:events`</Note>
 </dd>
 </dl>
 </dd>
@@ -5298,6 +5454,8 @@ client.Events.Search(
 <dd>
 
 Retrieve details of a specific Event item by its ID.
+
+<Note>**Required permission:** `read:events`</Note>
 </dd>
 </dl>
 </dd>
@@ -5369,7 +5527,9 @@ client.Events.Get(
 
 Export events to a CSV file.
 
-This will output a summary of each event that matches the supplied filter. A maximum of 10,000 events can be exported at a time. For most use cases it is recommended to use the search API instead and convert the JSON response to your desired format. The CSV format may change over time and should not be relied upon by code consumers.
+This will output a summary of each event that matches the supplied filter. Only the first 10,000 matching events can be exported: `(page + 1) * size` must not exceed 10,000, and a request beyond that is rejected with a 400. For most use cases it is recommended to use the search API instead and convert the JSON response to your desired format. The CSV format may change over time and should not be relied upon by code consumers.
+
+<Note>**Required permission:** `read:events`</Note>
 </dd>
 </dl>
 </dd>
@@ -5430,6 +5590,12 @@ client.Events.Export(
 <dd>
 
 Retrieve a paginated list of inbox items for an agent.
+
+Pagination is limited to the first 10,000 matching inbox items: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:agents`. A search whose results include a Duplicate Documents item also needs `read:documents`.</Note>
 </dd>
 </dl>
 </dd>
@@ -5489,6 +5655,8 @@ client.Inbox.Search(
 <dd>
 
 Update an inbox item or create it if it doesn't exist.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -5585,6 +5753,8 @@ Update mutable inbox item fields. Only supported for custom inbox items.
 
 The `appId` field can be provided to update a inbox item owned by a different app.
 All other fields will overwrite the existing value on the inbox item only if provided.
+
+<Note>**Required permission:** `edit:agents`. Patching a Duplicate Documents item also needs `read:documents`.</Note>
 </dd>
 </dl>
 </dd>
@@ -5689,6 +5859,8 @@ length of 512 characters.
 <dd>
 
 Update inbox item tag fields. All tags provided will overwrite the existing tags on the inbox item.
+
+<Note>**Required permission:** `edit:agents`. Updating tags on a Missing Knowledge or Duplicate Documents item also needs `read:agents`, and on a Duplicate Documents item `read:documents` too.</Note>
 </dd>
 </dl>
 </dd>
@@ -5770,6 +5942,8 @@ client.Inbox.ApplyTags(
 <dd>
 
 Retrieve details of a specific inbox item by its ID.
+
+<Note>**Required permission:** `read:agents`. Getting a Duplicate Documents item also needs `read:documents`.</Note>
 </dd>
 </dl>
 </dd>
@@ -5840,6 +6014,8 @@ client.Inbox.Get(
 <dd>
 
 Retrieve a suggested fix. Includes document information if the fix is a Missing Knowledge suggestion.
+
+<Note>**Required permission:** `read:agents`. Getting a Duplicate Documents fix also needs `read:documents`.</Note>
 </dd>
 </dl>
 </dd>
@@ -5910,6 +6086,8 @@ client.Inbox.GetFix(
 <dd>
 
 Apply a list of fixes belonging to an inbox item.
+
+<Note>**Required permission:** `edit:agents`. Applying fixes also needs `read:agents`. A Missing Knowledge fix also needs `create:documents`, and a Duplicate Documents fix also needs `read:documents`, `edit:documents` and `create:documents`.</Note>
 </dd>
 </dl>
 </dd>
@@ -5984,6 +6162,8 @@ client.Inbox.ApplyFixes(
 <dd>
 
 Ignore a specific inbox item by its ID.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6146,6 +6326,8 @@ A replace that names a `variantId` must keep the field's `validationType` as tha
 variant has it, or it is rejected with reason `INTELLIGENT_FIELD_TYPE_CHANGED`. To use
 a different type, create a new field. A field deleted in the variant may be recreated
 with any type.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6243,6 +6425,8 @@ kind of capability the same way. It does not carry `referencingCharters`; search
 charters to find the ones that reference a capability.
 
 Get an intelligent field by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6340,6 +6524,8 @@ the request body are changed.
 This is also how a field is activated and deactivated: set `status` to `ACTIVE` to
 start evaluating it, or `INACTIVE` to stop. `name`, `entityType`, and `validationType`
 cannot be changed after creation.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6426,7 +6612,7 @@ cannot be deactivated.
 <dl>
 <dd>
 
-**enumOptions:** `[]*mavenagigo.EnumOption` — Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The new list must be a superset of the existing options (add-only; removals are rejected).
+**enumOptions:** `[]*mavenagigo.EnumOption` — Updated enum options for fields that constrain the LLM to a finite set. Omit to leave unchanged. The list replaces the existing options: an option left out is removed and is no longer offered to the LLM, while values already computed with it are kept. A field that has options must keep at least one, so an empty list is rejected. An option kept from the existing list must keep its `label`; changing it is rejected.
     
 </dd>
 </dl>
@@ -6469,6 +6655,8 @@ its identity and entityType, every other setting comes from the request, and it 
 status a new field gets.
 
 Deleted fields cannot be modified.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6558,6 +6746,8 @@ value was computed.
 
 Values only exist for fields that were ACTIVE when the entity was evaluated, so a
 newly activated field returns nothing until evaluation has run.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6651,6 +6841,12 @@ client.IntelligentFields.SearchValues(
 <dd>
 
 Search knowledge bases
+
+Pagination is limited to the first 10,000 matching knowledge bases: `(page + 1) * size` must
+not exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to
+reach later results.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6710,6 +6906,8 @@ client.Knowledge.SearchKnowledgeBases(
 <dd>
 
 Update a knowledge base or create it if it doesn't exist.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6774,6 +6972,8 @@ client.Knowledge.CreateOrUpdateKnowledgeBase(
 <dd>
 
 Get an existing knowledge base by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6845,6 +7045,8 @@ Request that a knowledge base refresh itself.
 
 Knowledge bases refresh on a schedule determined by the `refreshFrequency` field.
 They can also be refreshed on demand by calling this endpoint.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6923,6 +7125,8 @@ ingestion workflow and sets the version status to CANCELED.
 
 An app still refreshing that version finds out on its next write to it: adding or
 removing a document on a canceled version is rejected rather than succeeding.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -6991,6 +7195,8 @@ client.Knowledge.CancelKnowledgeBaseVersion(
 <dd>
 
 Rolls the knowledge base back to its previous published version.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7052,6 +7258,8 @@ Update mutable knowledge base fields
 
 The `appId` field can be provided to update a knowledge base owned by a different app.
 All other fields will overwrite the existing value on the knowledge base only if provided.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7217,6 +7425,8 @@ If an existing version is in progress, then that version will be finalized in an
 
 If another version create for the same knowledge base is still in progress, this request may
 return 503 with a `Retry-After` header. Nothing is changed in that case, so it is safe to retry.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7287,6 +7497,8 @@ client.Knowledge.CreateKnowledgeBaseVersion(
 <dd>
 
 Finalize the latest knowledge base version. Required to indicate the version is complete. Will throw an exception if the latest version is not in progress.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7366,6 +7578,8 @@ Report refresh progress for an in-progress knowledge base version.
 Progress is advisory and shown to users while a refresh runs. Each call replaces the
 version's entire progress state - no history is kept, only the most recent value is
 retained. Will throw an exception if the target version is not in progress.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7449,6 +7663,8 @@ client.Knowledge.UpdateKnowledgeBaseVersionProgress(
 <dd>
 
 List all active versions for a knowledge base. Returns the most recent versions first.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7517,6 +7733,12 @@ client.Knowledge.ListKnowledgeBaseVersions(
 <dd>
 
 Search knowledge documents
+
+Pagination is limited to the first 10,000 matching knowledge documents: `(page + 1) * size`
+must not exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter
+to reach later results.
+
+<Note>**Required permission:** `read:documents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7582,6 +7804,8 @@ Will throw an exception if the latest version is not in progress.
 This API maintains document version history. If for the same reference ID none of the `title`, `text`, `sourceUrl`, `metadata` fields
 have changed, a new document version will not be created. The existing version will be reused.
 </Tip>
+
+<Note>**Required permission:** `create:documents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7610,8 +7834,10 @@ request := &mavenagigo.KnowledgeDocumentRequest{
             "## Getting started\nThis is a getting started guide for the help center.",
         ),
         Title: "Getting started",
-        Metadata: map[string]string{
-            "category": "getting-started",
+        Metadata: map[string]*mavenagigo.KnowledgeDocumentMetadataValue{
+            "category": &mavenagigo.KnowledgeDocumentMetadataValue{
+                String: "getting-started",
+            },
         },
     }
 client.Knowledge.CreateKnowledgeDocument(
@@ -7668,6 +7894,8 @@ client.Knowledge.CreateKnowledgeDocument(
 
 Delete knowledge document from a specific version.
 Requires an existing knowledge base with an in progress version of type PARTIAL. Will throw an exception if the version is not in progress.
+
+<Note>**Required permission:** `delete:documents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7751,6 +7979,8 @@ client.Knowledge.DeleteKnowledgeDocument(
 <dd>
 
 Get a knowledge document by its supplied version and document IDs. Response includes document content in markdown format.
+
+<Note>**Required permission:** `read:documents`</Note>
 </dd>
 </dl>
 </dd>
@@ -7835,6 +8065,8 @@ For any changes in document content see the `createKnowledgeBaseVersion` and `cr
 
 The `knowledgeBaseAppId` field can be provided to update a knowledge document in a knowledge base owned by a different app.
 All other fields will overwrite the existing value on the knowledge document only if provided.
+
+<Note>**Required permission:** `edit:documents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8362,6 +8594,26 @@ client.Organizations.GetConversationChart(
 <dl>
 <dd>
 
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Search segments.
+
+Pagination is limited to the first 10,000 matching segments: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:agents`</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
 #### 🔌 Usage
 
 <dl>
@@ -8416,6 +8668,8 @@ client.Segments.Search(
 <dd>
 
 Update a segment or create it if it doesn't exist.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8497,6 +8751,8 @@ client.Segments.CreateOrUpdate(
 <dd>
 
 Get a segment by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8568,6 +8824,8 @@ Update mutable segment fields
 
 The `appId` field can be provided to update a segment owned by a different app.
 All other fields will overwrite the existing value on the segment only if provided.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8640,6 +8898,8 @@ Soft delete a segment. Only INACTIVE segments can be deleted.
 Deleted segments are excluded from search results but can still be retrieved by ID for archival purposes. Creating a segment with the same referenceId as a deleted segment reclaims it: the segment keeps its identity, and every other setting comes from the request.
 
 Deleted segments cannot be modified.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8709,6 +8969,8 @@ client.Segments.Delete(
 <dd>
 
 Translate text from one language to another
+
+<Note>**Required permission:** `ask:agent`</Note>
 </dd>
 </dl>
 </dd>
@@ -8774,6 +9036,8 @@ client.Translations.Translate(
 Deprecated. Use `POST /v1/capabilities/search`, which searches every kind of capability
 at once. It returns the fields every capability shares rather than the whole Event
 Trigger; fetch one by its kind and reference ID for the rest.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8833,6 +9097,8 @@ client.Triggers.Search(
 <dd>
 
 Update an event trigger or create it if it doesn't exist.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8901,6 +9167,8 @@ Deprecated. Use `GET /v1/capabilities/TRIGGER/{referenceId}`, which returns this
 object for a trigger and the equivalent for every other kind of capability.
 
 Get an event trigger by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -8962,6 +9230,8 @@ Deprecated. Use `DELETE /v1/capabilities/TRIGGER/{referenceId}`, which deletes a
 of capability the same way.
 
 Delete an event trigger
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9023,6 +9293,8 @@ Updates an event trigger. `enabled` and `condition` are the editable fields.
 
 `PATCH /v1/capabilities/TRIGGER/{referenceId}` with a `status` also turns a trigger on and
 off, the same way it publishes and unpublishes any kind of capability.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9110,6 +9382,12 @@ client.Triggers.PartialUpdate(
 Search across all agent users on an agent.
 
 Agent users are a merged view of the users created by individual apps.
+
+Pagination is limited to the first 10,000 matching agent users: `(page + 1) * size` must not
+exceed 10,000, and a request beyond that is rejected with a 400. Narrow the filter to reach
+later results.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9171,6 +9449,8 @@ client.Users.Search(
 Get an agent user by its supplied ID.
 
 Agent users are a merged view of the users created by individual apps.
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9244,6 +9524,8 @@ If the ID belongs to an agent user that has been merged into another, the agent 
 
 The agent user's intelligent field values are deleted too, and removed from their `INTELLIGENT_FIELD_VALUE_CHANGED` events; the events themselves are kept.
 Unlike `DELETE /users/{userId}`, the wipe does not recompute the values. They can be computed again later from the user's remaining conversations, for example after the user sends another message; wipe those conversations first to prevent that.
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9302,6 +9584,8 @@ client.Users.DeleteAgentUser(
 <dd>
 
 Update an app user or create it if it doesn't exist.
+
+<Note>**Required permission:** `edit:agents`. A user with `executionMode` `SIMULATION` also needs `create:simulations`.</Note>
 </dd>
 </dl>
 </dd>
@@ -9377,6 +9661,8 @@ client.Users.CreateOrUpdate(
 <dd>
 
 Get an app user by its supplied ID
+
+<Note>**Required permission:** `read:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9455,6 +9741,8 @@ To wipe a conversation, use `DELETE /conversations/{conversationId}`. To wipe ev
 If this user is linked to a user from another app, it will not be unlinked. Unlinking of users is not yet supported.
 
 <Warning>This is a destructive operation and cannot be undone.</Warning>
+
+<Note>**Required permission:** `edit:agents`</Note>
 </dd>
 </dl>
 </dd>
@@ -9527,7 +9815,7 @@ Creates a short-lived session token for authenticating voice connections.
 
 Supports two token types:
 - **webrtc**: A Twilio-compatible access token for browser-based WebRTC calls
-- **websocket**: An ES256 JWT for direct WebSocket connections to /v1/voice/conversations
+- **websocket**: An ES256 JWT for direct WebSocket connections to /v1/realtime/conversations
 
 Session tokens are required before establishing any voice connection.
 </dd>

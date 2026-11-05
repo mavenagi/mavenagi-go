@@ -44,6 +44,8 @@ func NewClient(options *core.RequestOptions) *Client {
 }
 
 // Retrieves structured conversation data formatted as a table, allowing users to group, filter, and define specific metrics to display as columns.
+//
+// <Note>**Required permission:** `read:conversations`</Note>
 func (c *Client) GetConversationTable(
 	ctx context.Context,
 	request *mavenagigo.ConversationTableRequest,
@@ -61,6 +63,8 @@ func (c *Client) GetConversationTable(
 }
 
 // Fetches conversation data visualized in a chart format. Supported chart types include pie chart, date histogram, and stacked bar charts.
+//
+// <Note>**Required permission:** `read:conversations`</Note>
 func (c *Client) GetConversationChart(
 	ctx context.Context,
 	request *mavenagigo.ConversationChartRequest,
@@ -80,6 +84,8 @@ func (c *Client) GetConversationChart(
 // Export the conversation analytics table to a CSV file.
 //
 // This outputs the current table view defined by the request. For most programmatic use cases, prefer `getConversationTable` and format client-side. The CSV format may change and should not be relied upon by code consumers. A maximum of 10,000 rows can be exported at a time.
+//
+// <Note>**Required permission:** `read:conversations`</Note>
 func (c *Client) ExportConversationTable(
 	ctx context.Context,
 	request *mavenagigo.ConversationTableRequest,
@@ -97,6 +103,7 @@ func (c *Client) ExportConversationTable(
 }
 
 // Retrieves structured agent user data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+// <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) GetAgentUserTable(
 	ctx context.Context,
 	request *mavenagigo.AgentUserTableRequest,
@@ -114,6 +121,7 @@ func (c *Client) GetAgentUserTable(
 }
 
 // Retrieves structured event data formatted as a table, allowing users to group, filter,  and define specific metrics to display as columns.
+// <Note>**Required permission:** `read:events`</Note>
 func (c *Client) GetEventTable(
 	ctx context.Context,
 	request *mavenagigo.EventTableRequest,
@@ -131,6 +139,8 @@ func (c *Client) GetEventTable(
 }
 
 // Fetches event data visualized in a chart format. Supported chart types include pie chart, date histogram, and stacked bar charts.
+//
+// <Note>**Required permission:** `read:events`</Note>
 func (c *Client) GetEventChart(
 	ctx context.Context,
 	request *mavenagigo.EventChartRequest,

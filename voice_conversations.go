@@ -7,17 +7,19 @@ import (
 	fmt "fmt"
 	internal "github.com/mavenagi/mavenagi-go/internal"
 	big "math/big"
+	time "time"
 )
 
 // Audio chunk from the agent.
 var (
-	agentAudioChunkFieldEventID = big.NewInt(1 << 0)
-	agentAudioChunkFieldData    = big.NewInt(1 << 1)
+	agentAudioChunkFieldTimestamp = big.NewInt(1 << 0)
+	agentAudioChunkFieldData      = big.NewInt(1 << 1)
 )
 
 type AgentAudioChunk struct {
-	EventID string `json:"eventId" url:"eventId"`
-	// Base64-encoded AI audio data
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
+	// Base64-encoded agent audio, in the `outputFormat` from the `Config` message.
 	Data string `json:"data" url:"data"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -28,11 +30,11 @@ type AgentAudioChunk struct {
 	rawJSON         json.RawMessage
 }
 
-func (a *AgentAudioChunk) GetEventID() string {
+func (a *AgentAudioChunk) GetTimestamp() time.Time {
 	if a == nil {
-		return ""
+		return time.Time{}
 	}
-	return a.EventID
+	return a.Timestamp
 }
 
 func (a *AgentAudioChunk) GetData() string {
@@ -57,11 +59,11 @@ func (a *AgentAudioChunk) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
-// SetEventID sets the EventID field and marks it as non-optional;
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AgentAudioChunk) SetEventID(eventID string) {
-	a.EventID = eventID
-	a.require(agentAudioChunkFieldEventID)
+func (a *AgentAudioChunk) SetTimestamp(timestamp time.Time) {
+	a.Timestamp = timestamp
+	a.require(agentAudioChunkFieldTimestamp)
 }
 
 // SetData sets the Data field and marks it as non-optional;
@@ -75,7 +77,8 @@ func (a *AgentAudioChunk) UnmarshalJSON(data []byte) error {
 	type embed AgentAudioChunk
 	var unmarshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
 		embed: embed(*a),
 	}
@@ -83,6 +86,7 @@ func (a *AgentAudioChunk) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*a = AgentAudioChunk(unmarshaler.embed)
+	a.Timestamp = unmarshaler.Timestamp.Time()
 	if unmarshaler.Type != "agent_audio_chunk" {
 		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", a, "agent_audio_chunk", unmarshaler.Type)
 	}
@@ -100,10 +104,12 @@ func (a *AgentAudioChunk) MarshalJSON() ([]byte, error) {
 	type embed AgentAudioChunk
 	var marshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*a),
-		Type:  "agent_audio_chunk",
+		embed:     embed(*a),
+		Timestamp: internal.NewDateTime(a.Timestamp),
+		Type:      "agent_audio_chunk",
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -121,124 +127,19 @@ func (a *AgentAudioChunk) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
-// Transcribed agent speech
-var (
-	agentTranscriptFieldEventID = big.NewInt(1 << 0)
-	agentTranscriptFieldText    = big.NewInt(1 << 1)
-)
-
-type AgentTranscript struct {
-	EventID string `json:"eventId" url:"eventId"`
-	// Transcribed agent speech
-	Text string `json:"text" url:"text"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-	type_          string
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (a *AgentTranscript) GetEventID() string {
-	if a == nil {
-		return ""
-	}
-	return a.EventID
-}
-
-func (a *AgentTranscript) GetText() string {
-	if a == nil {
-		return ""
-	}
-	return a.Text
-}
-
-func (a *AgentTranscript) Type() string {
-	return a.type_
-}
-
-func (a *AgentTranscript) GetExtraProperties() map[string]interface{} {
-	return a.extraProperties
-}
-
-func (a *AgentTranscript) require(field *big.Int) {
-	if a.explicitFields == nil {
-		a.explicitFields = big.NewInt(0)
-	}
-	a.explicitFields.Or(a.explicitFields, field)
-}
-
-// SetEventID sets the EventID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AgentTranscript) SetEventID(eventID string) {
-	a.EventID = eventID
-	a.require(agentTranscriptFieldEventID)
-}
-
-// SetText sets the Text field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AgentTranscript) SetText(text string) {
-	a.Text = text
-	a.require(agentTranscriptFieldText)
-}
-
-func (a *AgentTranscript) UnmarshalJSON(data []byte) error {
-	type embed AgentTranscript
-	var unmarshaler = struct {
-		embed
-		Type string `json:"type"`
-	}{
-		embed: embed(*a),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
-		return err
-	}
-	*a = AgentTranscript(unmarshaler.embed)
-	if unmarshaler.Type != "agent_transcript" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", a, "agent_transcript", unmarshaler.Type)
-	}
-	a.type_ = unmarshaler.Type
-	extraProperties, err := internal.ExtractExtraProperties(data, *a, "type")
-	if err != nil {
-		return err
-	}
-	a.extraProperties = extraProperties
-	a.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (a *AgentTranscript) MarshalJSON() ([]byte, error) {
-	type embed AgentTranscript
-	var marshaler = struct {
-		embed
-		Type string `json:"type"`
-	}{
-		embed: embed(*a),
-		Type:  "agent_transcript",
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (a *AgentTranscript) String() string {
-	if len(a.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(a); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", a)
-}
-
+// Audio format for both directions. Audio is mono and base64-encoded in each message.
+// Only `PCM_8000` and `MULAW_8000` are supported. `PCM_16000` and `PCM_44100` are rejected
+// with an `invalid_audio_format` error.
 type AudioFormat string
 
 const (
-	AudioFormatPcm44100  AudioFormat = "PCM_44100"
-	AudioFormatPcm16000  AudioFormat = "PCM_16000"
-	AudioFormatPcm8000   AudioFormat = "PCM_8000"
+	// Not supported. PCM 16-bit little-endian, 44.1 kHz.
+	AudioFormatPcm44100 AudioFormat = "PCM_44100"
+	// Not supported. PCM 16-bit little-endian, 16 kHz.
+	AudioFormatPcm16000 AudioFormat = "PCM_16000"
+	// PCM 16-bit little-endian, 8 kHz.
+	AudioFormatPcm8000 AudioFormat = "PCM_8000"
+	// G.711 μ-law, 8 kHz.
 	AudioFormatMulaw8000 AudioFormat = "MULAW_8000"
 )
 
@@ -261,23 +162,115 @@ func (a AudioFormat) Ptr() *AudioFormat {
 	return &a
 }
 
+// Echo of a server `mark` message. Send it, with the same `name`, once all agent audio received
+// before that mark has played. Agent audio the client drops (for example on `vad_speech_started`)
+// counts as played. A missing echo delays the agent until a server-side timeout.
+var (
+	clientMarkFieldName = big.NewInt(1 << 0)
+)
+
+type ClientMark struct {
+	// The `name` from the server `mark` message.
+	Name string `json:"name" url:"name"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+	type_          string
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ClientMark) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *ClientMark) Type() string {
+	return c.type_
+}
+
+func (c *ClientMark) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ClientMark) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ClientMark) SetName(name string) {
+	c.Name = name
+	c.require(clientMarkFieldName)
+}
+
+func (c *ClientMark) UnmarshalJSON(data []byte) error {
+	type embed ClientMark
+	var unmarshaler = struct {
+		embed
+		Type string `json:"type"`
+	}{
+		embed: embed(*c),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*c = ClientMark(unmarshaler.embed)
+	if unmarshaler.Type != "mark" {
+		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", c, "mark", unmarshaler.Type)
+	}
+	c.type_ = unmarshaler.Type
+	extraProperties, err := internal.ExtractExtraProperties(data, *c, "type")
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ClientMark) MarshalJSON() ([]byte, error) {
+	type embed ClientMark
+	var marshaler = struct {
+		embed
+		Type string `json:"type"`
+	}{
+		embed: embed(*c),
+		Type:  "mark",
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ClientMark) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
 // Initialize conversation with configuration parameters
 var (
-	configFieldInputFormat    = big.NewInt(1 << 0)
-	configFieldOutputFormat   = big.NewInt(1 << 1)
-	configFieldConversationID = big.NewInt(1 << 2)
-	configFieldAppID          = big.NewInt(1 << 3)
+	configFieldInputFormat  = big.NewInt(1 << 0)
+	configFieldOutputFormat = big.NewInt(1 << 1)
 )
 
 type Config struct {
-	// The input audio format from the client.
+	// The audio format the client sends. Must be `PCM_8000` or `MULAW_8000`.
 	InputFormat AudioFormat `json:"inputFormat" url:"inputFormat"`
-	// The output audio format to send to the client.
+	// The audio format the server sends. Must equal `inputFormat`, or the server returns an `invalid_configuration` error.
 	OutputFormat AudioFormat `json:"outputFormat" url:"outputFormat"`
-	// The conversation ID which was created prior to starting this conversation.
-	ConversationID string `json:"conversationId" url:"conversationId"`
-	// The app ID this conversation ID is associated with.
-	AppID string `json:"appId" url:"appId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -299,20 +292,6 @@ func (c *Config) GetOutputFormat() AudioFormat {
 		return ""
 	}
 	return c.OutputFormat
-}
-
-func (c *Config) GetConversationID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ConversationID
-}
-
-func (c *Config) GetAppID() string {
-	if c == nil {
-		return ""
-	}
-	return c.AppID
 }
 
 func (c *Config) Type() string {
@@ -342,20 +321,6 @@ func (c *Config) SetInputFormat(inputFormat AudioFormat) {
 func (c *Config) SetOutputFormat(outputFormat AudioFormat) {
 	c.OutputFormat = outputFormat
 	c.require(configFieldOutputFormat)
-}
-
-// SetConversationID sets the ConversationID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *Config) SetConversationID(conversationID string) {
-	c.ConversationID = conversationID
-	c.require(configFieldConversationID)
-}
-
-// SetAppID sets the AppID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *Config) SetAppID(appID string) {
-	c.AppID = appID
-	c.require(configFieldAppID)
 }
 
 func (c *Config) UnmarshalJSON(data []byte) error {
@@ -408,13 +373,17 @@ func (c *Config) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// AI ended the conversation
+// Conversation created successfully. The client may start sending audio.
 var (
-	conversationEndedFieldEventID = big.NewInt(1 << 0)
+	conversationReadyFieldTimestamp = big.NewInt(1 << 0)
+	conversationReadyFieldSessionID = big.NewInt(1 << 1)
 )
 
-type ConversationEnded struct {
-	EventID string `json:"eventId" url:"eventId"`
+type ConversationReady struct {
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
+	// The conversation ID the server created for this connection.
+	SessionID string `json:"sessionId" url:"sessionId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -424,94 +393,18 @@ type ConversationEnded struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *ConversationEnded) GetEventID() string {
+func (c *ConversationReady) GetTimestamp() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.Timestamp
+}
+
+func (c *ConversationReady) GetSessionID() string {
 	if c == nil {
 		return ""
 	}
-	return c.EventID
-}
-
-func (c *ConversationEnded) Type() string {
-	return c.type_
-}
-
-func (c *ConversationEnded) GetExtraProperties() map[string]interface{} {
-	return c.extraProperties
-}
-
-func (c *ConversationEnded) require(field *big.Int) {
-	if c.explicitFields == nil {
-		c.explicitFields = big.NewInt(0)
-	}
-	c.explicitFields.Or(c.explicitFields, field)
-}
-
-// SetEventID sets the EventID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationEnded) SetEventID(eventID string) {
-	c.EventID = eventID
-	c.require(conversationEndedFieldEventID)
-}
-
-func (c *ConversationEnded) UnmarshalJSON(data []byte) error {
-	type embed ConversationEnded
-	var unmarshaler = struct {
-		embed
-		Type string `json:"type"`
-	}{
-		embed: embed(*c),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
-		return err
-	}
-	*c = ConversationEnded(unmarshaler.embed)
-	if unmarshaler.Type != "conversation_ended" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", c, "conversation_ended", unmarshaler.Type)
-	}
-	c.type_ = unmarshaler.Type
-	extraProperties, err := internal.ExtractExtraProperties(data, *c, "type")
-	if err != nil {
-		return err
-	}
-	c.extraProperties = extraProperties
-	c.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (c *ConversationEnded) MarshalJSON() ([]byte, error) {
-	type embed ConversationEnded
-	var marshaler = struct {
-		embed
-		Type string `json:"type"`
-	}{
-		embed: embed(*c),
-		Type:  "conversation_ended",
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (c *ConversationEnded) String() string {
-	if len(c.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(c); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", c)
-}
-
-// Conversation created successfully.
-type ConversationReady struct {
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-	type_          string
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
+	return c.SessionID
 }
 
 func (c *ConversationReady) Type() string {
@@ -529,11 +422,26 @@ func (c *ConversationReady) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationReady) SetTimestamp(timestamp time.Time) {
+	c.Timestamp = timestamp
+	c.require(conversationReadyFieldTimestamp)
+}
+
+// SetSessionID sets the SessionID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationReady) SetSessionID(sessionID string) {
+	c.SessionID = sessionID
+	c.require(conversationReadyFieldSessionID)
+}
+
 func (c *ConversationReady) UnmarshalJSON(data []byte) error {
 	type embed ConversationReady
 	var unmarshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
 		embed: embed(*c),
 	}
@@ -541,6 +449,7 @@ func (c *ConversationReady) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*c = ConversationReady(unmarshaler.embed)
+	c.Timestamp = unmarshaler.Timestamp.Time()
 	if unmarshaler.Type != "conversation_ready" {
 		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", c, "conversation_ready", unmarshaler.Type)
 	}
@@ -558,10 +467,12 @@ func (c *ConversationReady) MarshalJSON() ([]byte, error) {
 	type embed ConversationReady
 	var marshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*c),
-		Type:  "conversation_ready",
+		embed:     embed(*c),
+		Timestamp: internal.NewDateTime(c.Timestamp),
+		Type:      "conversation_ready",
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -581,15 +492,22 @@ func (c *ConversationReady) String() string {
 
 // Error occurred during conversation
 var (
-	errorFieldEventID = big.NewInt(1 << 0)
-	errorFieldMessage = big.NewInt(1 << 1)
-	errorFieldCode    = big.NewInt(1 << 2)
+	errorFieldTimestamp = big.NewInt(1 << 0)
+	errorFieldMessage   = big.NewInt(1 << 1)
+	errorFieldCode      = big.NewInt(1 << 2)
 )
 
 type Error struct {
-	EventID string `json:"eventId" url:"eventId"`
-	Message string `json:"message" url:"message"`
-	Code    string `json:"code" url:"code"`
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
+	Message   string    `json:"message" url:"message"`
+	// One of:
+	// - `invalid_message`: the server could not parse a client message, or its `type` is unknown.
+	// - `invalid_configuration`: `outputFormat` differs from `inputFormat`.
+	// - `invalid_audio_format`: the format is not `PCM_8000` or `MULAW_8000`.
+	// - `initialization_error`: the connection failed before the conversation started, including authentication and rate-limit failures.
+	// - `internal_error`: the voice model reported an error during the conversation.
+	Code string `json:"code" url:"code"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -599,11 +517,11 @@ type Error struct {
 	rawJSON         json.RawMessage
 }
 
-func (e *Error) GetEventID() string {
+func (e *Error) GetTimestamp() time.Time {
 	if e == nil {
-		return ""
+		return time.Time{}
 	}
-	return e.EventID
+	return e.Timestamp
 }
 
 func (e *Error) GetMessage() string {
@@ -635,11 +553,11 @@ func (e *Error) require(field *big.Int) {
 	e.explicitFields.Or(e.explicitFields, field)
 }
 
-// SetEventID sets the EventID field and marks it as non-optional;
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *Error) SetEventID(eventID string) {
-	e.EventID = eventID
-	e.require(errorFieldEventID)
+func (e *Error) SetTimestamp(timestamp time.Time) {
+	e.Timestamp = timestamp
+	e.require(errorFieldTimestamp)
 }
 
 // SetMessage sets the Message field and marks it as non-optional;
@@ -660,7 +578,8 @@ func (e *Error) UnmarshalJSON(data []byte) error {
 	type embed Error
 	var unmarshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
 		embed: embed(*e),
 	}
@@ -668,6 +587,7 @@ func (e *Error) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*e = Error(unmarshaler.embed)
+	e.Timestamp = unmarshaler.Timestamp.Time()
 	if unmarshaler.Type != "error" {
 		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", e, "error", unmarshaler.Type)
 	}
@@ -685,10 +605,12 @@ func (e *Error) MarshalJSON() ([]byte, error) {
 	type embed Error
 	var marshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*e),
-		Type:  "error",
+		embed:     embed(*e),
+		Timestamp: internal.NewDateTime(e.Timestamp),
+		Type:      "error",
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, e.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -706,13 +628,131 @@ func (e *Error) String() string {
 	return fmt.Sprintf("%#v", e)
 }
 
-// Base event type for all server events.
+// Playback mark between agent audio chunks. The client must echo it as a `ClientMark` with the
+// same `name` once it has played all agent audio received before it.
 var (
-	serverEventBaseFieldEventID = big.NewInt(1 << 0)
+	markFieldTimestamp = big.NewInt(1 << 0)
+	markFieldName      = big.NewInt(1 << 1)
+)
+
+type Mark struct {
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
+	Name      string    `json:"name" url:"name"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+	type_          string
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (m *Mark) GetTimestamp() time.Time {
+	if m == nil {
+		return time.Time{}
+	}
+	return m.Timestamp
+}
+
+func (m *Mark) GetName() string {
+	if m == nil {
+		return ""
+	}
+	return m.Name
+}
+
+func (m *Mark) Type() string {
+	return m.type_
+}
+
+func (m *Mark) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
+}
+
+func (m *Mark) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
+	}
+	m.explicitFields.Or(m.explicitFields, field)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *Mark) SetTimestamp(timestamp time.Time) {
+	m.Timestamp = timestamp
+	m.require(markFieldTimestamp)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *Mark) SetName(name string) {
+	m.Name = name
+	m.require(markFieldName)
+}
+
+func (m *Mark) UnmarshalJSON(data []byte) error {
+	type embed Mark
+	var unmarshaler = struct {
+		embed
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
+	}{
+		embed: embed(*m),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*m = Mark(unmarshaler.embed)
+	m.Timestamp = unmarshaler.Timestamp.Time()
+	if unmarshaler.Type != "mark" {
+		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "mark", unmarshaler.Type)
+	}
+	m.type_ = unmarshaler.Type
+	extraProperties, err := internal.ExtractExtraProperties(data, *m, "type")
+	if err != nil {
+		return err
+	}
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (m *Mark) MarshalJSON() ([]byte, error) {
+	type embed Mark
+	var marshaler = struct {
+		embed
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
+	}{
+		embed:     embed(*m),
+		Timestamp: internal.NewDateTime(m.Timestamp),
+		Type:      "mark",
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (m *Mark) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(m); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", m)
+}
+
+// Base event type for server events.
+var (
+	serverEventBaseFieldTimestamp = big.NewInt(1 << 0)
 )
 
 type ServerEventBase struct {
-	EventID string `json:"eventId" url:"eventId"`
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -721,11 +761,11 @@ type ServerEventBase struct {
 	rawJSON         json.RawMessage
 }
 
-func (s *ServerEventBase) GetEventID() string {
+func (s *ServerEventBase) GetTimestamp() time.Time {
 	if s == nil {
-		return ""
+		return time.Time{}
 	}
-	return s.EventID
+	return s.Timestamp
 }
 
 func (s *ServerEventBase) GetExtraProperties() map[string]interface{} {
@@ -739,20 +779,26 @@ func (s *ServerEventBase) require(field *big.Int) {
 	s.explicitFields.Or(s.explicitFields, field)
 }
 
-// SetEventID sets the EventID field and marks it as non-optional;
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *ServerEventBase) SetEventID(eventID string) {
-	s.EventID = eventID
-	s.require(serverEventBaseFieldEventID)
+func (s *ServerEventBase) SetTimestamp(timestamp time.Time) {
+	s.Timestamp = timestamp
+	s.require(serverEventBaseFieldTimestamp)
 }
 
 func (s *ServerEventBase) UnmarshalJSON(data []byte) error {
-	type unmarshaler ServerEventBase
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
+	type embed ServerEventBase
+	var unmarshaler = struct {
+		embed
+		Timestamp *internal.DateTime `json:"timestamp"`
+	}{
+		embed: embed(*s),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*s = ServerEventBase(value)
+	*s = ServerEventBase(unmarshaler.embed)
+	s.Timestamp = unmarshaler.Timestamp.Time()
 	extraProperties, err := internal.ExtractExtraProperties(data, *s)
 	if err != nil {
 		return err
@@ -766,8 +812,10 @@ func (s *ServerEventBase) MarshalJSON() ([]byte, error) {
 	type embed ServerEventBase
 	var marshaler = struct {
 		embed
+		Timestamp *internal.DateTime `json:"timestamp"`
 	}{
-		embed: embed(*s),
+		embed:     embed(*s),
+		Timestamp: internal.NewDateTime(s.Timestamp),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -783,6 +831,162 @@ func (s *ServerEventBase) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", s)
+}
+
+// Transcript of a completed user or agent utterance.
+var (
+	transcriptFieldTimestamp = big.NewInt(1 << 0)
+	transcriptFieldRole      = big.NewInt(1 << 1)
+	transcriptFieldText      = big.NewInt(1 << 2)
+)
+
+type Transcript struct {
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
+	// Who spoke.
+	Role TranscriptRole `json:"role" url:"role"`
+	// Transcribed speech.
+	Text string `json:"text" url:"text"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+	type_          string
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *Transcript) GetTimestamp() time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	return t.Timestamp
+}
+
+func (t *Transcript) GetRole() TranscriptRole {
+	if t == nil {
+		return ""
+	}
+	return t.Role
+}
+
+func (t *Transcript) GetText() string {
+	if t == nil {
+		return ""
+	}
+	return t.Text
+}
+
+func (t *Transcript) Type() string {
+	return t.type_
+}
+
+func (t *Transcript) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *Transcript) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *Transcript) SetTimestamp(timestamp time.Time) {
+	t.Timestamp = timestamp
+	t.require(transcriptFieldTimestamp)
+}
+
+// SetRole sets the Role field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *Transcript) SetRole(role TranscriptRole) {
+	t.Role = role
+	t.require(transcriptFieldRole)
+}
+
+// SetText sets the Text field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *Transcript) SetText(text string) {
+	t.Text = text
+	t.require(transcriptFieldText)
+}
+
+func (t *Transcript) UnmarshalJSON(data []byte) error {
+	type embed Transcript
+	var unmarshaler = struct {
+		embed
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
+	}{
+		embed: embed(*t),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*t = Transcript(unmarshaler.embed)
+	t.Timestamp = unmarshaler.Timestamp.Time()
+	if unmarshaler.Type != "transcript" {
+		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", t, "transcript", unmarshaler.Type)
+	}
+	t.type_ = unmarshaler.Type
+	extraProperties, err := internal.ExtractExtraProperties(data, *t, "type")
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *Transcript) MarshalJSON() ([]byte, error) {
+	type embed Transcript
+	var marshaler = struct {
+		embed
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
+	}{
+		embed:     embed(*t),
+		Timestamp: internal.NewDateTime(t.Timestamp),
+		Type:      "transcript",
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *Transcript) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+type TranscriptRole string
+
+const (
+	TranscriptRoleUser  TranscriptRole = "user"
+	TranscriptRoleAgent TranscriptRole = "agent"
+)
+
+func NewTranscriptRoleFromString(s string) (TranscriptRole, error) {
+	switch s {
+	case "user":
+		return TranscriptRoleUser, nil
+	case "agent":
+		return TranscriptRoleAgent, nil
+	}
+	var t TranscriptRole
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TranscriptRole) Ptr() *TranscriptRole {
+	return &t
 }
 
 // Audio chunk to send into the conversation.
@@ -881,13 +1085,15 @@ func (u *UserAudioChunk) String() string {
 	return fmt.Sprintf("%#v", u)
 }
 
-// User finished speaking
+// Voice activity detection heard the user start speaking. The client should stop playing and
+// drop any queued agent audio.
 var (
-	userFinishedSpeakingFieldEventID = big.NewInt(1 << 0)
+	vadSpeechStartedFieldTimestamp = big.NewInt(1 << 0)
 )
 
-type UserFinishedSpeaking struct {
-	EventID string `json:"eventId" url:"eventId"`
+type VadSpeechStarted struct {
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -897,92 +1103,97 @@ type UserFinishedSpeaking struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UserFinishedSpeaking) GetEventID() string {
-	if u == nil {
-		return ""
+func (v *VadSpeechStarted) GetTimestamp() time.Time {
+	if v == nil {
+		return time.Time{}
 	}
-	return u.EventID
+	return v.Timestamp
 }
 
-func (u *UserFinishedSpeaking) Type() string {
-	return u.type_
+func (v *VadSpeechStarted) Type() string {
+	return v.type_
 }
 
-func (u *UserFinishedSpeaking) GetExtraProperties() map[string]interface{} {
-	return u.extraProperties
+func (v *VadSpeechStarted) GetExtraProperties() map[string]interface{} {
+	return v.extraProperties
 }
 
-func (u *UserFinishedSpeaking) require(field *big.Int) {
-	if u.explicitFields == nil {
-		u.explicitFields = big.NewInt(0)
+func (v *VadSpeechStarted) require(field *big.Int) {
+	if v.explicitFields == nil {
+		v.explicitFields = big.NewInt(0)
 	}
-	u.explicitFields.Or(u.explicitFields, field)
+	v.explicitFields.Or(v.explicitFields, field)
 }
 
-// SetEventID sets the EventID field and marks it as non-optional;
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserFinishedSpeaking) SetEventID(eventID string) {
-	u.EventID = eventID
-	u.require(userFinishedSpeakingFieldEventID)
+func (v *VadSpeechStarted) SetTimestamp(timestamp time.Time) {
+	v.Timestamp = timestamp
+	v.require(vadSpeechStartedFieldTimestamp)
 }
 
-func (u *UserFinishedSpeaking) UnmarshalJSON(data []byte) error {
-	type embed UserFinishedSpeaking
+func (v *VadSpeechStarted) UnmarshalJSON(data []byte) error {
+	type embed VadSpeechStarted
 	var unmarshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*u),
+		embed: embed(*v),
 	}
 	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*u = UserFinishedSpeaking(unmarshaler.embed)
-	if unmarshaler.Type != "user_finished_speaking" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", u, "user_finished_speaking", unmarshaler.Type)
+	*v = VadSpeechStarted(unmarshaler.embed)
+	v.Timestamp = unmarshaler.Timestamp.Time()
+	if unmarshaler.Type != "vad_speech_started" {
+		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", v, "vad_speech_started", unmarshaler.Type)
 	}
-	u.type_ = unmarshaler.Type
-	extraProperties, err := internal.ExtractExtraProperties(data, *u, "type")
+	v.type_ = unmarshaler.Type
+	extraProperties, err := internal.ExtractExtraProperties(data, *v, "type")
 	if err != nil {
 		return err
 	}
-	u.extraProperties = extraProperties
-	u.rawJSON = json.RawMessage(data)
+	v.extraProperties = extraProperties
+	v.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (u *UserFinishedSpeaking) MarshalJSON() ([]byte, error) {
-	type embed UserFinishedSpeaking
+func (v *VadSpeechStarted) MarshalJSON() ([]byte, error) {
+	type embed VadSpeechStarted
 	var marshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*u),
-		Type:  "user_finished_speaking",
+		embed:     embed(*v),
+		Timestamp: internal.NewDateTime(v.Timestamp),
+		Type:      "vad_speech_started",
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, v.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (u *UserFinishedSpeaking) String() string {
-	if len(u.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+func (v *VadSpeechStarted) String() string {
+	if len(v.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(v.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(u); err == nil {
+	if value, err := internal.StringifyJSON(v); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", u)
+	return fmt.Sprintf("%#v", v)
 }
 
-// User started speaking
+// Voice activity detection heard the user stop speaking.
 var (
-	userStartedSpeakingFieldEventID = big.NewInt(1 << 0)
+	vadSpeechStoppedFieldTimestamp = big.NewInt(1 << 0)
 )
 
-type UserStartedSpeaking struct {
-	EventID string `json:"eventId" url:"eventId"`
+type VadSpeechStopped struct {
+	// When the server sent the event.
+	Timestamp time.Time `json:"timestamp" url:"timestamp"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -992,193 +1203,85 @@ type UserStartedSpeaking struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UserStartedSpeaking) GetEventID() string {
-	if u == nil {
-		return ""
+func (v *VadSpeechStopped) GetTimestamp() time.Time {
+	if v == nil {
+		return time.Time{}
 	}
-	return u.EventID
+	return v.Timestamp
 }
 
-func (u *UserStartedSpeaking) Type() string {
-	return u.type_
+func (v *VadSpeechStopped) Type() string {
+	return v.type_
 }
 
-func (u *UserStartedSpeaking) GetExtraProperties() map[string]interface{} {
-	return u.extraProperties
+func (v *VadSpeechStopped) GetExtraProperties() map[string]interface{} {
+	return v.extraProperties
 }
 
-func (u *UserStartedSpeaking) require(field *big.Int) {
-	if u.explicitFields == nil {
-		u.explicitFields = big.NewInt(0)
+func (v *VadSpeechStopped) require(field *big.Int) {
+	if v.explicitFields == nil {
+		v.explicitFields = big.NewInt(0)
 	}
-	u.explicitFields.Or(u.explicitFields, field)
+	v.explicitFields.Or(v.explicitFields, field)
 }
 
-// SetEventID sets the EventID field and marks it as non-optional;
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserStartedSpeaking) SetEventID(eventID string) {
-	u.EventID = eventID
-	u.require(userStartedSpeakingFieldEventID)
+func (v *VadSpeechStopped) SetTimestamp(timestamp time.Time) {
+	v.Timestamp = timestamp
+	v.require(vadSpeechStoppedFieldTimestamp)
 }
 
-func (u *UserStartedSpeaking) UnmarshalJSON(data []byte) error {
-	type embed UserStartedSpeaking
+func (v *VadSpeechStopped) UnmarshalJSON(data []byte) error {
+	type embed VadSpeechStopped
 	var unmarshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*u),
+		embed: embed(*v),
 	}
 	if err := json.Unmarshal(data, &unmarshaler); err != nil {
 		return err
 	}
-	*u = UserStartedSpeaking(unmarshaler.embed)
-	if unmarshaler.Type != "user_started_speaking" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", u, "user_started_speaking", unmarshaler.Type)
+	*v = VadSpeechStopped(unmarshaler.embed)
+	v.Timestamp = unmarshaler.Timestamp.Time()
+	if unmarshaler.Type != "vad_speech_stopped" {
+		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", v, "vad_speech_stopped", unmarshaler.Type)
 	}
-	u.type_ = unmarshaler.Type
-	extraProperties, err := internal.ExtractExtraProperties(data, *u, "type")
+	v.type_ = unmarshaler.Type
+	extraProperties, err := internal.ExtractExtraProperties(data, *v, "type")
 	if err != nil {
 		return err
 	}
-	u.extraProperties = extraProperties
-	u.rawJSON = json.RawMessage(data)
+	v.extraProperties = extraProperties
+	v.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (u *UserStartedSpeaking) MarshalJSON() ([]byte, error) {
-	type embed UserStartedSpeaking
+func (v *VadSpeechStopped) MarshalJSON() ([]byte, error) {
+	type embed VadSpeechStopped
 	var marshaler = struct {
 		embed
-		Type string `json:"type"`
+		Timestamp *internal.DateTime `json:"timestamp"`
+		Type      string             `json:"type"`
 	}{
-		embed: embed(*u),
-		Type:  "user_started_speaking",
+		embed:     embed(*v),
+		Timestamp: internal.NewDateTime(v.Timestamp),
+		Type:      "vad_speech_stopped",
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, v.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (u *UserStartedSpeaking) String() string {
-	if len(u.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+func (v *VadSpeechStopped) String() string {
+	if len(v.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(v.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(u); err == nil {
+	if value, err := internal.StringifyJSON(v); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", u)
-}
-
-// Transcribed user speech
-var (
-	userTranscriptFieldEventID = big.NewInt(1 << 0)
-	userTranscriptFieldText    = big.NewInt(1 << 1)
-)
-
-type UserTranscript struct {
-	EventID string `json:"eventId" url:"eventId"`
-	// Transcribed user speech
-	Text string `json:"text" url:"text"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-	type_          string
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (u *UserTranscript) GetEventID() string {
-	if u == nil {
-		return ""
-	}
-	return u.EventID
-}
-
-func (u *UserTranscript) GetText() string {
-	if u == nil {
-		return ""
-	}
-	return u.Text
-}
-
-func (u *UserTranscript) Type() string {
-	return u.type_
-}
-
-func (u *UserTranscript) GetExtraProperties() map[string]interface{} {
-	return u.extraProperties
-}
-
-func (u *UserTranscript) require(field *big.Int) {
-	if u.explicitFields == nil {
-		u.explicitFields = big.NewInt(0)
-	}
-	u.explicitFields.Or(u.explicitFields, field)
-}
-
-// SetEventID sets the EventID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserTranscript) SetEventID(eventID string) {
-	u.EventID = eventID
-	u.require(userTranscriptFieldEventID)
-}
-
-// SetText sets the Text field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UserTranscript) SetText(text string) {
-	u.Text = text
-	u.require(userTranscriptFieldText)
-}
-
-func (u *UserTranscript) UnmarshalJSON(data []byte) error {
-	type embed UserTranscript
-	var unmarshaler = struct {
-		embed
-		Type string `json:"type"`
-	}{
-		embed: embed(*u),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
-		return err
-	}
-	*u = UserTranscript(unmarshaler.embed)
-	if unmarshaler.Type != "user_transcript" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", u, "user_transcript", unmarshaler.Type)
-	}
-	u.type_ = unmarshaler.Type
-	extraProperties, err := internal.ExtractExtraProperties(data, *u, "type")
-	if err != nil {
-		return err
-	}
-	u.extraProperties = extraProperties
-	u.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (u *UserTranscript) MarshalJSON() ([]byte, error) {
-	type embed UserTranscript
-	var marshaler = struct {
-		embed
-		Type string `json:"type"`
-	}{
-		embed: embed(*u),
-		Type:  "user_transcript",
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (u *UserTranscript) String() string {
-	if len(u.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(u); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", u)
+	return fmt.Sprintf("%#v", v)
 }

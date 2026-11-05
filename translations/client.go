@@ -43,6 +43,8 @@ func NewClient(options *core.RequestOptions) *Client {
 }
 
 // Translate text from one language to another
+//
+// <Note>**Required permission:** `ask:agent`</Note>
 func (c *Client) Translate(
 	ctx context.Context,
 	request *mavenagigo.TranslationRequest,

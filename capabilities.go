@@ -292,6 +292,8 @@ var (
 	capabilityExecutionsSearchRequestFieldCapabilityIDs    = big.NewInt(1 << 2)
 	capabilityExecutionsSearchRequestFieldStatuses         = big.NewInt(1 << 3)
 	capabilityExecutionsSearchRequestFieldSimulationFilter = big.NewInt(1 << 4)
+	capabilityExecutionsSearchRequestFieldCreatedAfter     = big.NewInt(1 << 5)
+	capabilityExecutionsSearchRequestFieldCreatedBefore    = big.NewInt(1 << 6)
 )
 
 type CapabilityExecutionsSearchRequest struct {
@@ -319,6 +321,10 @@ type CapabilityExecutionsSearchRequest struct {
 	// Whether to include executions from simulations. Defaults to `ALL`, so a
 	// simulation conversation's executions are found by its ID like any other.
 	SimulationFilter *SimulationFilter `json:"simulationFilter,omitempty" url:"-"`
+	// Only return executions whose `createdAt` is on or after this timestamp.
+	CreatedAfter *time.Time `json:"createdAfter,omitempty" url:"-"`
+	// Only return executions whose `createdAt` is on or before this timestamp.
+	CreatedBefore *time.Time `json:"createdBefore,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -364,6 +370,45 @@ func (c *CapabilityExecutionsSearchRequest) SetStatuses(statuses []CapabilityExe
 func (c *CapabilityExecutionsSearchRequest) SetSimulationFilter(simulationFilter *SimulationFilter) {
 	c.SimulationFilter = simulationFilter
 	c.require(capabilityExecutionsSearchRequestFieldSimulationFilter)
+}
+
+// SetCreatedAfter sets the CreatedAfter field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityExecutionsSearchRequest) SetCreatedAfter(createdAfter *time.Time) {
+	c.CreatedAfter = createdAfter
+	c.require(capabilityExecutionsSearchRequestFieldCreatedAfter)
+}
+
+// SetCreatedBefore sets the CreatedBefore field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityExecutionsSearchRequest) SetCreatedBefore(createdBefore *time.Time) {
+	c.CreatedBefore = createdBefore
+	c.require(capabilityExecutionsSearchRequestFieldCreatedBefore)
+}
+
+func (c *CapabilityExecutionsSearchRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler CapabilityExecutionsSearchRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*c = CapabilityExecutionsSearchRequest(body)
+	return nil
+}
+
+func (c *CapabilityExecutionsSearchRequest) MarshalJSON() ([]byte, error) {
+	type embed CapabilityExecutionsSearchRequest
+	var marshaler = struct {
+		embed
+		CreatedAfter  *internal.DateTime `json:"createdAfter,omitempty"`
+		CreatedBefore *internal.DateTime `json:"createdBefore,omitempty"`
+	}{
+		embed:         embed(*c),
+		CreatedAfter:  internal.NewOptionalDateTime(c.CreatedAfter),
+		CreatedBefore: internal.NewOptionalDateTime(c.CreatedBefore),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
 }
 
 var (
