@@ -12,7 +12,8 @@ import (
 var (
 	voiceSessionTokenRequestFieldAppUserID  = big.NewInt(1 << 0)
 	voiceSessionTokenRequestFieldType       = big.NewInt(1 << 1)
-	voiceSessionTokenRequestFieldCustomData = big.NewInt(1 << 2)
+	voiceSessionTokenRequestFieldTransport  = big.NewInt(1 << 2)
+	voiceSessionTokenRequestFieldCustomData = big.NewInt(1 << 3)
 )
 
 type VoiceSessionTokenRequest struct {
@@ -21,8 +22,15 @@ type VoiceSessionTokenRequest struct {
 	// For "webrtc" tokens, at most 184 characters. A longer value fails with 400.
 	AppUserID string `json:"appUserId" url:"appUserId"`
 	// The type of session token to generate.
-	// Use "webrtc" for browser-based calls via Twilio, or "websocket" for direct WebSocket connections.
+	// Use "webrtc" for browser-based calls, or "websocket" for direct WebSocket connections.
+	// For "webrtc", `transport` selects the Maven telephony gateway (default) or Twilio.
 	Type VoiceTokenType `json:"type" url:"type"`
+	// The transport for a "webrtc" call. Default: "gateway".
+	// - "gateway": the response `token` is a token for the Maven telephony gateway, and the response includes `connectUrl`.
+	// - "twilio": the response `token` is a Twilio access token.
+	//
+	// The server ignores this field for "websocket" tokens.
+	Transport *VoiceWebRtcTransport `json:"transport,omitempty" url:"transport,omitempty"`
 	// Arbitrary key-value metadata to associate with this session (e.g., conversationId, topic).
 	//
 	// **Constraints**: at most 10 keys, each key up to 256 characters, each value up to 500 characters.
@@ -55,6 +63,13 @@ func (v *VoiceSessionTokenRequest) GetType() VoiceTokenType {
 	return v.Type
 }
 
+func (v *VoiceSessionTokenRequest) GetTransport() *VoiceWebRtcTransport {
+	if v == nil {
+		return nil
+	}
+	return v.Transport
+}
+
 func (v *VoiceSessionTokenRequest) GetCustomData() map[string]string {
 	if v == nil {
 		return nil
@@ -85,6 +100,13 @@ func (v *VoiceSessionTokenRequest) SetAppUserID(appUserID string) {
 func (v *VoiceSessionTokenRequest) SetType(type_ VoiceTokenType) {
 	v.Type = type_
 	v.require(voiceSessionTokenRequestFieldType)
+}
+
+// SetTransport sets the Transport field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *VoiceSessionTokenRequest) SetTransport(transport *VoiceWebRtcTransport) {
+	v.Transport = transport
+	v.require(voiceSessionTokenRequestFieldTransport)
 }
 
 // SetCustomData sets the CustomData field and marks it as non-optional;
@@ -134,14 +156,17 @@ func (v *VoiceSessionTokenRequest) String() string {
 }
 
 var (
-	voiceSessionTokenResponseFieldToken     = big.NewInt(1 << 0)
-	voiceSessionTokenResponseFieldIdentity  = big.NewInt(1 << 1)
-	voiceSessionTokenResponseFieldType      = big.NewInt(1 << 2)
-	voiceSessionTokenResponseFieldExpiresIn = big.NewInt(1 << 3)
+	voiceSessionTokenResponseFieldToken      = big.NewInt(1 << 0)
+	voiceSessionTokenResponseFieldIdentity   = big.NewInt(1 << 1)
+	voiceSessionTokenResponseFieldType       = big.NewInt(1 << 2)
+	voiceSessionTokenResponseFieldExpiresIn  = big.NewInt(1 << 3)
+	voiceSessionTokenResponseFieldConnectURL = big.NewInt(1 << 4)
 )
 
 type VoiceSessionTokenResponse struct {
-	// Opaque JWT session token. Pass this in the Authorization header when connecting.
+	// Opaque session token. Pass this in the Authorization header when connecting.
+	// For "websocket", the token is an ES256 JWT.
+	// For "webrtc", the token format depends on `transport`.
 	Token string `json:"token" url:"token"`
 	// The identity string associated with this token (echoes appUserId).
 	Identity string `json:"identity" url:"identity"`
@@ -149,6 +174,10 @@ type VoiceSessionTokenResponse struct {
 	Type VoiceTokenType `json:"type" url:"type"`
 	// Time in seconds until the token expires.
 	ExpiresIn int `json:"expiresIn" url:"expiresIn"`
+	// The URL that starts a "webrtc" call through the Maven telephony gateway.
+	// The client sends `token` to this URL to start the call.
+	// Present only when the request sets `transport` to "gateway".
+	ConnectURL *string `json:"connectUrl,omitempty" url:"connectUrl,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -183,6 +212,13 @@ func (v *VoiceSessionTokenResponse) GetExpiresIn() int {
 		return 0
 	}
 	return v.ExpiresIn
+}
+
+func (v *VoiceSessionTokenResponse) GetConnectURL() *string {
+	if v == nil {
+		return nil
+	}
+	return v.ConnectURL
 }
 
 func (v *VoiceSessionTokenResponse) GetExtraProperties() map[string]interface{} {
@@ -222,6 +258,13 @@ func (v *VoiceSessionTokenResponse) SetType(type_ VoiceTokenType) {
 func (v *VoiceSessionTokenResponse) SetExpiresIn(expiresIn int) {
 	v.ExpiresIn = expiresIn
 	v.require(voiceSessionTokenResponseFieldExpiresIn)
+}
+
+// SetConnectURL sets the ConnectURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *VoiceSessionTokenResponse) SetConnectURL(connectURL *string) {
+	v.ConnectURL = connectURL
+	v.require(voiceSessionTokenResponseFieldConnectURL)
 }
 
 func (v *VoiceSessionTokenResponse) UnmarshalJSON(data []byte) error {
@@ -282,5 +325,30 @@ func NewVoiceTokenTypeFromString(s string) (VoiceTokenType, error) {
 }
 
 func (v VoiceTokenType) Ptr() *VoiceTokenType {
+	return &v
+}
+
+// The transport that carries a "webrtc" call.
+type VoiceWebRtcTransport string
+
+const (
+	// The Maven telephony gateway. The token is a gateway token.
+	VoiceWebRtcTransportGateway VoiceWebRtcTransport = "gateway"
+	// Twilio Voice. The token is a Twilio access token.
+	VoiceWebRtcTransportTwilio VoiceWebRtcTransport = "twilio"
+)
+
+func NewVoiceWebRtcTransportFromString(s string) (VoiceWebRtcTransport, error) {
+	switch s {
+	case "gateway":
+		return VoiceWebRtcTransportGateway, nil
+	case "twilio":
+		return VoiceWebRtcTransportTwilio, nil
+	}
+	var t VoiceWebRtcTransport
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (v VoiceWebRtcTransport) Ptr() *VoiceWebRtcTransport {
 	return &v
 }
