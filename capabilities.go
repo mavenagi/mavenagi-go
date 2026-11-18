@@ -847,29 +847,24 @@ func (c *CapabilityExecution) validate() error {
 	return nil
 }
 
+// A recorded run, with the subject it ran for.
 var (
 	capabilityExecutionBaseFieldCapabilityID     = big.NewInt(1 << 0)
-	capabilityExecutionBaseFieldSubjectID        = big.NewInt(1 << 1)
-	capabilityExecutionBaseFieldStatus           = big.NewInt(1 << 2)
-	capabilityExecutionBaseFieldCompletionReason = big.NewInt(1 << 3)
-	capabilityExecutionBaseFieldMessage          = big.NewInt(1 << 4)
-	capabilityExecutionBaseFieldStartedAt        = big.NewInt(1 << 5)
-	capabilityExecutionBaseFieldCompletedAt      = big.NewInt(1 << 6)
-	capabilityExecutionBaseFieldDurationMs       = big.NewInt(1 << 7)
-	capabilityExecutionBaseFieldCreatedAt        = big.NewInt(1 << 8)
-	capabilityExecutionBaseFieldExecutionMode    = big.NewInt(1 << 9)
+	capabilityExecutionBaseFieldStatus           = big.NewInt(1 << 1)
+	capabilityExecutionBaseFieldCompletionReason = big.NewInt(1 << 2)
+	capabilityExecutionBaseFieldMessage          = big.NewInt(1 << 3)
+	capabilityExecutionBaseFieldStartedAt        = big.NewInt(1 << 4)
+	capabilityExecutionBaseFieldCompletedAt      = big.NewInt(1 << 5)
+	capabilityExecutionBaseFieldDurationMs       = big.NewInt(1 << 6)
+	capabilityExecutionBaseFieldExecutionMode    = big.NewInt(1 << 7)
+	capabilityExecutionBaseFieldSubjectID        = big.NewInt(1 << 8)
+	capabilityExecutionBaseFieldCreatedAt        = big.NewInt(1 << 9)
 )
 
 type CapabilityExecutionBase struct {
 	// The capability that ran.
-	CapabilityID *EntityID `json:"capabilityId" url:"capabilityId"`
-	// What it ran for: a conversation, inbox item or event. The same shape `subjectIds`
-	// accepts, so it can be fed straight back in as a filter.
-	//
-	// A deprecated `FEEDBACK_CREATED` trigger records a feedback here, which `subjectIds`
-	// cannot filter on. Switch those triggers to `EVENT_CREATED`.
-	SubjectID *EntityID                 `json:"subjectId" url:"subjectId"`
-	Status    CapabilityExecutionStatus `json:"status" url:"status"`
+	CapabilityID *EntityID                 `json:"capabilityId" url:"capabilityId"`
+	Status       CapabilityExecutionStatus `json:"status" url:"status"`
 	// Why the execution ended the way it did. Absent while RUNNING.
 	CompletionReason *CapabilityExecutionCompletionReason `json:"completionReason,omitempty" url:"completionReason,omitempty"`
 	// Detail from the app, truncated. Cleared when the subject conversation is
@@ -882,11 +877,17 @@ type CapabilityExecutionBase struct {
 	// End-to-end duration in milliseconds. Includes Maven's own work, so it is not purely the
 	// app's response time.
 	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	// When the execution was recorded. Results are ordered by this field.
-	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
 	// its conversation's mode, and an Event Trigger its event's.
 	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
+	// What it ran for: a conversation, inbox item or event. The same shape `subjectIds`
+	// accepts, so it can be fed straight back in as a filter.
+	//
+	// A deprecated `FEEDBACK_CREATED` trigger records a feedback here, which `subjectIds`
+	// cannot filter on. Switch those triggers to `EVENT_CREATED`.
+	SubjectID *EntityID `json:"subjectId" url:"subjectId"`
+	// When the execution was recorded. Results are ordered by this field.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -900,13 +901,6 @@ func (c *CapabilityExecutionBase) GetCapabilityID() *EntityID {
 		return nil
 	}
 	return c.CapabilityID
-}
-
-func (c *CapabilityExecutionBase) GetSubjectID() *EntityID {
-	if c == nil {
-		return nil
-	}
-	return c.SubjectID
 }
 
 func (c *CapabilityExecutionBase) GetStatus() CapabilityExecutionStatus {
@@ -951,18 +945,25 @@ func (c *CapabilityExecutionBase) GetDurationMs() *int64 {
 	return c.DurationMs
 }
 
-func (c *CapabilityExecutionBase) GetCreatedAt() time.Time {
-	if c == nil {
-		return time.Time{}
-	}
-	return c.CreatedAt
-}
-
 func (c *CapabilityExecutionBase) GetExecutionMode() ExecutionMode {
 	if c == nil {
 		return ""
 	}
 	return c.ExecutionMode
+}
+
+func (c *CapabilityExecutionBase) GetSubjectID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.SubjectID
+}
+
+func (c *CapabilityExecutionBase) GetCreatedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.CreatedAt
 }
 
 func (c *CapabilityExecutionBase) GetExtraProperties() map[string]interface{} {
@@ -981,13 +982,6 @@ func (c *CapabilityExecutionBase) require(field *big.Int) {
 func (c *CapabilityExecutionBase) SetCapabilityID(capabilityID *EntityID) {
 	c.CapabilityID = capabilityID
 	c.require(capabilityExecutionBaseFieldCapabilityID)
-}
-
-// SetSubjectID sets the SubjectID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CapabilityExecutionBase) SetSubjectID(subjectID *EntityID) {
-	c.SubjectID = subjectID
-	c.require(capabilityExecutionBaseFieldSubjectID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -1032,18 +1026,25 @@ func (c *CapabilityExecutionBase) SetDurationMs(durationMs *int64) {
 	c.require(capabilityExecutionBaseFieldDurationMs)
 }
 
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CapabilityExecutionBase) SetCreatedAt(createdAt time.Time) {
-	c.CreatedAt = createdAt
-	c.require(capabilityExecutionBaseFieldCreatedAt)
-}
-
 // SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CapabilityExecutionBase) SetExecutionMode(executionMode ExecutionMode) {
 	c.ExecutionMode = executionMode
 	c.require(capabilityExecutionBaseFieldExecutionMode)
+}
+
+// SetSubjectID sets the SubjectID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityExecutionBase) SetSubjectID(subjectID *EntityID) {
+	c.SubjectID = subjectID
+	c.require(capabilityExecutionBaseFieldSubjectID)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityExecutionBase) SetCreatedAt(createdAt time.Time) {
+	c.CreatedAt = createdAt
+	c.require(capabilityExecutionBaseFieldCreatedAt)
 }
 
 func (c *CapabilityExecutionBase) UnmarshalJSON(data []byte) error {
@@ -1535,11 +1536,227 @@ func (c *CapabilityResponse) validate() error {
 	return nil
 }
 
-// What a capability is simulated with, by kind. Only actions can be simulated today; a variant
-// is added for each kind as it becomes simulation-aware.
+// How one run of one capability went: its outcome and timing. Every execution has these, and a
+// simulated run, which is never recorded, has only these.
+var (
+	capabilityRunBaseFieldCapabilityID     = big.NewInt(1 << 0)
+	capabilityRunBaseFieldStatus           = big.NewInt(1 << 1)
+	capabilityRunBaseFieldCompletionReason = big.NewInt(1 << 2)
+	capabilityRunBaseFieldMessage          = big.NewInt(1 << 3)
+	capabilityRunBaseFieldStartedAt        = big.NewInt(1 << 4)
+	capabilityRunBaseFieldCompletedAt      = big.NewInt(1 << 5)
+	capabilityRunBaseFieldDurationMs       = big.NewInt(1 << 6)
+	capabilityRunBaseFieldExecutionMode    = big.NewInt(1 << 7)
+)
+
+type CapabilityRunBase struct {
+	// The capability that ran.
+	CapabilityID *EntityID                 `json:"capabilityId" url:"capabilityId"`
+	Status       CapabilityExecutionStatus `json:"status" url:"status"`
+	// Why the execution ended the way it did. Absent while RUNNING.
+	CompletionReason *CapabilityExecutionCompletionReason `json:"completionReason,omitempty" url:"completionReason,omitempty"`
+	// Detail from the app, truncated. Cleared when the subject conversation is
+	// wiped.
+	Message *string `json:"message,omitempty" url:"message,omitempty"`
+	// When the execution began.
+	StartedAt time.Time `json:"startedAt" url:"startedAt"`
+	// When it ended. Absent while RUNNING.
+	CompletedAt *time.Time `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	// End-to-end duration in milliseconds. Includes Maven's own work, so it is not purely the
+	// app's response time.
+	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
+	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
+	// its conversation's mode, and an Event Trigger its event's.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CapabilityRunBase) GetCapabilityID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.CapabilityID
+}
+
+func (c *CapabilityRunBase) GetStatus() CapabilityExecutionStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *CapabilityRunBase) GetCompletionReason() *CapabilityExecutionCompletionReason {
+	if c == nil {
+		return nil
+	}
+	return c.CompletionReason
+}
+
+func (c *CapabilityRunBase) GetMessage() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Message
+}
+
+func (c *CapabilityRunBase) GetStartedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.StartedAt
+}
+
+func (c *CapabilityRunBase) GetCompletedAt() *time.Time {
+	if c == nil {
+		return nil
+	}
+	return c.CompletedAt
+}
+
+func (c *CapabilityRunBase) GetDurationMs() *int64 {
+	if c == nil {
+		return nil
+	}
+	return c.DurationMs
+}
+
+func (c *CapabilityRunBase) GetExecutionMode() ExecutionMode {
+	if c == nil {
+		return ""
+	}
+	return c.ExecutionMode
+}
+
+func (c *CapabilityRunBase) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CapabilityRunBase) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetCapabilityID sets the CapabilityID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetCapabilityID(capabilityID *EntityID) {
+	c.CapabilityID = capabilityID
+	c.require(capabilityRunBaseFieldCapabilityID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetStatus(status CapabilityExecutionStatus) {
+	c.Status = status
+	c.require(capabilityRunBaseFieldStatus)
+}
+
+// SetCompletionReason sets the CompletionReason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetCompletionReason(completionReason *CapabilityExecutionCompletionReason) {
+	c.CompletionReason = completionReason
+	c.require(capabilityRunBaseFieldCompletionReason)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetMessage(message *string) {
+	c.Message = message
+	c.require(capabilityRunBaseFieldMessage)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetStartedAt(startedAt time.Time) {
+	c.StartedAt = startedAt
+	c.require(capabilityRunBaseFieldStartedAt)
+}
+
+// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetCompletedAt(completedAt *time.Time) {
+	c.CompletedAt = completedAt
+	c.require(capabilityRunBaseFieldCompletedAt)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetDurationMs(durationMs *int64) {
+	c.DurationMs = durationMs
+	c.require(capabilityRunBaseFieldDurationMs)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CapabilityRunBase) SetExecutionMode(executionMode ExecutionMode) {
+	c.ExecutionMode = executionMode
+	c.require(capabilityRunBaseFieldExecutionMode)
+}
+
+func (c *CapabilityRunBase) UnmarshalJSON(data []byte) error {
+	type embed CapabilityRunBase
+	var unmarshaler = struct {
+		embed
+		StartedAt   *internal.DateTime `json:"startedAt"`
+		CompletedAt *internal.DateTime `json:"completedAt,omitempty"`
+	}{
+		embed: embed(*c),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*c = CapabilityRunBase(unmarshaler.embed)
+	c.StartedAt = unmarshaler.StartedAt.Time()
+	c.CompletedAt = unmarshaler.CompletedAt.TimePtr()
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CapabilityRunBase) MarshalJSON() ([]byte, error) {
+	type embed CapabilityRunBase
+	var marshaler = struct {
+		embed
+		StartedAt   *internal.DateTime `json:"startedAt"`
+		CompletedAt *internal.DateTime `json:"completedAt,omitempty"`
+	}{
+		embed:       embed(*c),
+		StartedAt:   internal.NewDateTime(c.StartedAt),
+		CompletedAt: internal.NewOptionalDateTime(c.CompletedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CapabilityRunBase) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// What a capability is simulated with, by kind. A variant is added for each kind as it becomes
+// simulation-aware.
 type CapabilitySimulationInput struct {
-	CapabilityType string
-	Action         *ActionSimulationInput
+	CapabilityType      string
+	Action              *ActionSimulationInput
+	ConversationKickoff *ConversationKickoffSimulationInput
+	Trigger             *TriggerSimulationInput
 }
 
 func (c *CapabilitySimulationInput) GetCapabilityType() string {
@@ -1554,6 +1771,20 @@ func (c *CapabilitySimulationInput) GetAction() *ActionSimulationInput {
 		return nil
 	}
 	return c.Action
+}
+
+func (c *CapabilitySimulationInput) GetConversationKickoff() *ConversationKickoffSimulationInput {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationKickoff
+}
+
+func (c *CapabilitySimulationInput) GetTrigger() *TriggerSimulationInput {
+	if c == nil {
+		return nil
+	}
+	return c.Trigger
 }
 
 func (c *CapabilitySimulationInput) UnmarshalJSON(data []byte) error {
@@ -1574,6 +1805,18 @@ func (c *CapabilitySimulationInput) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.Action = value
+	case "CONVERSATION_KICKOFF":
+		value := new(ConversationKickoffSimulationInput)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ConversationKickoff = value
+	case "TRIGGER":
+		value := new(TriggerSimulationInput)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Trigger = value
 	}
 	return nil
 }
@@ -1585,16 +1828,30 @@ func (c CapabilitySimulationInput) MarshalJSON() ([]byte, error) {
 	if c.Action != nil {
 		return internal.MarshalJSONWithExtraProperty(c.Action, "capabilityType", "ACTION")
 	}
+	if c.ConversationKickoff != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ConversationKickoff, "capabilityType", "CONVERSATION_KICKOFF")
+	}
+	if c.Trigger != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Trigger, "capabilityType", "TRIGGER")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
 }
 
 type CapabilitySimulationInputVisitor interface {
 	VisitAction(*ActionSimulationInput) error
+	VisitConversationKickoff(*ConversationKickoffSimulationInput) error
+	VisitTrigger(*TriggerSimulationInput) error
 }
 
 func (c *CapabilitySimulationInput) Accept(visitor CapabilitySimulationInputVisitor) error {
 	if c.Action != nil {
 		return visitor.VisitAction(c.Action)
+	}
+	if c.ConversationKickoff != nil {
+		return visitor.VisitConversationKickoff(c.ConversationKickoff)
+	}
+	if c.Trigger != nil {
+		return visitor.VisitTrigger(c.Trigger)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", c)
 }
@@ -1606,6 +1863,12 @@ func (c *CapabilitySimulationInput) validate() error {
 	var fields []string
 	if c.Action != nil {
 		fields = append(fields, "ACTION")
+	}
+	if c.ConversationKickoff != nil {
+		fields = append(fields, "CONVERSATION_KICKOFF")
+	}
+	if c.Trigger != nil {
+		fields = append(fields, "TRIGGER")
 	}
 	if len(fields) == 0 {
 		if c.CapabilityType != "" {
@@ -1632,8 +1895,10 @@ func (c *CapabilitySimulationInput) validate() error {
 
 // What one simulated run of a capability produced, by kind.
 type CapabilitySimulationResult struct {
-	CapabilityType string
-	Action         *ExecuteActionResponse
+	CapabilityType      string
+	Action              *ExecuteActionResponse
+	ConversationKickoff *ConversationKickoffExecutionResponse
+	Trigger             *TriggerSimulationResult
 }
 
 func (c *CapabilitySimulationResult) GetCapabilityType() string {
@@ -1648,6 +1913,20 @@ func (c *CapabilitySimulationResult) GetAction() *ExecuteActionResponse {
 		return nil
 	}
 	return c.Action
+}
+
+func (c *CapabilitySimulationResult) GetConversationKickoff() *ConversationKickoffExecutionResponse {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationKickoff
+}
+
+func (c *CapabilitySimulationResult) GetTrigger() *TriggerSimulationResult {
+	if c == nil {
+		return nil
+	}
+	return c.Trigger
 }
 
 func (c *CapabilitySimulationResult) UnmarshalJSON(data []byte) error {
@@ -1668,6 +1947,18 @@ func (c *CapabilitySimulationResult) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.Action = value
+	case "CONVERSATION_KICKOFF":
+		value := new(ConversationKickoffExecutionResponse)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.ConversationKickoff = value
+	case "TRIGGER":
+		value := new(TriggerSimulationResult)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Trigger = value
 	}
 	return nil
 }
@@ -1679,16 +1970,30 @@ func (c CapabilitySimulationResult) MarshalJSON() ([]byte, error) {
 	if c.Action != nil {
 		return internal.MarshalJSONWithExtraProperty(c.Action, "capabilityType", "ACTION")
 	}
+	if c.ConversationKickoff != nil {
+		return internal.MarshalJSONWithExtraProperty(c.ConversationKickoff, "capabilityType", "CONVERSATION_KICKOFF")
+	}
+	if c.Trigger != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Trigger, "capabilityType", "TRIGGER")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
 }
 
 type CapabilitySimulationResultVisitor interface {
 	VisitAction(*ExecuteActionResponse) error
+	VisitConversationKickoff(*ConversationKickoffExecutionResponse) error
+	VisitTrigger(*TriggerSimulationResult) error
 }
 
 func (c *CapabilitySimulationResult) Accept(visitor CapabilitySimulationResultVisitor) error {
 	if c.Action != nil {
 		return visitor.VisitAction(c.Action)
+	}
+	if c.ConversationKickoff != nil {
+		return visitor.VisitConversationKickoff(c.ConversationKickoff)
+	}
+	if c.Trigger != nil {
+		return visitor.VisitTrigger(c.Trigger)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", c)
 }
@@ -1700,6 +2005,12 @@ func (c *CapabilitySimulationResult) validate() error {
 	var fields []string
 	if c.Action != nil {
 		fields = append(fields, "ACTION")
+	}
+	if c.ConversationKickoff != nil {
+		fields = append(fields, "CONVERSATION_KICKOFF")
+	}
+	if c.Trigger != nil {
+		fields = append(fields, "TRIGGER")
 	}
 	if len(fields) == 0 {
 		if c.CapabilityType != "" {
@@ -2067,27 +2378,21 @@ func (c *ConversationContextSimulationInput) String() string {
 // the conversation's first reply, so they are never RUNNING.
 var (
 	conversationKickoffCapabilityExecutionFieldCapabilityID     = big.NewInt(1 << 0)
-	conversationKickoffCapabilityExecutionFieldSubjectID        = big.NewInt(1 << 1)
-	conversationKickoffCapabilityExecutionFieldStatus           = big.NewInt(1 << 2)
-	conversationKickoffCapabilityExecutionFieldCompletionReason = big.NewInt(1 << 3)
-	conversationKickoffCapabilityExecutionFieldMessage          = big.NewInt(1 << 4)
-	conversationKickoffCapabilityExecutionFieldStartedAt        = big.NewInt(1 << 5)
-	conversationKickoffCapabilityExecutionFieldCompletedAt      = big.NewInt(1 << 6)
-	conversationKickoffCapabilityExecutionFieldDurationMs       = big.NewInt(1 << 7)
-	conversationKickoffCapabilityExecutionFieldCreatedAt        = big.NewInt(1 << 8)
-	conversationKickoffCapabilityExecutionFieldExecutionMode    = big.NewInt(1 << 9)
+	conversationKickoffCapabilityExecutionFieldStatus           = big.NewInt(1 << 1)
+	conversationKickoffCapabilityExecutionFieldCompletionReason = big.NewInt(1 << 2)
+	conversationKickoffCapabilityExecutionFieldMessage          = big.NewInt(1 << 3)
+	conversationKickoffCapabilityExecutionFieldStartedAt        = big.NewInt(1 << 4)
+	conversationKickoffCapabilityExecutionFieldCompletedAt      = big.NewInt(1 << 5)
+	conversationKickoffCapabilityExecutionFieldDurationMs       = big.NewInt(1 << 6)
+	conversationKickoffCapabilityExecutionFieldExecutionMode    = big.NewInt(1 << 7)
+	conversationKickoffCapabilityExecutionFieldSubjectID        = big.NewInt(1 << 8)
+	conversationKickoffCapabilityExecutionFieldCreatedAt        = big.NewInt(1 << 9)
 )
 
 type ConversationKickoffCapabilityExecution struct {
 	// The capability that ran.
-	CapabilityID *EntityID `json:"capabilityId" url:"capabilityId"`
-	// What it ran for: a conversation, inbox item or event. The same shape `subjectIds`
-	// accepts, so it can be fed straight back in as a filter.
-	//
-	// A deprecated `FEEDBACK_CREATED` trigger records a feedback here, which `subjectIds`
-	// cannot filter on. Switch those triggers to `EVENT_CREATED`.
-	SubjectID *EntityID                 `json:"subjectId" url:"subjectId"`
-	Status    CapabilityExecutionStatus `json:"status" url:"status"`
+	CapabilityID *EntityID                 `json:"capabilityId" url:"capabilityId"`
+	Status       CapabilityExecutionStatus `json:"status" url:"status"`
 	// Why the execution ended the way it did. Absent while RUNNING.
 	CompletionReason *CapabilityExecutionCompletionReason `json:"completionReason,omitempty" url:"completionReason,omitempty"`
 	// Detail from the app, truncated. Cleared when the subject conversation is
@@ -2100,11 +2405,17 @@ type ConversationKickoffCapabilityExecution struct {
 	// End-to-end duration in milliseconds. Includes Maven's own work, so it is not purely the
 	// app's response time.
 	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	// When the execution was recorded. Results are ordered by this field.
-	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
 	// its conversation's mode, and an Event Trigger its event's.
 	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
+	// What it ran for: a conversation, inbox item or event. The same shape `subjectIds`
+	// accepts, so it can be fed straight back in as a filter.
+	//
+	// A deprecated `FEEDBACK_CREATED` trigger records a feedback here, which `subjectIds`
+	// cannot filter on. Switch those triggers to `EVENT_CREATED`.
+	SubjectID *EntityID `json:"subjectId" url:"subjectId"`
+	// When the execution was recorded. Results are ordered by this field.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2118,13 +2429,6 @@ func (c *ConversationKickoffCapabilityExecution) GetCapabilityID() *EntityID {
 		return nil
 	}
 	return c.CapabilityID
-}
-
-func (c *ConversationKickoffCapabilityExecution) GetSubjectID() *EntityID {
-	if c == nil {
-		return nil
-	}
-	return c.SubjectID
 }
 
 func (c *ConversationKickoffCapabilityExecution) GetStatus() CapabilityExecutionStatus {
@@ -2169,18 +2473,25 @@ func (c *ConversationKickoffCapabilityExecution) GetDurationMs() *int64 {
 	return c.DurationMs
 }
 
-func (c *ConversationKickoffCapabilityExecution) GetCreatedAt() time.Time {
-	if c == nil {
-		return time.Time{}
-	}
-	return c.CreatedAt
-}
-
 func (c *ConversationKickoffCapabilityExecution) GetExecutionMode() ExecutionMode {
 	if c == nil {
 		return ""
 	}
 	return c.ExecutionMode
+}
+
+func (c *ConversationKickoffCapabilityExecution) GetSubjectID() *EntityID {
+	if c == nil {
+		return nil
+	}
+	return c.SubjectID
+}
+
+func (c *ConversationKickoffCapabilityExecution) GetCreatedAt() time.Time {
+	if c == nil {
+		return time.Time{}
+	}
+	return c.CreatedAt
 }
 
 func (c *ConversationKickoffCapabilityExecution) GetExtraProperties() map[string]interface{} {
@@ -2199,13 +2510,6 @@ func (c *ConversationKickoffCapabilityExecution) require(field *big.Int) {
 func (c *ConversationKickoffCapabilityExecution) SetCapabilityID(capabilityID *EntityID) {
 	c.CapabilityID = capabilityID
 	c.require(conversationKickoffCapabilityExecutionFieldCapabilityID)
-}
-
-// SetSubjectID sets the SubjectID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationKickoffCapabilityExecution) SetSubjectID(subjectID *EntityID) {
-	c.SubjectID = subjectID
-	c.require(conversationKickoffCapabilityExecutionFieldSubjectID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -2250,18 +2554,25 @@ func (c *ConversationKickoffCapabilityExecution) SetDurationMs(durationMs *int64
 	c.require(conversationKickoffCapabilityExecutionFieldDurationMs)
 }
 
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationKickoffCapabilityExecution) SetCreatedAt(createdAt time.Time) {
-	c.CreatedAt = createdAt
-	c.require(conversationKickoffCapabilityExecutionFieldCreatedAt)
-}
-
 // SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ConversationKickoffCapabilityExecution) SetExecutionMode(executionMode ExecutionMode) {
 	c.ExecutionMode = executionMode
 	c.require(conversationKickoffCapabilityExecutionFieldExecutionMode)
+}
+
+// SetSubjectID sets the SubjectID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffCapabilityExecution) SetSubjectID(subjectID *EntityID) {
+	c.SubjectID = subjectID
+	c.require(conversationKickoffCapabilityExecutionFieldSubjectID)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffCapabilityExecution) SetCreatedAt(createdAt time.Time) {
+	c.CreatedAt = createdAt
+	c.require(conversationKickoffCapabilityExecutionFieldCreatedAt)
 }
 
 func (c *ConversationKickoffCapabilityExecution) UnmarshalJSON(data []byte) error {
@@ -2308,6 +2619,120 @@ func (c *ConversationKickoffCapabilityExecution) MarshalJSON() ([]byte, error) {
 }
 
 func (c *ConversationKickoffCapabilityExecution) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// A conversation kickoff takes no parameters, only the conversation and user it runs in.
+var (
+	conversationKickoffSimulationInputFieldConversationMetadata = big.NewInt(1 << 0)
+	conversationKickoffSimulationInputFieldUser                 = big.NewInt(1 << 1)
+	conversationKickoffSimulationInputFieldTransientData        = big.NewInt(1 << 2)
+)
+
+type ConversationKickoffSimulationInput struct {
+	// The conversation's metadata, as the capability would read it.
+	ConversationMetadata map[string]string `json:"conversationMetadata,omitempty" url:"conversationMetadata,omitempty"`
+	// The user the capability runs for. Omit it to run for an anonymous user.
+	User *SimulatedUser `json:"user,omitempty" url:"user,omitempty"`
+	// Data passed to the capability for this run only and never stored.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationKickoffSimulationInput) GetConversationMetadata() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.ConversationMetadata
+}
+
+func (c *ConversationKickoffSimulationInput) GetUser() *SimulatedUser {
+	if c == nil {
+		return nil
+	}
+	return c.User
+}
+
+func (c *ConversationKickoffSimulationInput) GetTransientData() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.TransientData
+}
+
+func (c *ConversationKickoffSimulationInput) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationKickoffSimulationInput) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetConversationMetadata sets the ConversationMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffSimulationInput) SetConversationMetadata(conversationMetadata map[string]string) {
+	c.ConversationMetadata = conversationMetadata
+	c.require(conversationKickoffSimulationInputFieldConversationMetadata)
+}
+
+// SetUser sets the User field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffSimulationInput) SetUser(user *SimulatedUser) {
+	c.User = user
+	c.require(conversationKickoffSimulationInputFieldUser)
+}
+
+// SetTransientData sets the TransientData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationKickoffSimulationInput) SetTransientData(transientData map[string]string) {
+	c.TransientData = transientData
+	c.require(conversationKickoffSimulationInputFieldTransientData)
+}
+
+func (c *ConversationKickoffSimulationInput) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationKickoffSimulationInput
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationKickoffSimulationInput(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationKickoffSimulationInput) MarshalJSON() ([]byte, error) {
+	type embed ConversationKickoffSimulationInput
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationKickoffSimulationInput) String() string {
 	if len(c.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
 			return value
@@ -2500,31 +2925,25 @@ func (s *SimulatedUserData) String() string {
 // acknowledged the event, not that the app finished the work it was notified about.
 var (
 	triggerCapabilityExecutionFieldCapabilityID     = big.NewInt(1 << 0)
-	triggerCapabilityExecutionFieldSubjectID        = big.NewInt(1 << 1)
-	triggerCapabilityExecutionFieldStatus           = big.NewInt(1 << 2)
-	triggerCapabilityExecutionFieldCompletionReason = big.NewInt(1 << 3)
-	triggerCapabilityExecutionFieldMessage          = big.NewInt(1 << 4)
-	triggerCapabilityExecutionFieldStartedAt        = big.NewInt(1 << 5)
-	triggerCapabilityExecutionFieldCompletedAt      = big.NewInt(1 << 6)
-	triggerCapabilityExecutionFieldDurationMs       = big.NewInt(1 << 7)
-	triggerCapabilityExecutionFieldCreatedAt        = big.NewInt(1 << 8)
-	triggerCapabilityExecutionFieldExecutionMode    = big.NewInt(1 << 9)
+	triggerCapabilityExecutionFieldStatus           = big.NewInt(1 << 1)
+	triggerCapabilityExecutionFieldCompletionReason = big.NewInt(1 << 2)
+	triggerCapabilityExecutionFieldMessage          = big.NewInt(1 << 3)
+	triggerCapabilityExecutionFieldStartedAt        = big.NewInt(1 << 4)
+	triggerCapabilityExecutionFieldCompletedAt      = big.NewInt(1 << 5)
+	triggerCapabilityExecutionFieldDurationMs       = big.NewInt(1 << 6)
+	triggerCapabilityExecutionFieldExecutionMode    = big.NewInt(1 << 7)
+	triggerCapabilityExecutionFieldSubjectID        = big.NewInt(1 << 8)
+	triggerCapabilityExecutionFieldCreatedAt        = big.NewInt(1 << 9)
 	triggerCapabilityExecutionFieldEventType        = big.NewInt(1 << 10)
-	triggerCapabilityExecutionFieldAttempt          = big.NewInt(1 << 11)
-	triggerCapabilityExecutionFieldRetryability     = big.NewInt(1 << 12)
-	triggerCapabilityExecutionFieldHTTPStatus       = big.NewInt(1 << 13)
+	triggerCapabilityExecutionFieldRetryability     = big.NewInt(1 << 11)
+	triggerCapabilityExecutionFieldHTTPStatus       = big.NewInt(1 << 12)
+	triggerCapabilityExecutionFieldAttempt          = big.NewInt(1 << 13)
 )
 
 type TriggerCapabilityExecution struct {
 	// The capability that ran.
-	CapabilityID *EntityID `json:"capabilityId" url:"capabilityId"`
-	// What it ran for: a conversation, inbox item or event. The same shape `subjectIds`
-	// accepts, so it can be fed straight back in as a filter.
-	//
-	// A deprecated `FEEDBACK_CREATED` trigger records a feedback here, which `subjectIds`
-	// cannot filter on. Switch those triggers to `EVENT_CREATED`.
-	SubjectID *EntityID                 `json:"subjectId" url:"subjectId"`
-	Status    CapabilityExecutionStatus `json:"status" url:"status"`
+	CapabilityID *EntityID                 `json:"capabilityId" url:"capabilityId"`
+	Status       CapabilityExecutionStatus `json:"status" url:"status"`
 	// Why the execution ended the way it did. Absent while RUNNING.
 	CompletionReason *CapabilityExecutionCompletionReason `json:"completionReason,omitempty" url:"completionReason,omitempty"`
 	// Detail from the app, truncated. Cleared when the subject conversation is
@@ -2537,21 +2956,27 @@ type TriggerCapabilityExecution struct {
 	// End-to-end duration in milliseconds. Includes Maven's own work, so it is not purely the
 	// app's response time.
 	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	// When the execution was recorded. Results are ordered by this field.
-	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
 	// its conversation's mode, and an Event Trigger its event's.
 	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
+	// What it ran for: a conversation, inbox item or event. The same shape `subjectIds`
+	// accepts, so it can be fed straight back in as a filter.
+	//
+	// A deprecated `FEEDBACK_CREATED` trigger records a feedback here, which `subjectIds`
+	// cannot filter on. Switch those triggers to `EVENT_CREATED`.
+	SubjectID *EntityID `json:"subjectId" url:"subjectId"`
+	// When the execution was recorded. Results are ordered by this field.
+	CreatedAt time.Time `json:"createdAt" url:"createdAt"`
 	// The kind of event that caused this run.
 	EventType EventTriggerType `json:"eventType" url:"eventType"`
-	// Which delivery attempt this is, starting at 1. Retries are recorded as further
-	// executions, so several executions for one trigger and subject with ascending attempts are
-	// one delivery retried, while several all at attempt 1 are separate fires.
-	Attempt int `json:"attempt" url:"attempt"`
 	// How a failure should be treated. Present only on FAILED executions.
 	Retryability *CapabilityExecutionRetryability `json:"retryability,omitempty" url:"retryability,omitempty"`
 	// HTTP status returned by the app, when the failure carried one.
 	HTTPStatus *int `json:"httpStatus,omitempty" url:"httpStatus,omitempty"`
+	// Which delivery attempt this is, starting at 1. Retries are recorded as further
+	// executions, so several executions for one trigger and subject with ascending attempts are
+	// one delivery retried, while several all at attempt 1 are separate fires.
+	Attempt int `json:"attempt" url:"attempt"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2565,13 +2990,6 @@ func (t *TriggerCapabilityExecution) GetCapabilityID() *EntityID {
 		return nil
 	}
 	return t.CapabilityID
-}
-
-func (t *TriggerCapabilityExecution) GetSubjectID() *EntityID {
-	if t == nil {
-		return nil
-	}
-	return t.SubjectID
 }
 
 func (t *TriggerCapabilityExecution) GetStatus() CapabilityExecutionStatus {
@@ -2616,13 +3034,6 @@ func (t *TriggerCapabilityExecution) GetDurationMs() *int64 {
 	return t.DurationMs
 }
 
-func (t *TriggerCapabilityExecution) GetCreatedAt() time.Time {
-	if t == nil {
-		return time.Time{}
-	}
-	return t.CreatedAt
-}
-
 func (t *TriggerCapabilityExecution) GetExecutionMode() ExecutionMode {
 	if t == nil {
 		return ""
@@ -2630,18 +3041,25 @@ func (t *TriggerCapabilityExecution) GetExecutionMode() ExecutionMode {
 	return t.ExecutionMode
 }
 
+func (t *TriggerCapabilityExecution) GetSubjectID() *EntityID {
+	if t == nil {
+		return nil
+	}
+	return t.SubjectID
+}
+
+func (t *TriggerCapabilityExecution) GetCreatedAt() time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	return t.CreatedAt
+}
+
 func (t *TriggerCapabilityExecution) GetEventType() EventTriggerType {
 	if t == nil {
 		return ""
 	}
 	return t.EventType
-}
-
-func (t *TriggerCapabilityExecution) GetAttempt() int {
-	if t == nil {
-		return 0
-	}
-	return t.Attempt
 }
 
 func (t *TriggerCapabilityExecution) GetRetryability() *CapabilityExecutionRetryability {
@@ -2656,6 +3074,13 @@ func (t *TriggerCapabilityExecution) GetHTTPStatus() *int {
 		return nil
 	}
 	return t.HTTPStatus
+}
+
+func (t *TriggerCapabilityExecution) GetAttempt() int {
+	if t == nil {
+		return 0
+	}
+	return t.Attempt
 }
 
 func (t *TriggerCapabilityExecution) GetExtraProperties() map[string]interface{} {
@@ -2674,13 +3099,6 @@ func (t *TriggerCapabilityExecution) require(field *big.Int) {
 func (t *TriggerCapabilityExecution) SetCapabilityID(capabilityID *EntityID) {
 	t.CapabilityID = capabilityID
 	t.require(triggerCapabilityExecutionFieldCapabilityID)
-}
-
-// SetSubjectID sets the SubjectID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (t *TriggerCapabilityExecution) SetSubjectID(subjectID *EntityID) {
-	t.SubjectID = subjectID
-	t.require(triggerCapabilityExecutionFieldSubjectID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
@@ -2725,13 +3143,6 @@ func (t *TriggerCapabilityExecution) SetDurationMs(durationMs *int64) {
 	t.require(triggerCapabilityExecutionFieldDurationMs)
 }
 
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (t *TriggerCapabilityExecution) SetCreatedAt(createdAt time.Time) {
-	t.CreatedAt = createdAt
-	t.require(triggerCapabilityExecutionFieldCreatedAt)
-}
-
 // SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (t *TriggerCapabilityExecution) SetExecutionMode(executionMode ExecutionMode) {
@@ -2739,18 +3150,25 @@ func (t *TriggerCapabilityExecution) SetExecutionMode(executionMode ExecutionMod
 	t.require(triggerCapabilityExecutionFieldExecutionMode)
 }
 
+// SetSubjectID sets the SubjectID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerCapabilityExecution) SetSubjectID(subjectID *EntityID) {
+	t.SubjectID = subjectID
+	t.require(triggerCapabilityExecutionFieldSubjectID)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerCapabilityExecution) SetCreatedAt(createdAt time.Time) {
+	t.CreatedAt = createdAt
+	t.require(triggerCapabilityExecutionFieldCreatedAt)
+}
+
 // SetEventType sets the EventType field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (t *TriggerCapabilityExecution) SetEventType(eventType EventTriggerType) {
 	t.EventType = eventType
 	t.require(triggerCapabilityExecutionFieldEventType)
-}
-
-// SetAttempt sets the Attempt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (t *TriggerCapabilityExecution) SetAttempt(attempt int) {
-	t.Attempt = attempt
-	t.require(triggerCapabilityExecutionFieldAttempt)
 }
 
 // SetRetryability sets the Retryability field and marks it as non-optional;
@@ -2765,6 +3183,13 @@ func (t *TriggerCapabilityExecution) SetRetryability(retryability *CapabilityExe
 func (t *TriggerCapabilityExecution) SetHTTPStatus(httpStatus *int) {
 	t.HTTPStatus = httpStatus
 	t.require(triggerCapabilityExecutionFieldHTTPStatus)
+}
+
+// SetAttempt sets the Attempt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerCapabilityExecution) SetAttempt(attempt int) {
+	t.Attempt = attempt
+	t.require(triggerCapabilityExecutionFieldAttempt)
 }
 
 func (t *TriggerCapabilityExecution) UnmarshalJSON(data []byte) error {
@@ -2811,6 +3236,469 @@ func (t *TriggerCapabilityExecution) MarshalJSON() ([]byte, error) {
 }
 
 func (t *TriggerCapabilityExecution) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+// What a trigger's run has beyond the fields every run has.
+var (
+	triggerRunDetailsFieldEventType    = big.NewInt(1 << 0)
+	triggerRunDetailsFieldRetryability = big.NewInt(1 << 1)
+	triggerRunDetailsFieldHTTPStatus   = big.NewInt(1 << 2)
+)
+
+type TriggerRunDetails struct {
+	// The kind of event that caused this run.
+	EventType EventTriggerType `json:"eventType" url:"eventType"`
+	// How a failure should be treated. Present only on FAILED executions.
+	Retryability *CapabilityExecutionRetryability `json:"retryability,omitempty" url:"retryability,omitempty"`
+	// HTTP status returned by the app, when the failure carried one.
+	HTTPStatus *int `json:"httpStatus,omitempty" url:"httpStatus,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TriggerRunDetails) GetEventType() EventTriggerType {
+	if t == nil {
+		return ""
+	}
+	return t.EventType
+}
+
+func (t *TriggerRunDetails) GetRetryability() *CapabilityExecutionRetryability {
+	if t == nil {
+		return nil
+	}
+	return t.Retryability
+}
+
+func (t *TriggerRunDetails) GetHTTPStatus() *int {
+	if t == nil {
+		return nil
+	}
+	return t.HTTPStatus
+}
+
+func (t *TriggerRunDetails) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TriggerRunDetails) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetEventType sets the EventType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerRunDetails) SetEventType(eventType EventTriggerType) {
+	t.EventType = eventType
+	t.require(triggerRunDetailsFieldEventType)
+}
+
+// SetRetryability sets the Retryability field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerRunDetails) SetRetryability(retryability *CapabilityExecutionRetryability) {
+	t.Retryability = retryability
+	t.require(triggerRunDetailsFieldRetryability)
+}
+
+// SetHTTPStatus sets the HTTPStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerRunDetails) SetHTTPStatus(httpStatus *int) {
+	t.HTTPStatus = httpStatus
+	t.require(triggerRunDetailsFieldHTTPStatus)
+}
+
+func (t *TriggerRunDetails) UnmarshalJSON(data []byte) error {
+	type unmarshaler TriggerRunDetails
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TriggerRunDetails(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TriggerRunDetails) MarshalJSON() ([]byte, error) {
+	type embed TriggerRunDetails
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TriggerRunDetails) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+// What a trigger is simulated with. Only `EVENT_CREATED` triggers can be simulated; any other
+// trigger type is rejected with a 400.
+var (
+	triggerSimulationInputFieldEvent = big.NewInt(1 << 0)
+)
+
+type TriggerSimulationInput struct {
+	// The event the trigger fires for, in the shape creating an event takes, and checked as
+	// creating it would be. It is sent to the trigger as a `SIMULATION` event and never stored.
+	// An `executionMode` of `LIVE` is rejected with a 400. The trigger's condition is not
+	// evaluated: the event is sent to it even when a live event like it would not match.
+	Event *EventRequest `json:"event" url:"event"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TriggerSimulationInput) GetEvent() *EventRequest {
+	if t == nil {
+		return nil
+	}
+	return t.Event
+}
+
+func (t *TriggerSimulationInput) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TriggerSimulationInput) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetEvent sets the Event field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationInput) SetEvent(event *EventRequest) {
+	t.Event = event
+	t.require(triggerSimulationInputFieldEvent)
+}
+
+func (t *TriggerSimulationInput) UnmarshalJSON(data []byte) error {
+	type unmarshaler TriggerSimulationInput
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TriggerSimulationInput(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TriggerSimulationInput) MarshalJSON() ([]byte, error) {
+	type embed TriggerSimulationInput
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TriggerSimulationInput) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+// How a trigger's simulated run went, with the fields its execution would have. It has no
+// subject or `createdAt`, because the event is never stored and the run is never recorded.
+var (
+	triggerSimulationResultFieldCapabilityID     = big.NewInt(1 << 0)
+	triggerSimulationResultFieldStatus           = big.NewInt(1 << 1)
+	triggerSimulationResultFieldCompletionReason = big.NewInt(1 << 2)
+	triggerSimulationResultFieldMessage          = big.NewInt(1 << 3)
+	triggerSimulationResultFieldStartedAt        = big.NewInt(1 << 4)
+	triggerSimulationResultFieldCompletedAt      = big.NewInt(1 << 5)
+	triggerSimulationResultFieldDurationMs       = big.NewInt(1 << 6)
+	triggerSimulationResultFieldExecutionMode    = big.NewInt(1 << 7)
+	triggerSimulationResultFieldEventType        = big.NewInt(1 << 8)
+	triggerSimulationResultFieldRetryability     = big.NewInt(1 << 9)
+	triggerSimulationResultFieldHTTPStatus       = big.NewInt(1 << 10)
+)
+
+type TriggerSimulationResult struct {
+	// The capability that ran.
+	CapabilityID *EntityID                 `json:"capabilityId" url:"capabilityId"`
+	Status       CapabilityExecutionStatus `json:"status" url:"status"`
+	// Why the execution ended the way it did. Absent while RUNNING.
+	CompletionReason *CapabilityExecutionCompletionReason `json:"completionReason,omitempty" url:"completionReason,omitempty"`
+	// Detail from the app, truncated. Cleared when the subject conversation is
+	// wiped.
+	Message *string `json:"message,omitempty" url:"message,omitempty"`
+	// When the execution began.
+	StartedAt time.Time `json:"startedAt" url:"startedAt"`
+	// When it ended. Absent while RUNNING.
+	CompletedAt *time.Time `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	// End-to-end duration in milliseconds. Includes Maven's own work, so it is not purely the
+	// app's response time.
+	DurationMs *int64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
+	// Whether the execution ran on live data or in a simulation. A Conversation Kickoff takes
+	// its conversation's mode, and an Event Trigger its event's.
+	ExecutionMode ExecutionMode `json:"executionMode" url:"executionMode"`
+	// The kind of event that caused this run.
+	EventType EventTriggerType `json:"eventType" url:"eventType"`
+	// How a failure should be treated. Present only on FAILED executions.
+	Retryability *CapabilityExecutionRetryability `json:"retryability,omitempty" url:"retryability,omitempty"`
+	// HTTP status returned by the app, when the failure carried one.
+	HTTPStatus *int `json:"httpStatus,omitempty" url:"httpStatus,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TriggerSimulationResult) GetCapabilityID() *EntityID {
+	if t == nil {
+		return nil
+	}
+	return t.CapabilityID
+}
+
+func (t *TriggerSimulationResult) GetStatus() CapabilityExecutionStatus {
+	if t == nil {
+		return ""
+	}
+	return t.Status
+}
+
+func (t *TriggerSimulationResult) GetCompletionReason() *CapabilityExecutionCompletionReason {
+	if t == nil {
+		return nil
+	}
+	return t.CompletionReason
+}
+
+func (t *TriggerSimulationResult) GetMessage() *string {
+	if t == nil {
+		return nil
+	}
+	return t.Message
+}
+
+func (t *TriggerSimulationResult) GetStartedAt() time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	return t.StartedAt
+}
+
+func (t *TriggerSimulationResult) GetCompletedAt() *time.Time {
+	if t == nil {
+		return nil
+	}
+	return t.CompletedAt
+}
+
+func (t *TriggerSimulationResult) GetDurationMs() *int64 {
+	if t == nil {
+		return nil
+	}
+	return t.DurationMs
+}
+
+func (t *TriggerSimulationResult) GetExecutionMode() ExecutionMode {
+	if t == nil {
+		return ""
+	}
+	return t.ExecutionMode
+}
+
+func (t *TriggerSimulationResult) GetEventType() EventTriggerType {
+	if t == nil {
+		return ""
+	}
+	return t.EventType
+}
+
+func (t *TriggerSimulationResult) GetRetryability() *CapabilityExecutionRetryability {
+	if t == nil {
+		return nil
+	}
+	return t.Retryability
+}
+
+func (t *TriggerSimulationResult) GetHTTPStatus() *int {
+	if t == nil {
+		return nil
+	}
+	return t.HTTPStatus
+}
+
+func (t *TriggerSimulationResult) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TriggerSimulationResult) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetCapabilityID sets the CapabilityID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetCapabilityID(capabilityID *EntityID) {
+	t.CapabilityID = capabilityID
+	t.require(triggerSimulationResultFieldCapabilityID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetStatus(status CapabilityExecutionStatus) {
+	t.Status = status
+	t.require(triggerSimulationResultFieldStatus)
+}
+
+// SetCompletionReason sets the CompletionReason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetCompletionReason(completionReason *CapabilityExecutionCompletionReason) {
+	t.CompletionReason = completionReason
+	t.require(triggerSimulationResultFieldCompletionReason)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetMessage(message *string) {
+	t.Message = message
+	t.require(triggerSimulationResultFieldMessage)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetStartedAt(startedAt time.Time) {
+	t.StartedAt = startedAt
+	t.require(triggerSimulationResultFieldStartedAt)
+}
+
+// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetCompletedAt(completedAt *time.Time) {
+	t.CompletedAt = completedAt
+	t.require(triggerSimulationResultFieldCompletedAt)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetDurationMs(durationMs *int64) {
+	t.DurationMs = durationMs
+	t.require(triggerSimulationResultFieldDurationMs)
+}
+
+// SetExecutionMode sets the ExecutionMode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetExecutionMode(executionMode ExecutionMode) {
+	t.ExecutionMode = executionMode
+	t.require(triggerSimulationResultFieldExecutionMode)
+}
+
+// SetEventType sets the EventType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetEventType(eventType EventTriggerType) {
+	t.EventType = eventType
+	t.require(triggerSimulationResultFieldEventType)
+}
+
+// SetRetryability sets the Retryability field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetRetryability(retryability *CapabilityExecutionRetryability) {
+	t.Retryability = retryability
+	t.require(triggerSimulationResultFieldRetryability)
+}
+
+// SetHTTPStatus sets the HTTPStatus field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TriggerSimulationResult) SetHTTPStatus(httpStatus *int) {
+	t.HTTPStatus = httpStatus
+	t.require(triggerSimulationResultFieldHTTPStatus)
+}
+
+func (t *TriggerSimulationResult) UnmarshalJSON(data []byte) error {
+	type embed TriggerSimulationResult
+	var unmarshaler = struct {
+		embed
+		StartedAt   *internal.DateTime `json:"startedAt"`
+		CompletedAt *internal.DateTime `json:"completedAt,omitempty"`
+	}{
+		embed: embed(*t),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*t = TriggerSimulationResult(unmarshaler.embed)
+	t.StartedAt = unmarshaler.StartedAt.Time()
+	t.CompletedAt = unmarshaler.CompletedAt.TimePtr()
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TriggerSimulationResult) MarshalJSON() ([]byte, error) {
+	type embed TriggerSimulationResult
+	var marshaler = struct {
+		embed
+		StartedAt   *internal.DateTime `json:"startedAt"`
+		CompletedAt *internal.DateTime `json:"completedAt,omitempty"`
+	}{
+		embed:       embed(*t),
+		StartedAt:   internal.NewDateTime(t.StartedAt),
+		CompletedAt: internal.NewOptionalDateTime(t.CompletedAt),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TriggerSimulationResult) String() string {
 	if len(t.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
 			return value

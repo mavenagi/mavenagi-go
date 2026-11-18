@@ -254,11 +254,11 @@ var (
 	askRequestFieldConversationMessageID = big.NewInt(1 << 0)
 	askRequestFieldType                  = big.NewInt(1 << 1)
 	askRequestFieldText                  = big.NewInt(1 << 2)
-	askRequestFieldTextFormat            = big.NewInt(1 << 3)
-	askRequestFieldAttachments           = big.NewInt(1 << 4)
-	askRequestFieldTransientData         = big.NewInt(1 << 5)
-	askRequestFieldTimezone              = big.NewInt(1 << 6)
-	askRequestFieldAppMetadata           = big.NewInt(1 << 7)
+	askRequestFieldAttachments           = big.NewInt(1 << 3)
+	askRequestFieldTransientData         = big.NewInt(1 << 4)
+	askRequestFieldTimezone              = big.NewInt(1 << 5)
+	askRequestFieldAppMetadata           = big.NewInt(1 << 6)
+	askRequestFieldTextFormat            = big.NewInt(1 << 7)
 	askRequestFieldUserID                = big.NewInt(1 << 8)
 )
 
@@ -275,6 +275,20 @@ type AskRequest struct {
 	// required to optional to support the non-user ask types — existing USER_MESSAGE callers
 	// are unaffected.)
 	Text *string `json:"text,omitempty" url:"text,omitempty"`
+	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
+	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
+	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
+	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Key-value metadata to persist on the user message created by this request. Unlike
+	// `transientData` (which is never persisted) this is stored and returned when the message
+	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
+	// Applied only when the message is first created — if `conversationMessageId` already
+	// exists the message is reused and its metadata is not updated. Keys and values are strings
+	// with a maximum length of 500 characters each.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// What form the answer takes. Omit it for prose, or send `jsonSchema` to additionally get a
 	// `BotObjectResponse` matching a schema you supply.
 	//
@@ -300,20 +314,6 @@ type AskRequest struct {
 	// charter's manual is returned exactly as written without consulting the agent, so there is
 	// nothing to shape into the requested schema — the round returns the manual as `text` alone.
 	TextFormat *TextFormat `json:"textFormat,omitempty" url:"textFormat,omitempty"`
-	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
-	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
-	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
-	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
-	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
-	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
-	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
-	// Key-value metadata to persist on the user message created by this request. Unlike
-	// `transientData` (which is never persisted) this is stored and returned when the message
-	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
-	// Applied only when the message is first created — if `conversationMessageId` already
-	// exists the message is reused and its metadata is not updated. Keys and values are strings
-	// with a maximum length of 500 characters each.
-	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// Externally supplied ID to uniquely identify the user that created this message
 	UserID *EntityIDBase `json:"userId" url:"userId"`
 
@@ -345,13 +345,6 @@ func (a *AskRequest) GetText() *string {
 	return a.Text
 }
 
-func (a *AskRequest) GetTextFormat() *TextFormat {
-	if a == nil {
-		return nil
-	}
-	return a.TextFormat
-}
-
 func (a *AskRequest) GetAttachments() []*AttachmentRequest {
 	if a == nil {
 		return nil
@@ -378,6 +371,13 @@ func (a *AskRequest) GetAppMetadata() map[string]string {
 		return nil
 	}
 	return a.AppMetadata
+}
+
+func (a *AskRequest) GetTextFormat() *TextFormat {
+	if a == nil {
+		return nil
+	}
+	return a.TextFormat
 }
 
 func (a *AskRequest) GetUserID() *EntityIDBase {
@@ -419,13 +419,6 @@ func (a *AskRequest) SetText(text *string) {
 	a.require(askRequestFieldText)
 }
 
-// SetTextFormat sets the TextFormat field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequest) SetTextFormat(textFormat *TextFormat) {
-	a.TextFormat = textFormat
-	a.require(askRequestFieldTextFormat)
-}
-
 // SetAttachments sets the Attachments field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (a *AskRequest) SetAttachments(attachments []*AttachmentRequest) {
@@ -452,6 +445,13 @@ func (a *AskRequest) SetTimezone(timezone *string) {
 func (a *AskRequest) SetAppMetadata(appMetadata map[string]string) {
 	a.AppMetadata = appMetadata
 	a.require(askRequestFieldAppMetadata)
+}
+
+// SetTextFormat sets the TextFormat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequest) SetTextFormat(textFormat *TextFormat) {
+	a.TextFormat = textFormat
+	a.require(askRequestFieldTextFormat)
 }
 
 // SetUserID sets the UserID field and marks it as non-optional;
@@ -505,11 +505,11 @@ var (
 	askRequestBaseFieldConversationMessageID = big.NewInt(1 << 0)
 	askRequestBaseFieldType                  = big.NewInt(1 << 1)
 	askRequestBaseFieldText                  = big.NewInt(1 << 2)
-	askRequestBaseFieldTextFormat            = big.NewInt(1 << 3)
-	askRequestBaseFieldAttachments           = big.NewInt(1 << 4)
-	askRequestBaseFieldTransientData         = big.NewInt(1 << 5)
-	askRequestBaseFieldTimezone              = big.NewInt(1 << 6)
-	askRequestBaseFieldAppMetadata           = big.NewInt(1 << 7)
+	askRequestBaseFieldAttachments           = big.NewInt(1 << 3)
+	askRequestBaseFieldTransientData         = big.NewInt(1 << 4)
+	askRequestBaseFieldTimezone              = big.NewInt(1 << 5)
+	askRequestBaseFieldAppMetadata           = big.NewInt(1 << 6)
+	askRequestBaseFieldTextFormat            = big.NewInt(1 << 7)
 )
 
 type AskRequestBase struct {
@@ -525,6 +525,20 @@ type AskRequestBase struct {
 	// required to optional to support the non-user ask types — existing USER_MESSAGE callers
 	// are unaffected.)
 	Text *string `json:"text,omitempty" url:"text,omitempty"`
+	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
+	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
+	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
+	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Key-value metadata to persist on the user message created by this request. Unlike
+	// `transientData` (which is never persisted) this is stored and returned when the message
+	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
+	// Applied only when the message is first created — if `conversationMessageId` already
+	// exists the message is reused and its metadata is not updated. Keys and values are strings
+	// with a maximum length of 500 characters each.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 	// What form the answer takes. Omit it for prose, or send `jsonSchema` to additionally get a
 	// `BotObjectResponse` matching a schema you supply.
 	//
@@ -550,20 +564,6 @@ type AskRequestBase struct {
 	// charter's manual is returned exactly as written without consulting the agent, so there is
 	// nothing to shape into the requested schema — the round returns the manual as `text` alone.
 	TextFormat *TextFormat `json:"textFormat,omitempty" url:"textFormat,omitempty"`
-	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
-	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
-	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
-	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
-	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
-	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
-	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
-	// Key-value metadata to persist on the user message created by this request. Unlike
-	// `transientData` (which is never persisted) this is stored and returned when the message
-	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
-	// Applied only when the message is first created — if `conversationMessageId` already
-	// exists the message is reused and its metadata is not updated. Keys and values are strings
-	// with a maximum length of 500 characters each.
-	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -593,13 +593,6 @@ func (a *AskRequestBase) GetText() *string {
 	return a.Text
 }
 
-func (a *AskRequestBase) GetTextFormat() *TextFormat {
-	if a == nil {
-		return nil
-	}
-	return a.TextFormat
-}
-
 func (a *AskRequestBase) GetAttachments() []*AttachmentRequest {
 	if a == nil {
 		return nil
@@ -626,6 +619,13 @@ func (a *AskRequestBase) GetAppMetadata() map[string]string {
 		return nil
 	}
 	return a.AppMetadata
+}
+
+func (a *AskRequestBase) GetTextFormat() *TextFormat {
+	if a == nil {
+		return nil
+	}
+	return a.TextFormat
 }
 
 func (a *AskRequestBase) GetExtraProperties() map[string]interface{} {
@@ -660,13 +660,6 @@ func (a *AskRequestBase) SetText(text *string) {
 	a.require(askRequestBaseFieldText)
 }
 
-// SetTextFormat sets the TextFormat field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *AskRequestBase) SetTextFormat(textFormat *TextFormat) {
-	a.TextFormat = textFormat
-	a.require(askRequestBaseFieldTextFormat)
-}
-
 // SetAttachments sets the Attachments field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (a *AskRequestBase) SetAttachments(attachments []*AttachmentRequest) {
@@ -693,6 +686,13 @@ func (a *AskRequestBase) SetTimezone(timezone *string) {
 func (a *AskRequestBase) SetAppMetadata(appMetadata map[string]string) {
 	a.AppMetadata = appMetadata
 	a.require(askRequestBaseFieldAppMetadata)
+}
+
+// SetTextFormat sets the TextFormat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestBase) SetTextFormat(textFormat *TextFormat) {
+	a.TextFormat = textFormat
+	a.require(askRequestBaseFieldTextFormat)
 }
 
 func (a *AskRequestBase) UnmarshalJSON(data []byte) error {
@@ -723,6 +723,200 @@ func (a *AskRequestBase) MarshalJSON() ([]byte, error) {
 }
 
 func (a *AskRequestBase) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+// The fields every kind of ask shares, without the user who asks or the form of the answer.
+var (
+	askRequestFieldsFieldConversationMessageID = big.NewInt(1 << 0)
+	askRequestFieldsFieldType                  = big.NewInt(1 << 1)
+	askRequestFieldsFieldText                  = big.NewInt(1 << 2)
+	askRequestFieldsFieldAttachments           = big.NewInt(1 << 3)
+	askRequestFieldsFieldTransientData         = big.NewInt(1 << 4)
+	askRequestFieldsFieldTimezone              = big.NewInt(1 << 5)
+	askRequestFieldsFieldAppMetadata           = big.NewInt(1 << 6)
+)
+
+type AskRequestFields struct {
+	// Externally supplied ID to uniquely identify this message within the conversation. If a message with this ID already exists it will be reused and will not be updated.
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
+	// What prompts this assistant response. Omit (or send USER_MESSAGE) for a normal user
+	// question — this is the backwards-compatible default. Use WELCOME for an agent-authored
+	// opener, or PROACTIVE for a message the user did not prompt.
+	Type *AskType `json:"type,omitempty" url:"type,omitempty"`
+	// For USER_MESSAGE (the default) this is the user's message, in the user's own words, and
+	// is required. For WELCOME and PROACTIVE it is optional and, when provided, steers the
+	// agent's response (a directive to the agent, not the user's own words). (Changed from
+	// required to optional to support the non-user ask types — existing USER_MESSAGE callers
+	// are unaffected.)
+	Text *string `json:"text,omitempty" url:"text,omitempty"`
+	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
+	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
+	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
+	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Key-value metadata to persist on the user message created by this request. Unlike
+	// `transientData` (which is never persisted) this is stored and returned when the message
+	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
+	// Applied only when the message is first created — if `conversationMessageId` already
+	// exists the message is reused and its metadata is not updated. Keys and values are strings
+	// with a maximum length of 500 characters each.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AskRequestFields) GetConversationMessageID() *EntityIDBase {
+	if a == nil {
+		return nil
+	}
+	return a.ConversationMessageID
+}
+
+func (a *AskRequestFields) GetType() *AskType {
+	if a == nil {
+		return nil
+	}
+	return a.Type
+}
+
+func (a *AskRequestFields) GetText() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Text
+}
+
+func (a *AskRequestFields) GetAttachments() []*AttachmentRequest {
+	if a == nil {
+		return nil
+	}
+	return a.Attachments
+}
+
+func (a *AskRequestFields) GetTransientData() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.TransientData
+}
+
+func (a *AskRequestFields) GetTimezone() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Timezone
+}
+
+func (a *AskRequestFields) GetAppMetadata() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.AppMetadata
+}
+
+func (a *AskRequestFields) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AskRequestFields) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	a.ConversationMessageID = conversationMessageID
+	a.require(askRequestFieldsFieldConversationMessageID)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetType(type_ *AskType) {
+	a.Type = type_
+	a.require(askRequestFieldsFieldType)
+}
+
+// SetText sets the Text field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetText(text *string) {
+	a.Text = text
+	a.require(askRequestFieldsFieldText)
+}
+
+// SetAttachments sets the Attachments field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetAttachments(attachments []*AttachmentRequest) {
+	a.Attachments = attachments
+	a.require(askRequestFieldsFieldAttachments)
+}
+
+// SetTransientData sets the TransientData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetTransientData(transientData map[string]string) {
+	a.TransientData = transientData
+	a.require(askRequestFieldsFieldTransientData)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetTimezone(timezone *string) {
+	a.Timezone = timezone
+	a.require(askRequestFieldsFieldTimezone)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AskRequestFields) SetAppMetadata(appMetadata map[string]string) {
+	a.AppMetadata = appMetadata
+	a.require(askRequestFieldsFieldAppMetadata)
+}
+
+func (a *AskRequestFields) UnmarshalJSON(data []byte) error {
+	type unmarshaler AskRequestFields
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AskRequestFields(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AskRequestFields) MarshalJSON() ([]byte, error) {
+	type embed AskRequestFields
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AskRequestFields) String() string {
 	if len(a.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
 			return value
@@ -1518,8 +1712,13 @@ func (a *AskStreamTextEvent) String() string {
 
 // Fields used to filter conversations by billing status:
 // - ELIGIBLE_AND_BILLABLE: Billable conversations with a RESOLVED resolution status. Shown in Agent Designer as "Billable".
-// - ELIGIBLE_AND_NOT_BILLABLE: Conversations eligible for billing consideration but not currently billable. Shown in Agent Designer as "Not billable". Includes ERROR, IN_PROGRESS, ESCALATED, INCOMPLETE, and NEGATIVE_FEEDBACK.
-// - INELIGIBLE: Conversations excluded from billing consideration. Includes CONTENT_SAFETY_FLAGGED, PROMPT_ATTACK_FLAGGED, HANGUP, INELIGIBLE, and UNKNOWN. Shown in Agent Designer as "Not eligible".
+// - ELIGIBLE_AND_NOT_BILLABLE: Eligible conversations that are not RESOLVED. Shown in Agent Designer as "Not billable". Includes ERROR, IN_PROGRESS, ESCALATED, INCOMPLETE, and NEGATIVE_FEEDBACK.
+// - INELIGIBLE: Conversations excluded from billing consideration. Includes CONTENT_SAFETY_FLAGGED, PROMPT_ATTACK_FLAGGED, HANGUP, INELIGIBLE, and UNKNOWN. Shown in Agent Designer as "Not eligible". This differs from the INELIGIBLE resolution status, which covers copilot chat conversations only.
+//
+// Resolution-based pricing bills ELIGIBLE_AND_BILLABLE conversations. Volume-based pricing, used
+// for Voice and Proactive, bills ELIGIBLE_AND_BILLABLE and ELIGIBLE_AND_NOT_BILLABLE conversations.
+// Resolution rate is ELIGIBLE_AND_BILLABLE divided by both eligible values. Simulator and test
+// suite conversations are never billed. See [Resolution status and billing](https://docs.mavenagi.com/agent-designer/pages/resolution-status).
 type BillableFilterField string
 
 const (
@@ -1884,17 +2083,20 @@ type ConversationFilter struct {
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Filter by agent user IDs associated with the conversation. Shown in Agent Designer as "Users", where the user enters identifiers such as an email.
 	AgentUserIDs []string `json:"agentUserIds,omitempty" url:"agentUserIds,omitempty"`
-	// Filter by conversation resolution status which is determined by AI based on the conversation content.
+	// Filter by conversation resolution status. Matches conversations with any of the listed
+	// statuses. See `ResolutionStatus` for how each status is set.
 	//
 	// When `resolutionStatus`, `resolvedByMaven`, and `billable` are combined in a single filter,
-	// precedence is applied in the following order: `resolutionStatus`, `resolvedByMaven`,
-	// and then `billable`.
+	// only the first one set is applied, in this order: `resolutionStatus`, `resolvedByMaven`,
+	// then `billable`. The others are ignored.
 	ResolutionStatus []ResolutionStatus `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
-	// Filter conversations based on whether they were resolved by Maven AI.
+	// Filter conversations based on whether they were resolved by Maven. `true` is the same as
+	// `billable: [ELIGIBLE_AND_BILLABLE]` and `false` the same as
+	// `billable: [ELIGIBLE_AND_NOT_BILLABLE]`. Use `billable` or `resolutionStatus` instead.
 	//
 	// When `resolutionStatus`, `resolvedByMaven`, and `billable` are combined in a single filter,
-	// precedence is applied in the following order: `resolutionStatus`, `resolvedByMaven`,
-	// and then `billable`.
+	// only the first one set is applied, in this order: `resolutionStatus`, `resolvedByMaven`,
+	// then `billable`. The others are ignored.
 	ResolvedByMaven *bool `json:"resolvedByMaven,omitempty" url:"resolvedByMaven,omitempty"`
 	// Filter by the number of messages sent by the user in the conversation
 	UserMessageCount *NumberRange `json:"userMessageCount,omitempty" url:"userMessageCount,omitempty"`
@@ -1930,8 +2132,8 @@ type ConversationFilter struct {
 	// which means ELIGIBLE_AND_BILLABLE and ELIGIBLE_AND_NOT_BILLABLE.
 	//
 	// When `resolutionStatus`, `resolvedByMaven`, and `billable` are combined in a single filter,
-	// precedence is applied in the following order: `resolutionStatus`, `resolvedByMaven`,
-	// and then `billable`.
+	// only the first one set is applied, in this order: `resolutionStatus`, `resolvedByMaven`,
+	// then `billable`. The others are ignored.
 	//
 	// If billable is `null` or `[]` then defaults to all eligible conversations,
 	// which means ELIGIBLE_AND_BILLABLE and ELIGIBLE_AND_NOT_BILLABLE.
@@ -3703,16 +3905,48 @@ func (c *ConversationsSearchRequest) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
+// An agent turn to run on a conversation and deliver to the app that owns it. `type` must be `WELCOME`
+// or `PROACTIVE`; a `USER_MESSAGE` ask, which is also the default when `type` is omitted, returns a 400.
 var (
-	deliverConversationMessageRequestFieldConversationID = big.NewInt(1 << 0)
-	deliverConversationMessageRequestFieldMessage        = big.NewInt(1 << 1)
+	deliverAskRequestFieldConversationMessageID = big.NewInt(1 << 0)
+	deliverAskRequestFieldType                  = big.NewInt(1 << 1)
+	deliverAskRequestFieldText                  = big.NewInt(1 << 2)
+	deliverAskRequestFieldAttachments           = big.NewInt(1 << 3)
+	deliverAskRequestFieldTransientData         = big.NewInt(1 << 4)
+	deliverAskRequestFieldTimezone              = big.NewInt(1 << 5)
+	deliverAskRequestFieldAppMetadata           = big.NewInt(1 << 6)
+	deliverAskRequestFieldUserID                = big.NewInt(1 << 7)
 )
 
-type DeliverConversationMessageRequest struct {
-	// The ID of the conversation to deliver the message to. Message delivery will fail if the conversation does not have the `ASYNC` capability, and a closed conversation (`open` set to false) returns a 400.
-	ConversationID *EntityIDWithoutAgent `json:"conversationId" url:"conversationId"`
-	// The message to deliver.
-	Message *ConversationMessageRequest `json:"message" url:"message"`
+type DeliverAskRequest struct {
+	// Externally supplied ID to uniquely identify this message within the conversation. If a message with this ID already exists it will be reused and will not be updated.
+	ConversationMessageID *EntityIDBase `json:"conversationMessageId" url:"conversationMessageId"`
+	// What prompts this assistant response. Omit (or send USER_MESSAGE) for a normal user
+	// question — this is the backwards-compatible default. Use WELCOME for an agent-authored
+	// opener, or PROACTIVE for a message the user did not prompt.
+	Type *AskType `json:"type,omitempty" url:"type,omitempty"`
+	// For USER_MESSAGE (the default) this is the user's message, in the user's own words, and
+	// is required. For WELCOME and PROACTIVE it is optional and, when provided, steers the
+	// agent's response (a directive to the agent, not the user's own words). (Changed from
+	// required to optional to support the non-user ask types — existing USER_MESSAGE callers
+	// are unaffected.)
+	Text *string `json:"text,omitempty" url:"text,omitempty"`
+	// The attachments to the message. Image attachments will be sent to the LLM as additional data.
+	// Non-image attachments can be stored and downloaded from the API but will not be sent to the LLM.
+	Attachments []*AttachmentRequest `json:"attachments,omitempty" url:"attachments,omitempty"`
+	// Transient data which the Maven platform will not persist. This data will only be forwarded to actions taken by this ask request. For example, one may put in user tokens as transient data.
+	TransientData map[string]string `json:"transientData,omitempty" url:"transientData,omitempty"`
+	// IANA timezone identifier (e.g. "America/New_York", "Europe/London") to be used for time-based operations in the conversation.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
+	// Key-value metadata to persist on the user message created by this request. Unlike
+	// `transientData` (which is never persisted) this is stored and returned when the message
+	// is read back via the API or dashboard, and unlike user data it is not sent to the LLM.
+	// Applied only when the message is first created — if `conversationMessageId` already
+	// exists the message is reused and its metadata is not updated. Keys and values are strings
+	// with a maximum length of 500 characters each.
+	AppMetadata map[string]string `json:"appMetadata,omitempty" url:"appMetadata,omitempty"`
+	// Externally supplied ID to uniquely identify the user that created this message
+	UserID *EntityIDBase `json:"userId" url:"userId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3721,11 +3955,311 @@ type DeliverConversationMessageRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (d *DeliverConversationMessageRequest) GetConversationID() *EntityIDWithoutAgent {
+func (d *DeliverAskRequest) GetConversationMessageID() *EntityIDBase {
 	if d == nil {
 		return nil
 	}
-	return d.ConversationID
+	return d.ConversationMessageID
+}
+
+func (d *DeliverAskRequest) GetType() *AskType {
+	if d == nil {
+		return nil
+	}
+	return d.Type
+}
+
+func (d *DeliverAskRequest) GetText() *string {
+	if d == nil {
+		return nil
+	}
+	return d.Text
+}
+
+func (d *DeliverAskRequest) GetAttachments() []*AttachmentRequest {
+	if d == nil {
+		return nil
+	}
+	return d.Attachments
+}
+
+func (d *DeliverAskRequest) GetTransientData() map[string]string {
+	if d == nil {
+		return nil
+	}
+	return d.TransientData
+}
+
+func (d *DeliverAskRequest) GetTimezone() *string {
+	if d == nil {
+		return nil
+	}
+	return d.Timezone
+}
+
+func (d *DeliverAskRequest) GetAppMetadata() map[string]string {
+	if d == nil {
+		return nil
+	}
+	return d.AppMetadata
+}
+
+func (d *DeliverAskRequest) GetUserID() *EntityIDBase {
+	if d == nil {
+		return nil
+	}
+	return d.UserID
+}
+
+func (d *DeliverAskRequest) GetExtraProperties() map[string]interface{} {
+	return d.extraProperties
+}
+
+func (d *DeliverAskRequest) require(field *big.Int) {
+	if d.explicitFields == nil {
+		d.explicitFields = big.NewInt(0)
+	}
+	d.explicitFields.Or(d.explicitFields, field)
+}
+
+// SetConversationMessageID sets the ConversationMessageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetConversationMessageID(conversationMessageID *EntityIDBase) {
+	d.ConversationMessageID = conversationMessageID
+	d.require(deliverAskRequestFieldConversationMessageID)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetType(type_ *AskType) {
+	d.Type = type_
+	d.require(deliverAskRequestFieldType)
+}
+
+// SetText sets the Text field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetText(text *string) {
+	d.Text = text
+	d.require(deliverAskRequestFieldText)
+}
+
+// SetAttachments sets the Attachments field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetAttachments(attachments []*AttachmentRequest) {
+	d.Attachments = attachments
+	d.require(deliverAskRequestFieldAttachments)
+}
+
+// SetTransientData sets the TransientData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetTransientData(transientData map[string]string) {
+	d.TransientData = transientData
+	d.require(deliverAskRequestFieldTransientData)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetTimezone(timezone *string) {
+	d.Timezone = timezone
+	d.require(deliverAskRequestFieldTimezone)
+}
+
+// SetAppMetadata sets the AppMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetAppMetadata(appMetadata map[string]string) {
+	d.AppMetadata = appMetadata
+	d.require(deliverAskRequestFieldAppMetadata)
+}
+
+// SetUserID sets the UserID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverAskRequest) SetUserID(userID *EntityIDBase) {
+	d.UserID = userID
+	d.require(deliverAskRequestFieldUserID)
+}
+
+func (d *DeliverAskRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler DeliverAskRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*d = DeliverAskRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
+	if err != nil {
+		return err
+	}
+	d.extraProperties = extraProperties
+	d.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (d *DeliverAskRequest) MarshalJSON() ([]byte, error) {
+	type embed DeliverAskRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*d),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (d *DeliverAskRequest) String() string {
+	if len(d.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(d); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", d)
+}
+
+type DeliverContent struct {
+	ContentType string
+	// A message to deliver as written, such as a human agent's reply. The agent does not respond to it.
+	Message *ConversationMessageRequest
+	// Has the agent take a `WELCOME` or `PROACTIVE` turn on the conversation, and delivers the agent's
+	// reply to the app that owns it. `text` steers what the agent says. The `text` is saved on the
+	// conversation but not delivered; only the agent's reply is. Returns a 400 if the conversation has
+	// `llmEnabled` set to false.
+	Ask *DeliverAskRequest
+}
+
+func (d *DeliverContent) GetContentType() string {
+	if d == nil {
+		return ""
+	}
+	return d.ContentType
+}
+
+func (d *DeliverContent) GetMessage() *ConversationMessageRequest {
+	if d == nil {
+		return nil
+	}
+	return d.Message
+}
+
+func (d *DeliverContent) GetAsk() *DeliverAskRequest {
+	if d == nil {
+		return nil
+	}
+	return d.Ask
+}
+
+func (d *DeliverContent) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		ContentType string `json:"contentType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	d.ContentType = unmarshaler.ContentType
+	if unmarshaler.ContentType == "" {
+		return fmt.Errorf("%T did not include discriminant contentType", d)
+	}
+	switch unmarshaler.ContentType {
+	case "message":
+		value := new(ConversationMessageRequest)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		d.Message = value
+	case "ask":
+		value := new(DeliverAskRequest)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		d.Ask = value
+	}
+	return nil
+}
+
+func (d DeliverContent) MarshalJSON() ([]byte, error) {
+	if err := d.validate(); err != nil {
+		return nil, err
+	}
+	if d.Message != nil {
+		return internal.MarshalJSONWithExtraProperty(d.Message, "contentType", "message")
+	}
+	if d.Ask != nil {
+		return internal.MarshalJSONWithExtraProperty(d.Ask, "contentType", "ask")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", d)
+}
+
+type DeliverContentVisitor interface {
+	VisitMessage(*ConversationMessageRequest) error
+	VisitAsk(*DeliverAskRequest) error
+}
+
+func (d *DeliverContent) Accept(visitor DeliverContentVisitor) error {
+	if d.Message != nil {
+		return visitor.VisitMessage(d.Message)
+	}
+	if d.Ask != nil {
+		return visitor.VisitAsk(d.Ask)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", d)
+}
+
+func (d *DeliverContent) validate() error {
+	if d == nil {
+		return fmt.Errorf("type %T is nil", d)
+	}
+	var fields []string
+	if d.Message != nil {
+		fields = append(fields, "message")
+	}
+	if d.Ask != nil {
+		fields = append(fields, "ask")
+	}
+	if len(fields) == 0 {
+		if d.ContentType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", d, d.ContentType)
+		}
+		return fmt.Errorf("type %T is empty", d)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", d, fields)
+	}
+	if d.ContentType != "" {
+		field := fields[0]
+		if d.ContentType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				d,
+				d.ContentType,
+				d,
+			)
+		}
+	}
+	return nil
+}
+
+var (
+	deliverConversationMessageRequestFieldMessage        = big.NewInt(1 << 0)
+	deliverConversationMessageRequestFieldContent        = big.NewInt(1 << 1)
+	deliverConversationMessageRequestFieldConversationID = big.NewInt(1 << 2)
+)
+
+type DeliverConversationMessageRequest struct {
+	// Deprecated. Use `content` with `contentType: message`, which takes the same message.
+	//
+	// A message to deliver as written. Set exactly one of `message` or `content`.
+	Message *ConversationMessageRequest `json:"message,omitempty" url:"message,omitempty"`
+	// What to deliver. Set exactly one of `message` or `content`.
+	Content *DeliverContent `json:"content,omitempty" url:"content,omitempty"`
+	// The ID of the conversation to deliver the message to. Message delivery will fail if the conversation does not have the `ASYNC` capability, and a closed conversation (`open` set to false) returns a 400.
+	ConversationID *EntityIDWithoutAgent `json:"conversationId" url:"conversationId"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
 }
 
 func (d *DeliverConversationMessageRequest) GetMessage() *ConversationMessageRequest {
@@ -3733,6 +4267,20 @@ func (d *DeliverConversationMessageRequest) GetMessage() *ConversationMessageReq
 		return nil
 	}
 	return d.Message
+}
+
+func (d *DeliverConversationMessageRequest) GetContent() *DeliverContent {
+	if d == nil {
+		return nil
+	}
+	return d.Content
+}
+
+func (d *DeliverConversationMessageRequest) GetConversationID() *EntityIDWithoutAgent {
+	if d == nil {
+		return nil
+	}
+	return d.ConversationID
 }
 
 func (d *DeliverConversationMessageRequest) GetExtraProperties() map[string]interface{} {
@@ -3746,18 +4294,25 @@ func (d *DeliverConversationMessageRequest) require(field *big.Int) {
 	d.explicitFields.Or(d.explicitFields, field)
 }
 
-// SetConversationID sets the ConversationID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeliverConversationMessageRequest) SetConversationID(conversationID *EntityIDWithoutAgent) {
-	d.ConversationID = conversationID
-	d.require(deliverConversationMessageRequestFieldConversationID)
-}
-
 // SetMessage sets the Message field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DeliverConversationMessageRequest) SetMessage(message *ConversationMessageRequest) {
 	d.Message = message
 	d.require(deliverConversationMessageRequestFieldMessage)
+}
+
+// SetContent sets the Content field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverConversationMessageRequest) SetContent(content *DeliverContent) {
+	d.Content = content
+	d.require(deliverConversationMessageRequestFieldContent)
+}
+
+// SetConversationID sets the ConversationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverConversationMessageRequest) SetConversationID(conversationID *EntityIDWithoutAgent) {
+	d.ConversationID = conversationID
+	d.require(deliverConversationMessageRequestFieldConversationID)
 }
 
 func (d *DeliverConversationMessageRequest) UnmarshalJSON(data []byte) error {
@@ -3788,6 +4343,104 @@ func (d *DeliverConversationMessageRequest) MarshalJSON() ([]byte, error) {
 }
 
 func (d *DeliverConversationMessageRequest) String() string {
+	if len(d.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(d); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", d)
+}
+
+var (
+	deliverMessageBaseFieldMessage = big.NewInt(1 << 0)
+	deliverMessageBaseFieldContent = big.NewInt(1 << 1)
+)
+
+type DeliverMessageBase struct {
+	// Deprecated. Use `content` with `contentType: message`, which takes the same message.
+	//
+	// A message to deliver as written. Set exactly one of `message` or `content`.
+	Message *ConversationMessageRequest `json:"message,omitempty" url:"message,omitempty"`
+	// What to deliver. Set exactly one of `message` or `content`.
+	Content *DeliverContent `json:"content,omitempty" url:"content,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (d *DeliverMessageBase) GetMessage() *ConversationMessageRequest {
+	if d == nil {
+		return nil
+	}
+	return d.Message
+}
+
+func (d *DeliverMessageBase) GetContent() *DeliverContent {
+	if d == nil {
+		return nil
+	}
+	return d.Content
+}
+
+func (d *DeliverMessageBase) GetExtraProperties() map[string]interface{} {
+	return d.extraProperties
+}
+
+func (d *DeliverMessageBase) require(field *big.Int) {
+	if d.explicitFields == nil {
+		d.explicitFields = big.NewInt(0)
+	}
+	d.explicitFields.Or(d.explicitFields, field)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverMessageBase) SetMessage(message *ConversationMessageRequest) {
+	d.Message = message
+	d.require(deliverMessageBaseFieldMessage)
+}
+
+// SetContent sets the Content field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverMessageBase) SetContent(content *DeliverContent) {
+	d.Content = content
+	d.require(deliverMessageBaseFieldContent)
+}
+
+func (d *DeliverMessageBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler DeliverMessageBase
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*d = DeliverMessageBase(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
+	if err != nil {
+		return err
+	}
+	d.extraProperties = extraProperties
+	d.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (d *DeliverMessageBase) MarshalJSON() ([]byte, error) {
+	type embed DeliverMessageBase
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*d),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (d *DeliverMessageBase) String() string {
 	if len(d.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
 			return value
@@ -3995,15 +4648,20 @@ func (d *DeliverMessageResponse) String() string {
 }
 
 var (
-	deliverUserMessageRequestFieldUserID  = big.NewInt(1 << 0)
-	deliverUserMessageRequestFieldMessage = big.NewInt(1 << 1)
+	deliverUserMessageRequestFieldMessage = big.NewInt(1 << 0)
+	deliverUserMessageRequestFieldContent = big.NewInt(1 << 1)
+	deliverUserMessageRequestFieldUserID  = big.NewInt(1 << 2)
 )
 
 type DeliverUserMessageRequest struct {
+	// Deprecated. Use `content` with `contentType: message`, which takes the same message.
+	//
+	// A message to deliver as written. Set exactly one of `message` or `content`.
+	Message *ConversationMessageRequest `json:"message,omitempty" url:"message,omitempty"`
+	// What to deliver. Set exactly one of `message` or `content`.
+	Content *DeliverContent `json:"content,omitempty" url:"content,omitempty"`
 	// The ID of the user to deliver the message to.
 	UserID *EntityIDWithoutAgent `json:"userId" url:"userId"`
-	// The message to deliver.
-	Message *ConversationMessageRequest `json:"message" url:"message"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4012,18 +4670,25 @@ type DeliverUserMessageRequest struct {
 	rawJSON         json.RawMessage
 }
 
-func (d *DeliverUserMessageRequest) GetUserID() *EntityIDWithoutAgent {
-	if d == nil {
-		return nil
-	}
-	return d.UserID
-}
-
 func (d *DeliverUserMessageRequest) GetMessage() *ConversationMessageRequest {
 	if d == nil {
 		return nil
 	}
 	return d.Message
+}
+
+func (d *DeliverUserMessageRequest) GetContent() *DeliverContent {
+	if d == nil {
+		return nil
+	}
+	return d.Content
+}
+
+func (d *DeliverUserMessageRequest) GetUserID() *EntityIDWithoutAgent {
+	if d == nil {
+		return nil
+	}
+	return d.UserID
 }
 
 func (d *DeliverUserMessageRequest) GetExtraProperties() map[string]interface{} {
@@ -4037,18 +4702,25 @@ func (d *DeliverUserMessageRequest) require(field *big.Int) {
 	d.explicitFields.Or(d.explicitFields, field)
 }
 
-// SetUserID sets the UserID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeliverUserMessageRequest) SetUserID(userID *EntityIDWithoutAgent) {
-	d.UserID = userID
-	d.require(deliverUserMessageRequestFieldUserID)
-}
-
 // SetMessage sets the Message field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DeliverUserMessageRequest) SetMessage(message *ConversationMessageRequest) {
 	d.Message = message
 	d.require(deliverUserMessageRequestFieldMessage)
+}
+
+// SetContent sets the Content field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverUserMessageRequest) SetContent(content *DeliverContent) {
+	d.Content = content
+	d.require(deliverUserMessageRequestFieldContent)
+}
+
+// SetUserID sets the UserID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverUserMessageRequest) SetUserID(userID *EntityIDWithoutAgent) {
+	d.UserID = userID
+	d.require(deliverUserMessageRequestFieldUserID)
 }
 
 func (d *DeliverUserMessageRequest) UnmarshalJSON(data []byte) error {

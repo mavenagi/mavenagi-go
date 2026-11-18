@@ -65,6 +65,11 @@ func (c *Client) InitiateUpload(
 // Commit an upload after successful file transfer.
 // Updates the asset status and makes it available for use.
 //
+// An asset is committed once. Committing it again with the same checksum is safe while its file
+// is unchanged, so a client can retry a commit; a different checksum returns a 409. Once
+// committed, don't write to the upload URL again, even with the same bytes: committing after
+// that may return a 409, and the file then has to be uploaded as a new asset.
+//
 // <Note>**Required permission:** `ask:agent`</Note>
 func (c *Client) CommitUpload(
 	ctx context.Context,

@@ -780,7 +780,7 @@ type AppUserSummary struct {
 	UserID *EntityID `json:"userId" url:"userId"`
 	// App provided identifiers for the user.
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
-	// App provided data masked according to the data's visibility type. `HIDDEN` or `PARTIALLY_VISIBLE` data values will be not be fully returned.
+	// App provided data, masked by each value's visibility. `HIDDEN` values are returned as `********`, and `PARTIALLY_VISIBLE` values have all but their last 3 characters masked. The masking applies to this response only; `GET /users/{userId}` returns the full values.
 	VisibleData map[string]string `json:"visibleData" url:"visibleData"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

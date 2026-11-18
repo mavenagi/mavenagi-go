@@ -51,7 +51,9 @@ type AgentPatchRequest struct {
 	//
 	// The field must be `ACTIVE` to produce values. While it is inactive, conversations get no category. With agent variants, a conversation gets a category only if the field is active in its variant. Categories are capped at 280 characters.
 	CategoryIntelligentFieldID *EntityIDWithoutAgent `json:"categoryIntelligentFieldId,omitempty" url:"-"`
-	// LLM prompt for generating a response when the user's question has been detected as unsafe.
+	// Instructions to an LLM that writes the reply when the user's message is blocked for harmful content (hate, self-harm, sexual or violence). The LLM sees only these instructions and the blocked message, not the agent's charters, knowledge or earlier messages. To send fixed wording, say so in the instructions, for example `Always reply with exactly: "…"`.
+	//
+	// A message flagged as a prompt attack always gets the default reply, even when it was also flagged for harmful content. So does every blocked message while this is not set.
 	//
 	// Rejected with reason `VARIANT_REQUIRED` while `CONTENT_SAFETY_VIOLATION_RESPONSE_PROMPT_TEXT` is in `getVersionedEntityTypes`; set it through `patchVersionedSettings`.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"-"`
@@ -533,10 +535,11 @@ type AgentPrompting struct {
 	//
 	// Shown in Agent Designer as "Category prompt override".
 	CategoryGenerationPromptText *string `json:"categoryGenerationPromptText,omitempty" url:"categoryGenerationPromptText,omitempty"`
-	// LLM prompt for generating a response when the user's question has been detected as unsafe.
+	// Instructions to an LLM that writes the reply when the user's message is blocked for harmful content (hate, self-harm, sexual or violence). The LLM sees only these instructions and the blocked message, not the agent's charters, knowledge or earlier messages. To send fixed wording, say so in the instructions, for example `Always reply with exactly: "…"`.
 	//
-	// Use this to provide custom LLM generated replies when dealing with content safety violations.
-	// When not set, a default response is sent and replies will not be personalized by the LLM as it will not be involved.
+	// A message flagged as a prompt attack always gets the default reply, even when it was also flagged for harmful content. So does every blocked message while this is not set.
+	//
+	// Shown in Agent Designer as "Content Safety Violation Message".
 	//
 	// Omitted while `CONTENT_SAFETY_VIOLATION_RESPONSE_PROMPT_TEXT` is in `getVersionedEntityTypes`; read it through `getVersionedSettings`.
 	ContentSafetyViolationResponsePromptText *string `json:"contentSafetyViolationResponsePromptText,omitempty" url:"contentSafetyViolationResponsePromptText,omitempty"`

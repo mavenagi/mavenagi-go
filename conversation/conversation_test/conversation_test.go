@@ -493,21 +493,23 @@ func TestConversationDeliverMessageWithWireMock(
 		),
 	)
 	request := &mavenagigo.DeliverMessageRequest{
-		User: &mavenagigo.DeliverUserMessageRequest{
-			UserID: &mavenagigo.EntityIDWithoutAgent{
-				Type:        mavenagigo.EntityTypeAgent,
-				AppID:       "appId",
-				ReferenceID: "x",
+		Conversation: &mavenagigo.DeliverConversationMessageRequest{
+			ConversationID: &mavenagigo.EntityIDWithoutAgent{
+				Type:        mavenagigo.EntityTypeConversation,
+				AppID:       "chat-app",
+				ReferenceID: "conversation-0",
 			},
-			Message: &mavenagigo.ConversationMessageRequest{
-				ConversationMessageID: &mavenagigo.EntityIDBase{
-					ReferenceID: "x",
+			Content: &mavenagigo.DeliverContent{
+				Message: &mavenagigo.ConversationMessageRequest{
+					ConversationMessageID: &mavenagigo.EntityIDBase{
+						ReferenceID: "message-0",
+					},
+					UserID: &mavenagigo.EntityIDBase{
+						ReferenceID: "human-agent-0",
+					},
+					Text:            "Hi, I'm Priya. I can help with your refund.",
+					UserMessageType: mavenagigo.UserConversationMessageTypeHumanAgent,
 				},
-				UserID: &mavenagigo.EntityIDBase{
-					ReferenceID: "x",
-				},
-				Text:            "text",
-				UserMessageType: mavenagigo.UserConversationMessageTypeUser,
 			},
 		},
 	}

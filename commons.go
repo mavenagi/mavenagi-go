@@ -10,6 +10,121 @@ import (
 	time "time"
 )
 
+// A half-open span `[start, end)` between two instants. Set only `start` for "after", only
+// `end` for "before", or both for "between". At least one is required, and `start` must be
+// before `end` when both are set.
+//
+// Both ends are instants with an offset, so a client converts a local date to an instant
+// before sending it; the server applies no timezone. The server keeps only the instant, so
+// a window reads back in UTC.
+var (
+	absoluteTimeWindowFieldStart = big.NewInt(1 << 0)
+	absoluteTimeWindowFieldEnd   = big.NewInt(1 << 1)
+)
+
+type AbsoluteTimeWindow struct {
+	// The first instant inside the window. Omit to leave the window open at the start.
+	Start *time.Time `json:"start,omitempty" url:"start,omitempty"`
+	// The first instant after the window. Omit to leave the window open at the end.
+	End *time.Time `json:"end,omitempty" url:"end,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AbsoluteTimeWindow) GetStart() *time.Time {
+	if a == nil {
+		return nil
+	}
+	return a.Start
+}
+
+func (a *AbsoluteTimeWindow) GetEnd() *time.Time {
+	if a == nil {
+		return nil
+	}
+	return a.End
+}
+
+func (a *AbsoluteTimeWindow) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AbsoluteTimeWindow) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetStart sets the Start field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AbsoluteTimeWindow) SetStart(start *time.Time) {
+	a.Start = start
+	a.require(absoluteTimeWindowFieldStart)
+}
+
+// SetEnd sets the End field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AbsoluteTimeWindow) SetEnd(end *time.Time) {
+	a.End = end
+	a.require(absoluteTimeWindowFieldEnd)
+}
+
+func (a *AbsoluteTimeWindow) UnmarshalJSON(data []byte) error {
+	type embed AbsoluteTimeWindow
+	var unmarshaler = struct {
+		embed
+		Start *internal.DateTime `json:"start,omitempty"`
+		End   *internal.DateTime `json:"end,omitempty"`
+	}{
+		embed: embed(*a),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*a = AbsoluteTimeWindow(unmarshaler.embed)
+	a.Start = unmarshaler.Start.TimePtr()
+	a.End = unmarshaler.End.TimePtr()
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AbsoluteTimeWindow) MarshalJSON() ([]byte, error) {
+	type embed AbsoluteTimeWindow
+	var marshaler = struct {
+		embed
+		Start *internal.DateTime `json:"start,omitempty"`
+		End   *internal.DateTime `json:"end,omitempty"`
+	}{
+		embed: embed(*a),
+		Start: internal.NewOptionalDateTime(a.Start),
+		End:   internal.NewOptionalDateTime(a.End),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AbsoluteTimeWindow) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
 var (
 	actionBaseFieldUserInteractionRequired = big.NewInt(1 << 0)
 	actionBaseFieldButtonName              = big.NewInt(1 << 1)
@@ -2122,7 +2237,14 @@ var (
 type AppUser struct {
 	// Used to determine whether two users from different apps are the same
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
-	Data        map[string]*UserData `json:"data" url:"data"`
+	// Data about the user, keyed by field name.
+	//
+	// Do not store credentials, tokens or other secrets here, whatever their `visibility`.
+	// User data is not secret storage: values are stored as given, and the users API returns
+	// them in full to callers that can read users. To pass a per-user credential to your
+	// app's actions, send it as `transientData` on the ask or submit-action-form request, which
+	// is forwarded to the actions of that request and not stored.
+	Data map[string]*UserData `json:"data" url:"data"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2336,7 +2458,14 @@ var (
 type AppUserRequest struct {
 	// Used to determine whether two users from different apps are the same
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
-	Data        map[string]*UserData `json:"data" url:"data"`
+	// Data about the user, keyed by field name.
+	//
+	// Do not store credentials, tokens or other secrets here, whatever their `visibility`.
+	// User data is not secret storage: values are stored as given, and the users API returns
+	// them in full to callers that can read users. To pass a per-user credential to your
+	// app's actions, send it as `transientData` on the ask or submit-action-form request, which
+	// is forwarded to the actions of that request and not stored.
+	Data map[string]*UserData `json:"data" url:"data"`
 	// ID that uniquely identifies this app user
 	UserID *EntityIDBase `json:"userId" url:"userId"`
 	// The execution mode the user lives in. Defaults to `LIVE` for a new user, and to the existing
@@ -2475,7 +2604,14 @@ var (
 type AppUserResponse struct {
 	// Used to determine whether two users from different apps are the same
 	Identifiers []*AppUserIdentifier `json:"identifiers" url:"identifiers"`
-	Data        map[string]*UserData `json:"data" url:"data"`
+	// Data about the user, keyed by field name.
+	//
+	// Do not store credentials, tokens or other secrets here, whatever their `visibility`.
+	// User data is not secret storage: values are stored as given, and the users API returns
+	// them in full to callers that can read users. To pass a per-user credential to your
+	// app's actions, send it as `transientData` on the ask or submit-action-form request, which
+	// is forwarded to the actions of that request and not stored.
+	Data map[string]*UserData `json:"data" url:"data"`
 	// ID that uniquely identifies this user
 	UserID *EntityID `json:"userId" url:"userId"`
 	// The ID of the agent user (merged view) that this app user is associated with
@@ -2648,8 +2784,9 @@ var (
 	arraySettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
 	arraySettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
 	arraySettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
-	arraySettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
-	arraySettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+	arraySettingsSchemaEntryFieldValidation   = big.NewInt(1 << 5)
+	arraySettingsSchemaEntryFieldValidations  = big.NewInt(1 << 6)
+	arraySettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 7)
 )
 
 type ArraySettingsSchemaEntry struct {
@@ -2658,9 +2795,12 @@ type ArraySettingsSchemaEntry struct {
 	Description *string         `json:"description,omitempty" url:"description,omitempty"`
 	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
 	// Whether the setting must have a value upon install. Defaults to false.
-	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
-	DefaultValue []string                  `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
-	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// Use `validations`.
+	Validation *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	// More rules for the value, each with its own `errorMessage`, in order after `validation`.
+	Validations  []*SettingsSchemaValidation `json:"validations,omitempty" url:"validations,omitempty"`
+	DefaultValue []string                    `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2704,18 +2844,25 @@ func (a *ArraySettingsSchemaEntry) GetRequired() *bool {
 	return a.Required
 }
 
-func (a *ArraySettingsSchemaEntry) GetDefaultValue() []string {
-	if a == nil {
-		return nil
-	}
-	return a.DefaultValue
-}
-
 func (a *ArraySettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
 	if a == nil {
 		return nil
 	}
 	return a.Validation
+}
+
+func (a *ArraySettingsSchemaEntry) GetValidations() []*SettingsSchemaValidation {
+	if a == nil {
+		return nil
+	}
+	return a.Validations
+}
+
+func (a *ArraySettingsSchemaEntry) GetDefaultValue() []string {
+	if a == nil {
+		return nil
+	}
+	return a.DefaultValue
 }
 
 func (a *ArraySettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
@@ -2764,18 +2911,25 @@ func (a *ArraySettingsSchemaEntry) SetRequired(required *bool) {
 	a.require(arraySettingsSchemaEntryFieldRequired)
 }
 
-// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ArraySettingsSchemaEntry) SetDefaultValue(defaultValue []string) {
-	a.DefaultValue = defaultValue
-	a.require(arraySettingsSchemaEntryFieldDefaultValue)
-}
-
 // SetValidation sets the Validation field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (a *ArraySettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
 	a.Validation = validation
 	a.require(arraySettingsSchemaEntryFieldValidation)
+}
+
+// SetValidations sets the Validations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetValidations(validations []*SettingsSchemaValidation) {
+	a.Validations = validations
+	a.require(arraySettingsSchemaEntryFieldValidations)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ArraySettingsSchemaEntry) SetDefaultValue(defaultValue []string) {
+	a.DefaultValue = defaultValue
+	a.require(arraySettingsSchemaEntryFieldDefaultValue)
 }
 
 func (a *ArraySettingsSchemaEntry) UnmarshalJSON(data []byte) error {
@@ -4586,6 +4740,13 @@ func (b BotConversationMessageType) Ptr() *BotConversationMessageType {
 	return &b
 }
 
+// What the agent did to produce this response, in order.
+//
+// The agent may reason more than once before it responds. When it runs an action, it
+// reasons again with the action's result, and each pass is one step. A step lists the
+// context the agent evaluated, in this order: intelligent fields, segments, user data,
+// charters and knowledge. An `actions` item follows. Steering and form-submission items appear
+// where they happened.
 var (
 	botLogicFieldItems = big.NewInt(1 << 0)
 )
@@ -5645,11 +5806,19 @@ func (b *BotLogicIntelligentFieldDetail) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// The intelligent fields the agent's charters or segments refer to, with the values the
+// agent used for this step.
+//
+// The agent evaluates these fields once per request that asks it to respond, before its
+// first step, and never between steps. Every step of that request reuses those values. So
+// when a response takes several steps, this item repeats in each step with the same values.
+// The repeat does not mean the fields were evaluated again.
 var (
 	botLogicIntelligentFieldsItemFieldRefreshedFields = big.NewInt(1 << 0)
 )
 
 type BotLogicIntelligentFieldsItem struct {
+	// The fields and their values, as evaluated before the request's first step.
 	RefreshedFields []*BotLogicIntelligentFieldDetail `json:"refreshedFields" url:"refreshedFields"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -8070,8 +8239,9 @@ var (
 	colorSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
 	colorSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
 	colorSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
-	colorSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
-	colorSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+	colorSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 5)
+	colorSettingsSchemaEntryFieldValidations  = big.NewInt(1 << 6)
+	colorSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 7)
 )
 
 type ColorSettingsSchemaEntry struct {
@@ -8080,9 +8250,12 @@ type ColorSettingsSchemaEntry struct {
 	Description *string         `json:"description,omitempty" url:"description,omitempty"`
 	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
 	// Whether the setting must have a value upon install. Defaults to false.
-	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
-	DefaultValue *string                   `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
-	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// Use `validations`.
+	Validation *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	// More rules for the value, each with its own `errorMessage`, in order after `validation`.
+	Validations  []*SettingsSchemaValidation `json:"validations,omitempty" url:"validations,omitempty"`
+	DefaultValue *string                     `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -8126,18 +8299,25 @@ func (c *ColorSettingsSchemaEntry) GetRequired() *bool {
 	return c.Required
 }
 
-func (c *ColorSettingsSchemaEntry) GetDefaultValue() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DefaultValue
-}
-
 func (c *ColorSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
 	if c == nil {
 		return nil
 	}
 	return c.Validation
+}
+
+func (c *ColorSettingsSchemaEntry) GetValidations() []*SettingsSchemaValidation {
+	if c == nil {
+		return nil
+	}
+	return c.Validations
+}
+
+func (c *ColorSettingsSchemaEntry) GetDefaultValue() *string {
+	if c == nil {
+		return nil
+	}
+	return c.DefaultValue
 }
 
 func (c *ColorSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
@@ -8186,18 +8366,25 @@ func (c *ColorSettingsSchemaEntry) SetRequired(required *bool) {
 	c.require(colorSettingsSchemaEntryFieldRequired)
 }
 
-// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ColorSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
-	c.DefaultValue = defaultValue
-	c.require(colorSettingsSchemaEntryFieldDefaultValue)
-}
-
 // SetValidation sets the Validation field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ColorSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
 	c.Validation = validation
 	c.require(colorSettingsSchemaEntryFieldValidation)
+}
+
+// SetValidations sets the Validations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetValidations(validations []*SettingsSchemaValidation) {
+	c.Validations = validations
+	c.require(colorSettingsSchemaEntryFieldValidations)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ColorSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	c.DefaultValue = defaultValue
+	c.require(colorSettingsSchemaEntryFieldDefaultValue)
 }
 
 func (c *ColorSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
@@ -8496,7 +8683,9 @@ type ConversationAnalysis struct {
 	UserRequest *string `json:"userRequest,omitempty" url:"userRequest,omitempty"`
 	// Generated agent response summary of the conversation
 	AgentResponse *string `json:"agentResponse,omitempty" url:"agentResponse,omitempty"`
-	// Generated resolution status of the conversation
+	// Resolution status of the conversation. Code computes it from the messages, feedback,
+	// CSAT and inserts. The one AI input is the transcript summary, which can report a
+	// handoff and set `ESCALATED`. See `ResolutionStatus` for how each status is set.
 	ResolutionStatus *ResolutionStatus `json:"resolutionStatus,omitempty" url:"resolutionStatus,omitempty"`
 	// Generated category of the conversation. For agents with a `categoryIntelligentFieldId`, this is that intelligent field's value. New agents without one have no category.
 	Category *string `json:"category,omitempty" url:"category,omitempty"`
@@ -8506,7 +8695,9 @@ type ConversationAnalysis struct {
 	Quality *Quality `json:"quality,omitempty" url:"quality,omitempty"`
 	// If the quality of the conversation is `UNKNOWN` or `NEEDS_IMPROVEMENT` then a reason for the quality will be provided when possible.
 	QualityReason *QualityReason `json:"qualityReason,omitempty" url:"qualityReason,omitempty"`
-	// Whether the conversation was resolved by Maven
+	// Whether the conversation was resolved by Maven: `true` exactly when `resolutionStatus`
+	// is `RESOLVED`. These are the conversations billed under resolution-based pricing, and
+	// the ones the `ELIGIBLE_AND_BILLABLE` billing status matches.
 	ResolvedByMaven *bool `json:"resolvedByMaven,omitempty" url:"resolvedByMaven,omitempty"`
 	// Primary language of the conversation in ISO 639-1 code format
 	PrimaryLanguage *string `json:"primaryLanguage,omitempty" url:"primaryLanguage,omitempty"`
@@ -8977,7 +9168,7 @@ func (c *ConversationInformation) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// A single persisted Conversation Kickoff execution result, with timing.
+// One Conversation Kickoff execution result, with timing: one recorded when a conversation ran its kickoffs, or one from a simulation, which is not recorded.
 var (
 	conversationKickoffExecutionResponseFieldReferenceID = big.NewInt(1 << 0)
 	conversationKickoffExecutionResponseFieldAppID       = big.NewInt(1 << 1)
@@ -9655,6 +9846,7 @@ type ConversationPrecondition struct {
 	ConversationState            *ConversationStatePrecondition
 	ConversationMode             *ConversationModePrecondition
 	IntelligentField             *IntelligentFieldPrecondition
+	Time                         *TimePrecondition
 }
 
 func (c *ConversationPrecondition) GetConversationPreconditionType() string {
@@ -9720,6 +9912,13 @@ func (c *ConversationPrecondition) GetIntelligentField() *IntelligentFieldPrecon
 	return c.IntelligentField
 }
 
+func (c *ConversationPrecondition) GetTime() *TimePrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.Time
+}
+
 func (c *ConversationPrecondition) UnmarshalJSON(data []byte) error {
 	var unmarshaler struct {
 		ConversationPreconditionType string `json:"conversationPreconditionType"`
@@ -9780,6 +9979,12 @@ func (c *ConversationPrecondition) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.IntelligentField = value
+	case "time":
+		value := new(TimePrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Time = value
 	}
 	return nil
 }
@@ -9812,6 +10017,9 @@ func (c ConversationPrecondition) MarshalJSON() ([]byte, error) {
 	if c.IntelligentField != nil {
 		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
 	}
+	if c.Time != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Time, "conversationPreconditionType", "time")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
 }
 
@@ -9824,6 +10032,7 @@ type ConversationPreconditionVisitor interface {
 	VisitConversationState(*ConversationStatePrecondition) error
 	VisitConversationMode(*ConversationModePrecondition) error
 	VisitIntelligentField(*IntelligentFieldPrecondition) error
+	VisitTime(*TimePrecondition) error
 }
 
 func (c *ConversationPrecondition) Accept(visitor ConversationPreconditionVisitor) error {
@@ -9850,6 +10059,9 @@ func (c *ConversationPrecondition) Accept(visitor ConversationPreconditionVisito
 	}
 	if c.IntelligentField != nil {
 		return visitor.VisitIntelligentField(c.IntelligentField)
+	}
+	if c.Time != nil {
+		return visitor.VisitTime(c.Time)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", c)
 }
@@ -9882,6 +10094,9 @@ func (c *ConversationPrecondition) validate() error {
 	}
 	if c.IntelligentField != nil {
 		fields = append(fields, "intelligentField")
+	}
+	if c.Time != nil {
+		fields = append(fields, "time")
 	}
 	if len(fields) == 0 {
 		if c.ConversationPreconditionType != "" {
@@ -9916,6 +10131,7 @@ type ConversationPreconditionResponse struct {
 	ConversationState            *ConversationStatePrecondition
 	ConversationMode             *ConversationModePrecondition
 	IntelligentField             *IntelligentFieldPreconditionResponse
+	Time                         *TimePrecondition
 }
 
 func (c *ConversationPreconditionResponse) GetConversationPreconditionType() string {
@@ -9981,6 +10197,13 @@ func (c *ConversationPreconditionResponse) GetIntelligentField() *IntelligentFie
 	return c.IntelligentField
 }
 
+func (c *ConversationPreconditionResponse) GetTime() *TimePrecondition {
+	if c == nil {
+		return nil
+	}
+	return c.Time
+}
+
 func (c *ConversationPreconditionResponse) UnmarshalJSON(data []byte) error {
 	var unmarshaler struct {
 		ConversationPreconditionType string `json:"conversationPreconditionType"`
@@ -10041,6 +10264,12 @@ func (c *ConversationPreconditionResponse) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.IntelligentField = value
+	case "time":
+		value := new(TimePrecondition)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Time = value
 	}
 	return nil
 }
@@ -10073,6 +10302,9 @@ func (c ConversationPreconditionResponse) MarshalJSON() ([]byte, error) {
 	if c.IntelligentField != nil {
 		return internal.MarshalJSONWithExtraProperty(c.IntelligentField, "conversationPreconditionType", "intelligentField")
 	}
+	if c.Time != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Time, "conversationPreconditionType", "time")
+	}
 	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
 }
 
@@ -10085,6 +10317,7 @@ type ConversationPreconditionResponseVisitor interface {
 	VisitConversationState(*ConversationStatePrecondition) error
 	VisitConversationMode(*ConversationModePrecondition) error
 	VisitIntelligentField(*IntelligentFieldPreconditionResponse) error
+	VisitTime(*TimePrecondition) error
 }
 
 func (c *ConversationPreconditionResponse) Accept(visitor ConversationPreconditionResponseVisitor) error {
@@ -10111,6 +10344,9 @@ func (c *ConversationPreconditionResponse) Accept(visitor ConversationPreconditi
 	}
 	if c.IntelligentField != nil {
 		return visitor.VisitIntelligentField(c.IntelligentField)
+	}
+	if c.Time != nil {
+		return visitor.VisitTime(c.Time)
 	}
 	return fmt.Errorf("type %T does not define a non-empty union type", c)
 }
@@ -10143,6 +10379,9 @@ func (c *ConversationPreconditionResponse) validate() error {
 	}
 	if c.IntelligentField != nil {
 		fields = append(fields, "intelligentField")
+	}
+	if c.Time != nil {
+		fields = append(fields, "time")
 	}
 	if len(fields) == 0 {
 		if c.ConversationPreconditionType != "" {
@@ -11896,6 +12135,294 @@ func (c *CursorPage) String() string {
 }
 
 var (
+	dayOfMonthDaySelectorFieldDays = big.NewInt(1 << 0)
+)
+
+type DayOfMonthDaySelector struct {
+	// The dates of the month the window covers, from 1 to 31, or from -1 to -31 to count back from the end of the month: -1 is the last day and -3 the third from last. Must not be empty. A date past the end of a month never matches it, so 31 and -31 skip 30-day months and February.
+	Days []int `json:"days" url:"days"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (d *DayOfMonthDaySelector) GetDays() []int {
+	if d == nil {
+		return nil
+	}
+	return d.Days
+}
+
+func (d *DayOfMonthDaySelector) GetExtraProperties() map[string]interface{} {
+	return d.extraProperties
+}
+
+func (d *DayOfMonthDaySelector) require(field *big.Int) {
+	if d.explicitFields == nil {
+		d.explicitFields = big.NewInt(0)
+	}
+	d.explicitFields.Or(d.explicitFields, field)
+}
+
+// SetDays sets the Days field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DayOfMonthDaySelector) SetDays(days []int) {
+	d.Days = days
+	d.require(dayOfMonthDaySelectorFieldDays)
+}
+
+func (d *DayOfMonthDaySelector) UnmarshalJSON(data []byte) error {
+	type unmarshaler DayOfMonthDaySelector
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*d = DayOfMonthDaySelector(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
+	if err != nil {
+		return err
+	}
+	d.extraProperties = extraProperties
+	d.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (d *DayOfMonthDaySelector) MarshalJSON() ([]byte, error) {
+	type embed DayOfMonthDaySelector
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*d),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (d *DayOfMonthDaySelector) String() string {
+	if len(d.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(d); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", d)
+}
+
+type DayOfWeek string
+
+const (
+	DayOfWeekMonday    DayOfWeek = "MONDAY"
+	DayOfWeekTuesday   DayOfWeek = "TUESDAY"
+	DayOfWeekWednesday DayOfWeek = "WEDNESDAY"
+	DayOfWeekThursday  DayOfWeek = "THURSDAY"
+	DayOfWeekFriday    DayOfWeek = "FRIDAY"
+	DayOfWeekSaturday  DayOfWeek = "SATURDAY"
+	DayOfWeekSunday    DayOfWeek = "SUNDAY"
+)
+
+func NewDayOfWeekFromString(s string) (DayOfWeek, error) {
+	switch s {
+	case "MONDAY":
+		return DayOfWeekMonday, nil
+	case "TUESDAY":
+		return DayOfWeekTuesday, nil
+	case "WEDNESDAY":
+		return DayOfWeekWednesday, nil
+	case "THURSDAY":
+		return DayOfWeekThursday, nil
+	case "FRIDAY":
+		return DayOfWeekFriday, nil
+	case "SATURDAY":
+		return DayOfWeekSaturday, nil
+	case "SUNDAY":
+		return DayOfWeekSunday, nil
+	}
+	var t DayOfWeek
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DayOfWeek) Ptr() *DayOfWeek {
+	return &d
+}
+
+// Which days a recurring window covers. Each member names one way of picking days, so a
+// selector means exactly what its type says. For a window that covers days picked two ways
+// ("the 15th, or the third Monday"), OR two preconditions in a `PreconditionGroup`.
+type DaySelector struct {
+	DayType string
+	// Every occurrence of the listed days of the week.
+	Weekdays *WeekdaysDaySelector
+	// Fixed dates of the month, such as the 1st, the 15th, or the last day.
+	DayOfMonth *DayOfMonthDaySelector
+	// Numbered occurrences within the month, such as the third Monday or the last weekday.
+	NthWeekday *NthWeekdayDaySelector
+	// One run of dates every year, such as December 24 through January 2.
+	YearlyDates *YearlyDatesDaySelector
+}
+
+func (d *DaySelector) GetDayType() string {
+	if d == nil {
+		return ""
+	}
+	return d.DayType
+}
+
+func (d *DaySelector) GetWeekdays() *WeekdaysDaySelector {
+	if d == nil {
+		return nil
+	}
+	return d.Weekdays
+}
+
+func (d *DaySelector) GetDayOfMonth() *DayOfMonthDaySelector {
+	if d == nil {
+		return nil
+	}
+	return d.DayOfMonth
+}
+
+func (d *DaySelector) GetNthWeekday() *NthWeekdayDaySelector {
+	if d == nil {
+		return nil
+	}
+	return d.NthWeekday
+}
+
+func (d *DaySelector) GetYearlyDates() *YearlyDatesDaySelector {
+	if d == nil {
+		return nil
+	}
+	return d.YearlyDates
+}
+
+func (d *DaySelector) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		DayType string `json:"dayType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	d.DayType = unmarshaler.DayType
+	if unmarshaler.DayType == "" {
+		return fmt.Errorf("%T did not include discriminant dayType", d)
+	}
+	switch unmarshaler.DayType {
+	case "weekdays":
+		value := new(WeekdaysDaySelector)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		d.Weekdays = value
+	case "dayOfMonth":
+		value := new(DayOfMonthDaySelector)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		d.DayOfMonth = value
+	case "nthWeekday":
+		value := new(NthWeekdayDaySelector)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		d.NthWeekday = value
+	case "yearlyDates":
+		value := new(YearlyDatesDaySelector)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		d.YearlyDates = value
+	}
+	return nil
+}
+
+func (d DaySelector) MarshalJSON() ([]byte, error) {
+	if err := d.validate(); err != nil {
+		return nil, err
+	}
+	if d.Weekdays != nil {
+		return internal.MarshalJSONWithExtraProperty(d.Weekdays, "dayType", "weekdays")
+	}
+	if d.DayOfMonth != nil {
+		return internal.MarshalJSONWithExtraProperty(d.DayOfMonth, "dayType", "dayOfMonth")
+	}
+	if d.NthWeekday != nil {
+		return internal.MarshalJSONWithExtraProperty(d.NthWeekday, "dayType", "nthWeekday")
+	}
+	if d.YearlyDates != nil {
+		return internal.MarshalJSONWithExtraProperty(d.YearlyDates, "dayType", "yearlyDates")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", d)
+}
+
+type DaySelectorVisitor interface {
+	VisitWeekdays(*WeekdaysDaySelector) error
+	VisitDayOfMonth(*DayOfMonthDaySelector) error
+	VisitNthWeekday(*NthWeekdayDaySelector) error
+	VisitYearlyDates(*YearlyDatesDaySelector) error
+}
+
+func (d *DaySelector) Accept(visitor DaySelectorVisitor) error {
+	if d.Weekdays != nil {
+		return visitor.VisitWeekdays(d.Weekdays)
+	}
+	if d.DayOfMonth != nil {
+		return visitor.VisitDayOfMonth(d.DayOfMonth)
+	}
+	if d.NthWeekday != nil {
+		return visitor.VisitNthWeekday(d.NthWeekday)
+	}
+	if d.YearlyDates != nil {
+		return visitor.VisitYearlyDates(d.YearlyDates)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", d)
+}
+
+func (d *DaySelector) validate() error {
+	if d == nil {
+		return fmt.Errorf("type %T is nil", d)
+	}
+	var fields []string
+	if d.Weekdays != nil {
+		fields = append(fields, "weekdays")
+	}
+	if d.DayOfMonth != nil {
+		fields = append(fields, "dayOfMonth")
+	}
+	if d.NthWeekday != nil {
+		fields = append(fields, "nthWeekday")
+	}
+	if d.YearlyDates != nil {
+		fields = append(fields, "yearlyDates")
+	}
+	if len(fields) == 0 {
+		if d.DayType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", d, d.DayType)
+		}
+		return fmt.Errorf("type %T is empty", d)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", d, fields)
+	}
+	if d.DayType != "" {
+		field := fields[0]
+		if d.DayType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				d,
+				d.DayType,
+				d,
+			)
+		}
+	}
+	return nil
+}
+
+var (
 	deviceInfoFieldType    = big.NewInt(1 << 0)
 	deviceInfoFieldName    = big.NewInt(1 << 1)
 	deviceInfoFieldVersion = big.NewInt(1 << 2)
@@ -12364,7 +12891,7 @@ var (
 )
 
 type EntityID struct {
-	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with the other fields of its ID.
 	//
 	// Must be less than 192 characters and contain only:
 	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
@@ -12517,7 +13044,7 @@ var (
 )
 
 type EntityIDBase struct {
-	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with the other fields of its ID.
 	//
 	// Must be less than 192 characters and contain only:
 	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
@@ -12702,7 +13229,7 @@ var (
 )
 
 type EntityIDWithoutAgent struct {
-	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with all other entityId fields (type, appId, organizationId, agentId).
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with the other fields of its ID.
 	//
 	// Must be less than 192 characters and contain only:
 	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
@@ -12961,6 +13488,9 @@ const (
 	EntityTypeScenarioRun         EntityType = "SCENARIO_RUN"
 	EntityTypeFunction            EntityType = "FUNCTION"
 	EntityTypeFunctionVersion     EntityType = "FUNCTION_VERSION"
+	// In development. A person or a service account, identified above the organization level. No
+	// `EntityId` has this type: a mavenUser belongs to no organization or agent.
+	EntityTypeMavenUser EntityType = "MAVEN_USER"
 )
 
 func NewEntityTypeFromString(s string) (EntityType, error) {
@@ -13021,6 +13551,8 @@ func NewEntityTypeFromString(s string) (EntityType, error) {
 		return EntityTypeFunction, nil
 	case "FUNCTION_VERSION":
 		return EntityTypeFunctionVersion, nil
+	case "MAVEN_USER":
+		return EntityTypeMavenUser, nil
 	}
 	var t EntityType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -20585,14 +21117,67 @@ func (m *MetadataPrecondition) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
+type Month string
+
+const (
+	MonthJanuary   Month = "JANUARY"
+	MonthFebruary  Month = "FEBRUARY"
+	MonthMarch     Month = "MARCH"
+	MonthApril     Month = "APRIL"
+	MonthMay       Month = "MAY"
+	MonthJune      Month = "JUNE"
+	MonthJuly      Month = "JULY"
+	MonthAugust    Month = "AUGUST"
+	MonthSeptember Month = "SEPTEMBER"
+	MonthOctober   Month = "OCTOBER"
+	MonthNovember  Month = "NOVEMBER"
+	MonthDecember  Month = "DECEMBER"
+)
+
+func NewMonthFromString(s string) (Month, error) {
+	switch s {
+	case "JANUARY":
+		return MonthJanuary, nil
+	case "FEBRUARY":
+		return MonthFebruary, nil
+	case "MARCH":
+		return MonthMarch, nil
+	case "APRIL":
+		return MonthApril, nil
+	case "MAY":
+		return MonthMay, nil
+	case "JUNE":
+		return MonthJune, nil
+	case "JULY":
+		return MonthJuly, nil
+	case "AUGUST":
+		return MonthAugust, nil
+	case "SEPTEMBER":
+		return MonthSeptember, nil
+	case "OCTOBER":
+		return MonthOctober, nil
+	case "NOVEMBER":
+		return MonthNovember, nil
+	case "DECEMBER":
+		return MonthDecember, nil
+	}
+	var t Month
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m Month) Ptr() *Month {
+	return &m
+}
+
 var (
 	multilineSettingsSchemaEntryFieldKey          = big.NewInt(1 << 0)
 	multilineSettingsSchemaEntryFieldDisplayName  = big.NewInt(1 << 1)
 	multilineSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
 	multilineSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
 	multilineSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
-	multilineSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
-	multilineSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+	multilineSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 5)
+	multilineSettingsSchemaEntryFieldValidations  = big.NewInt(1 << 6)
+	multilineSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 7)
 )
 
 type MultilineSettingsSchemaEntry struct {
@@ -20601,9 +21186,12 @@ type MultilineSettingsSchemaEntry struct {
 	Description *string         `json:"description,omitempty" url:"description,omitempty"`
 	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
 	// Whether the setting must have a value upon install. Defaults to false.
-	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
-	DefaultValue *string                   `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
-	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// Use `validations`.
+	Validation *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	// More rules for the value, each with its own `errorMessage`, in order after `validation`.
+	Validations  []*SettingsSchemaValidation `json:"validations,omitempty" url:"validations,omitempty"`
+	DefaultValue *string                     `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -20647,18 +21235,25 @@ func (m *MultilineSettingsSchemaEntry) GetRequired() *bool {
 	return m.Required
 }
 
-func (m *MultilineSettingsSchemaEntry) GetDefaultValue() *string {
-	if m == nil {
-		return nil
-	}
-	return m.DefaultValue
-}
-
 func (m *MultilineSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
 	if m == nil {
 		return nil
 	}
 	return m.Validation
+}
+
+func (m *MultilineSettingsSchemaEntry) GetValidations() []*SettingsSchemaValidation {
+	if m == nil {
+		return nil
+	}
+	return m.Validations
+}
+
+func (m *MultilineSettingsSchemaEntry) GetDefaultValue() *string {
+	if m == nil {
+		return nil
+	}
+	return m.DefaultValue
 }
 
 func (m *MultilineSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
@@ -20707,18 +21302,25 @@ func (m *MultilineSettingsSchemaEntry) SetRequired(required *bool) {
 	m.require(multilineSettingsSchemaEntryFieldRequired)
 }
 
-// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (m *MultilineSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
-	m.DefaultValue = defaultValue
-	m.require(multilineSettingsSchemaEntryFieldDefaultValue)
-}
-
 // SetValidation sets the Validation field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MultilineSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
 	m.Validation = validation
 	m.require(multilineSettingsSchemaEntryFieldValidation)
+}
+
+// SetValidations sets the Validations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetValidations(validations []*SettingsSchemaValidation) {
+	m.Validations = validations
+	m.require(multilineSettingsSchemaEntryFieldValidations)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MultilineSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	m.DefaultValue = defaultValue
+	m.require(multilineSettingsSchemaEntryFieldDefaultValue)
 }
 
 func (m *MultilineSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
@@ -21421,6 +22023,108 @@ func (n *NovelUserEvent) String() string {
 	return fmt.Sprintf("%#v", n)
 }
 
+// Picks days by counting, within each month, the days that fall on any of `daysOfWeek`, and
+// keeping the occurrences listed.
+//
+// With a single day of the week this reads naturally: `[MONDAY]` with `[THIRD]` is the third
+// Monday. With several, the count runs across all of them: Monday through Friday with `[LAST]`
+// is the last weekday of the month, not the last Monday, last Tuesday, and so on.
+var (
+	nthWeekdayDaySelectorFieldDaysOfWeek  = big.NewInt(1 << 0)
+	nthWeekdayDaySelectorFieldOccurrences = big.NewInt(1 << 1)
+)
+
+type NthWeekdayDaySelector struct {
+	// The days of the week to count. Must not be empty.
+	DaysOfWeek []DayOfWeek `json:"daysOfWeek" url:"daysOfWeek"`
+	// Which of the counted days the window covers. Must not be empty.
+	Occurrences []Occurrence `json:"occurrences" url:"occurrences"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (n *NthWeekdayDaySelector) GetDaysOfWeek() []DayOfWeek {
+	if n == nil {
+		return nil
+	}
+	return n.DaysOfWeek
+}
+
+func (n *NthWeekdayDaySelector) GetOccurrences() []Occurrence {
+	if n == nil {
+		return nil
+	}
+	return n.Occurrences
+}
+
+func (n *NthWeekdayDaySelector) GetExtraProperties() map[string]interface{} {
+	return n.extraProperties
+}
+
+func (n *NthWeekdayDaySelector) require(field *big.Int) {
+	if n.explicitFields == nil {
+		n.explicitFields = big.NewInt(0)
+	}
+	n.explicitFields.Or(n.explicitFields, field)
+}
+
+// SetDaysOfWeek sets the DaysOfWeek field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NthWeekdayDaySelector) SetDaysOfWeek(daysOfWeek []DayOfWeek) {
+	n.DaysOfWeek = daysOfWeek
+	n.require(nthWeekdayDaySelectorFieldDaysOfWeek)
+}
+
+// SetOccurrences sets the Occurrences field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NthWeekdayDaySelector) SetOccurrences(occurrences []Occurrence) {
+	n.Occurrences = occurrences
+	n.require(nthWeekdayDaySelectorFieldOccurrences)
+}
+
+func (n *NthWeekdayDaySelector) UnmarshalJSON(data []byte) error {
+	type unmarshaler NthWeekdayDaySelector
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*n = NthWeekdayDaySelector(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *n)
+	if err != nil {
+		return err
+	}
+	n.extraProperties = extraProperties
+	n.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (n *NthWeekdayDaySelector) MarshalJSON() ([]byte, error) {
+	type embed NthWeekdayDaySelector
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*n),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, n.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (n *NthWeekdayDaySelector) String() string {
+	if len(n.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(n.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(n); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", n)
+}
+
 // A range of numbers that can be used to filter search results by numeric fields.
 // - `greaterThanOrEqual`: The minimum value (inclusive).
 // - `lessThan`: The maximum value (exclusive).
@@ -21524,8 +22228,9 @@ var (
 	numberSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
 	numberSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
 	numberSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
-	numberSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
-	numberSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+	numberSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 5)
+	numberSettingsSchemaEntryFieldValidations  = big.NewInt(1 << 6)
+	numberSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 7)
 )
 
 type NumberSettingsSchemaEntry struct {
@@ -21534,9 +22239,12 @@ type NumberSettingsSchemaEntry struct {
 	Description *string         `json:"description,omitempty" url:"description,omitempty"`
 	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
 	// Whether the setting must have a value upon install. Defaults to false.
-	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
-	DefaultValue *float64                  `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
-	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// Use `validations`.
+	Validation *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	// More rules for the value, each with its own `errorMessage`, in order after `validation`.
+	Validations  []*SettingsSchemaValidation `json:"validations,omitempty" url:"validations,omitempty"`
+	DefaultValue *float64                    `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -21580,18 +22288,25 @@ func (n *NumberSettingsSchemaEntry) GetRequired() *bool {
 	return n.Required
 }
 
-func (n *NumberSettingsSchemaEntry) GetDefaultValue() *float64 {
-	if n == nil {
-		return nil
-	}
-	return n.DefaultValue
-}
-
 func (n *NumberSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
 	if n == nil {
 		return nil
 	}
 	return n.Validation
+}
+
+func (n *NumberSettingsSchemaEntry) GetValidations() []*SettingsSchemaValidation {
+	if n == nil {
+		return nil
+	}
+	return n.Validations
+}
+
+func (n *NumberSettingsSchemaEntry) GetDefaultValue() *float64 {
+	if n == nil {
+		return nil
+	}
+	return n.DefaultValue
 }
 
 func (n *NumberSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
@@ -21640,18 +22355,25 @@ func (n *NumberSettingsSchemaEntry) SetRequired(required *bool) {
 	n.require(numberSettingsSchemaEntryFieldRequired)
 }
 
-// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (n *NumberSettingsSchemaEntry) SetDefaultValue(defaultValue *float64) {
-	n.DefaultValue = defaultValue
-	n.require(numberSettingsSchemaEntryFieldDefaultValue)
-}
-
 // SetValidation sets the Validation field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (n *NumberSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
 	n.Validation = validation
 	n.require(numberSettingsSchemaEntryFieldValidation)
+}
+
+// SetValidations sets the Validations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetValidations(validations []*SettingsSchemaValidation) {
+	n.Validations = validations
+	n.require(numberSettingsSchemaEntryFieldValidations)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (n *NumberSettingsSchemaEntry) SetDefaultValue(defaultValue *float64) {
+	n.DefaultValue = defaultValue
+	n.require(numberSettingsSchemaEntryFieldDefaultValue)
 }
 
 func (n *NumberSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
@@ -22462,6 +23184,39 @@ func (o *ObjectCondition) validate() error {
 		}
 	}
 	return nil
+}
+
+// A numbered occurrence within a month.
+type Occurrence string
+
+const (
+	OccurrenceFirst  Occurrence = "FIRST"
+	OccurrenceSecond Occurrence = "SECOND"
+	OccurrenceThird  Occurrence = "THIRD"
+	OccurrenceFourth Occurrence = "FOURTH"
+	// The final occurrence in the month, whether that is the fourth or the fifth.
+	OccurrenceLast Occurrence = "LAST"
+)
+
+func NewOccurrenceFromString(s string) (Occurrence, error) {
+	switch s {
+	case "FIRST":
+		return OccurrenceFirst, nil
+	case "SECOND":
+		return OccurrenceSecond, nil
+	case "THIRD":
+		return OccurrenceThird, nil
+	case "FOURTH":
+		return OccurrenceFourth, nil
+	case "LAST":
+		return OccurrenceLast, nil
+	}
+	var t Occurrence
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o Occurrence) Ptr() *Occurrence {
+	return &o
 }
 
 var (
@@ -24055,6 +24810,144 @@ func (q QualityReason) Ptr() *QualityReason {
 	return &q
 }
 
+// A window that repeats on the calendar of one timezone.
+//
+// Every field that is set must match, and an unset field matches anything, so a window with
+// only `months: [FEBRUARY]` is all of February and one with only `timeOfDay` is those hours
+// every day. Values inside a set match if any of them does.
+//
+// When `timeOfDay` wraps past midnight, `days` and `months` apply to the day the window
+// opens: Fridays with 22:00–02:00 runs from Friday night into early Saturday.
+var (
+	recurringTimeWindowFieldTimezone  = big.NewInt(1 << 0)
+	recurringTimeWindowFieldDays      = big.NewInt(1 << 1)
+	recurringTimeWindowFieldMonths    = big.NewInt(1 << 2)
+	recurringTimeWindowFieldTimeOfDay = big.NewInt(1 << 3)
+)
+
+type RecurringTimeWindow struct {
+	// The IANA timezone the calendar fields are read in (e.g. "America/New_York"). Required because business hours belong to the business, not to the end user, and a rule written against a fixed offset drifts by an hour at every daylight-saving change. Fixed offsets (e.g. "-08:00") and legacy IDs (e.g. "EST") are accepted, but they do not follow daylight saving. Clients can prefill it from the agent's `defaultTimezone`.
+	Timezone string `json:"timezone" url:"timezone"`
+	// Which days the window covers: days of the week, dates of the month, numbered weekdays of the month, or one range of dates every year. Omit to cover every day.
+	Days *DaySelector `json:"days,omitempty" url:"days,omitempty"`
+	// The months the window covers. Omit to cover every month. Not allowed with `yearlyDates` days, which name their own months.
+	Months []Month `json:"months,omitempty" url:"months,omitempty"`
+	// The hours the window covers on each matching day. Omit to cover the whole day.
+	TimeOfDay *TimeOfDayRange `json:"timeOfDay,omitempty" url:"timeOfDay,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (r *RecurringTimeWindow) GetTimezone() string {
+	if r == nil {
+		return ""
+	}
+	return r.Timezone
+}
+
+func (r *RecurringTimeWindow) GetDays() *DaySelector {
+	if r == nil {
+		return nil
+	}
+	return r.Days
+}
+
+func (r *RecurringTimeWindow) GetMonths() []Month {
+	if r == nil {
+		return nil
+	}
+	return r.Months
+}
+
+func (r *RecurringTimeWindow) GetTimeOfDay() *TimeOfDayRange {
+	if r == nil {
+		return nil
+	}
+	return r.TimeOfDay
+}
+
+func (r *RecurringTimeWindow) GetExtraProperties() map[string]interface{} {
+	return r.extraProperties
+}
+
+func (r *RecurringTimeWindow) require(field *big.Int) {
+	if r.explicitFields == nil {
+		r.explicitFields = big.NewInt(0)
+	}
+	r.explicitFields.Or(r.explicitFields, field)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (r *RecurringTimeWindow) SetTimezone(timezone string) {
+	r.Timezone = timezone
+	r.require(recurringTimeWindowFieldTimezone)
+}
+
+// SetDays sets the Days field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (r *RecurringTimeWindow) SetDays(days *DaySelector) {
+	r.Days = days
+	r.require(recurringTimeWindowFieldDays)
+}
+
+// SetMonths sets the Months field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (r *RecurringTimeWindow) SetMonths(months []Month) {
+	r.Months = months
+	r.require(recurringTimeWindowFieldMonths)
+}
+
+// SetTimeOfDay sets the TimeOfDay field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (r *RecurringTimeWindow) SetTimeOfDay(timeOfDay *TimeOfDayRange) {
+	r.TimeOfDay = timeOfDay
+	r.require(recurringTimeWindowFieldTimeOfDay)
+}
+
+func (r *RecurringTimeWindow) UnmarshalJSON(data []byte) error {
+	type unmarshaler RecurringTimeWindow
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*r = RecurringTimeWindow(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *r)
+	if err != nil {
+		return err
+	}
+	r.extraProperties = extraProperties
+	r.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (r *RecurringTimeWindow) MarshalJSON() ([]byte, error) {
+	type embed RecurringTimeWindow
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*r),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, r.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (r *RecurringTimeWindow) String() string {
+	if len(r.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(r.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(r); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", r)
+}
+
 // The kind of relationship (edge) between two entities. Names the edge,
 // not the node — `EntityId` already carries the node type.
 //
@@ -24082,21 +24975,65 @@ func (r RelationshipType) Ptr() *RelationshipType {
 	return &r
 }
 
+// The outcome of a conversation. Shown in Agent Designer as "Resolution status".
+//
+// The status is recalculated whenever the conversation changes, such as a new message,
+// feedback, a CSAT rating or an insert. The conditions are checked in this order, and the
+// first one that matches sets the status: `INELIGIBLE`, `CONTENT_SAFETY_FLAGGED`,
+// `PROMPT_ATTACK_FLAGGED`, `HANGUP`, `IN_PROGRESS`, `ERROR`, `NEGATIVE_FEEDBACK`, `ESCALATED`,
+// then `RESOLVED`.
+//
+// Code applies these checks, except for one input: the AI summary of the transcript can report
+// a handoff, which sets `ESCALATED`.
+//
+// Each status maps to one billing status (`BillableFilterField`): `RESOLVED` is billable;
+// `ESCALATED`, `NEGATIVE_FEEDBACK`, `ERROR`, `IN_PROGRESS` and `INCOMPLETE` are not billable;
+// the others are not eligible. These are labels. Volume-based pricing also bills not billable
+// conversations. See
+// [Resolution status and billing](https://docs.mavenagi.com/agent-designer/pages/resolution-status).
 type ResolutionStatus string
 
 const (
-	ResolutionStatusUnknown    ResolutionStatus = "UNKNOWN"
-	ResolutionStatusError      ResolutionStatus = "ERROR"
+	// Reserved. Not assigned to conversations today. Billing status: not eligible. Shown in
+	// Agent Designer as "Unknown".
+	ResolutionStatusUnknown ResolutionStatus = "UNKNOWN"
+	// The agent returned an empty response to a message. Billing status: not billable. Shown
+	// in Agent Designer as "Error".
+	ResolutionStatusError ResolutionStatus = "ERROR"
+	// The agent has not responded yet. Billing status: not billable. Shown in Agent Designer
+	// as "In progress".
 	ResolutionStatusInProgress ResolutionStatus = "IN_PROGRESS"
-	// Shown in Agent Designer as "Resolved by Maven".
-	ResolutionStatusResolved             ResolutionStatus = "RESOLVED"
-	ResolutionStatusEscalated            ResolutionStatus = "ESCALATED"
-	ResolutionStatusIncomplete           ResolutionStatus = "INCOMPLETE"
-	ResolutionStatusNegativeFeedback     ResolutionStatus = "NEGATIVE_FEEDBACK"
+	// The agent responded and no other status applies. Billing status: billable, the only
+	// status that is. `resolvedByMaven` is `true` exactly when the status is `RESOLVED`. Shown
+	// in Agent Designer as "Resolved by Maven".
+	ResolutionStatusResolved ResolutionStatus = "RESOLVED"
+	// The conversation was handed off to a human agent. Either an AI analysis of the
+	// transcript found a handoff, or a handoff action that Maven recognizes ran successfully.
+	// The AI analysis can be wrong. Once escalation is detected, later messages do not undo
+	// it, but the earlier checks, such as `NEGATIVE_FEEDBACK`, still take precedence. Copilot
+	// conversations are never `ESCALATED`. Billing status: not billable. Shown in Agent
+	// Designer as "Escalated".
+	ResolutionStatusEscalated ResolutionStatus = "ESCALATED"
+	// Reserved. Not assigned to conversations today. Billing status: not billable. Shown in
+	// Agent Designer as "Incomplete".
+	ResolutionStatusIncomplete ResolutionStatus = "INCOMPLETE"
+	// The end user or a human agent gave a thumbs down, or the average CSAT is below 50% of
+	// the maximum rating. An insert of an agent response overrides a thumbs down. Billing
+	// status: not billable. Shown in Agent Designer as "Negative feedback".
+	ResolutionStatusNegativeFeedback ResolutionStatus = "NEGATIVE_FEEDBACK"
+	// A message was flagged by content safety guardrails. Billing status: not eligible. Shown
+	// in Agent Designer as "Content safety flagged".
 	ResolutionStatusContentSafetyFlagged ResolutionStatus = "CONTENT_SAFETY_FLAGGED"
-	ResolutionStatusPromptAttackFlagged  ResolutionStatus = "PROMPT_ATTACK_FLAGGED"
-	ResolutionStatusHangup               ResolutionStatus = "HANGUP"
-	ResolutionStatusIneligible           ResolutionStatus = "INELIGIBLE"
+	// A message was flagged as a prompt injection attack. Billing status: not eligible. Shown
+	// in Agent Designer as "Prompt attack flagged".
+	ResolutionStatusPromptAttackFlagged ResolutionStatus = "PROMPT_ATTACK_FLAGGED"
+	// A voice call of 5 seconds or less, measured from the first message to the last. Billing
+	// status: not eligible. Shown in Agent Designer as "Hangup".
+	ResolutionStatusHangup ResolutionStatus = "HANGUP"
+	// A copilot chat conversation. Billing status: not eligible. Shown in Agent Designer as
+	// "Ineligible". Not the same as the `INELIGIBLE` billing status, which covers every not
+	// eligible status.
+	ResolutionStatusIneligible ResolutionStatus = "INELIGIBLE"
 )
 
 func NewResolutionStatusFromString(s string) (ResolutionStatus, error) {
@@ -28387,8 +29324,9 @@ var (
 	textSettingsSchemaEntryFieldDescription  = big.NewInt(1 << 2)
 	textSettingsSchemaEntryFieldVisibility   = big.NewInt(1 << 3)
 	textSettingsSchemaEntryFieldRequired     = big.NewInt(1 << 4)
-	textSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 5)
-	textSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 6)
+	textSettingsSchemaEntryFieldValidation   = big.NewInt(1 << 5)
+	textSettingsSchemaEntryFieldValidations  = big.NewInt(1 << 6)
+	textSettingsSchemaEntryFieldDefaultValue = big.NewInt(1 << 7)
 )
 
 type TextSettingsSchemaEntry struct {
@@ -28397,9 +29335,12 @@ type TextSettingsSchemaEntry struct {
 	Description *string         `json:"description,omitempty" url:"description,omitempty"`
 	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
 	// Whether the setting must have a value upon install. Defaults to false.
-	Required     *bool                     `json:"required,omitempty" url:"required,omitempty"`
-	DefaultValue *string                   `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
-	Validation   *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// Use `validations`.
+	Validation *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	// More rules for the value, each with its own `errorMessage`, in order after `validation`.
+	Validations  []*SettingsSchemaValidation `json:"validations,omitempty" url:"validations,omitempty"`
+	DefaultValue *string                     `json:"defaultValue,omitempty" url:"defaultValue,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -28443,18 +29384,25 @@ func (t *TextSettingsSchemaEntry) GetRequired() *bool {
 	return t.Required
 }
 
-func (t *TextSettingsSchemaEntry) GetDefaultValue() *string {
-	if t == nil {
-		return nil
-	}
-	return t.DefaultValue
-}
-
 func (t *TextSettingsSchemaEntry) GetValidation() *SettingsSchemaValidation {
 	if t == nil {
 		return nil
 	}
 	return t.Validation
+}
+
+func (t *TextSettingsSchemaEntry) GetValidations() []*SettingsSchemaValidation {
+	if t == nil {
+		return nil
+	}
+	return t.Validations
+}
+
+func (t *TextSettingsSchemaEntry) GetDefaultValue() *string {
+	if t == nil {
+		return nil
+	}
+	return t.DefaultValue
 }
 
 func (t *TextSettingsSchemaEntry) GetExtraProperties() map[string]interface{} {
@@ -28503,18 +29451,25 @@ func (t *TextSettingsSchemaEntry) SetRequired(required *bool) {
 	t.require(textSettingsSchemaEntryFieldRequired)
 }
 
-// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (t *TextSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
-	t.DefaultValue = defaultValue
-	t.require(textSettingsSchemaEntryFieldDefaultValue)
-}
-
 // SetValidation sets the Validation field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (t *TextSettingsSchemaEntry) SetValidation(validation *SettingsSchemaValidation) {
 	t.Validation = validation
 	t.require(textSettingsSchemaEntryFieldValidation)
+}
+
+// SetValidations sets the Validations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetValidations(validations []*SettingsSchemaValidation) {
+	t.Validations = validations
+	t.require(textSettingsSchemaEntryFieldValidations)
+}
+
+// SetDefaultValue sets the DefaultValue field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TextSettingsSchemaEntry) SetDefaultValue(defaultValue *string) {
+	t.DefaultValue = defaultValue
+	t.require(textSettingsSchemaEntryFieldDefaultValue)
 }
 
 func (t *TextSettingsSchemaEntry) UnmarshalJSON(data []byte) error {
@@ -28554,6 +29509,361 @@ func (t *TextSettingsSchemaEntry) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", t)
+}
+
+// A half-open span of wall-clock time `[start, end)` on a matching day, as 24-hour `HH:mm`
+// strings in the window's timezone.
+//
+// An `end` earlier than `start` wraps past midnight (22:00–02:00 runs overnight), and an `end`
+// of "00:00" means until midnight. `start` and `end` must differ: to cover the whole day, omit
+// `timeOfDay`.
+var (
+	timeOfDayRangeFieldStart = big.NewInt(1 << 0)
+	timeOfDayRangeFieldEnd   = big.NewInt(1 << 1)
+)
+
+type TimeOfDayRange struct {
+	// The first minute inside the range, e.g. "09:00".
+	Start string `json:"start" url:"start"`
+	// The first minute after the range, e.g. "17:00".
+	End string `json:"end" url:"end"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TimeOfDayRange) GetStart() string {
+	if t == nil {
+		return ""
+	}
+	return t.Start
+}
+
+func (t *TimeOfDayRange) GetEnd() string {
+	if t == nil {
+		return ""
+	}
+	return t.End
+}
+
+func (t *TimeOfDayRange) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TimeOfDayRange) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetStart sets the Start field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TimeOfDayRange) SetStart(start string) {
+	t.Start = start
+	t.require(timeOfDayRangeFieldStart)
+}
+
+// SetEnd sets the End field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TimeOfDayRange) SetEnd(end string) {
+	t.End = end
+	t.require(timeOfDayRangeFieldEnd)
+}
+
+func (t *TimeOfDayRange) UnmarshalJSON(data []byte) error {
+	type unmarshaler TimeOfDayRange
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TimeOfDayRange(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TimeOfDayRange) MarshalJSON() ([]byte, error) {
+	type embed TimeOfDayRange
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TimeOfDayRange) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+// A precondition met while the current time is inside a window.
+//
+// Accepted only in a charter's precondition; segments, knowledge bases, and actions reject it.
+//
+// The time checked is when the turn being answered arrives. In chat, the precondition is
+// re-evaluated on every turn, so a conversation that starts inside the window stops matching
+// once a later turn falls outside it. Voice calls do not re-check it on every turn, so a call
+// in progress can keep matching for a while after the window ends.
+//
+// Each precondition holds one window. Combine windows with a `PreconditionGroup`: OR for a
+// union ("weekdays 9–5 or Saturdays 10–2"), AND with a negated window for an exception
+// ("business hours, but not on Thanksgiving"). Omit the operator to match inside the window,
+// or set it to NOT to match outside it. Any other operator is rejected with a 400.
+var (
+	timePreconditionFieldOperator = big.NewInt(1 << 0)
+	timePreconditionFieldWindow   = big.NewInt(1 << 1)
+)
+
+type TimePrecondition struct {
+	// Operator to apply to this precondition
+	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
+	// The window the current time must fall inside for the precondition to be met.
+	Window *TimeWindow `json:"window" url:"window"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TimePrecondition) GetOperator() *PreconditionOperator {
+	if t == nil {
+		return nil
+	}
+	return t.Operator
+}
+
+func (t *TimePrecondition) GetWindow() *TimeWindow {
+	if t == nil {
+		return nil
+	}
+	return t.Window
+}
+
+func (t *TimePrecondition) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TimePrecondition) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetOperator sets the Operator field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TimePrecondition) SetOperator(operator *PreconditionOperator) {
+	t.Operator = operator
+	t.require(timePreconditionFieldOperator)
+}
+
+// SetWindow sets the Window field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TimePrecondition) SetWindow(window *TimeWindow) {
+	t.Window = window
+	t.require(timePreconditionFieldWindow)
+}
+
+func (t *TimePrecondition) UnmarshalJSON(data []byte) error {
+	type unmarshaler TimePrecondition
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TimePrecondition(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TimePrecondition) MarshalJSON() ([]byte, error) {
+	type embed TimePrecondition
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TimePrecondition) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+type TimeWindow struct {
+	WindowType string
+	// A single span between two instants, for one-off dates such as a sale or an outage.
+	Absolute *AbsoluteTimeWindow
+	// A window that repeats on a calendar, such as weekly business hours.
+	Recurring *RecurringTimeWindow
+	// One span a week that can cross days, such as Friday evening through Monday morning.
+	Weekly *WeeklyTimeWindow
+}
+
+func (t *TimeWindow) GetWindowType() string {
+	if t == nil {
+		return ""
+	}
+	return t.WindowType
+}
+
+func (t *TimeWindow) GetAbsolute() *AbsoluteTimeWindow {
+	if t == nil {
+		return nil
+	}
+	return t.Absolute
+}
+
+func (t *TimeWindow) GetRecurring() *RecurringTimeWindow {
+	if t == nil {
+		return nil
+	}
+	return t.Recurring
+}
+
+func (t *TimeWindow) GetWeekly() *WeeklyTimeWindow {
+	if t == nil {
+		return nil
+	}
+	return t.Weekly
+}
+
+func (t *TimeWindow) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		WindowType string `json:"windowType"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	t.WindowType = unmarshaler.WindowType
+	if unmarshaler.WindowType == "" {
+		return fmt.Errorf("%T did not include discriminant windowType", t)
+	}
+	switch unmarshaler.WindowType {
+	case "absolute":
+		value := new(AbsoluteTimeWindow)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		t.Absolute = value
+	case "recurring":
+		value := new(RecurringTimeWindow)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		t.Recurring = value
+	case "weekly":
+		value := new(WeeklyTimeWindow)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		t.Weekly = value
+	}
+	return nil
+}
+
+func (t TimeWindow) MarshalJSON() ([]byte, error) {
+	if err := t.validate(); err != nil {
+		return nil, err
+	}
+	if t.Absolute != nil {
+		return internal.MarshalJSONWithExtraProperty(t.Absolute, "windowType", "absolute")
+	}
+	if t.Recurring != nil {
+		return internal.MarshalJSONWithExtraProperty(t.Recurring, "windowType", "recurring")
+	}
+	if t.Weekly != nil {
+		return internal.MarshalJSONWithExtraProperty(t.Weekly, "windowType", "weekly")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", t)
+}
+
+type TimeWindowVisitor interface {
+	VisitAbsolute(*AbsoluteTimeWindow) error
+	VisitRecurring(*RecurringTimeWindow) error
+	VisitWeekly(*WeeklyTimeWindow) error
+}
+
+func (t *TimeWindow) Accept(visitor TimeWindowVisitor) error {
+	if t.Absolute != nil {
+		return visitor.VisitAbsolute(t.Absolute)
+	}
+	if t.Recurring != nil {
+		return visitor.VisitRecurring(t.Recurring)
+	}
+	if t.Weekly != nil {
+		return visitor.VisitWeekly(t.Weekly)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", t)
+}
+
+func (t *TimeWindow) validate() error {
+	if t == nil {
+		return fmt.Errorf("type %T is nil", t)
+	}
+	var fields []string
+	if t.Absolute != nil {
+		fields = append(fields, "absolute")
+	}
+	if t.Recurring != nil {
+		fields = append(fields, "recurring")
+	}
+	if t.Weekly != nil {
+		fields = append(fields, "weekly")
+	}
+	if len(fields) == 0 {
+		if t.WindowType != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", t, t.WindowType)
+		}
+		return fmt.Errorf("type %T is empty", t)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", t, fields)
+	}
+	if t.WindowType != "" {
+		field := fields[0]
+		if t.WindowType != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				t,
+				t.WindowType,
+				t,
+			)
+		}
+	}
+	return nil
 }
 
 // Type-independent conditions that apply to any value regardless of the type it is
@@ -28687,7 +29997,18 @@ var (
 type UserData struct {
 	// The value of the user metadata
 	Value string `json:"value" url:"value"`
-	// The visibility of the user metadata
+	// Who sees the value.
+	//
+	//   - `VISIBLE`: the agent (the LLM) is given the value.
+	//   - `PARTIALLY_VISIBLE`: the agent is not given the value. Agent user responses mask all
+	//     but its last 3 characters.
+	//   - `HIDDEN`: the agent is not given the value. Agent user responses show it as `********`.
+	//
+	// Visibility only controls what the agent is given and how agent user responses
+	// (`visibleData`) mask the value. It is not encryption or access control. Every value,
+	// whatever its visibility, is returned in full by `GET /users/{userId}` and
+	// `PUT /users` (in `data`, `allUserData` and `agentUserData`) and is passed to the
+	// actions and functions of every app that run for the user.
 	Visibility VisibilityType `json:"visibility" url:"visibility"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -28865,7 +30186,18 @@ var (
 type UserDataWithReference struct {
 	// The value of the user metadata
 	Value string `json:"value" url:"value"`
-	// The visibility of the user metadata
+	// Who sees the value.
+	//
+	//   - `VISIBLE`: the agent (the LLM) is given the value.
+	//   - `PARTIALLY_VISIBLE`: the agent is not given the value. Agent user responses mask all
+	//     but its last 3 characters.
+	//   - `HIDDEN`: the agent is not given the value. Agent user responses show it as `********`.
+	//
+	// Visibility only controls what the agent is given and how agent user responses
+	// (`visibleData`) mask the value. It is not encryption or access control. Every value,
+	// whatever its visibility, is returned in full by `GET /users/{userId}` and
+	// `PUT /users` (in `data`, `allUserData` and `agentUserData`) and is passed to the
+	// actions and functions of every app that run for the user.
 	Visibility VisibilityType `json:"visibility" url:"visibility"`
 	// Reverse index containing appId and referenceId data that identifies this app user
 	UserID *EntityIDFilter `json:"userId" url:"userId"`
@@ -30145,6 +31477,183 @@ func (u UserMessageResponseState) Ptr() *UserMessageResponseState {
 	return &u
 }
 
+var (
+	validatedSettingsSchemaEntryBaseFieldKey         = big.NewInt(1 << 0)
+	validatedSettingsSchemaEntryBaseFieldDisplayName = big.NewInt(1 << 1)
+	validatedSettingsSchemaEntryBaseFieldDescription = big.NewInt(1 << 2)
+	validatedSettingsSchemaEntryBaseFieldVisibility  = big.NewInt(1 << 3)
+	validatedSettingsSchemaEntryBaseFieldRequired    = big.NewInt(1 << 4)
+	validatedSettingsSchemaEntryBaseFieldValidation  = big.NewInt(1 << 5)
+	validatedSettingsSchemaEntryBaseFieldValidations = big.NewInt(1 << 6)
+)
+
+type ValidatedSettingsSchemaEntryBase struct {
+	Key         string          `json:"key" url:"key"`
+	DisplayName string          `json:"displayName" url:"displayName"`
+	Description *string         `json:"description,omitempty" url:"description,omitempty"`
+	Visibility  *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+	// Whether the setting must have a value upon install. Defaults to false.
+	Required *bool `json:"required,omitempty" url:"required,omitempty"`
+	// Use `validations`.
+	Validation *SettingsSchemaValidation `json:"validation,omitempty" url:"validation,omitempty"`
+	// More rules for the value, each with its own `errorMessage`, in order after `validation`.
+	Validations []*SettingsSchemaValidation `json:"validations,omitempty" url:"validations,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetKey() string {
+	if v == nil {
+		return ""
+	}
+	return v.Key
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetDisplayName() string {
+	if v == nil {
+		return ""
+	}
+	return v.DisplayName
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetDescription() *string {
+	if v == nil {
+		return nil
+	}
+	return v.Description
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetVisibility() *VisibilityType {
+	if v == nil {
+		return nil
+	}
+	return v.Visibility
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetRequired() *bool {
+	if v == nil {
+		return nil
+	}
+	return v.Required
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetValidation() *SettingsSchemaValidation {
+	if v == nil {
+		return nil
+	}
+	return v.Validation
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetValidations() []*SettingsSchemaValidation {
+	if v == nil {
+		return nil
+	}
+	return v.Validations
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) GetExtraProperties() map[string]interface{} {
+	return v.extraProperties
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) require(field *big.Int) {
+	if v.explicitFields == nil {
+		v.explicitFields = big.NewInt(0)
+	}
+	v.explicitFields.Or(v.explicitFields, field)
+}
+
+// SetKey sets the Key field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetKey(key string) {
+	v.Key = key
+	v.require(validatedSettingsSchemaEntryBaseFieldKey)
+}
+
+// SetDisplayName sets the DisplayName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetDisplayName(displayName string) {
+	v.DisplayName = displayName
+	v.require(validatedSettingsSchemaEntryBaseFieldDisplayName)
+}
+
+// SetDescription sets the Description field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetDescription(description *string) {
+	v.Description = description
+	v.require(validatedSettingsSchemaEntryBaseFieldDescription)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetVisibility(visibility *VisibilityType) {
+	v.Visibility = visibility
+	v.require(validatedSettingsSchemaEntryBaseFieldVisibility)
+}
+
+// SetRequired sets the Required field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetRequired(required *bool) {
+	v.Required = required
+	v.require(validatedSettingsSchemaEntryBaseFieldRequired)
+}
+
+// SetValidation sets the Validation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetValidation(validation *SettingsSchemaValidation) {
+	v.Validation = validation
+	v.require(validatedSettingsSchemaEntryBaseFieldValidation)
+}
+
+// SetValidations sets the Validations field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (v *ValidatedSettingsSchemaEntryBase) SetValidations(validations []*SettingsSchemaValidation) {
+	v.Validations = validations
+	v.require(validatedSettingsSchemaEntryBaseFieldValidations)
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) UnmarshalJSON(data []byte) error {
+	type unmarshaler ValidatedSettingsSchemaEntryBase
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*v = ValidatedSettingsSchemaEntryBase(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *v)
+	if err != nil {
+		return err
+	}
+	v.extraProperties = extraProperties
+	v.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) MarshalJSON() ([]byte, error) {
+	type embed ValidatedSettingsSchemaEntryBase
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*v),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, v.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (v *ValidatedSettingsSchemaEntryBase) String() string {
+	if len(v.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(v.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(v); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", v)
+}
+
 type VisibilityType string
 
 const (
@@ -30168,4 +31677,408 @@ func NewVisibilityTypeFromString(s string) (VisibilityType, error) {
 
 func (v VisibilityType) Ptr() *VisibilityType {
 	return &v
+}
+
+// A minute of the week, as a day of the week and a 24-hour `HH:mm` time on that day.
+var (
+	weekTimeFieldDayOfWeek = big.NewInt(1 << 0)
+	weekTimeFieldTime      = big.NewInt(1 << 1)
+)
+
+type WeekTime struct {
+	DayOfWeek DayOfWeek `json:"dayOfWeek" url:"dayOfWeek"`
+	// A 24-hour `HH:mm` time from "00:00" to "23:59", e.g. "18:00". To run to the end of Sunday, end on MONDAY at "00:00".
+	Time string `json:"time" url:"time"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (w *WeekTime) GetDayOfWeek() DayOfWeek {
+	if w == nil {
+		return ""
+	}
+	return w.DayOfWeek
+}
+
+func (w *WeekTime) GetTime() string {
+	if w == nil {
+		return ""
+	}
+	return w.Time
+}
+
+func (w *WeekTime) GetExtraProperties() map[string]interface{} {
+	return w.extraProperties
+}
+
+func (w *WeekTime) require(field *big.Int) {
+	if w.explicitFields == nil {
+		w.explicitFields = big.NewInt(0)
+	}
+	w.explicitFields.Or(w.explicitFields, field)
+}
+
+// SetDayOfWeek sets the DayOfWeek field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WeekTime) SetDayOfWeek(dayOfWeek DayOfWeek) {
+	w.DayOfWeek = dayOfWeek
+	w.require(weekTimeFieldDayOfWeek)
+}
+
+// SetTime sets the Time field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WeekTime) SetTime(time string) {
+	w.Time = time
+	w.require(weekTimeFieldTime)
+}
+
+func (w *WeekTime) UnmarshalJSON(data []byte) error {
+	type unmarshaler WeekTime
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*w = WeekTime(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *w)
+	if err != nil {
+		return err
+	}
+	w.extraProperties = extraProperties
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w *WeekTime) MarshalJSON() ([]byte, error) {
+	type embed WeekTime
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*w),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, w.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (w *WeekTime) String() string {
+	if len(w.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(w.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(w); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", w)
+}
+
+var (
+	weekdaysDaySelectorFieldDaysOfWeek = big.NewInt(1 << 0)
+)
+
+type WeekdaysDaySelector struct {
+	// The days of the week the window covers. Must not be empty.
+	DaysOfWeek []DayOfWeek `json:"daysOfWeek" url:"daysOfWeek"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (w *WeekdaysDaySelector) GetDaysOfWeek() []DayOfWeek {
+	if w == nil {
+		return nil
+	}
+	return w.DaysOfWeek
+}
+
+func (w *WeekdaysDaySelector) GetExtraProperties() map[string]interface{} {
+	return w.extraProperties
+}
+
+func (w *WeekdaysDaySelector) require(field *big.Int) {
+	if w.explicitFields == nil {
+		w.explicitFields = big.NewInt(0)
+	}
+	w.explicitFields.Or(w.explicitFields, field)
+}
+
+// SetDaysOfWeek sets the DaysOfWeek field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WeekdaysDaySelector) SetDaysOfWeek(daysOfWeek []DayOfWeek) {
+	w.DaysOfWeek = daysOfWeek
+	w.require(weekdaysDaySelectorFieldDaysOfWeek)
+}
+
+func (w *WeekdaysDaySelector) UnmarshalJSON(data []byte) error {
+	type unmarshaler WeekdaysDaySelector
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*w = WeekdaysDaySelector(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *w)
+	if err != nil {
+		return err
+	}
+	w.extraProperties = extraProperties
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w *WeekdaysDaySelector) MarshalJSON() ([]byte, error) {
+	type embed WeekdaysDaySelector
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*w),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, w.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (w *WeekdaysDaySelector) String() string {
+	if len(w.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(w.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(w); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", w)
+}
+
+// A half-open span `[start, end)` that repeats every week on the calendar of one timezone,
+// for a rule that runs across days, such as weekend coverage from Friday 18:00 to Monday 08:00.
+// A `recurring` window cannot say this in one window, because its `timeOfDay` applies to each
+// matching day on its own.
+//
+// The week runs from Monday to Sunday, and an `end` earlier in the week than `start` wraps past
+// Sunday night, the way a `timeOfDay` end before its start wraps past midnight. `start` and
+// `end` must differ.
+//
+// Both ends are wall-clock times in `timezone`, so the span follows daylight saving: in a
+// week when the clocks change inside the span, it is up to an hour shorter or longer, and a
+// wall-clock minute that happens twice when the clocks go back is inside the span both times.
+var (
+	weeklyTimeWindowFieldTimezone = big.NewInt(1 << 0)
+	weeklyTimeWindowFieldStart    = big.NewInt(1 << 1)
+	weeklyTimeWindowFieldEnd      = big.NewInt(1 << 2)
+)
+
+type WeeklyTimeWindow struct {
+	// The IANA timezone the days and times are read in (e.g. "America/New_York"). Required: the server applies no default timezone. Fixed offsets (e.g. "-08:00") and legacy IDs (e.g. "EST") are accepted, but they do not follow daylight saving.
+	Timezone string `json:"timezone" url:"timezone"`
+	// The first minute inside the span, e.g. Friday at "18:00".
+	Start *WeekTime `json:"start" url:"start"`
+	// The first minute after the span, e.g. Monday at "08:00".
+	End *WeekTime `json:"end" url:"end"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (w *WeeklyTimeWindow) GetTimezone() string {
+	if w == nil {
+		return ""
+	}
+	return w.Timezone
+}
+
+func (w *WeeklyTimeWindow) GetStart() *WeekTime {
+	if w == nil {
+		return nil
+	}
+	return w.Start
+}
+
+func (w *WeeklyTimeWindow) GetEnd() *WeekTime {
+	if w == nil {
+		return nil
+	}
+	return w.End
+}
+
+func (w *WeeklyTimeWindow) GetExtraProperties() map[string]interface{} {
+	return w.extraProperties
+}
+
+func (w *WeeklyTimeWindow) require(field *big.Int) {
+	if w.explicitFields == nil {
+		w.explicitFields = big.NewInt(0)
+	}
+	w.explicitFields.Or(w.explicitFields, field)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WeeklyTimeWindow) SetTimezone(timezone string) {
+	w.Timezone = timezone
+	w.require(weeklyTimeWindowFieldTimezone)
+}
+
+// SetStart sets the Start field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WeeklyTimeWindow) SetStart(start *WeekTime) {
+	w.Start = start
+	w.require(weeklyTimeWindowFieldStart)
+}
+
+// SetEnd sets the End field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WeeklyTimeWindow) SetEnd(end *WeekTime) {
+	w.End = end
+	w.require(weeklyTimeWindowFieldEnd)
+}
+
+func (w *WeeklyTimeWindow) UnmarshalJSON(data []byte) error {
+	type unmarshaler WeeklyTimeWindow
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*w = WeeklyTimeWindow(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *w)
+	if err != nil {
+		return err
+	}
+	w.extraProperties = extraProperties
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w *WeeklyTimeWindow) MarshalJSON() ([]byte, error) {
+	type embed WeeklyTimeWindow
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*w),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, w.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (w *WeeklyTimeWindow) String() string {
+	if len(w.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(w.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(w); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", w)
+}
+
+// The dates from `start` through `end`, both included, every year, as `MM-DD` strings. An `end`
+// earlier in the year than `start` wraps past New Year: `12-24` through `01-02` covers the last
+// eight days of December and the first two of January. An `end` equal to `start` covers that
+// one date.
+//
+// Both must be real dates. `start` cannot be February 29, since most years lack it. An `end`
+// of `02-29` runs through the last day of February in every year, and a range that spans it,
+// such as `02-28` through `03-01`, covers it in leap years.
+var (
+	yearlyDatesDaySelectorFieldStart = big.NewInt(1 << 0)
+	yearlyDatesDaySelectorFieldEnd   = big.NewInt(1 << 1)
+)
+
+type YearlyDatesDaySelector struct {
+	// The first date inside the range, e.g. "12-24".
+	Start string `json:"start" url:"start"`
+	// The last date inside the range, e.g. "01-02".
+	End string `json:"end" url:"end"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (y *YearlyDatesDaySelector) GetStart() string {
+	if y == nil {
+		return ""
+	}
+	return y.Start
+}
+
+func (y *YearlyDatesDaySelector) GetEnd() string {
+	if y == nil {
+		return ""
+	}
+	return y.End
+}
+
+func (y *YearlyDatesDaySelector) GetExtraProperties() map[string]interface{} {
+	return y.extraProperties
+}
+
+func (y *YearlyDatesDaySelector) require(field *big.Int) {
+	if y.explicitFields == nil {
+		y.explicitFields = big.NewInt(0)
+	}
+	y.explicitFields.Or(y.explicitFields, field)
+}
+
+// SetStart sets the Start field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (y *YearlyDatesDaySelector) SetStart(start string) {
+	y.Start = start
+	y.require(yearlyDatesDaySelectorFieldStart)
+}
+
+// SetEnd sets the End field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (y *YearlyDatesDaySelector) SetEnd(end string) {
+	y.End = end
+	y.require(yearlyDatesDaySelectorFieldEnd)
+}
+
+func (y *YearlyDatesDaySelector) UnmarshalJSON(data []byte) error {
+	type unmarshaler YearlyDatesDaySelector
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*y = YearlyDatesDaySelector(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *y)
+	if err != nil {
+		return err
+	}
+	y.extraProperties = extraProperties
+	y.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (y *YearlyDatesDaySelector) MarshalJSON() ([]byte, error) {
+	type embed YearlyDatesDaySelector
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*y),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, y.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (y *YearlyDatesDaySelector) String() string {
+	if len(y.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(y.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(y); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", y)
 }

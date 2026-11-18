@@ -848,7 +848,9 @@ The field must be `ACTIVE` to produce values. While it is inactive, conversation
 
 **contentSafetyViolationResponsePromptText:** `*string` 
 
-LLM prompt for generating a response when the user's question has been detected as unsafe.
+Instructions to an LLM that writes the reply when the user's message is blocked for harmful content (hate, self-harm, sexual or violence). The LLM sees only these instructions and the blocked message, not the agent's charters, knowledge or earlier messages. To send fixed wording, say so in the instructions, for example `Always reply with exactly: "…"`.
+
+A message flagged as a prompt attack always gets the default reply, even when it was also flagged for harmful content. So does every blocked message while this is not set.
 
 Rejected with reason `VARIANT_REQUIRED` while `CONTENT_SAFETY_VIOLATION_RESPONSE_PROMPT_TEXT` is in `getVersionedEntityTypes`; set it through `patchVersionedSettings`.
     
@@ -1965,6 +1967,8 @@ Update app settings. Performs a merge of the provided settings with the existing
 - No keys will be removed.
 
 Note that if an array value is provided it will fully replace an existing value as arrays cannot be merged.
+
+Returns the full app settings after the merge, including keys that were not in the request. This is the same object that Get app settings returns.
 </dd>
 </dl>
 </dd>
@@ -2094,6 +2098,11 @@ client.Assets.InitiateUpload(
 
 Commit an upload after successful file transfer.
 Updates the asset status and makes it available for use.
+
+An asset is committed once. Committing it again with the same checksum is safe while its file
+is unchanged, so a client can retry a commit; a different checksum returns a 409. Once
+committed, don't write to the upload URL again, even with the same bytes: committing after
+that may return a 409, and the file then has to be uploaded as a new asset.
 
 <Note>**Required permission:** `ask:agent`</Note>
 </dd>
@@ -2507,8 +2516,12 @@ conversation or agent user has to exist first. The capability is told its mode i
 `SIMULATION`, the same as in a test suite run, so an app that honours it can avoid side
 effects in real systems. Nothing here runs a capability live.
 
-Only actions can be simulated today. Triggers and conversation kickoffs are rejected with a
-400 until they can run as simulations. Intelligent fields cannot be simulated.
+A simulated run is not recorded. It returns its result here and never appears in
+capability execution search.
+
+Actions, conversation kickoffs and event triggers can be simulated today. An event trigger
+is given one event the caller describes in full; the event is never stored, and its user
+does not have to exist. Intelligent fields cannot be simulated.
 
 <Note>**Required permission:** `create:simulations`</Note>
 </dd>
@@ -3973,7 +3986,7 @@ Non-simulation conversations remain visible; they cannot be fully removed from t
 <Warning>This is a destructive operation and cannot be undone. <br/><br/>
 What is wiped: the conversation's `subject` and `analysis.agentResponse` are cleared, and `analysis.userRequest` is replaced with `reason`.
 Every message's text, from the user and the agent alike, is replaced with `reason`, and its attachments, follow-up questions, backend LLM prompt and history, the data actions returned, and action arguments are cleared.
-Evaluation results for the conversation are deleted, and the payloads recorded on its trigger and action executions are cleared. <br/><br/>
+Evaluation results for the conversation are deleted, the payloads recorded on its trigger and action executions are cleared, and the message recorded on each of its Conversation Kickoff executions is cleared. <br/><br/>
 What is kept: the conversation's metadata, each message's charts, structured answer and app-supplied metadata, the conversation's intelligent field values, its feedback and events, and the users who took part. To wipe a user's data, use `DELETE /users/{userId}` or `DELETE /agentusers/{agentUserId}`.</Warning>
 
 <Note>**Required permission:** `delete:conversations`</Note>
@@ -4588,6 +4601,8 @@ Replaced by `updateConversationMetadata`.
 
 Adds metadata to an existing conversation. If a metadata field already exists, it will be overwritten.
 
+When a metadata size limit is enforced for the agent, each entry may be at most 8,192 bytes by default, counting the key and value together, plus one byte, in UTF-8. A larger entry returns a 400 that names the key.
+
 A closed conversation (`open` set to false) takes no new metadata and returns a 400.
 </dd>
 </dl>
@@ -4954,6 +4969,10 @@ client.Conversation.Export(
 
 Deliver a message to a user or conversation.
 
+Send `content` with `contentType: message` to deliver a message as written, or `contentType: ask`
+to have the agent take a `WELCOME` or `PROACTIVE` turn and deliver its reply. Either way the app
+that owns the conversation receives the message through its `handleMessage` hook.
+
 A closed conversation (`open` set to false) takes no new messages and returns a 400.
 
 <Warning>
@@ -4977,21 +4996,23 @@ User message delivery is not yet supported and returns a 400.
 
 ```go
 request := &mavenagigo.DeliverMessageRequest{
-        User: &mavenagigo.DeliverUserMessageRequest{
-            UserID: &mavenagigo.EntityIDWithoutAgent{
-                Type: mavenagigo.EntityTypeAgent,
-                AppID: "appId",
-                ReferenceID: "x",
+        Conversation: &mavenagigo.DeliverConversationMessageRequest{
+            ConversationID: &mavenagigo.EntityIDWithoutAgent{
+                Type: mavenagigo.EntityTypeConversation,
+                AppID: "chat-app",
+                ReferenceID: "conversation-0",
             },
-            Message: &mavenagigo.ConversationMessageRequest{
-                ConversationMessageID: &mavenagigo.EntityIDBase{
-                    ReferenceID: "x",
+            Content: &mavenagigo.DeliverContent{
+                Message: &mavenagigo.ConversationMessageRequest{
+                    ConversationMessageID: &mavenagigo.EntityIDBase{
+                        ReferenceID: "message-0",
+                    },
+                    UserID: &mavenagigo.EntityIDBase{
+                        ReferenceID: "human-agent-0",
+                    },
+                    Text: "Hi, I'm Priya. I can help with your refund.",
+                    UserMessageType: mavenagigo.UserConversationMessageTypeHumanAgent,
                 },
-                UserID: &mavenagigo.EntityIDBase{
-                    ReferenceID: "x",
-                },
-                Text: "text",
-                UserMessageType: mavenagigo.UserConversationMessageTypeUser,
             },
         },
     }
@@ -9585,6 +9606,10 @@ client.Users.DeleteAgentUser(
 
 Update an app user or create it if it doesn't exist.
 
+<Warning>User data is not secret storage, even with `HIDDEN` visibility: `HIDDEN` only keeps a value away from the agent and masks it in agent user responses. Do not store credentials, tokens or other secrets in user data. To pass a per-user credential to your actions, send it as `transientData` on each ask request instead.</Warning>
+
+When a metadata size limit is enforced for the agent, each `data` entry may be at most 8,192 bytes by default, counting the key and value together, plus one byte, in UTF-8. A larger entry returns a 400 that names the key.
+
 <Note>**Required permission:** `edit:agents`. A user with `executionMode` `SIMULATION` also needs `create:simulations`.</Note>
 </dd>
 </dl>
@@ -9660,7 +9685,9 @@ client.Users.CreateOrUpdate(
 <dl>
 <dd>
 
-Get an app user by its supplied ID
+Get an app user by its supplied ID.
+
+Returns every user data value in full, including `HIDDEN` and `PARTIALLY_VISIBLE` ones.
 
 <Note>**Required permission:** `read:agents`</Note>
 </dd>

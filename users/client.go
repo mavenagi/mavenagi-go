@@ -126,6 +126,10 @@ func (c *Client) DeleteAgentUser(
 
 // Update an app user or create it if it doesn't exist.
 //
+// <Warning>User data is not secret storage, even with `HIDDEN` visibility: `HIDDEN` only keeps a value away from the agent and masks it in agent user responses. Do not store credentials, tokens or other secrets in user data. To pass a per-user credential to your actions, send it as `transientData` on each ask request instead.</Warning>
+//
+// When a metadata size limit is enforced for the agent, each `data` entry may be at most 8,192 bytes by default, counting the key and value together, plus one byte, in UTF-8. A larger entry returns a 400 that names the key.
+//
 // <Note>**Required permission:** `edit:agents`. A user with `executionMode` `SIMULATION` also needs `create:simulations`.</Note>
 func (c *Client) CreateOrUpdate(
 	ctx context.Context,
@@ -143,7 +147,9 @@ func (c *Client) CreateOrUpdate(
 	return response.Body, nil
 }
 
-// Get an app user by its supplied ID
+// Get an app user by its supplied ID.
+//
+// Returns every user data value in full, including `HIDDEN` and `PARTIALLY_VISIBLE` ones.
 //
 // <Note>**Required permission:** `read:agents`</Note>
 func (c *Client) Get(
