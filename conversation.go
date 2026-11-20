@@ -314,7 +314,8 @@ type AskRequest struct {
 	// charter's manual is returned exactly as written without consulting the agent, so there is
 	// nothing to shape into the requested schema — the round returns the manual as `text` alone.
 	TextFormat *TextFormat `json:"textFormat,omitempty" url:"textFormat,omitempty"`
-	// Externally supplied ID to uniquely identify the user that created this message
+	// Externally supplied ID to uniquely identify the user that created this message. On a conversation
+	// with a `users` audience, a `USER_MESSAGE` ask from a user outside it is rejected with a 400.
 	UserID *EntityIDBase `json:"userId" url:"userId"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -3082,36 +3083,23 @@ func (c *ConversationPatchRequest) String() string {
 }
 
 var (
-	conversationRequestFieldConversationID            = big.NewInt(1 << 0)
-	conversationRequestFieldSimulationContext         = big.NewInt(1 << 1)
-	conversationRequestFieldResponseConfig            = big.NewInt(1 << 2)
-	conversationRequestFieldSubject                   = big.NewInt(1 << 3)
-	conversationRequestFieldURL                       = big.NewInt(1 << 4)
-	conversationRequestFieldCreatedAt                 = big.NewInt(1 << 5)
-	conversationRequestFieldUpdatedAt                 = big.NewInt(1 << 6)
-	conversationRequestFieldTags                      = big.NewInt(1 << 7)
-	conversationRequestFieldMetadata                  = big.NewInt(1 << 8)
+	conversationRequestFieldResponseConfig            = big.NewInt(1 << 0)
+	conversationRequestFieldTags                      = big.NewInt(1 << 1)
+	conversationRequestFieldMetadata                  = big.NewInt(1 << 2)
+	conversationRequestFieldConversationID            = big.NewInt(1 << 3)
+	conversationRequestFieldSimulationContext         = big.NewInt(1 << 4)
+	conversationRequestFieldSubject                   = big.NewInt(1 << 5)
+	conversationRequestFieldURL                       = big.NewInt(1 << 6)
+	conversationRequestFieldCreatedAt                 = big.NewInt(1 << 7)
+	conversationRequestFieldUpdatedAt                 = big.NewInt(1 << 8)
 	conversationRequestFieldMessages                  = big.NewInt(1 << 9)
 	conversationRequestFieldSpawnedFromConversationID = big.NewInt(1 << 10)
+	conversationRequestFieldAudience                  = big.NewInt(1 << 11)
 )
 
 type ConversationRequest struct {
-	// An externally supplied ID to uniquely identify this conversation
-	ConversationID *EntityIDBase `json:"conversationId" url:"conversationId"`
-	// Additional context used for simulation runs. When provided, this conversation will be treated as a simulation and
-	// may only be created by apps with the appropriate permission. Simulation conversations are excluded from normal
-	// search results unless explicitly included via the `simulationFilter` field.
-	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
 	// Optional configurations for responses to this conversation
 	ResponseConfig *ResponseConfig `json:"responseConfig,omitempty" url:"responseConfig,omitempty"`
-	// The subject of the conversation
-	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
-	// The url of the conversation
-	URL *string `json:"url,omitempty" url:"url,omitempty"`
-	// The date and time the conversation was created
-	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
-	// The date and time the conversation was last updated
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The tags of the conversation. Used for filtering in Agent Designer.
 	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
 	// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing
@@ -3123,6 +3111,20 @@ type ConversationRequest struct {
 	//
 	// The metadata of the conversation supplied by the app which created the conversation.
 	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
+	// An externally supplied ID to uniquely identify this conversation
+	ConversationID *EntityIDBase `json:"conversationId" url:"conversationId"`
+	// Additional context used for simulation runs. When provided, this conversation will be treated as a simulation and
+	// may only be created by apps with the appropriate permission. Simulation conversations are excluded from normal
+	// search results unless explicitly included via the `simulationFilter` field.
+	SimulationContext *SimulationContext `json:"simulationContext,omitempty" url:"simulationContext,omitempty"`
+	// The subject of the conversation
+	Subject *string `json:"subject,omitempty" url:"subject,omitempty"`
+	// The url of the conversation
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
+	// The date and time the conversation was created
+	CreatedAt *time.Time `json:"createdAt,omitempty" url:"createdAt,omitempty"`
+	// The date and time the conversation was last updated
+	UpdatedAt *time.Time `json:"updatedAt,omitempty" url:"updatedAt,omitempty"`
 	// The messages in the conversation
 	Messages []*ConversationMessageRequest `json:"messages" url:"messages"`
 	// The unique identifier of the conversation this new conversation was spawned from, if applicable.
@@ -3136,12 +3138,42 @@ type ConversationRequest struct {
 	// The referenced conversation must belong to the same agent. Because the merged transcript is read
 	// back to the end user, only set this to a conversation the current user is entitled to see.
 	SpawnedFromConversationID *EntityID `json:"spawnedFromConversationId,omitempty" url:"spawnedFromConversationId,omitempty"`
+	// Who the conversation is for. Omit this field or send `allUsers` for a conversation that any of
+	// the agent's users may take part in. Send `users` to restrict the conversation to the listed users.
+	// A `USER` message from any other user, sent through `ask`, `askStream`, `appendNewMessages` or
+	// this request's `messages` when this request creates the conversation, is rejected with a 400.
+	// Initializing an existing conversation saves none of its `messages`.
+	//
+	// The audience is set when the conversation is created and cannot be changed. Initializing an
+	// existing conversation leaves its audience unchanged.
+	Audience *ConversationAudience `json:"audience,omitempty" url:"audience,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (c *ConversationRequest) GetResponseConfig() *ResponseConfig {
+	if c == nil {
+		return nil
+	}
+	return c.ResponseConfig
+}
+
+func (c *ConversationRequest) GetTags() []string {
+	if c == nil {
+		return nil
+	}
+	return c.Tags
+}
+
+func (c *ConversationRequest) GetMetadata() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.Metadata
 }
 
 func (c *ConversationRequest) GetConversationID() *EntityIDBase {
@@ -3156,13 +3188,6 @@ func (c *ConversationRequest) GetSimulationContext() *SimulationContext {
 		return nil
 	}
 	return c.SimulationContext
-}
-
-func (c *ConversationRequest) GetResponseConfig() *ResponseConfig {
-	if c == nil {
-		return nil
-	}
-	return c.ResponseConfig
 }
 
 func (c *ConversationRequest) GetSubject() *string {
@@ -3193,20 +3218,6 @@ func (c *ConversationRequest) GetUpdatedAt() *time.Time {
 	return c.UpdatedAt
 }
 
-func (c *ConversationRequest) GetTags() []string {
-	if c == nil {
-		return nil
-	}
-	return c.Tags
-}
-
-func (c *ConversationRequest) GetMetadata() map[string]string {
-	if c == nil {
-		return nil
-	}
-	return c.Metadata
-}
-
 func (c *ConversationRequest) GetMessages() []*ConversationMessageRequest {
 	if c == nil {
 		return nil
@@ -3221,6 +3232,13 @@ func (c *ConversationRequest) GetSpawnedFromConversationID() *EntityID {
 	return c.SpawnedFromConversationID
 }
 
+func (c *ConversationRequest) GetAudience() *ConversationAudience {
+	if c == nil {
+		return nil
+	}
+	return c.Audience
+}
+
 func (c *ConversationRequest) GetExtraProperties() map[string]interface{} {
 	return c.extraProperties
 }
@@ -3230,6 +3248,27 @@ func (c *ConversationRequest) require(field *big.Int) {
 		c.explicitFields = big.NewInt(0)
 	}
 	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetResponseConfig sets the ResponseConfig field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRequest) SetResponseConfig(responseConfig *ResponseConfig) {
+	c.ResponseConfig = responseConfig
+	c.require(conversationRequestFieldResponseConfig)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRequest) SetTags(tags []string) {
+	c.Tags = tags
+	c.require(conversationRequestFieldTags)
+}
+
+// SetMetadata sets the Metadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRequest) SetMetadata(metadata map[string]string) {
+	c.Metadata = metadata
+	c.require(conversationRequestFieldMetadata)
 }
 
 // SetConversationID sets the ConversationID field and marks it as non-optional;
@@ -3244,13 +3283,6 @@ func (c *ConversationRequest) SetConversationID(conversationID *EntityIDBase) {
 func (c *ConversationRequest) SetSimulationContext(simulationContext *SimulationContext) {
 	c.SimulationContext = simulationContext
 	c.require(conversationRequestFieldSimulationContext)
-}
-
-// SetResponseConfig sets the ResponseConfig field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationRequest) SetResponseConfig(responseConfig *ResponseConfig) {
-	c.ResponseConfig = responseConfig
-	c.require(conversationRequestFieldResponseConfig)
 }
 
 // SetSubject sets the Subject field and marks it as non-optional;
@@ -3281,20 +3313,6 @@ func (c *ConversationRequest) SetUpdatedAt(updatedAt *time.Time) {
 	c.require(conversationRequestFieldUpdatedAt)
 }
 
-// SetTags sets the Tags field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationRequest) SetTags(tags []string) {
-	c.Tags = tags
-	c.require(conversationRequestFieldTags)
-}
-
-// SetMetadata sets the Metadata field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConversationRequest) SetMetadata(metadata map[string]string) {
-	c.Metadata = metadata
-	c.require(conversationRequestFieldMetadata)
-}
-
 // SetMessages sets the Messages field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *ConversationRequest) SetMessages(messages []*ConversationMessageRequest) {
@@ -3307,6 +3325,13 @@ func (c *ConversationRequest) SetMessages(messages []*ConversationMessageRequest
 func (c *ConversationRequest) SetSpawnedFromConversationID(spawnedFromConversationID *EntityID) {
 	c.SpawnedFromConversationID = spawnedFromConversationID
 	c.require(conversationRequestFieldSpawnedFromConversationID)
+}
+
+// SetAudience sets the Audience field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationRequest) SetAudience(audience *ConversationAudience) {
+	c.Audience = audience
+	c.require(conversationRequestFieldAudience)
 }
 
 func (c *ConversationRequest) UnmarshalJSON(data []byte) error {
@@ -4570,11 +4595,15 @@ func (d *DeliverMessageRequest) validate() error {
 }
 
 var (
-	deliverMessageResponseFieldStatus = big.NewInt(1 << 0)
+	deliverMessageResponseFieldStatus         = big.NewInt(1 << 0)
+	deliverMessageResponseFieldConversationID = big.NewInt(1 << 1)
 )
 
 type DeliverMessageResponse struct {
 	Status DeliveryStatus `json:"status" url:"status"`
+	// The conversation the message was delivered to, or attempted on when `status` is `FAILED`. Absent when
+	// no conversation qualified for a delivery to a user.
+	ConversationID *EntityID `json:"conversationId,omitempty" url:"conversationId,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4588,6 +4617,13 @@ func (d *DeliverMessageResponse) GetStatus() DeliveryStatus {
 		return ""
 	}
 	return d.Status
+}
+
+func (d *DeliverMessageResponse) GetConversationID() *EntityID {
+	if d == nil {
+		return nil
+	}
+	return d.ConversationID
 }
 
 func (d *DeliverMessageResponse) GetExtraProperties() map[string]interface{} {
@@ -4606,6 +4642,13 @@ func (d *DeliverMessageResponse) require(field *big.Int) {
 func (d *DeliverMessageResponse) SetStatus(status DeliveryStatus) {
 	d.Status = status
 	d.require(deliverMessageResponseFieldStatus)
+}
+
+// SetConversationID sets the ConversationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverMessageResponse) SetConversationID(conversationID *EntityID) {
+	d.ConversationID = conversationID
+	d.require(deliverMessageResponseFieldConversationID)
 }
 
 func (d *DeliverMessageResponse) UnmarshalJSON(data []byte) error {
@@ -4651,6 +4694,7 @@ var (
 	deliverUserMessageRequestFieldMessage = big.NewInt(1 << 0)
 	deliverUserMessageRequestFieldContent = big.NewInt(1 << 1)
 	deliverUserMessageRequestFieldUserID  = big.NewInt(1 << 2)
+	deliverUserMessageRequestFieldAppIDs  = big.NewInt(1 << 3)
 )
 
 type DeliverUserMessageRequest struct {
@@ -4662,6 +4706,24 @@ type DeliverUserMessageRequest struct {
 	Content *DeliverContent `json:"content,omitempty" url:"content,omitempty"`
 	// The ID of the user to deliver the message to.
 	UserID *EntityIDWithoutAgent `json:"userId" url:"userId"`
+	// The apps whose conversations may receive the message, in order of preference. Omit it to allow any app; an empty list is rejected with a 400.
+	//
+	// The message goes to a conversation that already exists, is open, has the `ASYNC` capability, is owned
+	// by an allowed app, and lists this user in a `users` audience (set by `initialize`'s `audience`). A
+	// conversation with an `allUsers` audience, or with none, is never chosen. Apps are tried in the order
+	// given, and within an app the most recently updated conversation wins; with `appIds` omitted, the most
+	// recently updated conversation of any app wins. An `ask` also skips conversations with `llmEnabled`
+	// set to false.
+	//
+	// The message goes to one conversation only. To reach the user in several apps, send one request per app.
+	// Whether an app is installed is not checked when choosing: the message is handed to the chosen
+	// conversation's app, and if that app fails to take it, `status` is `FAILED` and no other app is tried.
+	//
+	// When no conversation qualifies, nothing is delivered and `status` is `FAILED`.
+	//
+	// Only 20 of a user's open `ASYNC` conversations are considered. If a user has more, an arbitrary 20
+	// are, so the most recent one may be missed. Close conversations that no longer take messages.
+	AppIDs []string `json:"appIds,omitempty" url:"appIds,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4689,6 +4751,13 @@ func (d *DeliverUserMessageRequest) GetUserID() *EntityIDWithoutAgent {
 		return nil
 	}
 	return d.UserID
+}
+
+func (d *DeliverUserMessageRequest) GetAppIDs() []string {
+	if d == nil {
+		return nil
+	}
+	return d.AppIDs
 }
 
 func (d *DeliverUserMessageRequest) GetExtraProperties() map[string]interface{} {
@@ -4721,6 +4790,13 @@ func (d *DeliverUserMessageRequest) SetContent(content *DeliverContent) {
 func (d *DeliverUserMessageRequest) SetUserID(userID *EntityIDWithoutAgent) {
 	d.UserID = userID
 	d.require(deliverUserMessageRequestFieldUserID)
+}
+
+// SetAppIDs sets the AppIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DeliverUserMessageRequest) SetAppIDs(appIDs []string) {
+	d.AppIDs = appIDs
+	d.require(deliverUserMessageRequestFieldAppIDs)
 }
 
 func (d *DeliverUserMessageRequest) UnmarshalJSON(data []byte) error {

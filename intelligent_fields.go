@@ -607,7 +607,9 @@ var (
 	intelligentFieldDetailResponseFieldUpdatedAt           = big.NewInt(1 << 8)
 	intelligentFieldDetailResponseFieldStatus              = big.NewInt(1 << 9)
 	intelligentFieldDetailResponseFieldFieldID             = big.NewInt(1 << 10)
-	intelligentFieldDetailResponseFieldReferencingCharters = big.NewInt(1 << 11)
+	intelligentFieldDetailResponseFieldCreatedBy           = big.NewInt(1 << 11)
+	intelligentFieldDetailResponseFieldUpdatedBy           = big.NewInt(1 << 12)
+	intelligentFieldDetailResponseFieldReferencingCharters = big.NewInt(1 << 13)
 )
 
 type IntelligentFieldDetailResponse struct {
@@ -649,6 +651,10 @@ type IntelligentFieldDetailResponse struct {
 	Status CapabilityStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this intelligent field
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
+	// Who wrote this version of the field. Absent when no one was recorded. Shown in Agent Designer as "Created by" on a field a variant adds.
+	CreatedBy *ChangeAuthor `json:"createdBy,omitempty" url:"createdBy,omitempty"`
+	// Who last changed this version of the field. Absent when no one was recorded. Shown in Agent Designer as "Modified by" on a field a variant changes.
+	UpdatedBy *ChangeAuthor `json:"updatedBy,omitempty" url:"updatedBy,omitempty"`
 	// Charters whose precondition references this intelligent field. A field referenced by
 	// an active precondition cannot be deactivated.
 	ReferencingCharters []*CharterSummary `json:"referencingCharters,omitempty" url:"referencingCharters,omitempty"`
@@ -735,6 +741,20 @@ func (i *IntelligentFieldDetailResponse) GetFieldID() *EntityID {
 		return nil
 	}
 	return i.FieldID
+}
+
+func (i *IntelligentFieldDetailResponse) GetCreatedBy() *ChangeAuthor {
+	if i == nil {
+		return nil
+	}
+	return i.CreatedBy
+}
+
+func (i *IntelligentFieldDetailResponse) GetUpdatedBy() *ChangeAuthor {
+	if i == nil {
+		return nil
+	}
+	return i.UpdatedBy
 }
 
 func (i *IntelligentFieldDetailResponse) GetReferencingCharters() []*CharterSummary {
@@ -830,6 +850,20 @@ func (i *IntelligentFieldDetailResponse) SetStatus(status CapabilityStatus) {
 func (i *IntelligentFieldDetailResponse) SetFieldID(fieldID *EntityID) {
 	i.FieldID = fieldID
 	i.require(intelligentFieldDetailResponseFieldFieldID)
+}
+
+// SetCreatedBy sets the CreatedBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldDetailResponse) SetCreatedBy(createdBy *ChangeAuthor) {
+	i.CreatedBy = createdBy
+	i.require(intelligentFieldDetailResponseFieldCreatedBy)
+}
+
+// SetUpdatedBy sets the UpdatedBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldDetailResponse) SetUpdatedBy(updatedBy *ChangeAuthor) {
+	i.UpdatedBy = updatedBy
+	i.require(intelligentFieldDetailResponseFieldUpdatedBy)
 }
 
 // SetReferencingCharters sets the ReferencingCharters field and marks it as non-optional;
@@ -1115,6 +1149,8 @@ var (
 	intelligentFieldResponseFieldUpdatedAt      = big.NewInt(1 << 8)
 	intelligentFieldResponseFieldStatus         = big.NewInt(1 << 9)
 	intelligentFieldResponseFieldFieldID        = big.NewInt(1 << 10)
+	intelligentFieldResponseFieldCreatedBy      = big.NewInt(1 << 11)
+	intelligentFieldResponseFieldUpdatedBy      = big.NewInt(1 << 12)
 )
 
 type IntelligentFieldResponse struct {
@@ -1156,6 +1192,10 @@ type IntelligentFieldResponse struct {
 	Status CapabilityStatus `json:"status" url:"status"`
 	// ID that uniquely identifies this intelligent field
 	FieldID *EntityID `json:"fieldId" url:"fieldId"`
+	// Who wrote this version of the field. Absent when no one was recorded. Shown in Agent Designer as "Created by" on a field a variant adds.
+	CreatedBy *ChangeAuthor `json:"createdBy,omitempty" url:"createdBy,omitempty"`
+	// Who last changed this version of the field. Absent when no one was recorded. Shown in Agent Designer as "Modified by" on a field a variant changes.
+	UpdatedBy *ChangeAuthor `json:"updatedBy,omitempty" url:"updatedBy,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1239,6 +1279,20 @@ func (i *IntelligentFieldResponse) GetFieldID() *EntityID {
 		return nil
 	}
 	return i.FieldID
+}
+
+func (i *IntelligentFieldResponse) GetCreatedBy() *ChangeAuthor {
+	if i == nil {
+		return nil
+	}
+	return i.CreatedBy
+}
+
+func (i *IntelligentFieldResponse) GetUpdatedBy() *ChangeAuthor {
+	if i == nil {
+		return nil
+	}
+	return i.UpdatedBy
 }
 
 func (i *IntelligentFieldResponse) GetExtraProperties() map[string]interface{} {
@@ -1327,6 +1381,20 @@ func (i *IntelligentFieldResponse) SetStatus(status CapabilityStatus) {
 func (i *IntelligentFieldResponse) SetFieldID(fieldID *EntityID) {
 	i.FieldID = fieldID
 	i.require(intelligentFieldResponseFieldFieldID)
+}
+
+// SetCreatedBy sets the CreatedBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetCreatedBy(createdBy *ChangeAuthor) {
+	i.CreatedBy = createdBy
+	i.require(intelligentFieldResponseFieldCreatedBy)
+}
+
+// SetUpdatedBy sets the UpdatedBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *IntelligentFieldResponse) SetUpdatedBy(updatedBy *ChangeAuthor) {
+	i.UpdatedBy = updatedBy
+	i.require(intelligentFieldResponseFieldUpdatedBy)
 }
 
 func (i *IntelligentFieldResponse) UnmarshalJSON(data []byte) error {

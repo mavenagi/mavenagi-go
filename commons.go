@@ -15,14 +15,18 @@ import (
 // before `end` when both are set.
 //
 // Both ends are instants with an offset, so a client converts a local date to an instant
-// before sending it; the server applies no timezone. The server keeps only the instant, so
-// a window reads back in UTC.
+// before sending it; matching compares instants and applies no timezone. The server keeps
+// each end's instant but not the offset it was sent with, so each end reads back at
+// `timezone`'s offset on that date, or in UTC without one.
 var (
-	absoluteTimeWindowFieldStart = big.NewInt(1 << 0)
-	absoluteTimeWindowFieldEnd   = big.NewInt(1 << 1)
+	absoluteTimeWindowFieldTimezone = big.NewInt(1 << 0)
+	absoluteTimeWindowFieldStart    = big.NewInt(1 << 1)
+	absoluteTimeWindowFieldEnd      = big.NewInt(1 << 2)
 )
 
 type AbsoluteTimeWindow struct {
+	// The IANA timezone the window was written in (e.g. "America/New_York"), kept so an editor can show the ends in it again. It does not change which instants match. Fixed offsets (e.g. "-08:00") and legacy IDs (e.g. "EST") are accepted, but the ends then read back at a fixed offset that ignores daylight saving. Clients can prefill it from the agent's `defaultTimezone`.
+	Timezone *string `json:"timezone,omitempty" url:"timezone,omitempty"`
 	// The first instant inside the window. Omit to leave the window open at the start.
 	Start *time.Time `json:"start,omitempty" url:"start,omitempty"`
 	// The first instant after the window. Omit to leave the window open at the end.
@@ -33,6 +37,13 @@ type AbsoluteTimeWindow struct {
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (a *AbsoluteTimeWindow) GetTimezone() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Timezone
 }
 
 func (a *AbsoluteTimeWindow) GetStart() *time.Time {
@@ -58,6 +69,13 @@ func (a *AbsoluteTimeWindow) require(field *big.Int) {
 		a.explicitFields = big.NewInt(0)
 	}
 	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetTimezone sets the Timezone field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AbsoluteTimeWindow) SetTimezone(timezone *string) {
+	a.Timezone = timezone
+	a.require(absoluteTimeWindowFieldTimezone)
 }
 
 // SetStart sets the Start field and marks it as non-optional;
@@ -317,6 +335,107 @@ func (a *ActionBase) MarshalJSON() ([]byte, error) {
 }
 
 func (a *ActionBase) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+// State an action changes: metadata on its conversation, and data on the user whose message
+// triggered it. Must set at least one of `conversationMetadata` or `userData`, and an empty
+// map counts as unset.
+var (
+	actionEffectsFieldConversationMetadata = big.NewInt(1 << 0)
+	actionEffectsFieldUserData             = big.NewInt(1 << 1)
+)
+
+type ActionEffects struct {
+	// Merged into the conversation's metadata. Keys and values are at most 500 characters
+	// each.
+	ConversationMetadata map[string]string `json:"conversationMetadata,omitempty" url:"conversationMetadata,omitempty"`
+	// A patch to the user's data. Keys may not start with `maven.`, which the platform
+	// reserves.
+	UserData *UserDataEffect `json:"userData,omitempty" url:"userData,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *ActionEffects) GetConversationMetadata() map[string]string {
+	if a == nil {
+		return nil
+	}
+	return a.ConversationMetadata
+}
+
+func (a *ActionEffects) GetUserData() *UserDataEffect {
+	if a == nil {
+		return nil
+	}
+	return a.UserData
+}
+
+func (a *ActionEffects) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *ActionEffects) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+// SetConversationMetadata sets the ConversationMetadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionEffects) SetConversationMetadata(conversationMetadata map[string]string) {
+	a.ConversationMetadata = conversationMetadata
+	a.require(actionEffectsFieldConversationMetadata)
+}
+
+// SetUserData sets the UserData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *ActionEffects) SetUserData(userData *UserDataEffect) {
+	a.UserData = userData
+	a.require(actionEffectsFieldUserData)
+}
+
+func (a *ActionEffects) UnmarshalJSON(data []byte) error {
+	type unmarshaler ActionEffects
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = ActionEffects(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *ActionEffects) MarshalJSON() ([]byte, error) {
+	type embed ActionEffects
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *ActionEffects) String() string {
 	if len(a.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
 			return value
@@ -2131,6 +2250,65 @@ func NewAdditionalDataKeyFromString(s string) (AdditionalDataKey, error) {
 
 func (a AdditionalDataKey) Ptr() *AdditionalDataKey {
 	return &a
+}
+
+type AllUsersConversationAudience struct {
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *AllUsersConversationAudience) GetExtraProperties() map[string]interface{} {
+	return a.extraProperties
+}
+
+func (a *AllUsersConversationAudience) require(field *big.Int) {
+	if a.explicitFields == nil {
+		a.explicitFields = big.NewInt(0)
+	}
+	a.explicitFields.Or(a.explicitFields, field)
+}
+
+func (a *AllUsersConversationAudience) UnmarshalJSON(data []byte) error {
+	type unmarshaler AllUsersConversationAudience
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = AllUsersConversationAudience(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *AllUsersConversationAudience) MarshalJSON() ([]byte, error) {
+	type embed AllUsersConversationAudience
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *AllUsersConversationAudience) String() string {
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
 }
 
 var (
@@ -8014,6 +8192,124 @@ func (c CapabilityType) Ptr() *CapabilityType {
 	return &c
 }
 
+// Who made a change, as recorded when it was made.
+var (
+	changeAuthorFieldMavenUserID = big.NewInt(1 << 0)
+	changeAuthorFieldName        = big.NewInt(1 << 1)
+	changeAuthorFieldActingAppID = big.NewInt(1 << 2)
+)
+
+type ChangeAuthor struct {
+	// The mavenUser ID of the person the change was made for, the same as `MavenUser.id`: one ID
+	// for the person in every organization. The mavenUsers API gives their current name. It answers
+	// 404 for someone the caller can no longer read, such as a person who left the organization, so
+	// fall back to `name` then. Absent when no person was recorded: an app that acted for no one, a
+	// change made with no signed-in caller, and older changes.
+	MavenUserID *LeveledEntityID `json:"mavenUserId,omitempty" url:"mavenUserId,omitempty"`
+	// Who made the change, as their name read at the time; it does not change if they rename later. When an app acted for a person signed in to Maven, their name (absent if they have no name on record). When an app acted for no person, the app's ID. Changes recorded before people were tracked usually name the app. A change made with no signed-in caller, such as background setup work, reads "Anonymous", and some older changes name a dashboard user.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// The ID of the app that made the change. Absent when no app made it, such as a change with no signed-in caller, and for older changes where no app was recorded.
+	ActingAppID *string `json:"actingAppId,omitempty" url:"actingAppId,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ChangeAuthor) GetMavenUserID() *LeveledEntityID {
+	if c == nil {
+		return nil
+	}
+	return c.MavenUserID
+}
+
+func (c *ChangeAuthor) GetName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Name
+}
+
+func (c *ChangeAuthor) GetActingAppID() *string {
+	if c == nil {
+		return nil
+	}
+	return c.ActingAppID
+}
+
+func (c *ChangeAuthor) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ChangeAuthor) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetMavenUserID sets the MavenUserID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ChangeAuthor) SetMavenUserID(mavenUserID *LeveledEntityID) {
+	c.MavenUserID = mavenUserID
+	c.require(changeAuthorFieldMavenUserID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ChangeAuthor) SetName(name *string) {
+	c.Name = name
+	c.require(changeAuthorFieldName)
+}
+
+// SetActingAppID sets the ActingAppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ChangeAuthor) SetActingAppID(actingAppID *string) {
+	c.ActingAppID = actingAppID
+	c.require(changeAuthorFieldActingAppID)
+}
+
+func (c *ChangeAuthor) UnmarshalJSON(data []byte) error {
+	type unmarshaler ChangeAuthor
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ChangeAuthor(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ChangeAuthor) MarshalJSON() ([]byte, error) {
+	type embed ChangeAuthor
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ChangeAuthor) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
 type ChartSpecSchema string
 
 const (
@@ -8931,6 +9227,247 @@ func (c *ConversationAnalysis) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
+}
+
+type ConversationAudience struct {
+	Type string
+	// Any of the agent's users may take part in the conversation. Equivalent to omitting `audience`.
+	AllUsers *AllUsersConversationAudience
+	// Only the listed users may take part in the conversation. A `USER` message from anyone else is
+	// rejected with a 400 on `ask`, `askStream` and `appendNewMessages`, and on the `initialize` that
+	// creates the conversation; a repeat `initialize` saves no messages. Messages from human agents and
+	// external systems are not checked, and voice caller messages are not checked yet.
+	Users *UsersConversationAudience
+}
+
+func (c *ConversationAudience) GetType() string {
+	if c == nil {
+		return ""
+	}
+	return c.Type
+}
+
+func (c *ConversationAudience) GetAllUsers() *AllUsersConversationAudience {
+	if c == nil {
+		return nil
+	}
+	return c.AllUsers
+}
+
+func (c *ConversationAudience) GetUsers() *UsersConversationAudience {
+	if c == nil {
+		return nil
+	}
+	return c.Users
+}
+
+func (c *ConversationAudience) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	c.Type = unmarshaler.Type
+	if unmarshaler.Type == "" {
+		return fmt.Errorf("%T did not include discriminant type", c)
+	}
+	switch unmarshaler.Type {
+	case "allUsers":
+		value := new(AllUsersConversationAudience)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.AllUsers = value
+	case "users":
+		value := new(UsersConversationAudience)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Users = value
+	}
+	return nil
+}
+
+func (c ConversationAudience) MarshalJSON() ([]byte, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	if c.AllUsers != nil {
+		return internal.MarshalJSONWithExtraProperty(c.AllUsers, "type", "allUsers")
+	}
+	if c.Users != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Users, "type", "users")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+type ConversationAudienceVisitor interface {
+	VisitAllUsers(*AllUsersConversationAudience) error
+	VisitUsers(*UsersConversationAudience) error
+}
+
+func (c *ConversationAudience) Accept(visitor ConversationAudienceVisitor) error {
+	if c.AllUsers != nil {
+		return visitor.VisitAllUsers(c.AllUsers)
+	}
+	if c.Users != nil {
+		return visitor.VisitUsers(c.Users)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+func (c *ConversationAudience) validate() error {
+	if c == nil {
+		return fmt.Errorf("type %T is nil", c)
+	}
+	var fields []string
+	if c.AllUsers != nil {
+		fields = append(fields, "allUsers")
+	}
+	if c.Users != nil {
+		fields = append(fields, "users")
+	}
+	if len(fields) == 0 {
+		if c.Type != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", c, c.Type)
+		}
+		return fmt.Errorf("type %T is empty", c)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", c, fields)
+	}
+	if c.Type != "" {
+		field := fields[0]
+		if c.Type != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				c,
+				c.Type,
+				c,
+			)
+		}
+	}
+	return nil
+}
+
+type ConversationAudienceResponse struct {
+	Type string
+	// Any of the agent's users may take part in the conversation.
+	AllUsers *AllUsersConversationAudience
+	// Only the listed users may take part in the conversation.
+	Users *UsersConversationAudienceResponse
+}
+
+func (c *ConversationAudienceResponse) GetType() string {
+	if c == nil {
+		return ""
+	}
+	return c.Type
+}
+
+func (c *ConversationAudienceResponse) GetAllUsers() *AllUsersConversationAudience {
+	if c == nil {
+		return nil
+	}
+	return c.AllUsers
+}
+
+func (c *ConversationAudienceResponse) GetUsers() *UsersConversationAudienceResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Users
+}
+
+func (c *ConversationAudienceResponse) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	c.Type = unmarshaler.Type
+	if unmarshaler.Type == "" {
+		return fmt.Errorf("%T did not include discriminant type", c)
+	}
+	switch unmarshaler.Type {
+	case "allUsers":
+		value := new(AllUsersConversationAudience)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.AllUsers = value
+	case "users":
+		value := new(UsersConversationAudienceResponse)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		c.Users = value
+	}
+	return nil
+}
+
+func (c ConversationAudienceResponse) MarshalJSON() ([]byte, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+	if c.AllUsers != nil {
+		return internal.MarshalJSONWithExtraProperty(c.AllUsers, "type", "allUsers")
+	}
+	if c.Users != nil {
+		return internal.MarshalJSONWithExtraProperty(c.Users, "type", "users")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+type ConversationAudienceResponseVisitor interface {
+	VisitAllUsers(*AllUsersConversationAudience) error
+	VisitUsers(*UsersConversationAudienceResponse) error
+}
+
+func (c *ConversationAudienceResponse) Accept(visitor ConversationAudienceResponseVisitor) error {
+	if c.AllUsers != nil {
+		return visitor.VisitAllUsers(c.AllUsers)
+	}
+	if c.Users != nil {
+		return visitor.VisitUsers(c.Users)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", c)
+}
+
+func (c *ConversationAudienceResponse) validate() error {
+	if c == nil {
+		return fmt.Errorf("type %T is nil", c)
+	}
+	var fields []string
+	if c.AllUsers != nil {
+		fields = append(fields, "allUsers")
+	}
+	if c.Users != nil {
+		fields = append(fields, "users")
+	}
+	if len(fields) == 0 {
+		if c.Type != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", c, c.Type)
+		}
+		return fmt.Errorf("type %T is empty", c)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", c, fields)
+	}
+	if c.Type != "" {
+		field := fields[0]
+		if c.Type != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				c,
+				c.Type,
+				c,
+			)
+		}
+	}
+	return nil
 }
 
 var (
@@ -10838,6 +11375,7 @@ var (
 	conversationResponseFieldVariantID         = big.NewInt(1 << 18)
 	conversationResponseFieldMessages          = big.NewInt(1 << 19)
 	conversationResponseFieldAttachments       = big.NewInt(1 << 20)
+	conversationResponseFieldAudience          = big.NewInt(1 << 21)
 )
 
 type ConversationResponse struct {
@@ -10898,6 +11436,9 @@ type ConversationResponse struct {
 	//
 	// Message attachments are included in LLM context, conversation attachments are not.
 	Attachments []*AttachmentResponse `json:"attachments" url:"attachments"`
+	// Who the conversation is for, as set when it was initialized. `allUsers` for a conversation
+	// initialized without an audience or created by an ask.
+	Audience *ConversationAudienceResponse `json:"audience" url:"audience"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -11051,6 +11592,13 @@ func (c *ConversationResponse) GetAttachments() []*AttachmentResponse {
 		return nil
 	}
 	return c.Attachments
+}
+
+func (c *ConversationResponse) GetAudience() *ConversationAudienceResponse {
+	if c == nil {
+		return nil
+	}
+	return c.Audience
 }
 
 func (c *ConversationResponse) GetExtraProperties() map[string]interface{} {
@@ -11211,6 +11759,13 @@ func (c *ConversationResponse) SetAttachments(attachments []*AttachmentResponse)
 	c.require(conversationResponseFieldAttachments)
 }
 
+// SetAudience sets the Audience field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationResponse) SetAudience(audience *ConversationAudienceResponse) {
+	c.Audience = audience
+	c.require(conversationResponseFieldAudience)
+}
+
 func (c *ConversationResponse) UnmarshalJSON(data []byte) error {
 	type embed ConversationResponse
 	var unmarshaler = struct {
@@ -11289,6 +11844,127 @@ func NewConversationRoundFromString(s string) (ConversationRound, error) {
 
 func (c ConversationRound) Ptr() *ConversationRound {
 	return &c
+}
+
+// The settings a conversation is created with.
+var (
+	conversationSetupFieldsFieldResponseConfig = big.NewInt(1 << 0)
+	conversationSetupFieldsFieldTags           = big.NewInt(1 << 1)
+	conversationSetupFieldsFieldMetadata       = big.NewInt(1 << 2)
+)
+
+type ConversationSetupFields struct {
+	// Optional configurations for responses to this conversation
+	ResponseConfig *ResponseConfig `json:"responseConfig,omitempty" url:"responseConfig,omitempty"`
+	// The tags of the conversation. Used for filtering in Agent Designer.
+	Tags []string `json:"tags,omitempty" url:"tags,omitempty"`
+	// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing
+	// additional information about the object in a structured format, and querying for objects
+	// via API or the dashboard.
+	//
+	// Keys are strings with a maximum length of 500 characters. Values are strings with a maximum
+	// length of 512 characters.
+	//
+	// The metadata of the conversation supplied by the app which created the conversation.
+	Metadata map[string]string `json:"metadata,omitempty" url:"metadata,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConversationSetupFields) GetResponseConfig() *ResponseConfig {
+	if c == nil {
+		return nil
+	}
+	return c.ResponseConfig
+}
+
+func (c *ConversationSetupFields) GetTags() []string {
+	if c == nil {
+		return nil
+	}
+	return c.Tags
+}
+
+func (c *ConversationSetupFields) GetMetadata() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.Metadata
+}
+
+func (c *ConversationSetupFields) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConversationSetupFields) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetResponseConfig sets the ResponseConfig field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSetupFields) SetResponseConfig(responseConfig *ResponseConfig) {
+	c.ResponseConfig = responseConfig
+	c.require(conversationSetupFieldsFieldResponseConfig)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSetupFields) SetTags(tags []string) {
+	c.Tags = tags
+	c.require(conversationSetupFieldsFieldTags)
+}
+
+// SetMetadata sets the Metadata field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConversationSetupFields) SetMetadata(metadata map[string]string) {
+	c.Metadata = metadata
+	c.require(conversationSetupFieldsFieldMetadata)
+}
+
+func (c *ConversationSetupFields) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConversationSetupFields
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConversationSetupFields(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConversationSetupFields) MarshalJSON() ([]byte, error) {
+	type embed ConversationSetupFields
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConversationSetupFields) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
 }
 
 type ConversationState string
@@ -11953,6 +12629,130 @@ func (c *ConversationValueSource) validate() error {
 		}
 	}
 	return nil
+}
+
+// The ID of an object above the organization level. It has no `organizationId` or `agentId`, and
+// none is inferred: the ID is unique within one residency zone and environment.
+var (
+	crossOrganizationLevelEntityIDFieldReferenceID = big.NewInt(1 << 0)
+	crossOrganizationLevelEntityIDFieldType        = big.NewInt(1 << 1)
+	crossOrganizationLevelEntityIDFieldAppID       = big.NewInt(1 << 2)
+)
+
+type CrossOrganizationLevelEntityID struct {
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with the other fields of its ID.
+	//
+	// Must be less than 192 characters and contain only:
+	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
+	// - hyphens (`-`)
+	// - underscores (`_`)
+	// - plus signs (`+`)
+	// - periods (`.`)
+	// - at symbol (`@`)
+	// - pipe symbol (`|`)
+	ReferenceID string `json:"referenceId" url:"referenceId"`
+	// The object type
+	Type EntityType `json:"type" url:"type"`
+	// The ID of the application that created this object
+	AppID string `json:"appId" url:"appId"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CrossOrganizationLevelEntityID) GetReferenceID() string {
+	if c == nil {
+		return ""
+	}
+	return c.ReferenceID
+}
+
+func (c *CrossOrganizationLevelEntityID) GetType() EntityType {
+	if c == nil {
+		return ""
+	}
+	return c.Type
+}
+
+func (c *CrossOrganizationLevelEntityID) GetAppID() string {
+	if c == nil {
+		return ""
+	}
+	return c.AppID
+}
+
+func (c *CrossOrganizationLevelEntityID) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CrossOrganizationLevelEntityID) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CrossOrganizationLevelEntityID) SetReferenceID(referenceID string) {
+	c.ReferenceID = referenceID
+	c.require(crossOrganizationLevelEntityIDFieldReferenceID)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CrossOrganizationLevelEntityID) SetType(type_ EntityType) {
+	c.Type = type_
+	c.require(crossOrganizationLevelEntityIDFieldType)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CrossOrganizationLevelEntityID) SetAppID(appID string) {
+	c.AppID = appID
+	c.require(crossOrganizationLevelEntityIDFieldAppID)
+}
+
+func (c *CrossOrganizationLevelEntityID) UnmarshalJSON(data []byte) error {
+	type unmarshaler CrossOrganizationLevelEntityID
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CrossOrganizationLevelEntityID(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CrossOrganizationLevelEntityID) MarshalJSON() ([]byte, error) {
+	type embed CrossOrganizationLevelEntityID
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CrossOrganizationLevelEntityID) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
 }
 
 var (
@@ -18342,7 +19142,8 @@ var (
 	initializeConversationResponseFieldVariantID                  = big.NewInt(1 << 18)
 	initializeConversationResponseFieldMessages                   = big.NewInt(1 << 19)
 	initializeConversationResponseFieldAttachments                = big.NewInt(1 << 20)
-	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 21)
+	initializeConversationResponseFieldAudience                   = big.NewInt(1 << 21)
+	initializeConversationResponseFieldConversationKickoffResults = big.NewInt(1 << 22)
 )
 
 type InitializeConversationResponse struct {
@@ -18403,6 +19204,9 @@ type InitializeConversationResponse struct {
 	//
 	// Message attachments are included in LLM context, conversation attachments are not.
 	Attachments []*AttachmentResponse `json:"attachments" url:"attachments"`
+	// Who the conversation is for, as set when it was initialized. `allUsers` for a conversation
+	// initialized without an audience or created by an ask.
+	Audience *ConversationAudienceResponse `json:"audience" url:"audience"`
 	// Results of the Conversation Kickoffs that ran during conversation initialization, one
 	// entry per kickoff in the order they were recorded. Empty when no kickoff ran. Only
 	// present on this initialize response; other endpoints that return a conversation do not
@@ -18561,6 +19365,13 @@ func (i *InitializeConversationResponse) GetAttachments() []*AttachmentResponse 
 		return nil
 	}
 	return i.Attachments
+}
+
+func (i *InitializeConversationResponse) GetAudience() *ConversationAudienceResponse {
+	if i == nil {
+		return nil
+	}
+	return i.Audience
 }
 
 func (i *InitializeConversationResponse) GetConversationKickoffResults() []*ConversationKickoffExecutionResponse {
@@ -18726,6 +19537,13 @@ func (i *InitializeConversationResponse) SetMessages(messages []*ConversationMes
 func (i *InitializeConversationResponse) SetAttachments(attachments []*AttachmentResponse) {
 	i.Attachments = attachments
 	i.require(initializeConversationResponseFieldAttachments)
+}
+
+// SetAudience sets the Audience field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (i *InitializeConversationResponse) SetAudience(audience *ConversationAudienceResponse) {
+	i.Audience = audience
+	i.require(initializeConversationResponseFieldAudience)
 }
 
 // SetConversationKickoffResults sets the ConversationKickoffResults field and marks it as non-optional;
@@ -20145,6 +20963,154 @@ func (l *LanguageInfo) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", l)
+}
+
+// An object ID that states the level its object lives at: `AGENT` (it belongs to an agent),
+// `ORGANIZATION` (it belongs to an organization and to none of its agents), or `CROSS_ORGANIZATION` (it
+// is above the organization level). An `AGENT` ID has the same fields as `EntityId`, plus `level`. An ID
+// sent without `level` is read as `AGENT`.
+type LeveledEntityID struct {
+	Level string
+	// An object that belongs to an agent.
+	Agent *EntityID
+	// An object that belongs to an organization and to none of its agents.
+	Organization *OrganizationLevelEntityID
+	// An object above the organization level.
+	CrossOrganization *CrossOrganizationLevelEntityID
+}
+
+func (l *LeveledEntityID) GetLevel() string {
+	if l == nil {
+		return ""
+	}
+	return l.Level
+}
+
+func (l *LeveledEntityID) GetAgent() *EntityID {
+	if l == nil {
+		return nil
+	}
+	return l.Agent
+}
+
+func (l *LeveledEntityID) GetOrganization() *OrganizationLevelEntityID {
+	if l == nil {
+		return nil
+	}
+	return l.Organization
+}
+
+func (l *LeveledEntityID) GetCrossOrganization() *CrossOrganizationLevelEntityID {
+	if l == nil {
+		return nil
+	}
+	return l.CrossOrganization
+}
+
+func (l *LeveledEntityID) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Level string `json:"level"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	l.Level = unmarshaler.Level
+	if unmarshaler.Level == "" {
+		return fmt.Errorf("%T did not include discriminant level", l)
+	}
+	switch unmarshaler.Level {
+	case "AGENT":
+		value := new(EntityID)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		l.Agent = value
+	case "ORGANIZATION":
+		value := new(OrganizationLevelEntityID)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		l.Organization = value
+	case "CROSS_ORGANIZATION":
+		value := new(CrossOrganizationLevelEntityID)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		l.CrossOrganization = value
+	}
+	return nil
+}
+
+func (l LeveledEntityID) MarshalJSON() ([]byte, error) {
+	if err := l.validate(); err != nil {
+		return nil, err
+	}
+	if l.Agent != nil {
+		return internal.MarshalJSONWithExtraProperty(l.Agent, "level", "AGENT")
+	}
+	if l.Organization != nil {
+		return internal.MarshalJSONWithExtraProperty(l.Organization, "level", "ORGANIZATION")
+	}
+	if l.CrossOrganization != nil {
+		return internal.MarshalJSONWithExtraProperty(l.CrossOrganization, "level", "CROSS_ORGANIZATION")
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", l)
+}
+
+type LeveledEntityIDVisitor interface {
+	VisitAgent(*EntityID) error
+	VisitOrganization(*OrganizationLevelEntityID) error
+	VisitCrossOrganization(*CrossOrganizationLevelEntityID) error
+}
+
+func (l *LeveledEntityID) Accept(visitor LeveledEntityIDVisitor) error {
+	if l.Agent != nil {
+		return visitor.VisitAgent(l.Agent)
+	}
+	if l.Organization != nil {
+		return visitor.VisitOrganization(l.Organization)
+	}
+	if l.CrossOrganization != nil {
+		return visitor.VisitCrossOrganization(l.CrossOrganization)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", l)
+}
+
+func (l *LeveledEntityID) validate() error {
+	if l == nil {
+		return fmt.Errorf("type %T is nil", l)
+	}
+	var fields []string
+	if l.Agent != nil {
+		fields = append(fields, "AGENT")
+	}
+	if l.Organization != nil {
+		fields = append(fields, "ORGANIZATION")
+	}
+	if l.CrossOrganization != nil {
+		fields = append(fields, "CROSS_ORGANIZATION")
+	}
+	if len(fields) == 0 {
+		if l.Level != "" {
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", l, l.Level)
+		}
+		return fmt.Errorf("type %T is empty", l)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", l, fields)
+	}
+	if l.Level != "" {
+		field := fields[0]
+		if l.Level != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				l,
+				l.Level,
+				l,
+			)
+		}
+	}
+	return nil
 }
 
 // Shown in Agent Designer as "Agent inclusion".
@@ -23383,6 +24349,147 @@ func (o *OneOfSettingsSchemaEntry) MarshalJSON() ([]byte, error) {
 }
 
 func (o *OneOfSettingsSchemaEntry) String() string {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
+}
+
+// The ID of an object that belongs to an organization and to none of its agents. It has no `agentId`,
+// and none is inferred.
+var (
+	organizationLevelEntityIDFieldReferenceID    = big.NewInt(1 << 0)
+	organizationLevelEntityIDFieldType           = big.NewInt(1 << 1)
+	organizationLevelEntityIDFieldAppID          = big.NewInt(1 << 2)
+	organizationLevelEntityIDFieldOrganizationID = big.NewInt(1 << 3)
+)
+
+type OrganizationLevelEntityID struct {
+	// Externally supplied ID to uniquely identify this object. Is globally unique when combined with the other fields of its ID.
+	//
+	// Must be less than 192 characters and contain only:
+	// - alphanumeric characters (`a-z`, `A-Z`, `0-9`)
+	// - hyphens (`-`)
+	// - underscores (`_`)
+	// - plus signs (`+`)
+	// - periods (`.`)
+	// - at symbol (`@`)
+	// - pipe symbol (`|`)
+	ReferenceID string `json:"referenceId" url:"referenceId"`
+	// The object type
+	Type EntityType `json:"type" url:"type"`
+	// The ID of the application that created this object
+	AppID string `json:"appId" url:"appId"`
+	// The ID of the organization that this object belongs to
+	OrganizationID string `json:"organizationId" url:"organizationId"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OrganizationLevelEntityID) GetReferenceID() string {
+	if o == nil {
+		return ""
+	}
+	return o.ReferenceID
+}
+
+func (o *OrganizationLevelEntityID) GetType() EntityType {
+	if o == nil {
+		return ""
+	}
+	return o.Type
+}
+
+func (o *OrganizationLevelEntityID) GetAppID() string {
+	if o == nil {
+		return ""
+	}
+	return o.AppID
+}
+
+func (o *OrganizationLevelEntityID) GetOrganizationID() string {
+	if o == nil {
+		return ""
+	}
+	return o.OrganizationID
+}
+
+func (o *OrganizationLevelEntityID) GetExtraProperties() map[string]interface{} {
+	return o.extraProperties
+}
+
+func (o *OrganizationLevelEntityID) require(field *big.Int) {
+	if o.explicitFields == nil {
+		o.explicitFields = big.NewInt(0)
+	}
+	o.explicitFields.Or(o.explicitFields, field)
+}
+
+// SetReferenceID sets the ReferenceID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrganizationLevelEntityID) SetReferenceID(referenceID string) {
+	o.ReferenceID = referenceID
+	o.require(organizationLevelEntityIDFieldReferenceID)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrganizationLevelEntityID) SetType(type_ EntityType) {
+	o.Type = type_
+	o.require(organizationLevelEntityIDFieldType)
+}
+
+// SetAppID sets the AppID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrganizationLevelEntityID) SetAppID(appID string) {
+	o.AppID = appID
+	o.require(organizationLevelEntityIDFieldAppID)
+}
+
+// SetOrganizationID sets the OrganizationID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrganizationLevelEntityID) SetOrganizationID(organizationID string) {
+	o.OrganizationID = organizationID
+	o.require(organizationLevelEntityIDFieldOrganizationID)
+}
+
+func (o *OrganizationLevelEntityID) UnmarshalJSON(data []byte) error {
+	type unmarshaler OrganizationLevelEntityID
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OrganizationLevelEntityID(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OrganizationLevelEntityID) MarshalJSON() ([]byte, error) {
+	type embed OrganizationLevelEntityID
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OrganizationLevelEntityID) String() string {
 	if len(o.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
 			return value
@@ -27132,7 +28239,7 @@ type SimulationActionBehavior struct {
 	// result. `response` is required. `response` and `errorMessage` are Handlebars templates
 	// over the action's input parameters, such as `{{parameterId}}`, rendered without HTML
 	// escaping. Set `status` to `ERROR` to mock a failed action.
-	FixedResponse *ExecuteActionResponse
+	FixedResponse *SimulationFixedResponse
 	// The platform calls the action's app instead of returning a mocked result.
 	CallApp *SimulationActionCallApp
 }
@@ -27144,7 +28251,7 @@ func (s *SimulationActionBehavior) GetType() string {
 	return s.Type
 }
 
-func (s *SimulationActionBehavior) GetFixedResponse() *ExecuteActionResponse {
+func (s *SimulationActionBehavior) GetFixedResponse() *SimulationFixedResponse {
 	if s == nil {
 		return nil
 	}
@@ -27171,7 +28278,7 @@ func (s *SimulationActionBehavior) UnmarshalJSON(data []byte) error {
 	}
 	switch unmarshaler.Type {
 	case "fixedResponse":
-		value := new(ExecuteActionResponse)
+		value := new(SimulationFixedResponse)
 		if err := json.Unmarshal(data, &value); err != nil {
 			return err
 		}
@@ -27200,7 +28307,7 @@ func (s SimulationActionBehavior) MarshalJSON() ([]byte, error) {
 }
 
 type SimulationActionBehaviorVisitor interface {
-	VisitFixedResponse(*ExecuteActionResponse) error
+	VisitFixedResponse(*SimulationFixedResponse) error
 	VisitCallApp(*SimulationActionCallApp) error
 }
 
@@ -27405,16 +28512,33 @@ func (s *SimulationActionMock) String() string {
 
 // Conversations with a simulation context are the runs on the Agent Designer "Simulator" page.
 var (
-	simulationContextFieldAdditionalPromptText    = big.NewInt(1 << 0)
-	simulationContextFieldPersona                 = big.NewInt(1 << 1)
-	simulationContextFieldAvailableKnowledgeBases = big.NewInt(1 << 2)
-	simulationContextFieldVariantID               = big.NewInt(1 << 3)
-	simulationContextFieldEvaluateWithCharters    = big.NewInt(1 << 4)
-	simulationContextFieldActionMocks             = big.NewInt(1 << 5)
-	simulationContextFieldDefaultActionBehavior   = big.NewInt(1 << 6)
+	simulationContextFieldEvaluateWithCharters    = big.NewInt(1 << 0)
+	simulationContextFieldActionMocks             = big.NewInt(1 << 1)
+	simulationContextFieldDefaultActionBehavior   = big.NewInt(1 << 2)
+	simulationContextFieldAdditionalPromptText    = big.NewInt(1 << 3)
+	simulationContextFieldPersona                 = big.NewInt(1 << 4)
+	simulationContextFieldAvailableKnowledgeBases = big.NewInt(1 << 5)
+	simulationContextFieldVariantID               = big.NewInt(1 << 6)
 )
 
 type SimulationContext struct {
+	// When true, the simulation evaluates the agent's charters even if charter evaluation is
+	// turned off for the agent. When absent or false, the simulation follows the agent's own
+	// charter evaluation setting, like any other conversation. While charters are evaluated,
+	// `additionalPromptText` has no effect. Not yet enabled for every agent: until it is, the
+	// value is stored and returned, and the agent's own setting applies. A conversation that
+	// already exists keeps the value it was created with.
+	EvaluateWithCharters *bool `json:"evaluateWithCharters,omitempty" url:"evaluateWithCharters,omitempty"`
+	// What the platform does when the agent executes each action during this simulation. At
+	// most one entry per action; a request that names an action twice is rejected. An action
+	// with no entry follows `defaultActionBehavior`. A conversation that already exists keeps
+	// the mocks and default it was created with.
+	ActionMocks []*SimulationActionMock `json:"actionMocks,omitempty" url:"actionMocks,omitempty"`
+	// What the platform does when the agent executes an action that has no `actionMocks`
+	// entry. When absent, the action's app is called as usual. A `fixedResponse` here keeps the
+	// simulation from calling any action's app that `actionMocks` doesn't name with `callApp`;
+	// its templates are rendered over the parameters of whichever action was called.
+	DefaultActionBehavior *SimulationActionBehavior `json:"defaultActionBehavior,omitempty" url:"defaultActionBehavior,omitempty"`
 	// Deprecated. Superseded by charters, which determine agent behavior per round. Has no effect for agents using charters.
 	//
 	// If provided, overrides the agent's default additional prompt text during the simulation.
@@ -27435,29 +28559,33 @@ type SimulationContext struct {
 	// while agent variants aren't enabled for the agent. A conversation that already exists
 	// keeps the variant it was created with.
 	VariantID *EntityIDWithoutAgent `json:"variantId,omitempty" url:"variantId,omitempty"`
-	// When true, the simulation evaluates the agent's charters even if charter evaluation is
-	// turned off for the agent. When absent or false, the simulation follows the agent's own
-	// charter evaluation setting, like any other conversation. While charters are evaluated,
-	// `additionalPromptText` has no effect. Not yet enabled for every agent: until it is, the
-	// value is stored and returned, and the agent's own setting applies. A conversation that
-	// already exists keeps the value it was created with.
-	EvaluateWithCharters *bool `json:"evaluateWithCharters,omitempty" url:"evaluateWithCharters,omitempty"`
-	// What the platform does when the agent executes each action during this simulation. At
-	// most one entry per action; a request that names an action twice is rejected. An action
-	// with no entry follows `defaultActionBehavior`. A conversation that already exists keeps
-	// the mocks and default it was created with.
-	ActionMocks []*SimulationActionMock `json:"actionMocks,omitempty" url:"actionMocks,omitempty"`
-	// What the platform does when the agent executes an action that has no `actionMocks`
-	// entry. When absent, the action's app is called as usual. A `fixedResponse` here keeps the
-	// simulation from calling any action's app that `actionMocks` doesn't name with `callApp`;
-	// its templates are rendered over the parameters of whichever action was called.
-	DefaultActionBehavior *SimulationActionBehavior `json:"defaultActionBehavior,omitempty" url:"defaultActionBehavior,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
+}
+
+func (s *SimulationContext) GetEvaluateWithCharters() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.EvaluateWithCharters
+}
+
+func (s *SimulationContext) GetActionMocks() []*SimulationActionMock {
+	if s == nil {
+		return nil
+	}
+	return s.ActionMocks
+}
+
+func (s *SimulationContext) GetDefaultActionBehavior() *SimulationActionBehavior {
+	if s == nil {
+		return nil
+	}
+	return s.DefaultActionBehavior
 }
 
 func (s *SimulationContext) GetAdditionalPromptText() *string {
@@ -27488,27 +28616,6 @@ func (s *SimulationContext) GetVariantID() *EntityIDWithoutAgent {
 	return s.VariantID
 }
 
-func (s *SimulationContext) GetEvaluateWithCharters() *bool {
-	if s == nil {
-		return nil
-	}
-	return s.EvaluateWithCharters
-}
-
-func (s *SimulationContext) GetActionMocks() []*SimulationActionMock {
-	if s == nil {
-		return nil
-	}
-	return s.ActionMocks
-}
-
-func (s *SimulationContext) GetDefaultActionBehavior() *SimulationActionBehavior {
-	if s == nil {
-		return nil
-	}
-	return s.DefaultActionBehavior
-}
-
 func (s *SimulationContext) GetExtraProperties() map[string]interface{} {
 	return s.extraProperties
 }
@@ -27518,6 +28625,27 @@ func (s *SimulationContext) require(field *big.Int) {
 		s.explicitFields = big.NewInt(0)
 	}
 	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetEvaluateWithCharters sets the EvaluateWithCharters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationContext) SetEvaluateWithCharters(evaluateWithCharters *bool) {
+	s.EvaluateWithCharters = evaluateWithCharters
+	s.require(simulationContextFieldEvaluateWithCharters)
+}
+
+// SetActionMocks sets the ActionMocks field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationContext) SetActionMocks(actionMocks []*SimulationActionMock) {
+	s.ActionMocks = actionMocks
+	s.require(simulationContextFieldActionMocks)
+}
+
+// SetDefaultActionBehavior sets the DefaultActionBehavior field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationContext) SetDefaultActionBehavior(defaultActionBehavior *SimulationActionBehavior) {
+	s.DefaultActionBehavior = defaultActionBehavior
+	s.require(simulationContextFieldDefaultActionBehavior)
 }
 
 // SetAdditionalPromptText sets the AdditionalPromptText field and marks it as non-optional;
@@ -27546,27 +28674,6 @@ func (s *SimulationContext) SetAvailableKnowledgeBases(availableKnowledgeBases [
 func (s *SimulationContext) SetVariantID(variantID *EntityIDWithoutAgent) {
 	s.VariantID = variantID
 	s.require(simulationContextFieldVariantID)
-}
-
-// SetEvaluateWithCharters sets the EvaluateWithCharters field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SimulationContext) SetEvaluateWithCharters(evaluateWithCharters *bool) {
-	s.EvaluateWithCharters = evaluateWithCharters
-	s.require(simulationContextFieldEvaluateWithCharters)
-}
-
-// SetActionMocks sets the ActionMocks field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SimulationContext) SetActionMocks(actionMocks []*SimulationActionMock) {
-	s.ActionMocks = actionMocks
-	s.require(simulationContextFieldActionMocks)
-}
-
-// SetDefaultActionBehavior sets the DefaultActionBehavior field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SimulationContext) SetDefaultActionBehavior(defaultActionBehavior *SimulationActionBehavior) {
-	s.DefaultActionBehavior = defaultActionBehavior
-	s.require(simulationContextFieldDefaultActionBehavior)
 }
 
 func (s *SimulationContext) UnmarshalJSON(data []byte) error {
@@ -27631,6 +28738,285 @@ func NewSimulationFilterFromString(s string) (SimulationFilter, error) {
 
 func (s SimulationFilter) Ptr() *SimulationFilter {
 	return &s
+}
+
+var (
+	simulationFixedResponseFieldResponse     = big.NewInt(1 << 0)
+	simulationFixedResponseFieldData         = big.NewInt(1 << 1)
+	simulationFixedResponseFieldStatus       = big.NewInt(1 << 2)
+	simulationFixedResponseFieldErrorMessage = big.NewInt(1 << 3)
+	simulationFixedResponseFieldEffects      = big.NewInt(1 << 4)
+)
+
+type SimulationFixedResponse struct {
+	// The action's result. This is what the agent is given, whether it succeeded or failed.
+	Response string `json:"response" url:"response"`
+	// Structured data returned alongside the response. Must serialize to fewer than 10,000 characters of JSON; data over that limit is omitted and the response is kept.
+	Data map[string]interface{} `json:"data,omitempty" url:"data,omitempty"`
+	// Whether the action succeeded. Defaults to SUCCESS when absent.
+	Status *ActionExecutionStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Why the action failed, when status is ERROR. Never given to the agent. Truncated to 2,000 characters; a blank value is treated as if it were absent.
+	ErrorMessage *string `json:"errorMessage,omitempty" url:"errorMessage,omitempty"`
+	// State the action would have changed. The platform writes it each time this mock answers,
+	// under the app that initialized the conversation; the mocked app is not called. Both
+	// writes are attempted; if either fails, the action's result is an error and the other
+	// write stays applied. `userData` patches the initializing app's profile of the user who
+	// sent the message that triggered the action: that user must be a `SIMULATION` user with a
+	// profile under that app. Allowed on an `actionMocks` entry, not on
+	// `defaultActionBehavior`, and not with an `ERROR` status: a failed action changes no
+	// state.
+	Effects *ActionEffects `json:"effects,omitempty" url:"effects,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SimulationFixedResponse) GetResponse() string {
+	if s == nil {
+		return ""
+	}
+	return s.Response
+}
+
+func (s *SimulationFixedResponse) GetData() map[string]interface{} {
+	if s == nil {
+		return nil
+	}
+	return s.Data
+}
+
+func (s *SimulationFixedResponse) GetStatus() *ActionExecutionStatus {
+	if s == nil {
+		return nil
+	}
+	return s.Status
+}
+
+func (s *SimulationFixedResponse) GetErrorMessage() *string {
+	if s == nil {
+		return nil
+	}
+	return s.ErrorMessage
+}
+
+func (s *SimulationFixedResponse) GetEffects() *ActionEffects {
+	if s == nil {
+		return nil
+	}
+	return s.Effects
+}
+
+func (s *SimulationFixedResponse) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SimulationFixedResponse) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetResponse sets the Response field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationFixedResponse) SetResponse(response string) {
+	s.Response = response
+	s.require(simulationFixedResponseFieldResponse)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationFixedResponse) SetData(data map[string]interface{}) {
+	s.Data = data
+	s.require(simulationFixedResponseFieldData)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationFixedResponse) SetStatus(status *ActionExecutionStatus) {
+	s.Status = status
+	s.require(simulationFixedResponseFieldStatus)
+}
+
+// SetErrorMessage sets the ErrorMessage field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationFixedResponse) SetErrorMessage(errorMessage *string) {
+	s.ErrorMessage = errorMessage
+	s.require(simulationFixedResponseFieldErrorMessage)
+}
+
+// SetEffects sets the Effects field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationFixedResponse) SetEffects(effects *ActionEffects) {
+	s.Effects = effects
+	s.require(simulationFixedResponseFieldEffects)
+}
+
+func (s *SimulationFixedResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler SimulationFixedResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SimulationFixedResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SimulationFixedResponse) MarshalJSON() ([]byte, error) {
+	type embed SimulationFixedResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SimulationFixedResponse) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+// How a simulation evaluates charters and handles the actions the agent executes.
+var (
+	simulationSetupFieldsFieldEvaluateWithCharters  = big.NewInt(1 << 0)
+	simulationSetupFieldsFieldActionMocks           = big.NewInt(1 << 1)
+	simulationSetupFieldsFieldDefaultActionBehavior = big.NewInt(1 << 2)
+)
+
+type SimulationSetupFields struct {
+	// When true, the simulation evaluates the agent's charters even if charter evaluation is
+	// turned off for the agent. When absent or false, the simulation follows the agent's own
+	// charter evaluation setting, like any other conversation. While charters are evaluated,
+	// `additionalPromptText` has no effect. Not yet enabled for every agent: until it is, the
+	// value is stored and returned, and the agent's own setting applies. A conversation that
+	// already exists keeps the value it was created with.
+	EvaluateWithCharters *bool `json:"evaluateWithCharters,omitempty" url:"evaluateWithCharters,omitempty"`
+	// What the platform does when the agent executes each action during this simulation. At
+	// most one entry per action; a request that names an action twice is rejected. An action
+	// with no entry follows `defaultActionBehavior`. A conversation that already exists keeps
+	// the mocks and default it was created with.
+	ActionMocks []*SimulationActionMock `json:"actionMocks,omitempty" url:"actionMocks,omitempty"`
+	// What the platform does when the agent executes an action that has no `actionMocks`
+	// entry. When absent, the action's app is called as usual. A `fixedResponse` here keeps the
+	// simulation from calling any action's app that `actionMocks` doesn't name with `callApp`;
+	// its templates are rendered over the parameters of whichever action was called.
+	DefaultActionBehavior *SimulationActionBehavior `json:"defaultActionBehavior,omitempty" url:"defaultActionBehavior,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SimulationSetupFields) GetEvaluateWithCharters() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.EvaluateWithCharters
+}
+
+func (s *SimulationSetupFields) GetActionMocks() []*SimulationActionMock {
+	if s == nil {
+		return nil
+	}
+	return s.ActionMocks
+}
+
+func (s *SimulationSetupFields) GetDefaultActionBehavior() *SimulationActionBehavior {
+	if s == nil {
+		return nil
+	}
+	return s.DefaultActionBehavior
+}
+
+func (s *SimulationSetupFields) GetExtraProperties() map[string]interface{} {
+	return s.extraProperties
+}
+
+func (s *SimulationSetupFields) require(field *big.Int) {
+	if s.explicitFields == nil {
+		s.explicitFields = big.NewInt(0)
+	}
+	s.explicitFields.Or(s.explicitFields, field)
+}
+
+// SetEvaluateWithCharters sets the EvaluateWithCharters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationSetupFields) SetEvaluateWithCharters(evaluateWithCharters *bool) {
+	s.EvaluateWithCharters = evaluateWithCharters
+	s.require(simulationSetupFieldsFieldEvaluateWithCharters)
+}
+
+// SetActionMocks sets the ActionMocks field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationSetupFields) SetActionMocks(actionMocks []*SimulationActionMock) {
+	s.ActionMocks = actionMocks
+	s.require(simulationSetupFieldsFieldActionMocks)
+}
+
+// SetDefaultActionBehavior sets the DefaultActionBehavior field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SimulationSetupFields) SetDefaultActionBehavior(defaultActionBehavior *SimulationActionBehavior) {
+	s.DefaultActionBehavior = defaultActionBehavior
+	s.require(simulationSetupFieldsFieldDefaultActionBehavior)
+}
+
+func (s *SimulationSetupFields) UnmarshalJSON(data []byte) error {
+	type unmarshaler SimulationSetupFields
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SimulationSetupFields(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SimulationSetupFields) MarshalJSON() ([]byte, error) {
+	type embed SimulationSetupFields
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SimulationSetupFields) String() string {
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
 }
 
 var (
@@ -30096,6 +31482,200 @@ func (u *UserData) String() string {
 	return fmt.Sprintf("%#v", u)
 }
 
+var (
+	userDataEffectFieldData       = big.NewInt(1 << 0)
+	userDataEffectFieldRemoveKeys = big.NewInt(1 << 1)
+)
+
+type UserDataEffect struct {
+	// Keys to set. Keys not named are left as they are.
+	Data map[string]*UserDataPatch `json:"data,omitempty" url:"data,omitempty"`
+	// Keys to clear. Each is set to an empty string with `VISIBLE` visibility; there is no
+	// delete. A key may not also appear in `data`.
+	RemoveKeys []string `json:"removeKeys,omitempty" url:"removeKeys,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UserDataEffect) GetData() map[string]*UserDataPatch {
+	if u == nil {
+		return nil
+	}
+	return u.Data
+}
+
+func (u *UserDataEffect) GetRemoveKeys() []string {
+	if u == nil {
+		return nil
+	}
+	return u.RemoveKeys
+}
+
+func (u *UserDataEffect) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UserDataEffect) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataEffect) SetData(data map[string]*UserDataPatch) {
+	u.Data = data
+	u.require(userDataEffectFieldData)
+}
+
+// SetRemoveKeys sets the RemoveKeys field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataEffect) SetRemoveKeys(removeKeys []string) {
+	u.RemoveKeys = removeKeys
+	u.require(userDataEffectFieldRemoveKeys)
+}
+
+func (u *UserDataEffect) UnmarshalJSON(data []byte) error {
+	type unmarshaler UserDataEffect
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UserDataEffect(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UserDataEffect) MarshalJSON() ([]byte, error) {
+	type embed UserDataEffect
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UserDataEffect) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
+}
+
+// Not `UserData`, which requires `visibility`; a patch can leave it out.
+var (
+	userDataPatchFieldValue      = big.NewInt(1 << 0)
+	userDataPatchFieldVisibility = big.NewInt(1 << 1)
+)
+
+type UserDataPatch struct {
+	// The value to store.
+	Value string `json:"value" url:"value"`
+	// Defaults to `VISIBLE`.
+	Visibility *VisibilityType `json:"visibility,omitempty" url:"visibility,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UserDataPatch) GetValue() string {
+	if u == nil {
+		return ""
+	}
+	return u.Value
+}
+
+func (u *UserDataPatch) GetVisibility() *VisibilityType {
+	if u == nil {
+		return nil
+	}
+	return u.Visibility
+}
+
+func (u *UserDataPatch) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UserDataPatch) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetValue sets the Value field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataPatch) SetValue(value string) {
+	u.Value = value
+	u.require(userDataPatchFieldValue)
+}
+
+// SetVisibility sets the Visibility field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UserDataPatch) SetVisibility(visibility *VisibilityType) {
+	u.Visibility = visibility
+	u.require(userDataPatchFieldVisibility)
+}
+
+func (u *UserDataPatch) UnmarshalJSON(data []byte) error {
+	type unmarshaler UserDataPatch
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UserDataPatch(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UserDataPatch) MarshalJSON() ([]byte, error) {
+	type embed UserDataPatch
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UserDataPatch) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
+}
+
 // A value from the data of the user the conversation is with. User data set by different apps
 // is read together, the same way a segment's `user` condition reads it.
 var (
@@ -31475,6 +33055,167 @@ func NewUserMessageResponseStateFromString(s string) (UserMessageResponseState, 
 
 func (u UserMessageResponseState) Ptr() *UserMessageResponseState {
 	return &u
+}
+
+var (
+	usersConversationAudienceFieldUserIDs = big.NewInt(1 << 0)
+)
+
+type UsersConversationAudience struct {
+	// The users the conversation is for, identified the same way as a message's `userId`: by
+	// reference ID within the calling app. Must list between 1 and 100 users.
+	UserIDs []*EntityIDBase `json:"userIds" url:"userIds"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UsersConversationAudience) GetUserIDs() []*EntityIDBase {
+	if u == nil {
+		return nil
+	}
+	return u.UserIDs
+}
+
+func (u *UsersConversationAudience) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UsersConversationAudience) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetUserIDs sets the UserIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UsersConversationAudience) SetUserIDs(userIDs []*EntityIDBase) {
+	u.UserIDs = userIDs
+	u.require(usersConversationAudienceFieldUserIDs)
+}
+
+func (u *UsersConversationAudience) UnmarshalJSON(data []byte) error {
+	type unmarshaler UsersConversationAudience
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UsersConversationAudience(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UsersConversationAudience) MarshalJSON() ([]byte, error) {
+	type embed UsersConversationAudience
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UsersConversationAudience) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
+}
+
+var (
+	usersConversationAudienceResponseFieldUserIDs = big.NewInt(1 << 0)
+)
+
+type UsersConversationAudienceResponse struct {
+	// The users the conversation is for, as `initialize` named them: each is a user ID (`type` `USER`) with
+	// the app and reference ID it was given under, the same ID a message's `userId` names. These identify
+	// users of the agent, not `mavenUserId`s.
+	UserIDs []*EntityID `json:"userIds" url:"userIds"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (u *UsersConversationAudienceResponse) GetUserIDs() []*EntityID {
+	if u == nil {
+		return nil
+	}
+	return u.UserIDs
+}
+
+func (u *UsersConversationAudienceResponse) GetExtraProperties() map[string]interface{} {
+	return u.extraProperties
+}
+
+func (u *UsersConversationAudienceResponse) require(field *big.Int) {
+	if u.explicitFields == nil {
+		u.explicitFields = big.NewInt(0)
+	}
+	u.explicitFields.Or(u.explicitFields, field)
+}
+
+// SetUserIDs sets the UserIDs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UsersConversationAudienceResponse) SetUserIDs(userIDs []*EntityID) {
+	u.UserIDs = userIDs
+	u.require(usersConversationAudienceResponseFieldUserIDs)
+}
+
+func (u *UsersConversationAudienceResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler UsersConversationAudienceResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*u = UsersConversationAudienceResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	if err != nil {
+		return err
+	}
+	u.extraProperties = extraProperties
+	u.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (u *UsersConversationAudienceResponse) MarshalJSON() ([]byte, error) {
+	type embed UsersConversationAudienceResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*u),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (u *UsersConversationAudienceResponse) String() string {
+	if len(u.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(u); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", u)
 }
 
 var (

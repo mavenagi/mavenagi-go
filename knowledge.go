@@ -2130,6 +2130,7 @@ const (
 	KnowledgeBaseTypeAPI    KnowledgeBaseType = "API"
 	KnowledgeBaseTypeURL    KnowledgeBaseType = "URL"
 	KnowledgeBaseTypeManual KnowledgeBaseType = "MANUAL"
+	// No longer returned. RSS knowledge bases are `LEGACY`; filtering on `RSS` still matches them.
 	KnowledgeBaseTypeRss    KnowledgeBaseType = "RSS"
 	KnowledgeBaseTypeLegacy KnowledgeBaseType = "LEGACY"
 )
@@ -2157,20 +2158,23 @@ func (k KnowledgeBaseType) Ptr() *KnowledgeBaseType {
 
 // Each version is one entry in the knowledge base's "Version history" in Agent Designer.
 var (
-	knowledgeBaseVersionFieldType           = big.NewInt(1 << 0)
-	knowledgeBaseVersionFieldVersionID      = big.NewInt(1 << 1)
-	knowledgeBaseVersionFieldStatus         = big.NewInt(1 << 2)
-	knowledgeBaseVersionFieldErrorMessage   = big.NewInt(1 << 3)
-	knowledgeBaseVersionFieldCreatedAt      = big.NewInt(1 << 4)
-	knowledgeBaseVersionFieldUpdatedAt      = big.NewInt(1 << 5)
-	knowledgeBaseVersionFieldIndexingState  = big.NewInt(1 << 6)
-	knowledgeBaseVersionFieldProgress       = big.NewInt(1 << 7)
-	knowledgeBaseVersionFieldDocumentDeltas = big.NewInt(1 << 8)
+	knowledgeBaseVersionFieldType             = big.NewInt(1 << 0)
+	knowledgeBaseVersionFieldFunctionVersions = big.NewInt(1 << 1)
+	knowledgeBaseVersionFieldVersionID        = big.NewInt(1 << 2)
+	knowledgeBaseVersionFieldStatus           = big.NewInt(1 << 3)
+	knowledgeBaseVersionFieldErrorMessage     = big.NewInt(1 << 4)
+	knowledgeBaseVersionFieldCreatedAt        = big.NewInt(1 << 5)
+	knowledgeBaseVersionFieldUpdatedAt        = big.NewInt(1 << 6)
+	knowledgeBaseVersionFieldIndexingState    = big.NewInt(1 << 7)
+	knowledgeBaseVersionFieldProgress         = big.NewInt(1 << 8)
+	knowledgeBaseVersionFieldDocumentDeltas   = big.NewInt(1 << 9)
 )
 
 type KnowledgeBaseVersion struct {
 	// Indicates whether the completed version constitutes a full or partial refresh of the knowledge base. Deleting and updating documents is only supported for partial refreshes.
 	Type KnowledgeBaseVersionType `json:"type" url:"type"`
+	// The Function versions that build this version. On a version, absent for historical versions and for versions created without them.
+	FunctionVersions *KnowledgeBaseFunctionBindings `json:"functionVersions,omitempty" url:"functionVersions,omitempty"`
 	// The unique ID of the knowledge base version.
 	VersionID *EntityID `json:"versionId" url:"versionId"`
 	// The status of the knowledge base version
@@ -2202,6 +2206,13 @@ func (k *KnowledgeBaseVersion) GetType() KnowledgeBaseVersionType {
 		return ""
 	}
 	return k.Type
+}
+
+func (k *KnowledgeBaseVersion) GetFunctionVersions() *KnowledgeBaseFunctionBindings {
+	if k == nil {
+		return nil
+	}
+	return k.FunctionVersions
 }
 
 func (k *KnowledgeBaseVersion) GetVersionID() *EntityID {
@@ -2276,6 +2287,13 @@ func (k *KnowledgeBaseVersion) require(field *big.Int) {
 func (k *KnowledgeBaseVersion) SetType(type_ KnowledgeBaseVersionType) {
 	k.Type = type_
 	k.require(knowledgeBaseVersionFieldType)
+}
+
+// SetFunctionVersions sets the FunctionVersions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersion) SetFunctionVersions(functionVersions *KnowledgeBaseFunctionBindings) {
+	k.FunctionVersions = functionVersions
+	k.require(knowledgeBaseVersionFieldFunctionVersions)
 }
 
 // SetVersionID sets the VersionID field and marks it as non-optional;
@@ -2648,12 +2666,15 @@ func (k *KnowledgeBaseVersionProgressRequest) String() string {
 }
 
 var (
-	knowledgeBaseVersionRequestFieldType = big.NewInt(1 << 0)
+	knowledgeBaseVersionRequestFieldType             = big.NewInt(1 << 0)
+	knowledgeBaseVersionRequestFieldFunctionVersions = big.NewInt(1 << 1)
 )
 
 type KnowledgeBaseVersionRequest struct {
 	// Indicates whether the completed version constitutes a full or partial refresh of the knowledge base. Deleting and updating documents is only supported for partial refreshes.
 	Type KnowledgeBaseVersionType `json:"type" url:"type"`
+	// The Function versions that build this version. On a version, absent for historical versions and for versions created without them.
+	FunctionVersions *KnowledgeBaseFunctionBindings `json:"functionVersions,omitempty" url:"functionVersions,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2667,6 +2688,13 @@ func (k *KnowledgeBaseVersionRequest) GetType() KnowledgeBaseVersionType {
 		return ""
 	}
 	return k.Type
+}
+
+func (k *KnowledgeBaseVersionRequest) GetFunctionVersions() *KnowledgeBaseFunctionBindings {
+	if k == nil {
+		return nil
+	}
+	return k.FunctionVersions
 }
 
 func (k *KnowledgeBaseVersionRequest) GetExtraProperties() map[string]interface{} {
@@ -2685,6 +2713,13 @@ func (k *KnowledgeBaseVersionRequest) require(field *big.Int) {
 func (k *KnowledgeBaseVersionRequest) SetType(type_ KnowledgeBaseVersionType) {
 	k.Type = type_
 	k.require(knowledgeBaseVersionRequestFieldType)
+}
+
+// SetFunctionVersions sets the FunctionVersions field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (k *KnowledgeBaseVersionRequest) SetFunctionVersions(functionVersions *KnowledgeBaseFunctionBindings) {
+	k.FunctionVersions = functionVersions
+	k.require(knowledgeBaseVersionRequestFieldFunctionVersions)
 }
 
 func (k *KnowledgeBaseVersionRequest) UnmarshalJSON(data []byte) error {
