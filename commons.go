@@ -16786,8 +16786,9 @@ func (f FeedbackType) Ptr() *FeedbackType {
 
 // A condition on a single value, discriminated by the type the value is
 // validated as. Used wherever a value needs testing regardless of where it
-// came from: an intelligent field's computed value, or a value addressed by
-// path inside data an action returned.
+// came from: an intelligent field's computed value, a value addressed by
+// path inside data an action returned, or the value under a metadata
+// precondition's `key`.
 //
 // Pick the variant by type:
 // - `string`: For STRING and MULTILINE values
@@ -21954,21 +21955,44 @@ func (m *MetadataFilterGroup) String() string {
 }
 
 var (
-	metadataPreconditionFieldOperator = big.NewInt(1 << 0)
-	metadataPreconditionFieldKey      = big.NewInt(1 << 1)
-	metadataPreconditionFieldValue    = big.NewInt(1 << 2)
-	metadataPreconditionFieldValues   = big.NewInt(1 << 3)
+	metadataPreconditionFieldOperator       = big.NewInt(1 << 0)
+	metadataPreconditionFieldKey            = big.NewInt(1 << 1)
+	metadataPreconditionFieldValue          = big.NewInt(1 << 2)
+	metadataPreconditionFieldValues         = big.NewInt(1 << 3)
+	metadataPreconditionFieldFieldCondition = big.NewInt(1 << 4)
 )
 
 type MetadataPrecondition struct {
 	// Operator to apply to this precondition
 	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
-	// The key that must be present in the metadata for a precondition to be met
+	// The metadata key the precondition reads. Without a `fieldCondition`, a missing key fails the precondition, or meets it when `operator` is `NOT`. With a `fieldCondition`, a missing key is undetermined: it meets only `IS_UNDETERMINED`.
 	Key string `json:"key" url:"key"`
-	// Single value for CONTAINS operator or exact match
+	// Single value for CONTAINS operator or exact match. Superseded by `fieldCondition`, which carries its own value; this field and the inherited `operator` apply only without one. Keep using it until `fieldCondition` is generally available.
 	Value *string `json:"value,omitempty" url:"value,omitempty"`
-	// Multiple values for CONTAINS_ANY and CONTAINS_ALL operators
+	// Multiple values for CONTAINS_ANY and CONTAINS_ALL operators. Superseded by `fieldCondition`, which carries its own values; this field and the inherited `operator` apply only without one. Keep using it until `fieldCondition` is generally available.
 	Values []string `json:"values,omitempty" url:"values,omitempty"`
+	// A typed condition on the value stored under `key`, used instead of `operator`, `value`
+	// and `values`. On charters, segments and knowledge bases, setting it together with
+	// `operator`, `value` or a non-empty `values` is a 400.
+	//
+	// Pick the arm by how the value is stored: `string` for a plain string, such as a prefix
+	// or suffix match, and `set` for a JSON array of strings, such as `["us-east","eu-west"]`.
+	// `numeric` and `boolean` read a value written as a number or `true`/`false`.
+	//
+	// A missing key meets only `universal` `IS_UNDETERMINED`. Every other condition is unmet,
+	// negated ones such as `NOT_STARTS_WITH` and `NEQ` included, unlike `operator: NOT`,
+	// which a missing key meets. To also match a conversation without the key, put the
+	// condition in an `OR` group with `IS_UNDETERMINED`.
+	//
+	// A `string` condition compares the stored text, unwrapping a JSON-quoted string first, so
+	// a JSON array or number is compared as its raw text. An empty comparison value matches
+	// every value for `STARTS_WITH`, `ENDS_WITH` and `CONTAINS_SUBSTRING`. A `numeric` or
+	// `boolean` condition is unmet when the value cannot be read as that type. A `set`
+	// condition reads a value that is not a JSON array as a one-element set, and skips `null`
+	// elements, so `[null]` is an empty set. A `numeric` `comparison` or `boolean` condition
+	// without a `value` is saved with `0` or `false`, so `{"opType": "comparison",
+	// "operator": "GT"}` means greater than 0.
+	FieldCondition *FieldCondition `json:"fieldCondition,omitempty" url:"fieldCondition,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -22003,6 +22027,13 @@ func (m *MetadataPrecondition) GetValues() []string {
 		return nil
 	}
 	return m.Values
+}
+
+func (m *MetadataPrecondition) GetFieldCondition() *FieldCondition {
+	if m == nil {
+		return nil
+	}
+	return m.FieldCondition
 }
 
 func (m *MetadataPrecondition) GetExtraProperties() map[string]interface{} {
@@ -22042,6 +22073,13 @@ func (m *MetadataPrecondition) SetValue(value *string) {
 func (m *MetadataPrecondition) SetValues(values []string) {
 	m.Values = values
 	m.require(metadataPreconditionFieldValues)
+}
+
+// SetFieldCondition sets the FieldCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MetadataPrecondition) SetFieldCondition(fieldCondition *FieldCondition) {
+	m.FieldCondition = fieldCondition
+	m.require(metadataPreconditionFieldFieldCondition)
 }
 
 func (m *MetadataPrecondition) UnmarshalJSON(data []byte) error {
@@ -25825,7 +25863,8 @@ type PresenceOperator string
 const (
 	// The field has no determined value — the LLM could not determine one, the
 	// computation failed, is still running, or has not run. Surfaced to authors as
-	// the special "Undetermined" value.
+	// the special "Undetermined" value. For a metadata precondition, the key is
+	// absent.
 	PresenceOperatorIsUndetermined PresenceOperator = "IS_UNDETERMINED"
 	// The field has a determined (non-null) value.
 	PresenceOperatorIsDetermined PresenceOperator = "IS_DETERMINED"
@@ -26117,8 +26156,10 @@ const (
 	// The conversation was handed off to a human agent. Either an AI analysis of the
 	// transcript found a handoff, or a handoff action that Maven recognizes ran successfully.
 	// The AI analysis can be wrong. Once escalation is detected, later messages do not undo
-	// it, but the earlier checks, such as `NEGATIVE_FEEDBACK`, still take precedence. Copilot
-	// conversations are never `ESCALATED`. Billing status: not billable. Shown in Agent
+	// it, but the earlier checks, such as `NEGATIVE_FEEDBACK`, still take precedence. Agent
+	// Assist copilot conversations are never `ESCALATED`, in any mode: those tagged `copilot`
+	// or `copilot-research` count as `RESOLVED` instead, and copilot chat and Advice
+	// conversations are `INELIGIBLE`. Billing status: not billable. Shown in Agent
 	// Designer as "Escalated".
 	ResolutionStatusEscalated ResolutionStatus = "ESCALATED"
 	// Reserved. Not assigned to conversations today. Billing status: not billable. Shown in
@@ -26137,9 +26178,11 @@ const (
 	// A voice call of 5 seconds or less, measured from the first message to the last. Billing
 	// status: not eligible. Shown in Agent Designer as "Hangup".
 	ResolutionStatusHangup ResolutionStatus = "HANGUP"
-	// A copilot chat conversation. Billing status: not eligible. Shown in Agent Designer as
-	// "Ineligible". Not the same as the `INELIGIBLE` billing status, which covers every not
-	// eligible status.
+	// A copilot chat or Advice conversation (tagged `copilot-chat` or `copilot-advice`). Other
+	// Agent Assist copilot conversations, such as those tagged `copilot` or `copilot-research`,
+	// keep the normal statuses but are never `ESCALATED`. Billing status: not eligible. Shown in
+	// Agent Designer as "Ineligible". Not the same as the `INELIGIBLE` billing status, which
+	// covers every not eligible status.
 	ResolutionStatusIneligible ResolutionStatus = "INELIGIBLE"
 )
 
@@ -28511,6 +28554,11 @@ func (s *SimulationActionMock) String() string {
 }
 
 // Conversations with a simulation context are the runs on the Agent Designer "Simulator" page.
+//
+// By default, an action the agent executes in a simulation calls its app, with mode
+// `SIMULATION`, and the app may act on real systems. To keep an action's app from being called, give it an
+// `actionMocks` entry with a `fixedResponse`, or set `defaultActionBehavior` to a
+// `fixedResponse`.
 var (
 	simulationContextFieldEvaluateWithCharters    = big.NewInt(1 << 0)
 	simulationContextFieldActionMocks             = big.NewInt(1 << 1)
@@ -30311,6 +30359,15 @@ func (s *SystemEventNameCondition) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
+// Checks the conversation's tags against `tags`. The `operator` decides how:
+//
+//   - None: every listed tag must be present.
+//   - `CONTAINS` or `CONTAINS_ANY`: at least one listed tag must be present.
+//   - `NOT_CONTAINS` or `NOT_CONTAINS_ANY`: none of the listed tags may be present.
+//   - `CONTAINS_ALL`: every listed tag must be present.
+//   - `NOT_CONTAINS_ALL`: at least one listed tag must be missing.
+//   - `NOT`: met unless every listed tag is present. To require that none are present, use
+//     `NOT_CONTAINS_ANY`.
 var (
 	tagsPreconditionFieldOperator = big.NewInt(1 << 0)
 	tagsPreconditionFieldTags     = big.NewInt(1 << 1)
@@ -30319,7 +30376,7 @@ var (
 type TagsPrecondition struct {
 	// Operator to apply to this precondition
 	Operator *PreconditionOperator `json:"operator,omitempty" url:"operator,omitempty"`
-	// The tags that must be present in the conversation context for the precondition to be met
+	// The tags the `operator` checks the conversation's tags against.
 	Tags []string `json:"tags" url:"tags"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
